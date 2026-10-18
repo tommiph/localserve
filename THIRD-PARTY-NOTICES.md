@@ -1,6 +1,6 @@
 # Third-party notices
 
-Localserve-authored source does not include an open-source license grant. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.
+Localserve-authored code is licensed under the MIT License in LICENSE. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.
 
 - Node.js and bundled components: runtime/LICENSE.txt.
 - Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.

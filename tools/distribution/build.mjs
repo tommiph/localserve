@@ -14,6 +14,8 @@ import {controlExamples} from './templates/control-examples.mjs';
 import {validateControlPage} from '../../server/controls.mjs';
 import {assertPublicPath} from './boundary.mjs';
 import {renderDemoReadme} from './readme.mjs';
+import {publicTests} from '../testing/public-tests.mjs';
+import {sanitizeOculusReadings,initializeSourceLauncher} from './sanitize-source.mjs';
 
 const run = promisify(execFile);
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -167,13 +169,14 @@ for (const entry of await fs.readdir(path.join(root, 'plugins'), { withFileTypes
 declarations.sort((a,b) => a.id.localeCompare(b.id));
 const before = await definitions();
 try {
-  for (const file of ['server.mjs','styles.css','project-info.json','VERSIONING.md','VERSION-HISTORY.json','tools/version.mjs','Start Localserve.cmd','Start Localserve Tray.cmd','runtime/node.exe','runtime/LICENSE.txt']) await copyFile(file);
+  for (const file of ['LICENSE','server.mjs','styles.css','project-info.json','VERSIONING.md','VERSION-HISTORY.json','tools/version.mjs','Start Localserve.cmd','Start Localserve Tray.cmd','runtime/node.exe','runtime/LICENSE.txt']) await copyFile(file);
   for (const directory of ['server','web','vendor']) await copyTree(directory);
-  for(const file of ['build.mjs','verify.mjs','smoke.mjs','archive.ps1','boundary.mjs','readme.mjs','gitignore.txt'])await copyFile('tools/distribution/'+file);
+  for(const file of ['build.mjs','verify.mjs','smoke.mjs','archive.ps1','boundary.mjs','readme.mjs','gitignore.txt','release.mjs','prepare-source.mjs','verify-source.mjs','sanitize-source.mjs'])await copyFile('tools/distribution/'+file);
   for(const directory of ['templates','licenses'])await copyTree('tools/distribution/'+directory);
   for(const file of ['localserve.iss','build.mjs','verify.mjs','README.md','compiler-lock.json','prepare-compiler.ps1','LICENSE.InnoSetup.txt'])await copyFile('tools/installer/'+file);
   // Only public isolated tests are copied; never traverse tests/.tmp.
-  for (const file of ['universe.test.mjs','universe-viewer.test.mjs','universe-ui.test.mjs','vistas-legacy.test.mjs','games.test.mjs','version.test.mjs','installer.test.mjs']) await copyFile('tests/'+file);
+  for (const file of publicTests.filter(file=>file!=='tests/source.test.mjs')) await copyFile(file);
+  for (const file of ['tools/testing/public-tests.mjs','tools/testing/run.mjs','.github/workflows/windows.yml']) await copyFile(file);
   await write('tests/source.test.mjs',await fs.readFile(path.join(tooling,'templates/source.test.mjs')));
   await write('tools/initialize-settings.mjs',await fs.readFile(path.join(tooling,'templates/initialize-settings.mjs')));
   await write('tools/install-control-examples.mjs',await fs.readFile(path.join(tooling,'templates/install-control-examples.mjs')));
@@ -183,8 +186,7 @@ try {
     await write('examples/controls/'+id+'.json',JSON.stringify(page,null,2)+'\n');
   }
   for (const launcher of ['Start Localserve.cmd','Start Localserve Tray.cmd']) {
-    await write(launcher,(await fs.readFile(path.join(stage,launcher),'utf8')).replace('start "" "tray\\LocalserveTray.exe"',
-      'rem Initialize missing private settings without replacing existing values.\r\n"runtime\\node.exe" "tools\\initialize-settings.mjs"\r\nif errorlevel 1 exit /b 1\r\nstart "" "tray\\LocalserveTray.exe"'));
+    await write(launcher,initializeSourceLauncher(await fs.readFile(path.join(stage,launcher),'utf8')));
   }
   // User-added display HTML is content, not an application dependency. Never
   // recursively copy assets/, which can contain private user-authored pages.
@@ -244,12 +246,11 @@ try {
     await write(folder+'/declaration.json',JSON.stringify(declaration,null,2)+'\n');
     await pluginGuide(declaration);
   }
-  // Remove one installation-specific Android app alias in this copy only.
+  // Both configured source and an already clean checkout produce this same
+  // generic public reading; an unknown field contract must stop packaging.
   const oculus = 'plugins/oculus-go/server/readings.mjs';
   const readings = await fs.readFile(path.join(stage, oculus),'utf8');
-  const generic = readings.replace(/'active-app': pkg === '[^']+' \? 'Home VR'\s*:\s*/, "'active-app': ");
-  if (generic === readings) throw new Error('Review Oculus alias sanitization after source changes.');
-  await write(oculus,generic);
+  await write(oculus,sanitizeOculusReadings(readings));
 
   for (const [name, file] of [['node-tradfri-client','node-tradfri-client-3.2.0.txt'],['node-dtls-client','node-dtls-client-1.1.1.txt'],['alcalzone-shared','alcalzone-shared-4.0.8.txt']]) {
     await write(`plugins/tradfri/vendor/node_modules/${name}/LICENSE`,await fs.readFile(path.join(tooling,'licenses',file)));
@@ -272,10 +273,10 @@ try {
     doNotDisturb:{enabled:false,scheduleEnabled:false,days:[1,2,3,4,5,6,0],start:'22:00',end:'07:00'},
     listen:{host:'127.0.0.1',port:0},maxConcurrentRuns:8},null,2)+'\n');
   await write('tray/settings.json',JSON.stringify({autoStartServer:true},null,2)+'\n');
-  await write('package.json',JSON.stringify({name:'localserve',version,private:true,type:'module',scripts:{start:'.\\runtime\\node.exe server.mjs',test:'.\\runtime\\node.exe --test --test-concurrency=1 tests/universe.test.mjs tests/universe-viewer.test.mjs tests/universe-ui.test.mjs tests/vistas-legacy.test.mjs tests/games.test.mjs tests/source.test.mjs tests/version.test.mjs tests/installer.test.mjs','version:check':'.\\runtime\\node.exe tools/version.mjs --check'},engines:{node:'>=24'}},null,2)+'\n');
+  await write('package.json',JSON.stringify({name:'localserve',version,license:'MIT',private:true,type:'module',scripts:{start:'.\\runtime\\node.exe server.mjs',test:'.\\runtime\\node.exe tools/testing/run.mjs','version:check':'.\\runtime\\node.exe tools/version.mjs --check'},engines:{node:'>=24'}},null,2)+'\n');
 
   await write('.gitignore',await fs.readFile(path.join(tooling,'gitignore.txt')));
-  const notices = ['# Third-party notices','', 'Localserve-authored source does not include an open-source license grant. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.','', '- Node.js and bundled components: runtime/LICENSE.txt.', '- Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.', '- SunCalc: vendor/suncalc/LICENSE.', '- Three.js r97 (MIT): assets/universe/vendor/three-r97/LICENSE.txt.', '- Timezone catalogue: assets/timezones/LICENSE.txt.', '- Public station catalogue and provider attribution: plugins/hsl-trains/LICENSE.txt.',''];
+  const notices = ['# Third-party notices','', 'Localserve-authored code is licensed under the MIT License in LICENSE. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.','', '- Node.js and bundled components: runtime/LICENSE.txt.', '- Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.', '- SunCalc: vendor/suncalc/LICENSE.', '- Three.js r97 (MIT): assets/universe/vendor/three-r97/LICENSE.txt.', '- Timezone catalogue: assets/timezones/LICENSE.txt.', '- Public station catalogue and provider attribution: plugins/hsl-trains/LICENSE.txt.',''];
   async function packages(directory) {
     for (const entry of await fs.readdir(directory,{withFileTypes:true})) {
       const file = path.join(directory,entry.name);

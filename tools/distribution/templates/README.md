@@ -9,10 +9,16 @@ step-by-step Tasks, mobile device remotes and read-only information displays.
 
 ## Install and start
 
-The per-user Windows Setup executable adds shortcuts and opens the administrator
-after setup. Portable/source installation is also available as described below.
-See [setup details](tools/installer/README.md) for prerequisites, upgrades and
-data retention. Unsigned preview builds still need normal Windows trust checks.
+[Download Windows Setup or the portable ZIP](https://github.com/tommiph/localserve/releases).
+Choose the newest preview and read its release notes. Windows 10/11 x64 and
+Microsoft .NET Framework 4.8 or later are required. Preview builds are unsigned.
+
+For Setup, run the downloaded executable as your normal Windows user and select
+**Open Localserve** at the end. It adds Start menu shortcuts and opens the
+administrator. Sign-in startup is optional. See [setup details](tools/installer/README.md)
+for upgrades and data retention.
+
+For a portable/source installation:
 
 1. Clone or download the complete repository into a writable folder on a Windows
    10/11 x64 PC. Extract a downloaded ZIP before running anything.
@@ -33,6 +39,16 @@ Generic [TV and lighting remote examples](examples/controls/README.md) are
 included with an installer that preserves existing remotes. Configure your own
 devices before enabling them. [Local display examples](assets/pages/README.md)
 include a sci-fi screen and solar-system screensaver.
+
+## Your first Task
+
+1. Open **Simulator**, leave **Configuration complete** on, and enable the plugin.
+2. Open **Tasks**, create a Task and name it **First Task**.
+3. Add **Log activity**, enter a short message, enable the Task and save it.
+4. Run it manually. Check its completed run and find your message in **Activity**.
+
+This uses no device or provider account. Add rules and real plugin actions when
+you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
 
 ## Features
 
@@ -82,6 +98,6 @@ pinned client libraries are under plugins/sensors/android/; optional SDK/JDK
 preparation is separate from running the server. Tizen source requires your
 own SDK, signing identity and compatible TV.
 
-See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for dependency terms.
-Third-party open-source licenses do not grant a license to Localserve-authored
-code. Review applicable licensing before redistribution.
+Localserve-authored code is available under the [MIT License](LICENSE).
+Bundled dependencies and third-party assets retain their own licenses and
+attribution. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
