@@ -1,0 +1,34 @@
+name: Windows checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source:
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6, Node 24
+        with:
+          persist-credentials: false
+      - name: Check component versions
+        run: .\runtime\node.exe tools/version.mjs --check
+      - name: Run isolated public tests
+        run: .\runtime\node.exe tools/testing/run.mjs
+      - name: Verify clean packaging and independent first start
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/installer/prepare-compiler.ps1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\runtime\node.exe tools/distribution/release.mjs --installer
+      - name: Show isolated test diagnostics
+        if: failure()
+        run: |
+          if (Test-Path work/github-source-tests.txt) { Get-Content work/github-source-tests.txt }

@@ -4,6 +4,19 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import {installerFiles} from '../tools/installer/build.mjs';
 import {renderDemoReadme} from '../tools/distribution/readme.mjs';
+import path from 'node:path';
+import {ownedUninstaller} from '../tools/installer/uninstall-path.mjs';
+
+test('numbered uninstallers are resolved only within their owning installation',()=>{
+  const installation=path.resolve('tests/.tmp/Localserve ä (setup)');
+  for(const name of ['unins000.exe','unins001.exe','unins123.exe']){
+    const file=path.join(installation,'uninstall',name);
+    assert.equal(ownedUninstaller('"'+file+'"',installation),file);
+  }
+  for(const command of ['cmd.exe /c anything','"'+path.join(installation,'uninstall/unins001.exe')+'" /SILENT','"'+path.join(installation,'other/unins000.exe')+'"','"'+path.join(installation,'uninstall/other.exe')+'"','"relative/unins000.exe"']){
+    assert.throws(()=>ownedUninstaller(command,installation));
+  }
+});
 
 test('installer file list excludes settings seeds and rejects unsafe names',()=>{
   const value=installerFiles({files:[{path:'config.json'},{path:'tray/settings.json'},{path:'server.mjs'},{path:'plugins/example/declaration.json'}]});
