@@ -1,0 +1,24 @@
+Finavia plugin provenance
+
+Adapter and declaration: authored for Localserve using its existing supervised
+HSL Trains/Simulator runtime lifecycle. No external Finavia client source was
+copied. Historical endpoint and XML field names were inspected in the public
+nokka200/FinaviaApi repository. The signed-in Finavia portal and a successful
+HTTPS apigw.finavia.fi response confirmed the current gateway, header and XML.
+
+Finavia flight data remains subject to Finavia API general and specific terms,
+not an assumed Creative Commons license. General terms are available at
+https://apiportal.finavia.fi/signup. Public Flights was an active subscription
+in the user's signed-in portal; no new subscription or terms were accepted.
+This plugin does not
+represent affiliation, partnership or endorsement. No Finavia logo is bundled.
+
+Bundled third-party code:
+  SAX JavaScript XML parser 1.6.1
+  https://github.com/isaacs/sax-js
+  Source: vendor/sax/lib/sax.js and vendor/sax/package.json
+  License: Blue Oak Model License 1.0.0, vendor/sax/LICENSE.md
+  Copied from the already bundled Localserve News parser, with its license.
+
+The plugin uses Localserve's root-owned bundled Node runtime. No external
+package installation or machine-specific runtime path is required.

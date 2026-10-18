@@ -1,0 +1,1958 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "pc-network",
+  "name": "PC and Network",
+  "version": "1.1.0",
+  "description": "Windows CPU, GPU, memory, storage, adapters and network name lookups",
+  "icon": "microchip",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Refresh interval",
+      "type": "number",
+      "min": 0.16666666666666666,
+      "max": 1,
+      "default": 0.16666666666666666,
+      "enum": [
+        0.16666666666666666,
+        0.5,
+        1
+      ],
+      "enumLabels": [
+        "10 seconds",
+        "30 seconds",
+        "1 minute"
+      ],
+      "help": "Each refresh samples counters for one second. Completion-based polling avoids overlap and catch-up bursts."
+    },
+    {
+      "id": "resolve-neighbors",
+      "label": "Resolve local hostnames",
+      "type": "boolean",
+      "default": true,
+      "help": "Try reverse DNS for up to two existing private IPv4 neighbor-cache entries per refresh. Missing names remain unavailable; this is not an exhaustive device inventory."
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "host-name",
+      "label": "PC hostname",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "host-name"
+      }
+    },
+    {
+      "id": "operating-system",
+      "label": "Operating system",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "operating-system"
+      }
+    },
+    {
+      "id": "cpu-model",
+      "label": "CPU model",
+      "type": "string",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "cpu-model"
+      }
+    },
+    {
+      "id": "logical-processors",
+      "label": "Logical processors",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "logical-processors"
+      }
+    },
+    {
+      "id": "cpu-percent",
+      "label": "Total CPU usage (%)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "cpu-percent"
+      }
+    },
+    {
+      "id": "sample-seconds",
+      "label": "Sample length (seconds)",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "sample-seconds"
+      }
+    },
+    {
+      "id": "uptime-hours",
+      "label": "PC uptime (hours)",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "uptime-hours"
+      }
+    },
+    {
+      "id": "memory-total-gib",
+      "label": "Physical memory total (GiB)",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "memory-total-gib"
+      }
+    },
+    {
+      "id": "memory-used-gib",
+      "label": "Physical memory used (GiB)",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "memory-used-gib"
+      }
+    },
+    {
+      "id": "memory-available-gib",
+      "label": "Physical memory available (GiB)",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "memory-available-gib"
+      }
+    },
+    {
+      "id": "memory-percent",
+      "label": "Memory usage (%)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "memory-percent"
+      }
+    },
+    {
+      "id": "commit-used-gib",
+      "label": "Committed memory used (GiB)",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "commit-used-gib"
+      }
+    },
+    {
+      "id": "commit-limit-gib",
+      "label": "Commit limit (GiB)",
+      "type": "number",
+      "icon": "microchip",
+      "source": {
+        "kind": "state",
+        "key": "commit-limit-gib"
+      }
+    },
+    {
+      "id": "receive-mbps",
+      "label": "Network receive (Mb/s)",
+      "type": "number",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "receive-mbps"
+      }
+    },
+    {
+      "id": "transmit-mbps",
+      "label": "Network send (Mb/s)",
+      "type": "number",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "transmit-mbps"
+      }
+    },
+    {
+      "id": "updated-at",
+      "label": "Last status reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "updated-at"
+      }
+    },
+    {
+      "id": "adapter-count",
+      "label": "Displayed adapter count",
+      "type": "number",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "adapter-count"
+      }
+    },
+    {
+      "id": "disk-count",
+      "label": "Displayed volume count",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "disk-count"
+      }
+    },
+    {
+      "id": "drive-d-free-percent",
+      "label": "D: free space (%)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "drive-d-free-percent"
+      }
+    },
+    {
+      "id": "drive-e-free-percent",
+      "label": "E: free space (%)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "drive-e-free-percent"
+      }
+    },
+    {
+      "id": "neighbor-count",
+      "label": "Displayed neighbor count",
+      "type": "number",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "neighbor-count"
+      }
+    },
+    {
+      "id": "neighbors-status",
+      "label": "Neighbor cache status",
+      "type": "string",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "neighbors-status"
+      }
+    },
+    {
+      "id": "adapters",
+      "label": "Network adapters",
+      "type": "table",
+      "icon": "network-wired",
+      "columns": [
+        {
+          "id": "name",
+          "label": "Adapter",
+          "type": "string"
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "id": "address",
+          "label": "IP addresses",
+          "type": "string"
+        },
+        {
+          "id": "link",
+          "label": "Link Mb/s",
+          "type": "number"
+        },
+        {
+          "id": "receive",
+          "label": "Receive Mb/s",
+          "type": "number"
+        },
+        {
+          "id": "transmit",
+          "label": "Send Mb/s",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "adapter-count",
+        "rows": [
+          {
+            "name": "adapter-1-name",
+            "status": "adapter-1-status",
+            "address": "adapter-1-address",
+            "link": "adapter-1-link",
+            "receive": "adapter-1-receive",
+            "transmit": "adapter-1-transmit"
+          },
+          {
+            "name": "adapter-2-name",
+            "status": "adapter-2-status",
+            "address": "adapter-2-address",
+            "link": "adapter-2-link",
+            "receive": "adapter-2-receive",
+            "transmit": "adapter-2-transmit"
+          },
+          {
+            "name": "adapter-3-name",
+            "status": "adapter-3-status",
+            "address": "adapter-3-address",
+            "link": "adapter-3-link",
+            "receive": "adapter-3-receive",
+            "transmit": "adapter-3-transmit"
+          },
+          {
+            "name": "adapter-4-name",
+            "status": "adapter-4-status",
+            "address": "adapter-4-address",
+            "link": "adapter-4-link",
+            "receive": "adapter-4-receive",
+            "transmit": "adapter-4-transmit"
+          },
+          {
+            "name": "adapter-5-name",
+            "status": "adapter-5-status",
+            "address": "adapter-5-address",
+            "link": "adapter-5-link",
+            "receive": "adapter-5-receive",
+            "transmit": "adapter-5-transmit"
+          },
+          {
+            "name": "adapter-6-name",
+            "status": "adapter-6-status",
+            "address": "adapter-6-address",
+            "link": "adapter-6-link",
+            "receive": "adapter-6-receive",
+            "transmit": "adapter-6-transmit"
+          },
+          {
+            "name": "adapter-7-name",
+            "status": "adapter-7-status",
+            "address": "adapter-7-address",
+            "link": "adapter-7-link",
+            "receive": "adapter-7-receive",
+            "transmit": "adapter-7-transmit"
+          },
+          {
+            "name": "adapter-8-name",
+            "status": "adapter-8-status",
+            "address": "adapter-8-address",
+            "link": "adapter-8-link",
+            "receive": "adapter-8-receive",
+            "transmit": "adapter-8-transmit"
+          },
+          {
+            "name": "adapter-9-name",
+            "status": "adapter-9-status",
+            "address": "adapter-9-address",
+            "link": "adapter-9-link",
+            "receive": "adapter-9-receive",
+            "transmit": "adapter-9-transmit"
+          },
+          {
+            "name": "adapter-10-name",
+            "status": "adapter-10-status",
+            "address": "adapter-10-address",
+            "link": "adapter-10-link",
+            "receive": "adapter-10-receive",
+            "transmit": "adapter-10-transmit"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "adapter-1-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-1-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-1-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-1-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-1-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-1-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-2-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-2-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-2-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-2-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-2-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-2-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-3-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-3-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-3-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-3-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-3-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-3-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-4-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-4-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-4-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-4-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-4-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-4-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-5-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-5-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-5-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-5-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-5-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-5-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-6-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-6-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-6-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-6-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-6-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-6-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-7-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-7-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-7-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-7-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-7-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-7-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-8-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-8-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-8-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-8-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-8-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-8-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-9-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-9-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-9-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-9-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-9-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-9-transmit",
+            "type": "number"
+          },
+          {
+            "key": "adapter-10-name",
+            "type": "string"
+          },
+          {
+            "key": "adapter-10-status",
+            "type": "string"
+          },
+          {
+            "key": "adapter-10-address",
+            "type": "string"
+          },
+          {
+            "key": "adapter-10-link",
+            "type": "number"
+          },
+          {
+            "key": "adapter-10-receive",
+            "type": "number"
+          },
+          {
+            "key": "adapter-10-transmit",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "disks",
+      "label": "Storage volumes",
+      "type": "table",
+      "icon": "server",
+      "columns": [
+        {
+          "id": "name",
+          "label": "Volume",
+          "type": "string"
+        },
+        {
+          "id": "total",
+          "label": "Total GiB",
+          "type": "number"
+        },
+        {
+          "id": "free",
+          "label": "Free GiB",
+          "type": "number"
+        },
+        {
+          "id": "used",
+          "label": "Used %",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "disk-count",
+        "rows": [
+          {
+            "name": "disk-1-name",
+            "total": "disk-1-total",
+            "free": "disk-1-free",
+            "used": "disk-1-used"
+          },
+          {
+            "name": "disk-2-name",
+            "total": "disk-2-total",
+            "free": "disk-2-free",
+            "used": "disk-2-used"
+          },
+          {
+            "name": "disk-3-name",
+            "total": "disk-3-total",
+            "free": "disk-3-free",
+            "used": "disk-3-used"
+          },
+          {
+            "name": "disk-4-name",
+            "total": "disk-4-total",
+            "free": "disk-4-free",
+            "used": "disk-4-used"
+          },
+          {
+            "name": "disk-5-name",
+            "total": "disk-5-total",
+            "free": "disk-5-free",
+            "used": "disk-5-used"
+          },
+          {
+            "name": "disk-6-name",
+            "total": "disk-6-total",
+            "free": "disk-6-free",
+            "used": "disk-6-used"
+          },
+          {
+            "name": "disk-7-name",
+            "total": "disk-7-total",
+            "free": "disk-7-free",
+            "used": "disk-7-used"
+          },
+          {
+            "name": "disk-8-name",
+            "total": "disk-8-total",
+            "free": "disk-8-free",
+            "used": "disk-8-used"
+          },
+          {
+            "name": "disk-9-name",
+            "total": "disk-9-total",
+            "free": "disk-9-free",
+            "used": "disk-9-used"
+          },
+          {
+            "name": "disk-10-name",
+            "total": "disk-10-total",
+            "free": "disk-10-free",
+            "used": "disk-10-used"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "disk-1-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-1-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-1-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-1-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-2-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-2-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-2-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-2-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-3-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-3-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-3-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-3-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-4-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-4-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-4-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-4-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-5-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-5-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-5-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-5-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-6-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-6-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-6-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-6-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-7-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-7-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-7-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-7-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-8-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-8-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-8-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-8-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-9-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-9-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-9-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-9-used",
+            "type": "number"
+          },
+          {
+            "key": "disk-10-name",
+            "type": "string"
+          },
+          {
+            "key": "disk-10-total",
+            "type": "number"
+          },
+          {
+            "key": "disk-10-free",
+            "type": "number"
+          },
+          {
+            "key": "disk-10-used",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "neighbors",
+      "label": "Local network neighbors",
+      "type": "table",
+      "icon": "network-wired",
+      "columns": [
+        {
+          "id": "address",
+          "label": "IP address",
+          "type": "string"
+        },
+        {
+          "id": "hostname",
+          "label": "Hostname",
+          "type": "string"
+        },
+        {
+          "id": "resolution",
+          "label": "Name lookup",
+          "type": "string"
+        },
+        {
+          "id": "state",
+          "label": "Cache state",
+          "type": "string"
+        },
+        {
+          "id": "adapter",
+          "label": "Adapter",
+          "type": "string"
+        },
+        {
+          "id": "mac",
+          "label": "MAC address",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "neighbor-count",
+        "rows": [
+          {
+            "address": "neighbor-1-address",
+            "hostname": "neighbor-1-hostname",
+            "resolution": "neighbor-1-resolution",
+            "state": "neighbor-1-state",
+            "adapter": "neighbor-1-adapter",
+            "mac": "neighbor-1-mac"
+          },
+          {
+            "address": "neighbor-2-address",
+            "hostname": "neighbor-2-hostname",
+            "resolution": "neighbor-2-resolution",
+            "state": "neighbor-2-state",
+            "adapter": "neighbor-2-adapter",
+            "mac": "neighbor-2-mac"
+          },
+          {
+            "address": "neighbor-3-address",
+            "hostname": "neighbor-3-hostname",
+            "resolution": "neighbor-3-resolution",
+            "state": "neighbor-3-state",
+            "adapter": "neighbor-3-adapter",
+            "mac": "neighbor-3-mac"
+          },
+          {
+            "address": "neighbor-4-address",
+            "hostname": "neighbor-4-hostname",
+            "resolution": "neighbor-4-resolution",
+            "state": "neighbor-4-state",
+            "adapter": "neighbor-4-adapter",
+            "mac": "neighbor-4-mac"
+          },
+          {
+            "address": "neighbor-5-address",
+            "hostname": "neighbor-5-hostname",
+            "resolution": "neighbor-5-resolution",
+            "state": "neighbor-5-state",
+            "adapter": "neighbor-5-adapter",
+            "mac": "neighbor-5-mac"
+          },
+          {
+            "address": "neighbor-6-address",
+            "hostname": "neighbor-6-hostname",
+            "resolution": "neighbor-6-resolution",
+            "state": "neighbor-6-state",
+            "adapter": "neighbor-6-adapter",
+            "mac": "neighbor-6-mac"
+          },
+          {
+            "address": "neighbor-7-address",
+            "hostname": "neighbor-7-hostname",
+            "resolution": "neighbor-7-resolution",
+            "state": "neighbor-7-state",
+            "adapter": "neighbor-7-adapter",
+            "mac": "neighbor-7-mac"
+          },
+          {
+            "address": "neighbor-8-address",
+            "hostname": "neighbor-8-hostname",
+            "resolution": "neighbor-8-resolution",
+            "state": "neighbor-8-state",
+            "adapter": "neighbor-8-adapter",
+            "mac": "neighbor-8-mac"
+          },
+          {
+            "address": "neighbor-9-address",
+            "hostname": "neighbor-9-hostname",
+            "resolution": "neighbor-9-resolution",
+            "state": "neighbor-9-state",
+            "adapter": "neighbor-9-adapter",
+            "mac": "neighbor-9-mac"
+          },
+          {
+            "address": "neighbor-10-address",
+            "hostname": "neighbor-10-hostname",
+            "resolution": "neighbor-10-resolution",
+            "state": "neighbor-10-state",
+            "adapter": "neighbor-10-adapter",
+            "mac": "neighbor-10-mac"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "neighbor-1-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-1-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-1-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-1-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-1-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-1-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-2-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-3-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-4-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-5-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-6-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-7-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-8-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-9-mac",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-address",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-hostname",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-resolution",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-state",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-adapter",
+            "type": "string"
+          },
+          {
+            "key": "neighbor-10-mac",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lookup-target",
+      "label": "Lookup target",
+      "type": "string",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "lookup-target"
+      }
+    },
+    {
+      "id": "lookup-addresses",
+      "label": "Resolved addresses",
+      "type": "string",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "lookup-addresses"
+      }
+    },
+    {
+      "id": "lookup-hostname",
+      "label": "Reverse hostname",
+      "type": "string",
+      "icon": "network-wired",
+      "source": {
+        "kind": "state",
+        "key": "lookup-hostname"
+      }
+    },
+    {
+      "id": "lookup-status",
+      "label": "Lookup status",
+      "type": "string",
+      "icon": "circle-check",
+      "source": {
+        "kind": "state",
+        "key": "lookup-status"
+      }
+    },
+    {
+      "id": "lookup-at",
+      "label": "Last lookup reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "lookup-at"
+      }
+    },
+    {
+      "id": "gpu-count",
+      "label": "Displayed GPU count",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-count"
+      }
+    },
+    {
+      "id": "gpu-1-name",
+      "label": "GPU 1 model",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-name"
+      }
+    },
+    {
+      "id": "gpu-1-percent",
+      "label": "GPU 1 usage (%)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-percent"
+      }
+    },
+    {
+      "id": "gpu-1-dedicated-used-gib",
+      "label": "GPU 1 dedicated used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-dedicated-used-gib"
+      }
+    },
+    {
+      "id": "gpu-1-dedicated-total-gib",
+      "label": "GPU 1 dedicated total (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-dedicated-total-gib"
+      }
+    },
+    {
+      "id": "gpu-1-shared-used-gib",
+      "label": "GPU 1 shared used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-shared-used-gib"
+      }
+    },
+    {
+      "id": "gpu-1-shared-limit-gib",
+      "label": "GPU 1 shared limit (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-shared-limit-gib"
+      }
+    },
+    {
+      "id": "gpu-1-status",
+      "label": "GPU 1 readings",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-status"
+      }
+    },
+    {
+      "id": "gpu-1-received-at",
+      "label": "GPU 1 last complete sample",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-1-received-at"
+      }
+    },
+    {
+      "id": "gpu-2-name",
+      "label": "GPU 2 model",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-name"
+      }
+    },
+    {
+      "id": "gpu-2-percent",
+      "label": "GPU 2 usage (%)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-percent"
+      }
+    },
+    {
+      "id": "gpu-2-dedicated-used-gib",
+      "label": "GPU 2 dedicated used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-dedicated-used-gib"
+      }
+    },
+    {
+      "id": "gpu-2-dedicated-total-gib",
+      "label": "GPU 2 dedicated total (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-dedicated-total-gib"
+      }
+    },
+    {
+      "id": "gpu-2-shared-used-gib",
+      "label": "GPU 2 shared used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-shared-used-gib"
+      }
+    },
+    {
+      "id": "gpu-2-shared-limit-gib",
+      "label": "GPU 2 shared limit (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-shared-limit-gib"
+      }
+    },
+    {
+      "id": "gpu-2-status",
+      "label": "GPU 2 readings",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-status"
+      }
+    },
+    {
+      "id": "gpu-2-received-at",
+      "label": "GPU 2 last complete sample",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-2-received-at"
+      }
+    },
+    {
+      "id": "gpu-3-name",
+      "label": "GPU 3 model",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-name"
+      }
+    },
+    {
+      "id": "gpu-3-percent",
+      "label": "GPU 3 usage (%)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-percent"
+      }
+    },
+    {
+      "id": "gpu-3-dedicated-used-gib",
+      "label": "GPU 3 dedicated used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-dedicated-used-gib"
+      }
+    },
+    {
+      "id": "gpu-3-dedicated-total-gib",
+      "label": "GPU 3 dedicated total (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-dedicated-total-gib"
+      }
+    },
+    {
+      "id": "gpu-3-shared-used-gib",
+      "label": "GPU 3 shared used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-shared-used-gib"
+      }
+    },
+    {
+      "id": "gpu-3-shared-limit-gib",
+      "label": "GPU 3 shared limit (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-shared-limit-gib"
+      }
+    },
+    {
+      "id": "gpu-3-status",
+      "label": "GPU 3 readings",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-status"
+      }
+    },
+    {
+      "id": "gpu-3-received-at",
+      "label": "GPU 3 last complete sample",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-3-received-at"
+      }
+    },
+    {
+      "id": "gpu-4-name",
+      "label": "GPU 4 model",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-name"
+      }
+    },
+    {
+      "id": "gpu-4-percent",
+      "label": "GPU 4 usage (%)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-percent"
+      }
+    },
+    {
+      "id": "gpu-4-dedicated-used-gib",
+      "label": "GPU 4 dedicated used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-dedicated-used-gib"
+      }
+    },
+    {
+      "id": "gpu-4-dedicated-total-gib",
+      "label": "GPU 4 dedicated total (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-dedicated-total-gib"
+      }
+    },
+    {
+      "id": "gpu-4-shared-used-gib",
+      "label": "GPU 4 shared used (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-shared-used-gib"
+      }
+    },
+    {
+      "id": "gpu-4-shared-limit-gib",
+      "label": "GPU 4 shared limit (GiB)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-shared-limit-gib"
+      }
+    },
+    {
+      "id": "gpu-4-status",
+      "label": "GPU 4 readings",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-status"
+      }
+    },
+    {
+      "id": "gpu-4-received-at",
+      "label": "GPU 4 last complete sample",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "gpu-4-received-at"
+      }
+    },
+    {
+      "id": "gpus",
+      "label": "GPUs",
+      "type": "table",
+      "icon": "display",
+      "columns": [
+        {
+          "id": "name",
+          "label": "GPU",
+          "type": "string"
+        },
+        {
+          "id": "percent",
+          "label": "Usage (%)",
+          "type": "number"
+        },
+        {
+          "id": "dedicated-used",
+          "label": "Dedicated used (GiB)",
+          "type": "number"
+        },
+        {
+          "id": "dedicated-total",
+          "label": "Dedicated total (GiB)",
+          "type": "number"
+        },
+        {
+          "id": "shared-used",
+          "label": "Shared used (GiB)",
+          "type": "number"
+        },
+        {
+          "id": "shared-limit",
+          "label": "Shared limit (GiB)",
+          "type": "number"
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "gpu-count",
+        "rows": [
+          {
+            "name": "gpu-1-name",
+            "percent": "gpu-1-percent",
+            "dedicated-used": "gpu-1-dedicated-used-gib",
+            "dedicated-total": "gpu-1-dedicated-total-gib",
+            "shared-used": "gpu-1-shared-used-gib",
+            "shared-limit": "gpu-1-shared-limit-gib",
+            "status": "gpu-1-status"
+          },
+          {
+            "name": "gpu-2-name",
+            "percent": "gpu-2-percent",
+            "dedicated-used": "gpu-2-dedicated-used-gib",
+            "dedicated-total": "gpu-2-dedicated-total-gib",
+            "shared-used": "gpu-2-shared-used-gib",
+            "shared-limit": "gpu-2-shared-limit-gib",
+            "status": "gpu-2-status"
+          },
+          {
+            "name": "gpu-3-name",
+            "percent": "gpu-3-percent",
+            "dedicated-used": "gpu-3-dedicated-used-gib",
+            "dedicated-total": "gpu-3-dedicated-total-gib",
+            "shared-used": "gpu-3-shared-used-gib",
+            "shared-limit": "gpu-3-shared-limit-gib",
+            "status": "gpu-3-status"
+          },
+          {
+            "name": "gpu-4-name",
+            "percent": "gpu-4-percent",
+            "dedicated-used": "gpu-4-dedicated-used-gib",
+            "dedicated-total": "gpu-4-dedicated-total-gib",
+            "shared-used": "gpu-4-shared-used-gib",
+            "shared-limit": "gpu-4-shared-limit-gib",
+            "status": "gpu-4-status"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh PC status",
+      "description": "Sample local Windows counters and try bounded cached-neighbor hostname resolution.",
+      "parameters": []
+    },
+    {
+      "id": "lookup",
+      "name": "Look up name or address",
+      "description": "Use the system resolver for a hostname, or reverse DNS for one IP address.",
+      "parameters": [
+        {
+          "id": "target",
+          "label": "Hostname or IP address",
+          "type": "string",
+          "maxLength": 253,
+          "required": true,
+          "default": "localhost",
+          "help": "A hostname such as printer.local, or an IP address. Do not enter a URL, port, command or subnet."
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "status-updated",
+      "name": "PC status updated",
+      "description": "A successful local status sample. Task conditions trigger when a declared numeric comparison becomes true.",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "cpu-percent",
+          "label": "Total CPU usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "memory-percent",
+          "label": "Memory usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100,
+          "required": true
+        },
+        {
+          "id": "receive-mbps",
+          "label": "Receive (Mb/s)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "transmit-mbps",
+          "label": "Send (Mb/s)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "gpu-1-percent",
+          "label": "GPU 1 usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "gpu-1-dedicated-used-gib",
+          "label": "GPU 1 dedicated used (GiB)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "gpu-2-percent",
+          "label": "GPU 2 usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "gpu-2-dedicated-used-gib",
+          "label": "GPU 2 dedicated used (GiB)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "gpu-3-percent",
+          "label": "GPU 3 usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "gpu-3-dedicated-used-gib",
+          "label": "GPU 3 dedicated used (GiB)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "gpu-4-percent",
+          "label": "GPU 4 usage (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "gpu-4-dedicated-used-gib",
+          "label": "GPU 4 dedicated used (GiB)",
+          "type": "number",
+          "min": 0
+        }
+      ]
+    },
+    {
+      "id": "lookup-completed",
+      "name": "Network lookup completed",
+      "description": "One requested lookup finished with an explicit resolution status.",
+      "testAction": "lookup",
+      "payload": [
+        {
+          "id": "target",
+          "label": "Lookup target",
+          "type": "string",
+          "maxLength": 253,
+          "required": true
+        },
+        {
+          "id": "success",
+          "label": "Resolved",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "id": "status",
+          "label": "Resolution status",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "addresses",
+          "label": "IP addresses",
+          "type": "string",
+          "maxLength": 1000
+        },
+        {
+          "id": "hostname",
+          "label": "Hostname",
+          "type": "string",
+          "maxLength": 253
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "observatory",
+      "name": "Observatory",
+      "sourceLabel": "Data source",
+      "directory": "cards/observatory",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "host",
+          "field": "host-name",
+          "format": "text"
+        },
+        {
+          "id": "cpu-model",
+          "field": "cpu-model",
+          "format": "text"
+        },
+        {
+          "id": "cpu",
+          "field": "cpu-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "memory",
+          "field": "memory-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "used",
+          "field": "memory-used-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpu",
+          "field": "gpu-1-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpu-memory",
+          "field": "gpu-1-dedicated-used-gib",
+          "format": "number",
+          "decimals": 1,
+          "percentOf": "gpu-memory-total"
+        },
+        {
+          "id": "gpu-memory-total",
+          "field": "gpu-1-dedicated-total-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "receive",
+          "field": "receive-mbps",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "send",
+          "field": "transmit-mbps",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "uptime",
+          "field": "uptime-hours",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

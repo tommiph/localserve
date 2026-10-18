@@ -1,0 +1,11 @@
+PlayStation adapter/declaration/vault/helper are readable Localserve project source.
+Authentication/presence/played-game/trophy protocol was adapted from the user's
+existing Glance implementation. No live data or encrypted Glance session was copied.
+
+Protocol documentation checked against achievements-app/psn-api maintainer source:
+https://github.com/achievements-app/psn-api
+https://psn-api.achievements.app/
+No third-party runtime library is bundled, imported or downloaded at startup.
+
+The native helper uses Windows' built-in .NET Framework and CurrentUser DPAPI.
+Source is native/Vault.cs; build and resulting executable remain in this package.

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Universe</title>
+    <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/assets/material-symbols/material-symbols.css">
+    <link rel="stylesheet" href="/assets/vista-legacy.css?v=6">
+    <link rel="stylesheet" href="/assets/universe/universe.css">
+    <!-- Local ES5/WebGL1 dependency; no CDN or module loader on the TV path. -->
+    <script src="/assets/universe/vendor/three-r97/three.min.js" defer></script>
+    <script src="/assets/vista-legacy.js?v=24" defer></script>
+    <script src="/assets/universe/flight.js" defer></script>
+    <script src="/assets/universe/worlds.js?v=1" defer></script>
+    <script src="/assets/universe/universe.js?v=2" defer></script>
+  </head>
+  <body data-card-host="universe">
+    <canvas id="universe-space" aria-hidden="true"></canvas>
+    <div class="universe-vignette" aria-hidden="true"></div>
+    <div id="universe-panel"><main id="vista-display" aria-label="Selected Card"></main></div>
+    <p id="universe-empty" role="status"></p>
+    <p id="vista-status" role="status"></p>
+    <div class="universe-tools"><button id="universe-pause" type="button" aria-pressed="false">Pause flight</button><button id="universe-next" type="button">Next Card</button><button id="universe-fullscreen" type="button">Fullscreen</button></div>
+    <noscript>Enable JavaScript to view Universe.</noscript>
+  </body>
+</html>

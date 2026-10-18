@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-variant="unknown" data-theme="dark" data-connected="true">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Atmosphere · Weather</title>
+  <link rel="stylesheet" href="card.css">
+</head>
+<body data-ready-made>
+  <main class="atmosphere" aria-label="Current weather">
+    <div class="sky" aria-hidden="true">
+      <img class="landscape" src="assets/landscape.svg" alt="">
+      <div class="light-bloom"></div>
+      <img class="sun" src="assets/sun.svg" alt="">
+      <img class="cloud cloud-back" src="assets/cloud.svg" alt="">
+      <img class="cloud cloud-front" src="assets/cloud.svg" alt="">
+      <div class="rain rain-back"></div><div class="rain rain-front"></div>
+      <div class="snow snow-back"></div><div class="snow snow-front"></div>
+      <div class="mist mist-back"></div><div class="mist mist-front"></div>
+      <div class="lightning"></div><div class="unknown-orbit"></div>
+    </div>
+    <header class="card-top"><span class="eyebrow">Current weather</span><span class="source-status"><span class="status-dot"></span><span data-card-text="source-status">Connecting</span></span></header>
+    <section class="weather-hero">
+      <div class="place"><h1 data-card-text="source-name">Choose a Location</h1><p><span class="place-marker">⌖</span> Nearest area <span data-card-text="area">No data</span></p></div>
+      <div class="temperature-line"><span class="temperature" data-card-text="temperature" data-available="false">No data</span><span class="temperature-unit">°C</span></div>
+      <h2 class="condition" data-card-text="condition">No data</h2>
+      <p class="feels-like">Feels like <span data-card-text="feels">No data</span><span> °C</span></p>
+    </section>
+    <section class="weather-details" aria-label="Weather details">
+      <div class="metric"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h13a3 3 0 1 0-3-3M3 12h17M3 16h10a3 3 0 1 1-3 3"/></svg><span class="metric-label">Wind</span><strong><span data-card-text="wind">No data</span><small> km/h</small></strong><span class="metric-hint" data-card-text="direction">No data</span></div>
+      <div class="metric"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3S5 11 5 15a7 7 0 0 0 14 0c0-4-7-12-7-12Z"/><path d="M8 15a4 4 0 0 0 4 4"/></svg><span class="metric-label">Humidity</span><strong><span data-card-text="humidity">No data</span><small> %</small></strong><span class="metric-hint">Relative humidity</span></div>
+      <div class="metric"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14a4 4 0 1 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 0 8M8 17l-1 3m6-3-1 3m6-3-1 3"/></svg><span class="metric-label">Precipitation</span><strong><span data-card-text="precipitation">No data</span><small> mm</small></strong><span class="metric-hint">Reported amount</span></div>
+      <div class="metric"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span class="metric-label">Visibility</span><strong><span data-card-text="visibility">No data</span><small> km</small></strong><span class="metric-hint">Reported distance</span></div>
+    </section>
+    <footer class="card-bottom"><span>Received <time data-card-text="received">No data</time></span><span>wttr.in</span></footer>
+  </main>
+</body>
+</html>

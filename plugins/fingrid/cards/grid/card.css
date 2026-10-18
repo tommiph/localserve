@@ -1,0 +1,43 @@
+/* Observatory gauge geometry/colors and inline centered values. Production
+   uses the shared numeric-value mode, never a percentage scale. */
+:root { color-scheme:dark; --bg:#09151f; --panel:#0b2330; --text:#f0f9ff; --muted:#9cb5c6; --accent:#55e1cc; --line:#25404b; }
+:root[data-theme="light"] { color-scheme:light; --bg:#edf8fb; --panel:#d7edf1; --text:#123a48; --muted:#496c78; --accent:#087e77; --line:#b0cfd8; }
+* { box-sizing:border-box; }
+:root { --font-scale:1; --gauge-accent:#83e0cb; --gauge-surface:#0c2429; --gauge-ink:#f4f7ff; --gauge-edge:#cadfff21; }
+:root[data-theme="light"] { --gauge-accent:#167d70; --gauge-surface:#e2efeb; --gauge-ink:#173246; }
+html,body { margin:0; width:100%; height:100%; min-width:0; min-height:0; font-family:Segoe UI,Arial,sans-serif; color:var(--text); background:var(--bg); }
+.card { position:relative; isolation:isolate; height:100%; min-height:0; display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(145deg,var(--bg),var(--panel)); }
+.art { position:absolute; inset:0; z-index:-1; opacity:.14; pointer-events:none; overflow:hidden; }
+.art img { position:absolute; width:72%; height:90%; right:-15%; top:0; object-fit:contain; }
+.card-top,.card-bottom { flex:none; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 24px; }
+.card-top { border-bottom:1px solid var(--line); }
+.eyebrow { color:var(--accent); font-size:10px; font-weight:650; letter-spacing:.19em; text-transform:uppercase; }
+.source-status { color:var(--muted); font-size:10px; text-align:right; }
+.content { flex:1; min-height:0; overflow:auto; padding:20px 24px; }
+h1,p { margin:0; }
+h1 { font-size:29px; font-weight:550; letter-spacing:-.04em; }
+.subline { color:var(--muted); margin-top:7px; font-size:11px; line-height:1.5; }
+.instruments { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:24px 0; }
+.instrument { display:grid; gap:10px; justify-items:center; min-width:0; text-align:center; color:var(--muted); font-size:11px; }
+.dial { width:110px; max-width:100%; height:auto; aspect-ratio:1; padding:5px; border-radius:50%; background:var(--gauge-accent); }
+.dial > div { border-radius:50%; height:100%; display:flex; align-items:center; justify-content:center; gap:3px; background:var(--gauge-surface); color:var(--gauge-ink); font-size:calc(27px * var(--font-scale)); font-variant-numeric:tabular-nums; }
+.dial[data-available="false"] { background:var(--gauge-edge); }
+.dial[data-available="false"] > div { font-size:calc(13px * var(--font-scale)); }
+.dial .unit { color:#b7c5dd; font-size:calc(10px * var(--font-scale)); }
+:root[data-theme="light"] .dial .unit { color:#486174; }
+.unit { color:var(--muted); font-size:10px; font-weight:400; }
+.metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:16px 0; }
+.metric { min-width:0; padding:13px 15px; border:1px solid var(--line); border-radius:12px; background:var(--panel); }
+.metric > span { display:block; color:var(--muted); font-size:10px; margin-bottom:7px; }
+.metric strong { display:block; font-size:23px; font-weight:500; color:var(--text); overflow-wrap:anywhere; }
+.metric .unit { margin-left:4px; }
+[data-available="false"] { color:var(--muted); }
+.dial [data-available="false"],.metric [data-available="false"] { font-size:13px; }
+.unit[data-available="false"] { display:none; }
+.card-bottom { color:var(--muted); font-size:9px; border-top:1px solid var(--line); }
+@media(max-width:430px) { .content { padding:17px; } .instruments,.metrics { gap:9px; } .dial > div { font-size:19px; } .metric { padding:10px 7px; } .metric strong { font-size:18px; } }
+/* Small Vista slots keep the compact values and their reported units visible. */
+@media(max-height:380px) { .card-top,.card-bottom { padding-top:12px; padding-bottom:12px; } .content { padding-top:12px; padding-bottom:6px; } h1 { font-size:23px; } .subline { display:none; } .instruments { margin:8px 0; } .instrument { gap:6px; } .metrics { margin:6px 0 0; } .metric { padding:8px 10px; } .metric strong { font-size:19px; } }
+:root[data-connected="false"] * { animation-play-state:paused !important; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
+

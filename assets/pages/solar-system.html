@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Immersive Solar System Screen Saver</title>
+    <!-- Three.js r97 (Stable for older Chromium / WebGL 1 / Tizen compatibility) -->
+    <script src="vendor/three-r97/three.min.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <p id="display-error" role="status" hidden style="position:fixed;top:0;left:0;right:0;bottom:0;margin:0;padding:3rem;color:#ddd;background:#000;font:20px sans-serif">Unable to render this screensaver. This browser needs WebGL support. Reload the page to try again.</p>
+
+    <!-- External source obeys the local display CSP; no inline script privilege. -->
+    <script src="solar-system.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TV notice</title>
+  <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/notices/notice.css">
+  <script src="/assets/notices/notice.js?v=1.1.2-loop2" defer></script>
+</head>
+<body data-template="notice">
+  <!-- Original, package-owned artwork. Content is filled as text, never markup. -->
+  <div class="motif" aria-hidden="true">
+    <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+    <div class="orbit orbit-three"></div><div class="beam"></div>
+    <svg viewBox="0 0 700 700" class="circuit"><path d="M20 140h180l70 70h160l90-90h160M40 540h180l90-90h120l90 90h160M100 40v150l80 80v160l-80 80v150M600 40v150l-80 80v160l80 80v150"/><circle cx="350" cy="350" r="230"/><circle cx="350" cy="350" r="250"/></svg>
+  </div>
+  <main class="notice" aria-labelledby="notice-title">
+    <header><span id="notice-type">Notice</span><span id="server-name">Localserve</span></header>
+    <section class="notice-content">
+      <div class="symbol" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <g class="glyph glyph-notice"><circle cx="50" cy="50" r="37"/><path d="M50 45v25M50 29v3"/></g>
+          <g class="glyph glyph-alarm"><path d="M22 65h56L70 53V40a20 20 0 0 0-40 0v13ZM42 76a8 8 0 0 0 16 0M15 35a36 36 0 0 1 12-17M85 35a36 36 0 0 0-12-17"/></g>
+          <g class="glyph glyph-alert"><path d="M57 10 25 56h23l-5 34 32-48H53Z"/></g>
+          <g class="glyph glyph-warning"><path d="M50 12 91 83H9ZM50 38v21M50 69v3"/></g>
+        </svg>
+      </div>
+      <div class="copy"><h1 id="notice-title">Notice unavailable</h1><p id="notice-message">This notice may have expired.</p></div>
+    </section>
+    <footer><span id="return-label">Automatic return</span><span id="countdown"></span><span id="sound-status" role="status"></span></footer>
+    <div class="remaining-track" aria-hidden="true"><div id="remaining"></div></div>
+  </main>
+</body>
+</html>

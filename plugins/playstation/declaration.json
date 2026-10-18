@@ -1,0 +1,1578 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "playstation",
+  "name": "PlayStation",
+  "version": "1.0.0",
+  "description": "PSN presence, active game, playtime and trophies",
+  "icon": "gamepad",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "npsso",
+      "label": "NPSSO token",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 64,
+      "help": "Enter only the 64-character value from Sony. After a successful refresh, clear this field; the Windows-protected session is retained. A nonempty value is saved in private settings."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "min": 1,
+      "max": 5,
+      "default": 1,
+      "enum": [
+        1,
+        2,
+        5
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes"
+      ],
+      "help": "Presence refreshes at this interval. Profile, playtime, trophies and console details refresh every 5 minutes or when the active game changes."
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "online-id",
+      "label": "Online ID",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "online-id"
+      }
+    },
+    {
+      "id": "online-status",
+      "label": "PSN presence",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "online-status"
+      }
+    },
+    {
+      "id": "online",
+      "label": "Account online",
+      "type": "boolean",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "online"
+      }
+    },
+    {
+      "id": "platform",
+      "label": "Presence platform",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "platform"
+      }
+    },
+    {
+      "id": "active-game",
+      "label": "Active game",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "active-game"
+      }
+    },
+    {
+      "id": "active-game-display",
+      "label": "Current game display",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "active-game-display"
+      }
+    },
+    {
+      "id": "game-running",
+      "label": "Game reported",
+      "type": "boolean",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "game-running"
+      }
+    },
+    {
+      "id": "title-id",
+      "label": "Active title ID",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "title-id"
+      }
+    },
+    {
+      "id": "last-online",
+      "label": "Last online",
+      "type": "timestamp",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "last-online"
+      }
+    },
+    {
+      "id": "active-play-hours",
+      "label": "Active game playtime (hours)",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "active-play-hours"
+      }
+    },
+    {
+      "id": "all-games-play-hours",
+      "label": "All games playtime (hours, complete PSN library)",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "all-games-play-hours"
+      }
+    },
+    {
+      "id": "active-trophies",
+      "label": "Active game earned trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "active-trophies"
+      }
+    },
+    {
+      "id": "plus",
+      "label": "PlayStation Plus",
+      "type": "boolean",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "plus"
+      }
+    },
+    {
+      "id": "trophy-level",
+      "label": "Trophy level",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "trophy-level"
+      }
+    },
+    {
+      "id": "trophy-progress",
+      "label": "Level progress (%)",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "trophy-progress"
+      }
+    },
+    {
+      "id": "bronze",
+      "label": "Bronze trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "bronze"
+      }
+    },
+    {
+      "id": "silver",
+      "label": "Silver trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "silver"
+      }
+    },
+    {
+      "id": "gold",
+      "label": "Gold trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "gold"
+      }
+    },
+    {
+      "id": "platinum",
+      "label": "Platinum trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "platinum"
+      }
+    },
+    {
+      "id": "trophies-total",
+      "label": "Earned trophies",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "trophies-total"
+      }
+    },
+    {
+      "id": "games-total",
+      "label": "Games played (provider total)",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "games-total"
+      }
+    },
+    {
+      "id": "collections-total",
+      "label": "Trophy collections (provider total)",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "collections-total"
+      }
+    },
+    {
+      "id": "games-scanned",
+      "label": "Games read",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "games-scanned"
+      }
+    },
+    {
+      "id": "collections-scanned",
+      "label": "Collections read",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "collections-scanned"
+      }
+    },
+    {
+      "id": "games-truncated",
+      "label": "Game history bounded",
+      "type": "boolean",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "games-truncated"
+      }
+    },
+    {
+      "id": "collections-truncated",
+      "label": "Trophy history bounded",
+      "type": "boolean",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "collections-truncated"
+      }
+    },
+    {
+      "id": "details-status",
+      "label": "Detail readings",
+      "type": "string",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "details-status"
+      }
+    },
+    {
+      "id": "details-received-at",
+      "label": "Complete detail reception",
+      "type": "timestamp",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "details-received-at"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful presence reception",
+      "type": "timestamp",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "game-row-count",
+      "label": "Displayed game rows",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "game-row-count"
+      }
+    },
+    {
+      "id": "trophy-row-count",
+      "label": "Displayed trophy rows",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "trophy-row-count"
+      }
+    },
+    {
+      "id": "device-row-count",
+      "label": "Displayed console rows",
+      "type": "number",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "device-row-count"
+      }
+    },
+    {
+      "id": "games",
+      "label": "Games played",
+      "type": "table",
+      "icon": "gamepad",
+      "columns": [
+        {
+          "id": "name",
+          "label": "Game",
+          "type": "string"
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "type": "string"
+        },
+        {
+          "id": "hours",
+          "label": "Hours",
+          "type": "number"
+        },
+        {
+          "id": "plays",
+          "label": "Plays",
+          "type": "number"
+        },
+        {
+          "id": "first",
+          "label": "First played",
+          "type": "timestamp"
+        },
+        {
+          "id": "last",
+          "label": "Last played",
+          "type": "timestamp"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "game-row-count",
+        "rows": [
+          {
+            "name": "games-1-name",
+            "platform": "games-1-platform",
+            "hours": "games-1-hours",
+            "plays": "games-1-plays",
+            "first": "games-1-first",
+            "last": "games-1-last"
+          },
+          {
+            "name": "games-2-name",
+            "platform": "games-2-platform",
+            "hours": "games-2-hours",
+            "plays": "games-2-plays",
+            "first": "games-2-first",
+            "last": "games-2-last"
+          },
+          {
+            "name": "games-3-name",
+            "platform": "games-3-platform",
+            "hours": "games-3-hours",
+            "plays": "games-3-plays",
+            "first": "games-3-first",
+            "last": "games-3-last"
+          },
+          {
+            "name": "games-4-name",
+            "platform": "games-4-platform",
+            "hours": "games-4-hours",
+            "plays": "games-4-plays",
+            "first": "games-4-first",
+            "last": "games-4-last"
+          },
+          {
+            "name": "games-5-name",
+            "platform": "games-5-platform",
+            "hours": "games-5-hours",
+            "plays": "games-5-plays",
+            "first": "games-5-first",
+            "last": "games-5-last"
+          },
+          {
+            "name": "games-6-name",
+            "platform": "games-6-platform",
+            "hours": "games-6-hours",
+            "plays": "games-6-plays",
+            "first": "games-6-first",
+            "last": "games-6-last"
+          },
+          {
+            "name": "games-7-name",
+            "platform": "games-7-platform",
+            "hours": "games-7-hours",
+            "plays": "games-7-plays",
+            "first": "games-7-first",
+            "last": "games-7-last"
+          },
+          {
+            "name": "games-8-name",
+            "platform": "games-8-platform",
+            "hours": "games-8-hours",
+            "plays": "games-8-plays",
+            "first": "games-8-first",
+            "last": "games-8-last"
+          },
+          {
+            "name": "games-9-name",
+            "platform": "games-9-platform",
+            "hours": "games-9-hours",
+            "plays": "games-9-plays",
+            "first": "games-9-first",
+            "last": "games-9-last"
+          },
+          {
+            "name": "games-10-name",
+            "platform": "games-10-platform",
+            "hours": "games-10-hours",
+            "plays": "games-10-plays",
+            "first": "games-10-first",
+            "last": "games-10-last"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "games-1-name",
+            "type": "string"
+          },
+          {
+            "key": "games-1-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-1-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-1-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-1-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-1-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-2-name",
+            "type": "string"
+          },
+          {
+            "key": "games-2-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-2-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-2-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-2-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-2-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-3-name",
+            "type": "string"
+          },
+          {
+            "key": "games-3-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-3-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-3-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-3-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-3-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-4-name",
+            "type": "string"
+          },
+          {
+            "key": "games-4-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-4-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-4-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-4-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-4-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-5-name",
+            "type": "string"
+          },
+          {
+            "key": "games-5-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-5-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-5-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-5-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-5-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-6-name",
+            "type": "string"
+          },
+          {
+            "key": "games-6-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-6-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-6-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-6-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-6-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-7-name",
+            "type": "string"
+          },
+          {
+            "key": "games-7-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-7-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-7-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-7-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-7-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-8-name",
+            "type": "string"
+          },
+          {
+            "key": "games-8-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-8-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-8-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-8-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-8-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-9-name",
+            "type": "string"
+          },
+          {
+            "key": "games-9-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-9-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-9-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-9-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-9-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-10-name",
+            "type": "string"
+          },
+          {
+            "key": "games-10-platform",
+            "type": "string"
+          },
+          {
+            "key": "games-10-hours",
+            "type": "number"
+          },
+          {
+            "key": "games-10-plays",
+            "type": "number"
+          },
+          {
+            "key": "games-10-first",
+            "type": "timestamp"
+          },
+          {
+            "key": "games-10-last",
+            "type": "timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "collections",
+      "label": "Trophy collections",
+      "type": "table",
+      "icon": "gamepad",
+      "columns": [
+        {
+          "id": "name",
+          "label": "Collection",
+          "type": "string"
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "type": "string"
+        },
+        {
+          "id": "progress",
+          "label": "Completion %",
+          "type": "number"
+        },
+        {
+          "id": "earned",
+          "label": "Earned",
+          "type": "number"
+        },
+        {
+          "id": "available",
+          "label": "Available",
+          "type": "number"
+        },
+        {
+          "id": "last",
+          "label": "Updated",
+          "type": "timestamp"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "trophy-row-count",
+        "rows": [
+          {
+            "name": "collections-1-name",
+            "platform": "collections-1-platform",
+            "progress": "collections-1-progress",
+            "earned": "collections-1-earned",
+            "available": "collections-1-available",
+            "last": "collections-1-last"
+          },
+          {
+            "name": "collections-2-name",
+            "platform": "collections-2-platform",
+            "progress": "collections-2-progress",
+            "earned": "collections-2-earned",
+            "available": "collections-2-available",
+            "last": "collections-2-last"
+          },
+          {
+            "name": "collections-3-name",
+            "platform": "collections-3-platform",
+            "progress": "collections-3-progress",
+            "earned": "collections-3-earned",
+            "available": "collections-3-available",
+            "last": "collections-3-last"
+          },
+          {
+            "name": "collections-4-name",
+            "platform": "collections-4-platform",
+            "progress": "collections-4-progress",
+            "earned": "collections-4-earned",
+            "available": "collections-4-available",
+            "last": "collections-4-last"
+          },
+          {
+            "name": "collections-5-name",
+            "platform": "collections-5-platform",
+            "progress": "collections-5-progress",
+            "earned": "collections-5-earned",
+            "available": "collections-5-available",
+            "last": "collections-5-last"
+          },
+          {
+            "name": "collections-6-name",
+            "platform": "collections-6-platform",
+            "progress": "collections-6-progress",
+            "earned": "collections-6-earned",
+            "available": "collections-6-available",
+            "last": "collections-6-last"
+          },
+          {
+            "name": "collections-7-name",
+            "platform": "collections-7-platform",
+            "progress": "collections-7-progress",
+            "earned": "collections-7-earned",
+            "available": "collections-7-available",
+            "last": "collections-7-last"
+          },
+          {
+            "name": "collections-8-name",
+            "platform": "collections-8-platform",
+            "progress": "collections-8-progress",
+            "earned": "collections-8-earned",
+            "available": "collections-8-available",
+            "last": "collections-8-last"
+          },
+          {
+            "name": "collections-9-name",
+            "platform": "collections-9-platform",
+            "progress": "collections-9-progress",
+            "earned": "collections-9-earned",
+            "available": "collections-9-available",
+            "last": "collections-9-last"
+          },
+          {
+            "name": "collections-10-name",
+            "platform": "collections-10-platform",
+            "progress": "collections-10-progress",
+            "earned": "collections-10-earned",
+            "available": "collections-10-available",
+            "last": "collections-10-last"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "collections-1-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-1-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-1-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-1-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-1-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-1-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-2-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-2-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-2-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-2-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-2-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-2-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-3-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-3-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-3-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-3-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-3-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-3-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-4-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-4-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-4-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-4-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-4-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-4-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-5-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-5-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-5-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-5-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-5-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-5-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-6-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-6-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-6-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-6-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-6-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-6-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-7-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-7-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-7-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-7-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-7-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-7-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-8-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-8-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-8-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-8-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-8-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-8-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-9-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-9-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-9-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-9-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-9-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-9-last",
+            "type": "timestamp"
+          },
+          {
+            "key": "collections-10-name",
+            "type": "string"
+          },
+          {
+            "key": "collections-10-platform",
+            "type": "string"
+          },
+          {
+            "key": "collections-10-progress",
+            "type": "number"
+          },
+          {
+            "key": "collections-10-earned",
+            "type": "number"
+          },
+          {
+            "key": "collections-10-available",
+            "type": "number"
+          },
+          {
+            "key": "collections-10-last",
+            "type": "timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "consoles",
+      "label": "Associated consoles",
+      "type": "table",
+      "icon": "gamepad",
+      "columns": [
+        {
+          "id": "name",
+          "label": "Console",
+          "type": "string"
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "type": "string"
+        },
+        {
+          "id": "model",
+          "label": "Model",
+          "type": "string"
+        },
+        {
+          "id": "software",
+          "label": "System version",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "device-row-count",
+        "rows": [
+          {
+            "name": "consoles-1-name",
+            "platform": "consoles-1-platform",
+            "model": "consoles-1-model",
+            "software": "consoles-1-software"
+          },
+          {
+            "name": "consoles-2-name",
+            "platform": "consoles-2-platform",
+            "model": "consoles-2-model",
+            "software": "consoles-2-software"
+          },
+          {
+            "name": "consoles-3-name",
+            "platform": "consoles-3-platform",
+            "model": "consoles-3-model",
+            "software": "consoles-3-software"
+          },
+          {
+            "name": "consoles-4-name",
+            "platform": "consoles-4-platform",
+            "model": "consoles-4-model",
+            "software": "consoles-4-software"
+          },
+          {
+            "name": "consoles-5-name",
+            "platform": "consoles-5-platform",
+            "model": "consoles-5-model",
+            "software": "consoles-5-software"
+          },
+          {
+            "name": "consoles-6-name",
+            "platform": "consoles-6-platform",
+            "model": "consoles-6-model",
+            "software": "consoles-6-software"
+          },
+          {
+            "name": "consoles-7-name",
+            "platform": "consoles-7-platform",
+            "model": "consoles-7-model",
+            "software": "consoles-7-software"
+          },
+          {
+            "name": "consoles-8-name",
+            "platform": "consoles-8-platform",
+            "model": "consoles-8-model",
+            "software": "consoles-8-software"
+          },
+          {
+            "name": "consoles-9-name",
+            "platform": "consoles-9-platform",
+            "model": "consoles-9-model",
+            "software": "consoles-9-software"
+          },
+          {
+            "name": "consoles-10-name",
+            "platform": "consoles-10-platform",
+            "model": "consoles-10-model",
+            "software": "consoles-10-software"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "consoles-1-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-1-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-1-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-1-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-2-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-2-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-2-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-2-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-3-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-3-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-3-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-3-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-4-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-4-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-4-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-4-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-5-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-5-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-5-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-5-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-6-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-6-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-6-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-6-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-7-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-7-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-7-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-7-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-8-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-8-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-8-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-8-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-9-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-9-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-9-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-9-software",
+            "type": "string"
+          },
+          {
+            "key": "consoles-10-name",
+            "type": "string"
+          },
+          {
+            "key": "consoles-10-platform",
+            "type": "string"
+          },
+          {
+            "key": "consoles-10-model",
+            "type": "string"
+          },
+          {
+            "key": "consoles-10-software",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh PSN status",
+      "description": "Read the connected account presence and due detail data.",
+      "parameters": []
+    }
+  ],
+  "events": [
+    {
+      "id": "status-updated",
+      "name": "PSN status updated",
+      "testAction": "refresh",
+      "description": "Successful committed presence reading. Optional typed conditions retain their usual true-edge semantics.",
+      "payload": [
+        {
+          "id": "online-id",
+          "label": "Online ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "status",
+          "label": "PSN presence",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "online",
+          "label": "Account online",
+          "type": "boolean"
+        },
+        {
+          "id": "game",
+          "label": "Active game",
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "id": "game-running",
+          "label": "Game reported",
+          "type": "boolean"
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "type": "string",
+          "maxLength": 40
+        }
+      ]
+    },
+    {
+      "id": "presence-changed",
+      "name": "PSN presence changed",
+      "testAction": "refresh",
+      "occurrenceKey": "change-id",
+      "description": "Presence, platform or reported game differs from the preceding successful reading. First readings establish a baseline.",
+      "payload": [
+        {
+          "id": "online-id",
+          "label": "Online ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "status",
+          "label": "PSN presence",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "online",
+          "label": "Account online",
+          "type": "boolean"
+        },
+        {
+          "id": "game",
+          "label": "Active game",
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "id": "game-running",
+          "label": "Game reported",
+          "type": "boolean"
+        },
+        {
+          "id": "platform",
+          "label": "Platform",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "change-id",
+          "label": "Change ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "gaming-lounge",
+      "name": "Gaming lounge",
+      "sourceLabel": "Data source",
+      "directory": "cards/gaming-lounge",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "game",
+          "field": "active-game-display",
+          "format": "text"
+        },
+        {
+          "id": "account",
+          "field": "online-id",
+          "format": "text"
+        },
+        {
+          "id": "presence",
+          "field": "online-status",
+          "format": "text"
+        },
+        {
+          "id": "online",
+          "field": "online",
+          "format": "text"
+        },
+        {
+          "id": "hours",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "level",
+          "field": "trophy-level",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "progress",
+          "field": "trophy-progress",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "trophies-total",
+          "field": "trophies-total",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "all-hours",
+          "field": "all-games-play-hours",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "platinum",
+          "field": "platinum",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "gold",
+          "field": "gold",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "silver",
+          "field": "silver",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "bronze",
+          "field": "bronze",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ],
+      "variant": {
+        "slot": "online",
+        "fallback": "unknown",
+        "choices": {
+          "online": [
+            "true"
+          ],
+          "offline": [
+            "false"
+          ]
+        }
+      }
+    }
+  ]
+}

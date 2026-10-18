@@ -1,0 +1,8 @@
+TRÅDFRI adapter/declaration/native credential helper are readable Localserve
+project source, adapted from the user's Home Control integration.
+Bundled runtime package versions are listed in vendor/packages.json. Each package
+retains its upstream LICENSE/source/package metadata in vendor/node_modules/.
+Primary library: node-tradfri-client 3.2.0 (MIT), AlCalzone and contributors.
+https://github.com/AlCalzone/node-tradfri-client
+No third-party executable or dependency installation is used at startup.
+The native helper uses built-in Windows .NET and CurrentUser DPAPI.

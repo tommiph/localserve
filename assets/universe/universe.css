@@ -1,0 +1,17 @@
+/* Literal colors and prefixed transforms keep this page usable on Chromium M47. */
+html, body { width:100%; height:100%; margin:0; overflow:hidden; background:#030611; color:#dce8ff; font:16px Arial,sans-serif; }
+#universe-space { position:absolute; left:0; top:0; width:100%; height:100%; }
+.universe-vignette { position:absolute; top:0; right:0; bottom:0; left:0; pointer-events:none; background:radial-gradient(ellipse at center,transparent 35%,rgba(0,2,10,.55) 100%); }
+#universe-panel { position:absolute; left:0; top:0; width:960px; height:540px; -webkit-transform-origin:0 0; transform-origin:0 0; visibility:hidden; box-shadow:0 0 1px 1px rgba(130,191,255,.5),0 0 70px rgba(62,139,255,.2); border-radius:20px; overflow:hidden; }
+#vista-display { width:100%; height:100%; box-sizing:border-box; display:-webkit-flex; display:flex; }
+#vista-display > * { width:100%; height:100%; }
+#vista-status { position:absolute; right:24px; top:20px; margin:0; padding:8px 12px; border-radius:6px; background:#202b42; display:none; }
+#universe-empty { position:absolute; left:0; right:0; top:46%; text-align:center; color:#9eacc4; font-size:18px; pointer-events:none; }
+.universe-tools { position:absolute; bottom:20px; right:20px; opacity:0; -webkit-transition:opacity .3s; transition:opacity .3s; }
+body:hover .universe-tools { opacity:1; }
+/* Separate the newer selector so old engines keep the hover rule above. */
+.universe-tools:focus-within { opacity:1; }
+html[data-theme="light"] body.legacy-vista { background:#030611; color:#dce8ff; }
+.universe-tools button { font:14px Arial,sans-serif; color:#e1eaff; padding:10px 14px; margin-left:8px; background:#111b30; border:1px solid #344869; border-radius:8px; cursor:pointer; }
+.universe-tools button:focus { outline:2px solid #93bdff; }
+@media (prefers-reduced-motion:reduce) { .universe-tools { transition:none; } }

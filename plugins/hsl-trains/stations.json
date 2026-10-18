@@ -1,0 +1,862 @@
+[
+  {
+    "code": "AIN",
+    "name": "Ainola"
+  },
+  {
+    "code": "ALV",
+    "name": "Alavus"
+  },
+  {
+    "code": "AVP",
+    "name": "Aviapolis"
+  },
+  {
+    "code": "DRA",
+    "name": "Dragsvik"
+  },
+  {
+    "code": "EPZ",
+    "name": "Eläinpuisto-Zoo"
+  },
+  {
+    "code": "ENO",
+    "name": "Eno"
+  },
+  {
+    "code": "EPO",
+    "name": "Espoo"
+  },
+  {
+    "code": "HPJ",
+    "name": "Haapajärvi"
+  },
+  {
+    "code": "HPK",
+    "name": "Haapamäki"
+  },
+  {
+    "code": "HPA",
+    "name": "Haaparanta pohjoinen"
+  },
+  {
+    "code": "HAA",
+    "name": "Haarajoki"
+  },
+  {
+    "code": "HSI",
+    "name": "Haksi"
+  },
+  {
+    "code": "HKS",
+    "name": "Hankasalmi"
+  },
+  {
+    "code": "HNK",
+    "name": "Hanko asema"
+  },
+  {
+    "code": "HKP",
+    "name": "Hanko-Pohjoinen"
+  },
+  {
+    "code": "HVA",
+    "name": "Harjavalta"
+  },
+  {
+    "code": "HNV",
+    "name": "Heinävesi"
+  },
+  {
+    "code": "HKI",
+    "name": "Helsinki asema"
+  },
+  {
+    "code": "HNN",
+    "name": "Henna"
+  },
+  {
+    "code": "HR",
+    "name": "Herrala"
+  },
+  {
+    "code": "HKH",
+    "name": "Hiekkaharju"
+  },
+  {
+    "code": "HK",
+    "name": "Hikiä"
+  },
+  {
+    "code": "HLS",
+    "name": "Hillosensalmi"
+  },
+  {
+    "code": "HH",
+    "name": "Hinthaara"
+  },
+  {
+    "code": "HP",
+    "name": "Humppila"
+  },
+  {
+    "code": "HPL",
+    "name": "Huopalahti"
+  },
+  {
+    "code": "HY",
+    "name": "Hyvinkää asema"
+  },
+  {
+    "code": "HL",
+    "name": "Hämeenlinna"
+  },
+  {
+    "code": "HM",
+    "name": "Härmä"
+  },
+  {
+    "code": "HÖL",
+    "name": "Höljäkkä"
+  },
+  {
+    "code": "ILM",
+    "name": "Iisalmi"
+  },
+  {
+    "code": "ITA",
+    "name": "Iittala"
+  },
+  {
+    "code": "ILA",
+    "name": "Ilmala asema"
+  },
+  {
+    "code": "IMR",
+    "name": "Imatra asema"
+  },
+  {
+    "code": "IKR",
+    "name": "Inkeroinen"
+  },
+  {
+    "code": "IKO",
+    "name": "Inkoo"
+  },
+  {
+    "code": "IKY",
+    "name": "Isokyrö"
+  },
+  {
+    "code": "JNS",
+    "name": "Joensuu asema"
+  },
+  {
+    "code": "JK",
+    "name": "Jokela"
+  },
+  {
+    "code": "JRS",
+    "name": "Jorvas"
+  },
+  {
+    "code": "JTS",
+    "name": "Joutseno"
+  },
+  {
+    "code": "JJ",
+    "name": "Juupajoki"
+  },
+  {
+    "code": "JY",
+    "name": "Jyväskylä"
+  },
+  {
+    "code": "JÄS",
+    "name": "Jämsä"
+  },
+  {
+    "code": "JR",
+    "name": "Järvelä"
+  },
+  {
+    "code": "JP",
+    "name": "Järvenpää asema"
+  },
+  {
+    "code": "KAJ",
+    "name": "Kajaani"
+  },
+  {
+    "code": "KAN",
+    "name": "Kannelmäki"
+  },
+  {
+    "code": "KNS",
+    "name": "Kannus"
+  },
+  {
+    "code": "KR",
+    "name": "Karjaa"
+  },
+  {
+    "code": "KRU",
+    "name": "Karkku"
+  },
+  {
+    "code": "KHA",
+    "name": "Kauhava"
+  },
+  {
+    "code": "KLH",
+    "name": "Kauklahti asema"
+  },
+  {
+    "code": "KNI",
+    "name": "Kauniainen"
+  },
+  {
+    "code": "KA",
+    "name": "Kausala"
+  },
+  {
+    "code": "KEM",
+    "name": "Kemi asema"
+  },
+  {
+    "code": "KJÄ",
+    "name": "Kemijärvi"
+  },
+  {
+    "code": "KML",
+    "name": "Kempele"
+  },
+  {
+    "code": "KEA",
+    "name": "Kera"
+  },
+  {
+    "code": "KE",
+    "name": "Kerava asema"
+  },
+  {
+    "code": "KIÄ",
+    "name": "Kerimäki"
+  },
+  {
+    "code": "KTI",
+    "name": "Kesälahti"
+  },
+  {
+    "code": "KEU",
+    "name": "Keuruu"
+  },
+  {
+    "code": "KIA",
+    "name": "Kiiala"
+  },
+  {
+    "code": "KIL",
+    "name": "Kilo"
+  },
+  {
+    "code": "KKN",
+    "name": "Kirkkonummi"
+  },
+  {
+    "code": "KIT",
+    "name": "Kitee"
+  },
+  {
+    "code": "KRV",
+    "name": "Kiuruvesi"
+  },
+  {
+    "code": "KTÖ",
+    "name": "Kivistö"
+  },
+  {
+    "code": "KOH",
+    "name": "Kohtavaara"
+  },
+  {
+    "code": "KVH",
+    "name": "Koivuhovi"
+  },
+  {
+    "code": "KVY",
+    "name": "Koivukylä"
+  },
+  {
+    "code": "KKI",
+    "name": "Kokemäki"
+  },
+  {
+    "code": "KOK",
+    "name": "Kokkola"
+  },
+  {
+    "code": "KLI",
+    "name": "Kolari"
+  },
+  {
+    "code": "KLO",
+    "name": "Kolho"
+  },
+  {
+    "code": "KON",
+    "name": "Kontiomäki"
+  },
+  {
+    "code": "KRA",
+    "name": "Koria"
+  },
+  {
+    "code": "KRS",
+    "name": "Korso"
+  },
+  {
+    "code": "KTA",
+    "name": "Kotka asema"
+  },
+  {
+    "code": "KTS",
+    "name": "Kotkan satama"
+  },
+  {
+    "code": "KV",
+    "name": "Kouvola asema"
+  },
+  {
+    "code": "KUO",
+    "name": "Kuopio asema"
+  },
+  {
+    "code": "KUT",
+    "name": "Kupittaa"
+  },
+  {
+    "code": "KYN",
+    "name": "Kylänlahti"
+  },
+  {
+    "code": "KY",
+    "name": "Kymi"
+  },
+  {
+    "code": "KLN",
+    "name": "Kyminlinna"
+  },
+  {
+    "code": "KÄP",
+    "name": "Käpylä"
+  },
+  {
+    "code": "LH",
+    "name": "Lahti"
+  },
+  {
+    "code": "LAI",
+    "name": "Laihia"
+  },
+  {
+    "code": "LNA",
+    "name": "Lapinlahti"
+  },
+  {
+    "code": "LR",
+    "name": "Lappeenranta"
+  },
+  {
+    "code": "LAA",
+    "name": "Lappila"
+  },
+  {
+    "code": "LPO",
+    "name": "Lappohja"
+  },
+  {
+    "code": "LPA",
+    "name": "Lapua"
+  },
+  {
+    "code": "LNÄ",
+    "name": "Leinelä"
+  },
+  {
+    "code": "LPÄ",
+    "name": "Lempäälä"
+  },
+  {
+    "code": "LEN",
+    "name": "Lentoasema"
+  },
+  {
+    "code": "LPV",
+    "name": "Leppävaara"
+  },
+  {
+    "code": "LIS",
+    "name": "Lieksa"
+  },
+  {
+    "code": "LVT",
+    "name": "Lievestuore"
+  },
+  {
+    "code": "LM",
+    "name": "Loimaa"
+  },
+  {
+    "code": "LOH",
+    "name": "Louhela"
+  },
+  {
+    "code": "LUS",
+    "name": "Lusto"
+  },
+  {
+    "code": "ML",
+    "name": "Malmi"
+  },
+  {
+    "code": "MLO",
+    "name": "Malminkartano"
+  },
+  {
+    "code": "MRL",
+    "name": "Martinlaakso"
+  },
+  {
+    "code": "MAS",
+    "name": "Masala"
+  },
+  {
+    "code": "MI",
+    "name": "Mikkeli"
+  },
+  {
+    "code": "MIS",
+    "name": "Misi"
+  },
+  {
+    "code": "MLA",
+    "name": "Mommila"
+  },
+  {
+    "code": "MVA",
+    "name": "Moskova_(Leningradski)"
+  },
+  {
+    "code": "MH",
+    "name": "Muhos"
+  },
+  {
+    "code": "MUL",
+    "name": "Muurola"
+  },
+  {
+    "code": "MKI",
+    "name": "Myllykoski"
+  },
+  {
+    "code": "MY",
+    "name": "Myllymäki"
+  },
+  {
+    "code": "MYR",
+    "name": "Myyrmäki"
+  },
+  {
+    "code": "MÄK",
+    "name": "Mäkkylä"
+  },
+  {
+    "code": "MLÄ",
+    "name": "Mäntsälä"
+  },
+  {
+    "code": "MR",
+    "name": "Mäntyharju"
+  },
+  {
+    "code": "NSL",
+    "name": "Nastola"
+  },
+  {
+    "code": "NLÄ",
+    "name": "Nikkilä"
+  },
+  {
+    "code": "NVL",
+    "name": "Nivala"
+  },
+  {
+    "code": "NOA",
+    "name": "Nokia"
+  },
+  {
+    "code": "NRM",
+    "name": "Nurmes"
+  },
+  {
+    "code": "OI",
+    "name": "Oitti"
+  },
+  {
+    "code": "OV",
+    "name": "Orivesi"
+  },
+  {
+    "code": "OVK",
+    "name": "Orivesi keskusta"
+  },
+  {
+    "code": "OU",
+    "name": "Oulainen"
+  },
+  {
+    "code": "OL",
+    "name": "Oulu asema"
+  },
+  {
+    "code": "OLK",
+    "name": "Oulunkylä"
+  },
+  {
+    "code": "PTI",
+    "name": "Paimenportti"
+  },
+  {
+    "code": "PTO",
+    "name": "Paltamo"
+  },
+  {
+    "code": "PAR",
+    "name": "Parikkala"
+  },
+  {
+    "code": "PKO",
+    "name": "Parkano"
+  },
+  {
+    "code": "PRL",
+    "name": "Parola"
+  },
+  {
+    "code": "PSL",
+    "name": "Pasila asema"
+  },
+  {
+    "code": "PAU",
+    "name": "Pasila autojuna-asema"
+  },
+  {
+    "code": "PEL",
+    "name": "Pello"
+  },
+  {
+    "code": "PVI",
+    "name": "Petäjävesi"
+  },
+  {
+    "code": "PM",
+    "name": "Pieksämäki asema"
+  },
+  {
+    "code": "PTR",
+    "name": "Pietari_(Finljandski)"
+  },
+  {
+    "code": "PTL",
+    "name": "Pietari_(Ladozhski)"
+  },
+  {
+    "code": "PH",
+    "name": "Pihlajavesi"
+  },
+  {
+    "code": "PJM",
+    "name": "Pitäjänmäki"
+  },
+  {
+    "code": "POH",
+    "name": "Pohjois-Haaga"
+  },
+  {
+    "code": "PRI",
+    "name": "Pori"
+  },
+  {
+    "code": "PRV",
+    "name": "Porvoo"
+  },
+  {
+    "code": "PLA",
+    "name": "Puistola"
+  },
+  {
+    "code": "PMK",
+    "name": "Pukinmäki"
+  },
+  {
+    "code": "PUN",
+    "name": "Punkaharju"
+  },
+  {
+    "code": "PUR",
+    "name": "Purola"
+  },
+  {
+    "code": "PHÄ",
+    "name": "Pyhäsalmi"
+  },
+  {
+    "code": "PNÄ",
+    "name": "Pännäinen"
+  },
+  {
+    "code": "PKY",
+    "name": "Pääskylahti"
+  },
+  {
+    "code": "RKL",
+    "name": "Rekola"
+  },
+  {
+    "code": "REE",
+    "name": "Retretti"
+  },
+  {
+    "code": "RI",
+    "name": "Riihimäki asema"
+  },
+  {
+    "code": "ROI",
+    "name": "Rovaniemi"
+  },
+  {
+    "code": "RNN",
+    "name": "Runni"
+  },
+  {
+    "code": "RKI",
+    "name": "Ruukki"
+  },
+  {
+    "code": "RY",
+    "name": "Ryttylä"
+  },
+  {
+    "code": "SLO",
+    "name": "Salo"
+  },
+  {
+    "code": "STA",
+    "name": "Santala"
+  },
+  {
+    "code": "SAU",
+    "name": "Saunakallio"
+  },
+  {
+    "code": "SAV",
+    "name": "Savio"
+  },
+  {
+    "code": "SL",
+    "name": "Savonlinna asema"
+  },
+  {
+    "code": "SK",
+    "name": "Seinäjoki asema"
+  },
+  {
+    "code": "SIJ",
+    "name": "Siilinjärvi asema"
+  },
+  {
+    "code": "SPL",
+    "name": "Simpele"
+  },
+  {
+    "code": "STI",
+    "name": "Siuntio"
+  },
+  {
+    "code": "SGY",
+    "name": "Skogby"
+  },
+  {
+    "code": "SKV",
+    "name": "Sukeva"
+  },
+  {
+    "code": "SNJ",
+    "name": "Suonenjoki"
+  },
+  {
+    "code": "TMS",
+    "name": "Tammisaari"
+  },
+  {
+    "code": "TPE",
+    "name": "Tampere asema"
+  },
+  {
+    "code": "TNA",
+    "name": "Tapanila"
+  },
+  {
+    "code": "TSL",
+    "name": "Tavastila"
+  },
+  {
+    "code": "TK",
+    "name": "Tervajoki"
+  },
+  {
+    "code": "TRV",
+    "name": "Tervola"
+  },
+  {
+    "code": "TSO",
+    "name": "Tesoma"
+  },
+  {
+    "code": "TKL",
+    "name": "Tikkurila asema"
+  },
+  {
+    "code": "TL",
+    "name": "Toijala"
+  },
+  {
+    "code": "TOL",
+    "name": "Tolsa"
+  },
+  {
+    "code": "TOR",
+    "name": "Tornio"
+  },
+  {
+    "code": "TRI",
+    "name": "Tornio-Itäinen"
+  },
+  {
+    "code": "TRL",
+    "name": "Tuomarila"
+  },
+  {
+    "code": "TU",
+    "name": "Turenki"
+  },
+  {
+    "code": "TKU",
+    "name": "Turku asema"
+  },
+  {
+    "code": "TUS",
+    "name": "Turku satama"
+  },
+  {
+    "code": "TUU",
+    "name": "Tuuri"
+  },
+  {
+    "code": "TVE",
+    "name": "Tver"
+  },
+  {
+    "code": "UIM",
+    "name": "Uimaharju"
+  },
+  {
+    "code": "UTJ",
+    "name": "Utajärvi"
+  },
+  {
+    "code": "UKÄ",
+    "name": "Uusikylä"
+  },
+  {
+    "code": "VAA",
+    "name": "Vaala"
+  },
+  {
+    "code": "VS",
+    "name": "Vaasa"
+  },
+  {
+    "code": "VNA",
+    "name": "Vainikkala asema"
+  },
+  {
+    "code": "VMO",
+    "name": "Valimo"
+  },
+  {
+    "code": "VMA",
+    "name": "Vammala"
+  },
+  {
+    "code": "VKS",
+    "name": "Vantaankoski"
+  },
+  {
+    "code": "VAR",
+    "name": "Varkaus"
+  },
+  {
+    "code": "VEH",
+    "name": "Vehkala"
+  },
+  {
+    "code": "VTI",
+    "name": "Vihanti"
+  },
+  {
+    "code": "VIH",
+    "name": "Vihtari"
+  },
+  {
+    "code": "VIA",
+    "name": "Viiala"
+  },
+  {
+    "code": "VNJ",
+    "name": "Viinijärvi"
+  },
+  {
+    "code": "VYB",
+    "name": "Viipuri"
+  },
+  {
+    "code": "VLH",
+    "name": "Villähde"
+  },
+  {
+    "code": "VLP",
+    "name": "Vilppula"
+  },
+  {
+    "code": "VSL",
+    "name": "Vuonislahti"
+  },
+  {
+    "code": "YST",
+    "name": "Ylistaro"
+  },
+  {
+    "code": "YTR",
+    "name": "Ylitornio"
+  },
+  {
+    "code": "YV",
+    "name": "Ylivieska"
+  },
+  {
+    "code": "ÄHT",
+    "name": "Ähtäri"
+  }
+]

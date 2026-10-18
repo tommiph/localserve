@@ -1,0 +1,141 @@
+/* Touch-first lighting Controls. Scoped to this presentation so TV remotes and
+   administrator geometry keep their existing styles. All artwork is local CSS. */
+.lighting-viewer { padding: 24px 20px; }
+.lighting-viewer .controls-viewer-header,
+.lighting-viewer #controls-board,
+.lighting-viewer .controls-feedback { max-width: 1040px; margin-left: auto; margin-right: auto; }
+.lighting-viewer .controls-viewer-header { margin-bottom: 24px; }
+.lighting-viewer .controls-viewer-header > div { text-align: right; }
+.lighting-viewer .controls-viewer-header h1 { font-size: calc(16px * var(--font-scale)); }
+.lighting-shell { --lighting-warm: #e9d8a8; }
+.lighting-hero { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 32px 36px; min-height: 214px; border: 1px solid var(--border); border-radius: 24px; overflow: hidden; background: radial-gradient(ellipse at 85% 30%, #c5ac6820, transparent 62%), var(--surface); }
+.lighting-eyebrow { margin: 0 0 10px; letter-spacing: .2em; font-size: calc(11px * var(--font-scale)); font-weight: 700; color: var(--muted); }
+.lighting-hero h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 600; letter-spacing: -.04em; margin: 0 0 14px; }
+.lighting-summary { font-size: calc(16px * var(--font-scale)); margin: 0; }
+.lighting-summary::before { content: ''; display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin-right: 9px; vertical-align: middle; }
+.lighting-reception { color: var(--muted); font-size: calc(12px * var(--font-scale)); margin: 10px 0 0; }
+.lighting-hero-art { flex: 0 0 150px; width: 150px; height: 150px; position: relative; display: grid; place-items: center; }
+.lighting-hero-art > i { font-size: 66px; color: var(--lighting-warm); position: relative; filter: drop-shadow(0 0 15px #e9d8a84d); }
+.lamp-glow { position: absolute; inset: 12px; background: radial-gradient(circle, #e9d8a82c, transparent 67%); border-radius: 50%; }
+.lamp-orbit { position: absolute; inset: 0; border: 1px solid #b8a57640; border-radius: 50%; }
+.lamp-orbit::before, .lamp-orbit::after { content: ''; position: absolute; border: 1px solid #b8a57620; border-radius: 50%; inset: 13px; }
+.lamp-orbit::after { inset: -15px; border-style: dashed; }
+.lighting-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 28px 0; }
+.lighting-tabs { display: flex; gap: 4px; padding: 5px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.lighting-tabs button { min-height: 44px; padding: 0 17px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: calc(13px * var(--font-scale)); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.lighting-tabs button[aria-current="page"] { color: var(--text); background: var(--surface-hover); box-shadow: 0 1px 3px #0002; }
+.lighting-tabs button > span { opacity: .65; font-size: .8em; }
+.lighting-capture { min-height: 46px; border-radius: 12px; }
+.lighting-list-heading { display: flex; justify-content: space-between; align-items: center; margin: 0 0 20px; gap: 12px; }
+.lighting-list-heading h3 { font-size: calc(19px * var(--font-scale)); margin: 0 0 4px; font-weight: 600; }
+.lighting-list-heading span { font-size: calc(12px * var(--font-scale)); color: var(--muted); }
+.lighting-icon-button { width: 44px; height: 44px; flex: 0 0 44px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); cursor: pointer; }
+.lighting-search { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding-left: 16px; background: var(--surface); color: var(--muted); }
+.lighting-search input { width: 100%; min-height: 46px; border: 0; background: transparent; box-shadow: none; }
+.lighting-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.lighting-card { min-width: 0; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); padding: 22px; }
+.lighting-card[data-on="true"] { border-color: #a08e5c70; background: linear-gradient(130deg, #d2b75f0d, transparent 70%), var(--surface); }
+.lighting-card[data-unreachable="true"] { border-style: dashed; }
+.lighting-card-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.lighting-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; border: 0; background: none; color: var(--text); padding: 0; text-align: left; cursor: pointer; min-height: 48px; }
+.lighting-open strong { display: block; font-size: calc(15px * var(--font-scale)); font-weight: 600; overflow-wrap: anywhere; }
+.lighting-open small { display: block; color: var(--muted); margin-top: 5px; font-size: calc(11px * var(--font-scale)); }
+.lighting-bulb { width: 44px; height: 48px; flex: 0 0 44px; display: grid; place-items: center; font-size: 27px; color: var(--muted); }
+.lighting-card[data-on="true"] .lighting-bulb { color: var(--bulb-color); filter: drop-shadow(0 0 9px color-mix(in srgb, var(--bulb-color), transparent 60%)); }
+.lighting-power.control-target { margin: 0; display: flex; align-items: center; flex: 0 0 auto; min-height: 44px; }
+.lighting-power .switch { width: 46px; height: 27px; }
+.lighting-power .switch::after { width: 19px; height: 19px; }
+.lighting-state { font-size: calc(11px * var(--font-scale)); color: var(--muted); margin: 12px 0 23px 58px; }
+.lighting-range.control-target { display: block; margin: 0; }
+.lighting-range > span { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: calc(12px * var(--font-scale)); color: var(--muted); }
+.lighting-range > span > output { margin-left: auto; font-variant-numeric: tabular-nums; color: var(--text); }
+.lighting-range > span > .lighting-percent { margin-left: -5px; color: var(--muted); }
+.lighting-range input[type="range"] { width: 100%; min-height: 44px; margin: 0; padding: 0; cursor: pointer; accent-color: var(--accent); }
+.lighting-range small { display: block; margin-top: 3px; color: var(--muted); font-size: calc(10px * var(--font-scale)); }
+.lighting-card-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--border); margin-top: 18px; padding-top: 9px; }
+.lighting-card-bottom > span { font-size: calc(11px * var(--font-scale)); color: var(--muted); }
+.lighting-card-bottom button { background: none; color: var(--text); border: 0; cursor: pointer; min-height: 40px; font: inherit; font-size: calc(12px * var(--font-scale)); display: flex; align-items: center; gap: 12px; }
+.lighting-footnote { margin: 24px 0 8px; font-size: calc(11px * var(--font-scale)); color: var(--muted); line-height: 1.7; }
+.lighting-empty { color: var(--muted); padding: 35px 16px; text-align: center; border: 1px dashed var(--border); border-radius: 16px; }
+.lighting-viewer .controls-feedback { font-size: calc(12px * var(--font-scale)); }
+.lighting-scene { display: grid; grid-template-columns: 48px 1fr; gap: 16px; border: 1px solid var(--border); border-radius: 18px; padding: 22px; background: var(--surface); min-width: 0; }
+.lighting-scene-symbol { width: 48px; height: 48px; display: grid; place-items: center; background: var(--accent-soft); border-radius: 14px; color: var(--accent); font-size: 20px; }
+.lighting-scene-heading { min-width: 0; }
+.lighting-scene h4 { margin: 3px 0 7px; font-weight: 600; font-size: calc(15px * var(--font-scale)); overflow-wrap: anywhere; }
+.lighting-scene-heading p { font-size: calc(11px * var(--font-scale)); color: var(--muted); margin: 0; }
+.lighting-scene-run { grid-column: 1 / -1; min-height: 46px; border-radius: 10px; }
+.lighting-scene-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border); padding-top: 10px; gap: 6px; }
+.lighting-scene-actions button { display: flex; align-items: center; justify-content: center; gap: 7px; background: transparent; color: var(--muted); border: 0; min-height: 44px; font: inherit; font-size: calc(11px * var(--font-scale)); padding: 0 8px; cursor: pointer; }
+.lighting-scene-actions label { margin-left: auto; padding: 8px 0 8px 6px; }
+.lighting-dialog { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); border: 1px solid var(--border); border-radius: 22px; padding: 0; background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.lighting-dialog::backdrop, .lighting-confirm::backdrop { background: #06090bbf; backdrop-filter: blur(5px); }
+.lighting-dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 34px); }
+.lighting-dialog-header { display: flex; align-items: center; gap: 12px; padding: 22px; border-bottom: 1px solid var(--border); }
+.lighting-dialog-header h2 { font-size: calc(18px * var(--font-scale)); font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.lighting-dialog-header > [data-lighting-close]:last-child { margin-left: auto; }
+.lighting-dialog-header > div { flex: 1; min-width: 0; }
+.lighting-dialog-header p { font-size: calc(12px * var(--font-scale)); color: var(--muted); margin: 7px 0 0; }
+.lighting-dialog-body { padding: 24px; overflow: auto; min-height: 0; }
+.lighting-detail .lighting-dialog-body { max-height: calc(100dvh - 155px); }
+.lighting-dialog-body .lighting-range { margin: 24px 0; }
+.lighting-field { display: block; font-size: calc(13px * var(--font-scale)); }
+.lighting-field input { display: block; width: 100%; min-height: 46px; margin-top: 10px; border-radius: 10px; }
+.lighting-dialog-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 18px 22px; border-top: 1px solid var(--border); }
+.lighting-dialog-footer button { min-height: 44px; }
+.lighting-capture-list { margin: 24px 0 0; border: 0; padding: 0; }
+.lighting-capture-list legend { font-size: calc(14px * var(--font-scale)); font-weight: 600; }
+.lighting-capture-list > p { font-size: calc(12px * var(--font-scale)); color: var(--muted); line-height: 1.6; }
+.lighting-capture-list > label { display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--border); padding: 14px 0; min-height: 60px; }
+.lighting-capture-list input, .lighting-recapture input { width: 20px; height: 20px; accent-color: var(--accent); }
+.lighting-capture-list strong { display: block; font-weight: 500; font-size: calc(13px * var(--font-scale)); }
+.lighting-capture-list small { display: block; font-size: calc(11px * var(--font-scale)); color: var(--muted); margin-top: 6px; }
+.lighting-recapture { display: flex; gap: 10px; align-items: center; font-size: calc(12px * var(--font-scale)); margin-top: 24px; }
+.lighting-form-error { color: var(--danger); font-size: calc(13px * var(--font-scale)); line-height: 1.6; }
+.lighting-confirm { width: min(400px, calc(100vw - 32px)); padding: 24px; border-radius: 18px; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.lighting-confirm h2 { font-size: 18px; margin: 0 0 14px; }
+.lighting-confirm p { color: var(--muted); font-size: 13px; }
+.lighting-confirm > div { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.lighting-colour-wheel { width: 230px; height: 230px; margin: 6px auto 24px; border-radius: 50%; background: conic-gradient(red, #ff0, #0f0, #0ff, blue, #f0f, red); padding: 24px; box-shadow: 0 0 30px #75adff0b; position: relative; touch-action: none; cursor: crosshair; }
+.lighting-colour-wheel > div { border-radius: 50%; width: 100%; height: 100%; background: var(--surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; font-size: 28px; }
+.lighting-colour-wheel span { font-size: 12px; color: var(--muted); }
+.lighting-wheel-thumb { position: absolute; width: 18px; height: 18px; left: calc(50% - 9px); top: 3px; border: 3px solid white; border-radius: 50%; box-shadow: 0 1px 6px #0008; transform-origin: 9px 112px; transform: rotate(var(--hue)); pointer-events: none; }
+.lighting-colour-wheel[aria-disabled="true"] { opacity: .5; cursor: default; }
+.lighting-colour-wheel:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+.lighting-color-picker { display: flex; align-items: center; gap: 12px; font-size: calc(12px * var(--font-scale)); }
+.lighting-color-picker input { width: 56px; height: 44px; border: 1px solid var(--border); border-radius: 10px; padding: 4px; background: var(--surface-muted); cursor: pointer; }
+.lighting-color-picker output { font-size: 11px; color: var(--muted); }
+.lighting-white-orb { display: grid; place-items: center; width: 180px; height: 180px; border-radius: 50%; margin: 10px auto 30px; background: radial-gradient(circle, #f3d49128, transparent 68%); border: 1px solid #ceba8533; font-size: 56px; color: #d7c393; }
+.lighting-white-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin: 24px 0 -10px; }
+.lighting-temperature input { accent-color: #d7b472 !important; }
+.lighting-viewer [hidden], .lighting-dialog [hidden] { display: none !important; }
+.lighting-viewer button:focus-visible, .lighting-dialog button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+@media (max-width: 600px) {
+  .lighting-viewer { padding: 20px 16px; }
+  .lighting-viewer .controls-viewer-header { flex-direction: row; align-items: center; gap: 12px; }
+  .lighting-viewer .controls-viewer-header .brand { font-size: 14px; gap: 8px; }
+  .lighting-viewer .controls-viewer-header img { width: 35px; height: 25px; }
+  .lighting-viewer .controls-viewer-header h1 { font-size: 13px; }
+  .lighting-viewer .controls-viewer-header #controls-status { font-size: 10px; }
+  .lighting-hero { min-height: 154px; padding: 22px; border-radius: 20px; gap: 12px; }
+  .lighting-hero-art { flex-basis: 85px; width: 85px; height: 110px; }
+  .lighting-hero-art > i { font-size: 49px; }
+  .lamp-orbit { inset: 15px -4px; }
+  .lighting-hero h2 { font-size: calc(27px * var(--font-scale)); }
+  .lighting-summary { font-size: calc(13px * var(--font-scale)); }
+  .lighting-reception { font-size: calc(10px * var(--font-scale)); }
+  .lighting-toolbar { margin: 18px 0 24px; gap: 8px; }
+  .lighting-tabs { flex: 1; min-width: 0; }
+  .lighting-tabs button { flex: 1; justify-content: center; padding: 0 5px; gap: 5px; font-size: calc(11px * var(--font-scale)); }
+  .lighting-tabs button > span { display: none; }
+  .lighting-capture { width: 46px; flex: 0 0 46px; padding: 0; justify-content: center; }
+  .lighting-capture > span { display: none; }
+  .lighting-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .lighting-card { padding: 18px; }
+  .lighting-card .lighting-state { margin-top: 5px; margin-bottom: 14px; }
+  .lighting-card-bottom { margin-top: 12px; padding-top: 4px; }
+  .lighting-list-heading span { font-size: calc(11px * var(--font-scale)); }
+  .lighting-dialog { margin: auto; width: calc(100vw - 20px); max-height: calc(100dvh - 20px); border-radius: 20px; }
+  .lighting-dialog-header { padding: 18px; }
+  .lighting-dialog-header h2 { font-size: calc(16px * var(--font-scale)); }
+  .lighting-dialog-body { padding: 22px; }
+}

@@ -1,0 +1,1012 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "fingrid",
+  "name": "Fingrid",
+  "version": "1.1.0",
+  "description": "Finland electricity system datasets and latest readings",
+  "icon": "bolt",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "defaultCardLayout": "table",
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "source-id"
+  },
+  "instances": {
+    "setting": "datasets",
+    "stateKey": "datasets",
+    "eventKey": "source-id"
+  },
+  "attribution": {
+    "label": "Source Fingrid / data.fingrid.fi",
+    "url": "https://data.fingrid.fi/en/about",
+    "licenseLabel": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "notice": "Values unchanged; labels and dates formatted. Other publishers may have dataset-specific licenses. Fingrid does not warrant completeness or accuracy."
+  },
+  "settings": [
+    {
+      "id": "api-key",
+      "label": "Fingrid API key",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 128,
+      "pattern": "^[a-fA-F0-9]{0,128}$",
+      "help": "Stored privately in this plugin, masked here and excluded from Cards. Sent only as the x-api-key header to data.fingrid.fi."
+    },
+    {
+      "id": "api-paused",
+      "label": "Pause API calls",
+      "type": "boolean",
+      "required": true,
+      "default": false
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "required": true,
+      "default": 3,
+      "min": 3,
+      "max": 60,
+      "enum": [
+        3,
+        5,
+        15,
+        30,
+        60
+      ],
+      "enumLabels": [
+        "3 minutes",
+        "5 minutes",
+        "15 minutes",
+        "30 minutes",
+        "1 hour"
+      ],
+      "help": "Per enabled Dataset, staggered serially. API reads are spaced by at least two seconds. Many sources may slow polling to stay within the local request budget."
+    },
+    {
+      "id": "language",
+      "label": "Dataset language",
+      "type": "string",
+      "required": true,
+      "default": "en",
+      "enum": [
+        "en",
+        "fi"
+      ],
+      "enumLabels": [
+        "English",
+        "Finnish"
+      ]
+    },
+    {
+      "id": "datasets",
+      "label": "Datasets",
+      "type": "list",
+      "itemLabel": "dataset",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name",
+        "query"
+      ],
+      "help": "Add a named time-series dataset from data.fingrid.fi. Separate readings, Cards and Task events. Copies start disabled.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Source ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "query",
+          "label": "Dataset ID",
+          "type": "string",
+          "required": true,
+          "default": "193",
+          "maxLength": 10,
+          "pattern": "^[1-9][0-9]{0,9}$",
+          "help": "Enter the numeric Dataset ID shown on its Fingrid dataset page. Only time-series datasets are supported; units and period times come from the API.",
+          "suggestions": [
+            {
+              "value": "193",
+              "label": "Electricity consumption · real-time"
+            },
+            {
+              "value": "192",
+              "label": "Electricity production · real-time"
+            },
+            {
+              "value": "181",
+              "label": "Wind production · real-time"
+            },
+            {
+              "value": "177",
+              "label": "Grid frequency · real-time"
+            },
+            {
+              "value": "188",
+              "label": "Nuclear production · real-time"
+            },
+            {
+              "value": "191",
+              "label": "Hydro production · real-time"
+            },
+            {
+              "value": "124",
+              "label": "Electricity consumption · 15 minutes"
+            },
+            {
+              "value": "265",
+              "label": "Consumption emission factor"
+            }
+          ]
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "readings",
+      "label": "Observed readings",
+      "type": "table",
+      "icon": "chart-line",
+      "columns": [
+        {
+          "id": "start",
+          "label": "Period start",
+          "type": "timestamp"
+        },
+        {
+          "id": "end",
+          "label": "Period end",
+          "type": "timestamp"
+        },
+        {
+          "id": "value",
+          "label": "Value",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "sample-count",
+        "rows": [
+          {
+            "start": "sample-1-start",
+            "end": "sample-1-end",
+            "value": "sample-1-value"
+          },
+          {
+            "start": "sample-2-start",
+            "end": "sample-2-end",
+            "value": "sample-2-value"
+          },
+          {
+            "start": "sample-3-start",
+            "end": "sample-3-end",
+            "value": "sample-3-value"
+          },
+          {
+            "start": "sample-4-start",
+            "end": "sample-4-end",
+            "value": "sample-4-value"
+          },
+          {
+            "start": "sample-5-start",
+            "end": "sample-5-end",
+            "value": "sample-5-value"
+          },
+          {
+            "start": "sample-6-start",
+            "end": "sample-6-end",
+            "value": "sample-6-value"
+          },
+          {
+            "start": "sample-7-start",
+            "end": "sample-7-end",
+            "value": "sample-7-value"
+          },
+          {
+            "start": "sample-8-start",
+            "end": "sample-8-end",
+            "value": "sample-8-value"
+          },
+          {
+            "start": "sample-9-start",
+            "end": "sample-9-end",
+            "value": "sample-9-value"
+          },
+          {
+            "start": "sample-10-start",
+            "end": "sample-10-end",
+            "value": "sample-10-value"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "sample-1-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-1-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-1-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-2-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-2-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-2-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-3-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-3-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-3-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-4-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-4-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-4-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-5-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-5-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-5-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-6-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-6-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-6-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-7-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-7-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-7-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-8-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-8-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-8-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-9-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-9-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-9-value",
+            "type": "number"
+          },
+          {
+            "key": "sample-10-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-10-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "sample-10-value",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "value",
+      "label": "Latest available value",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "value"
+      }
+    },
+    {
+      "id": "unit",
+      "label": "Reported unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "unit"
+      }
+    },
+    {
+      "id": "dataset-title",
+      "label": "Dataset title",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "dataset-title"
+      }
+    },
+    {
+      "id": "dataset-id",
+      "label": "Dataset ID",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "dataset-id"
+      }
+    },
+    {
+      "id": "description",
+      "label": "Dataset description",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "description"
+      }
+    },
+    {
+      "id": "organization",
+      "label": "Organization",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "organization"
+      }
+    },
+    {
+      "id": "license",
+      "label": "Reported license",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "license"
+      }
+    },
+    {
+      "id": "dataset-status",
+      "label": "Dataset status",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "dataset-status"
+      }
+    },
+    {
+      "id": "data-period",
+      "label": "Data period",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "data-period"
+      }
+    },
+    {
+      "id": "update-cadence",
+      "label": "Update cadence",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "update-cadence"
+      }
+    },
+    {
+      "id": "dataset-url",
+      "label": "Dataset page",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "dataset-url"
+      }
+    },
+    {
+      "id": "period-start",
+      "label": "Period start",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "period-start"
+      }
+    },
+    {
+      "id": "period-end",
+      "label": "Period end",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "period-end"
+      }
+    },
+    {
+      "id": "modified-at",
+      "label": "Provider modified",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "modified-at"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Received",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "attempted-at",
+      "label": "Last attempt",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "attempted-at"
+      }
+    },
+    {
+      "id": "sample-count",
+      "label": "Observed samples",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "sample-count"
+      }
+    },
+    {
+      "id": "api-state",
+      "label": "API state",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "api-state"
+      }
+    },
+    {
+      "id": "api-paused",
+      "label": "API paused",
+      "type": "boolean",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "api-paused"
+      }
+    },
+    {
+      "id": "last-error",
+      "label": "Last error",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "last-error"
+      }
+    },
+    {
+      "id": "next-check",
+      "label": "Next allowed check",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "next-check"
+      }
+    },
+    {
+      "id": "effective-minutes",
+      "label": "Minimum poll minutes",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "effective-minutes"
+      }
+    },
+    {
+      "id": "request-count",
+      "label": "Local recent requests",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "request-count"
+      }
+    },
+    {
+      "id": "request-limit",
+      "label": "Local rolling request limit",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "request-limit"
+      }
+    },
+    {
+      "id": "grid-production",
+      "label": "Grid Production",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-production"
+      }
+    },
+    {
+      "id": "grid-production-unit",
+      "label": "Grid Production unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-production-unit"
+      }
+    },
+    {
+      "id": "grid-consumption",
+      "label": "Grid Consumption",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-consumption"
+      }
+    },
+    {
+      "id": "grid-consumption-unit",
+      "label": "Grid Consumption unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-consumption-unit"
+      }
+    },
+    {
+      "id": "grid-wind",
+      "label": "Grid Wind production",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-wind"
+      }
+    },
+    {
+      "id": "grid-wind-unit",
+      "label": "Grid Wind production unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-wind-unit"
+      }
+    },
+    {
+      "id": "grid-frequency",
+      "label": "Grid Frequency",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-frequency"
+      }
+    },
+    {
+      "id": "grid-frequency-unit",
+      "label": "Grid Frequency unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-frequency-unit"
+      }
+    },
+    {
+      "id": "grid-nuclear",
+      "label": "Grid Nuclear production",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-nuclear"
+      }
+    },
+    {
+      "id": "grid-nuclear-unit",
+      "label": "Grid Nuclear production unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-nuclear-unit"
+      }
+    },
+    {
+      "id": "grid-hydro",
+      "label": "Grid Hydro production",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-hydro"
+      }
+    },
+    {
+      "id": "grid-hydro-unit",
+      "label": "Grid Hydro production unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-hydro-unit"
+      }
+    },
+    {
+      "id": "grid-carbon",
+      "label": "Grid CO₂ estimate",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-carbon"
+      }
+    },
+    {
+      "id": "grid-carbon-unit",
+      "label": "Grid CO₂ estimate unit",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "grid-carbon-unit"
+      }
+    },
+    {
+      "id": "grid-period-end",
+      "label": "Grid oldest period end",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "grid-period-end"
+      }
+    },
+    {
+      "id": "grid-received-at",
+      "label": "Grid oldest reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "grid-received-at"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh dataset",
+      "description": "Read metadata when due and the latest available value from the configured dataset.",
+      "parameters": [
+        {
+          "id": "source-id",
+          "label": "Dataset",
+          "type": "string",
+          "format": "identifier",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "reading-updated",
+      "name": "Reading updated",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "source-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "source-name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "dataset-id",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 2147483647
+        },
+        {
+          "id": "value",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "unit",
+          "type": "string",
+          "maxLength": 64
+        },
+        {
+          "id": "period-start",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "period-end",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "received-at",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "reading-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "value-changed",
+      "name": "Value changed",
+      "occurrenceKey": "reading-id",
+      "payload": [
+        {
+          "id": "source-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "source-name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "dataset-id",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 2147483647
+        },
+        {
+          "id": "value",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "unit",
+          "type": "string",
+          "maxLength": 64
+        },
+        {
+          "id": "period-start",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "period-end",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "received-at",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "reading-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "previous-value",
+          "type": "number",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "grid",
+      "name": "Grid",
+      "sourceLabel": "Dataset",
+      "directory": "cards/grid",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "production",
+          "field": "grid-production",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "production-unit",
+          "field": "grid-production-unit",
+          "format": "text"
+        },
+        {
+          "id": "consumption",
+          "field": "grid-consumption",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "consumption-unit",
+          "field": "grid-consumption-unit",
+          "format": "text"
+        },
+        {
+          "id": "wind",
+          "field": "grid-wind",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "wind-unit",
+          "field": "grid-wind-unit",
+          "format": "text"
+        },
+        {
+          "id": "frequency",
+          "field": "grid-frequency",
+          "format": "text"
+        },
+        {
+          "id": "frequency-unit",
+          "field": "grid-frequency-unit",
+          "format": "text"
+        },
+        {
+          "id": "nuclear",
+          "field": "grid-nuclear",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "nuclear-unit",
+          "field": "grid-nuclear-unit",
+          "format": "text"
+        },
+        {
+          "id": "hydro",
+          "field": "grid-hydro",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "hydro-unit",
+          "field": "grid-hydro-unit",
+          "format": "text"
+        },
+        {
+          "id": "carbon",
+          "field": "grid-carbon",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "carbon-unit",
+          "field": "grid-carbon-unit",
+          "format": "text"
+        },
+        {
+          "id": "period",
+          "field": "grid-period-end",
+          "format": "time"
+        },
+        {
+          "id": "received",
+          "field": "grid-received-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

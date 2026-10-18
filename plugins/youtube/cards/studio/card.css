@@ -1,0 +1,34 @@
+/* Studio is fixed package artwork; counts never imply percentage progress. */
+:root { color-scheme:dark; font-family:"Segoe UI",system-ui,sans-serif; --font-scale:1; --ink:#fff3f1; --muted:#d0babc; --top:#2b1c23; --bottom:#48242b; --accent:#edada8; --edge:#f2d4d322; --panel:#fff0ee08; }
+:root[data-theme="light"] { color-scheme:light; --ink:#44272c; --muted:#78555c; --top:#f2e3e2; --bottom:#fff6f0; --accent:#aa514f; --edge:#9c575927; --panel:#ffffff88; }
+* { box-sizing:border-box; }
+html,body { height:100%; margin:0; }
+body { color:var(--ink); background:var(--top); }
+.studio { position:relative; isolation:isolate; height:100%; min-height:0; display:flex; flex-direction:column; overflow:hidden; background:linear-gradient(140deg,var(--top),var(--bottom)); }
+.art { position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+.art img { position:absolute; width:62%; height:65%; object-fit:contain; right:-18%; top:-8%; opacity:.15; }
+header,footer { flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 24px; font-size:calc(10px * var(--font-scale)); color:var(--muted); }
+header { border-bottom:1px solid var(--edge); } footer { border-top:1px solid var(--edge); font-size:calc(9px * var(--font-scale)); }
+.eyebrow { text-transform:uppercase; letter-spacing:.19em; font-size:calc(9px * var(--font-scale)); }
+.content { flex:1; min-height:0; overflow:auto; padding:20px 24px; scrollbar-color:var(--edge) transparent; }
+h1 { font-size:calc(29px * var(--font-scale)); letter-spacing:-.04em; margin:0; font-weight:550; overflow-wrap:anywhere; }
+.subline { color:var(--muted); font-size:calc(10px * var(--font-scale)); line-height:1.5; margin:8px 0; overflow-wrap:anywhere; }
+.hero { padding:17px 0; } .hero h2 { margin:12px 0 0; font-size:calc(26px * var(--font-scale)); font-weight:500; line-height:1.3; max-width:90%; overflow-wrap:anywhere; }
+.instruments { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:12px 0 22px; }
+.instrument { display:grid; justify-items:center; gap:9px; text-align:center; color:var(--muted); font-size:calc(10px * var(--font-scale)); min-width:0; }
+.dial { display:grid; place-items:center; width:clamp(65px,12vw,112px); aspect-ratio:1; border:3px solid var(--accent); border-radius:50%; background:var(--panel); color:var(--ink); font-size:calc(22px * var(--font-scale)); padding:8px; overflow-wrap:anywhere; }
+.dial[data-available="false"] { border-color:var(--edge); font-size:calc(12px * var(--font-scale)); color:var(--muted); }
+.dial span { max-width:100%; font-size:clamp(10px,3vw,calc(22px * var(--font-scale))); }
+.dial[data-available="false"] span { font-size:calc(12px * var(--font-scale)); }
+.values { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:16px 0; color:var(--muted); font-size:calc(9px * var(--font-scale)); }
+.values>div { padding:12px; border:1px solid var(--edge); border-radius:10px; background:var(--panel); }
+.values strong { display:block; color:var(--ink); margin-top:6px; font-size:calc(13px * var(--font-scale)); font-weight:500; overflow-wrap:anywhere; }
+.list-wrap { overflow-x:auto; border:1px solid var(--edge); border-radius:10px; background:var(--panel); }
+table { width:100%; border-collapse:collapse; text-align:left; font-size:calc(11px * var(--font-scale)); }
+th,td { padding:11px 12px; border-bottom:1px solid var(--edge); overflow-wrap:anywhere; }
+th { color:var(--muted); font-weight:500; font-size:calc(9px * var(--font-scale)); }
+tbody tr:last-child td { border-bottom:0; } [data-available="false"] { color:var(--muted); }
+:root[data-connected="false"] * { animation-play-state:paused !important; }
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
+@media(max-width:480px) { .instruments,.values { grid-template-columns:repeat(2,minmax(0,1fr)); } header,footer,.content { padding-left:17px; padding-right:17px; } .hero h2 { font-size:calc(22px * var(--font-scale)); } }
+@media(max-height:380px) { .content { padding-top:12px; } .hero { padding:8px 0; } h1 { font-size:calc(23px * var(--font-scale)); } .dial { max-width:80px; } }

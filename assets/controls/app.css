@@ -1,0 +1,15 @@
+/* Installation UI stays out of the way when unsupported or already installed.
+   Keep the app surface themeable; black is only the icon and launch chrome. */
+.controls-viewer-header { flex-wrap: wrap; }
+.control-install { margin-left: auto; min-height: 44px; }
+.control-install[hidden] { display: none; }
+
+/* Installed windows can extend into Android's display cutouts/gesture area. */
+@media (display-mode: standalone) {
+  .controls-viewer {
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+}

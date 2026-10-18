@@ -1,0 +1,961 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "youtube",
+  "name": "YouTube",
+  "version": "1.1.0",
+  "description": "Public channel uploads and new-video events",
+  "icon": "play",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "defaultCardLayout": "table",
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "source-id"
+  },
+  "instances": {
+    "setting": "channels",
+    "stateKey": "channels",
+    "eventKey": "source-id"
+  },
+  "settingsLookup": {
+    "setting": "channels",
+    "actionId": "lookup-channel",
+    "queryParameter": "query",
+    "valueField": "query",
+    "readingFields": [
+      "channel-name",
+      "channel-id",
+      "latest-id",
+      "latest-title",
+      "latest-published",
+      "received-at",
+      "api-state",
+      "next-check",
+      "last-error",
+      "videos"
+    ]
+  },
+  "settingsGuide": {
+    "title": "YouTube setup and testing",
+    "sections": [
+      {
+        "title": "Connect a channel",
+        "steps": [
+          "Enter a Google API key with YouTube Data API v3 enabled. Settings save when changed; browser-referrer key restrictions may reject server requests.",
+          "Enable YouTube and the server, and turn Pause API calls off. In Channels, choose Find channel, search, then select Use channel. Review the entry, enable it and save. Search results start disabled.",
+          "Open Events and select the Channel under Current readings. The first successful refresh lists current videos and establishes a baseline; it does not emit Video released for existing uploads. Refresh videos respects the next allowed check."
+        ]
+      },
+      {
+        "title": "Play a new upload on the TV",
+        "steps": [
+          "YouTube monitors uploads. Samsung TV performs playback: configure and enable Samsung TV, then enable YouTube playback in its Settings. This sends the TV’s private screen ID to YouTube for a temporary session; no Google account or Data API key is used for playback.",
+          "In Tasks, add a Task with Add rule → Event and choose your Channel’s Video released event. Videos updated reports refreshes and counts; it has no released video title or ID.",
+          "Add Samsung TV → Play YouTube video. In the Video ID event-value selector, choose Video ID to insert {{event.video-id}}. Keep the default app ID unless your TV requires another installed YouTube app.",
+          "Enable the Task and Event rule, then save. Future uploads detected while monitoring is active can start it. The TV must already be on and reachable; playback does not wake it. Missed uploads are not replayed automatically."
+        ]
+      },
+      {
+        "title": "Test a notice, delay and playback",
+        "steps": [
+          "Before a new upload arrives, test playback using an existing eleven-character Video ID entered directly in the action, then save and choose Run. Current readings do not create a saved Video released Event.",
+          "For an Event-based Task, add Show TV notice with Video title as its Title and insert other declared Event values into Message. Add Delay set to 10 seconds, then Play YouTube video using Video ID. Choose a 10-second notice duration for this example.",
+          "Run can select retained Event values from matching Task history. Rerun on a finished run starts the current Task from step one with that run’s captured values. Keep the Task enabled; its automatic Event rule can be disabled during manual testing.",
+          "If no matching history exists, allow a real Event to start a Task first, or use literal text and a literal Video ID for the initial test. No Event values are invented. Optional properties may be absent; binding a missing value stops all steps before effects."
+        ]
+      },
+      {
+        "title": "If nothing happens",
+        "steps": [
+          "Check server Enabled, plugin Enabled, Channel Enabled and Pause API calls. In Events → Current readings, inspect API calls, Last request error, Next allowed check and Successful reception. Provider errors and quota limits can postpone checks; Refresh videos does not bypass them.",
+          "For automatic playback, check Task Enabled, Event rule Enabled, the selected Channel and any condition. The first refresh, a changed Channel and resuming after missed uploads do not release old videos.",
+          "For playback failures, check Samsung TV configuration, YouTube playback, its explicit YouTube control port (default 8080), and Task runs or Activity for the error. A successful command does not confirm what played; verify the TV screen."
+        ]
+      }
+    ]
+  },
+  "settings": [
+    {
+      "id": "api-key",
+      "label": "YouTube Data API key",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 200,
+      "pattern": "^[A-Za-z0-9_-]{0,200}$",
+      "help": "Use a Google API key with YouTube Data API v3 enabled. Stored in private plugin settings, masked here and never available to Cards. Server/IP restrictions work; browser-referrer restrictions may reject server requests."
+    },
+    {
+      "id": "api-paused",
+      "label": "Pause API calls",
+      "type": "boolean",
+      "required": true,
+      "default": false,
+      "help": "Stops upload checks and channel lookup without deleting the key or readings. Resuming does not replay uploads missed while paused."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "required": true,
+      "default": 15,
+      "min": 15,
+      "max": 240,
+      "enum": [
+        15,
+        30,
+        60,
+        120,
+        240
+      ],
+      "enumLabels": [
+        "15 minutes",
+        "30 minutes",
+        "1 hour",
+        "2 hours",
+        "4 hours"
+      ],
+      "help": "Minimum interval per enabled Channel, with staggered serial requests. Many Channels may slow checks to target 1,500 daily read units. Current values shows effective cadence and local estimated budgets."
+    },
+    {
+      "id": "channels",
+      "label": "Channels",
+      "type": "list",
+      "itemLabel": "channel",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name",
+        "query"
+      ],
+      "fields": [
+        {
+          "id": "id",
+          "label": "Channel source ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "query",
+          "label": "Channel ID, @handle or URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 200,
+          "help": "Enter an @handle, UC channel ID or supported HTTPS YouTube channel URL. Find channel in Settings lets you search by name and choose a result."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "help": "Each named Channel has separate Cards and Task events. Copies start disabled. New/changed Channels baseline current public uploads without releasing old events."
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "videos",
+      "label": "Public videos",
+      "type": "table",
+      "icon": "clipboard-list",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string"
+        },
+        {
+          "id": "published",
+          "label": "Published",
+          "type": "timestamp"
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number"
+        },
+        {
+          "id": "url",
+          "label": "Video URL",
+          "type": "string"
+        },
+        {
+          "id": "id",
+          "label": "Video ID",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "video-count",
+        "rows": [
+          {
+            "title": "video-1-title",
+            "published": "video-1-published",
+            "duration": "video-1-duration",
+            "url": "video-1-url",
+            "id": "video-1-id"
+          },
+          {
+            "title": "video-2-title",
+            "published": "video-2-published",
+            "duration": "video-2-duration",
+            "url": "video-2-url",
+            "id": "video-2-id"
+          },
+          {
+            "title": "video-3-title",
+            "published": "video-3-published",
+            "duration": "video-3-duration",
+            "url": "video-3-url",
+            "id": "video-3-id"
+          },
+          {
+            "title": "video-4-title",
+            "published": "video-4-published",
+            "duration": "video-4-duration",
+            "url": "video-4-url",
+            "id": "video-4-id"
+          },
+          {
+            "title": "video-5-title",
+            "published": "video-5-published",
+            "duration": "video-5-duration",
+            "url": "video-5-url",
+            "id": "video-5-id"
+          },
+          {
+            "title": "video-6-title",
+            "published": "video-6-published",
+            "duration": "video-6-duration",
+            "url": "video-6-url",
+            "id": "video-6-id"
+          },
+          {
+            "title": "video-7-title",
+            "published": "video-7-published",
+            "duration": "video-7-duration",
+            "url": "video-7-url",
+            "id": "video-7-id"
+          },
+          {
+            "title": "video-8-title",
+            "published": "video-8-published",
+            "duration": "video-8-duration",
+            "url": "video-8-url",
+            "id": "video-8-id"
+          },
+          {
+            "title": "video-9-title",
+            "published": "video-9-published",
+            "duration": "video-9-duration",
+            "url": "video-9-url",
+            "id": "video-9-id"
+          },
+          {
+            "title": "video-10-title",
+            "published": "video-10-published",
+            "duration": "video-10-duration",
+            "url": "video-10-url",
+            "id": "video-10-id"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "video-1-title",
+            "type": "string"
+          },
+          {
+            "key": "video-1-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-1-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-1-url",
+            "type": "string"
+          },
+          {
+            "key": "video-1-id",
+            "type": "string"
+          },
+          {
+            "key": "video-2-title",
+            "type": "string"
+          },
+          {
+            "key": "video-2-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-2-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-2-url",
+            "type": "string"
+          },
+          {
+            "key": "video-2-id",
+            "type": "string"
+          },
+          {
+            "key": "video-3-title",
+            "type": "string"
+          },
+          {
+            "key": "video-3-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-3-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-3-url",
+            "type": "string"
+          },
+          {
+            "key": "video-3-id",
+            "type": "string"
+          },
+          {
+            "key": "video-4-title",
+            "type": "string"
+          },
+          {
+            "key": "video-4-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-4-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-4-url",
+            "type": "string"
+          },
+          {
+            "key": "video-4-id",
+            "type": "string"
+          },
+          {
+            "key": "video-5-title",
+            "type": "string"
+          },
+          {
+            "key": "video-5-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-5-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-5-url",
+            "type": "string"
+          },
+          {
+            "key": "video-5-id",
+            "type": "string"
+          },
+          {
+            "key": "video-6-title",
+            "type": "string"
+          },
+          {
+            "key": "video-6-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-6-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-6-url",
+            "type": "string"
+          },
+          {
+            "key": "video-6-id",
+            "type": "string"
+          },
+          {
+            "key": "video-7-title",
+            "type": "string"
+          },
+          {
+            "key": "video-7-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-7-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-7-url",
+            "type": "string"
+          },
+          {
+            "key": "video-7-id",
+            "type": "string"
+          },
+          {
+            "key": "video-8-title",
+            "type": "string"
+          },
+          {
+            "key": "video-8-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-8-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-8-url",
+            "type": "string"
+          },
+          {
+            "key": "video-8-id",
+            "type": "string"
+          },
+          {
+            "key": "video-9-title",
+            "type": "string"
+          },
+          {
+            "key": "video-9-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-9-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-9-url",
+            "type": "string"
+          },
+          {
+            "key": "video-9-id",
+            "type": "string"
+          },
+          {
+            "key": "video-10-title",
+            "type": "string"
+          },
+          {
+            "key": "video-10-published",
+            "type": "timestamp"
+          },
+          {
+            "key": "video-10-duration",
+            "type": "number"
+          },
+          {
+            "key": "video-10-url",
+            "type": "string"
+          },
+          {
+            "key": "video-10-id",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "channel-name",
+      "label": "YouTube channel",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "channel-name"
+      }
+    },
+    {
+      "id": "channel-id",
+      "label": "YouTube channel ID",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "channel-id"
+      }
+    },
+    {
+      "id": "channel-handle",
+      "label": "Channel handle",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "channel-handle"
+      }
+    },
+    {
+      "id": "latest-title",
+      "label": "Latest public video",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "latest-title"
+      }
+    },
+    {
+      "id": "latest-url",
+      "label": "Latest video URL",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "latest-url"
+      }
+    },
+    {
+      "id": "latest-id",
+      "label": "Latest video ID",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "latest-id"
+      }
+    },
+    {
+      "id": "api-state",
+      "label": "API calls",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "api-state"
+      }
+    },
+    {
+      "id": "last-error",
+      "label": "Last request error",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "last-error"
+      }
+    },
+    {
+      "id": "subscribers",
+      "label": "Reported subscribers",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "subscribers"
+      }
+    },
+    {
+      "id": "total-videos",
+      "label": "Reported channel video count",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "total-videos"
+      }
+    },
+    {
+      "id": "views",
+      "label": "Reported channel views",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "views"
+      }
+    },
+    {
+      "id": "video-count",
+      "label": "Displayed videos",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "video-count"
+      }
+    },
+    {
+      "id": "budget-reads",
+      "label": "Estimated read units today",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "budget-reads"
+      }
+    },
+    {
+      "id": "budget-read-limit",
+      "label": "Local daily read budget",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "budget-read-limit"
+      }
+    },
+    {
+      "id": "budget-searches",
+      "label": "Name searches today",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "budget-searches"
+      }
+    },
+    {
+      "id": "budget-search-limit",
+      "label": "Local daily name-search limit",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "budget-search-limit"
+      }
+    },
+    {
+      "id": "effective-minutes",
+      "label": "Effective minimum poll (minutes)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "effective-minutes"
+      }
+    },
+    {
+      "id": "latest-published",
+      "label": "Latest video published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "latest-published"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "next-check",
+      "label": "Next allowed check",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "next-check"
+      }
+    },
+    {
+      "id": "blocked-until",
+      "label": "Error block until",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "blocked-until"
+      }
+    },
+    {
+      "id": "videos-limited",
+      "label": "Video list limited",
+      "type": "boolean",
+      "icon": "list-check",
+      "source": {
+        "kind": "state",
+        "key": "videos-limited"
+      }
+    },
+    {
+      "id": "api-paused",
+      "label": "API calls paused",
+      "type": "boolean",
+      "icon": "pause",
+      "source": {
+        "kind": "state",
+        "key": "api-paused"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh videos",
+      "description": "Read one upload page and public video details. First success seeds a baseline; no replay of old releases.",
+      "parameters": [
+        {
+          "id": "source-id",
+          "label": "Channel source",
+          "type": "string",
+          "format": "identifier",
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "lookup-channel",
+      "name": "Find channel",
+      "settingsOnly": true,
+      "description": "Find up to five public channel matches by name, @handle, channel ID or supported URL. Select a result to add it in Settings.",
+      "parameters": [
+        {
+          "id": "query",
+          "label": "Channel name, @handle, ID or URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 200
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "video-released",
+      "name": "Video released",
+      "description": "A newly detected public, non-live video published within the current active polling window. Claims persist before Tasks; no startup/pause catch-up.",
+      "occurrenceKey": "release-id",
+      "payload": [
+        {
+          "id": "source-id",
+          "label": "Channel source ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "source-name",
+          "label": "Channel source name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "channel-id",
+          "label": "YouTube channel ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        {
+          "id": "channel-name",
+          "label": "YouTube channel name",
+          "type": "string",
+          "maxLength": 150
+        },
+        {
+          "id": "video-id",
+          "label": "Video ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 11
+        },
+        {
+          "id": "title",
+          "label": "Video title",
+          "type": "string",
+          "required": true,
+          "maxLength": 300
+        },
+        {
+          "id": "url",
+          "label": "Video URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "published-at",
+          "label": "Publication time (epoch ms)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "release-id",
+          "label": "Release identity",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "videos-updated",
+      "name": "Videos updated",
+      "description": "Every successful upload refresh, including unchanged and empty public results. This event has channel/count properties, not a released video.",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "source-id",
+          "label": "Channel source ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "source-name",
+          "label": "Channel source name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "channel-id",
+          "label": "YouTube channel ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        },
+        {
+          "id": "channel-name",
+          "label": "YouTube channel name",
+          "type": "string",
+          "maxLength": 150
+        },
+        {
+          "id": "video-count",
+          "label": "Displayed videos",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 10
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "studio",
+      "name": "Studio",
+      "sourceLabel": "Channel",
+      "directory": "cards/studio",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "latest-title",
+          "format": "text"
+        },
+        {
+          "id": "published",
+          "field": "latest-published",
+          "format": "datetime"
+        },
+        {
+          "id": "channel",
+          "field": "channel-name",
+          "format": "text"
+        },
+        {
+          "id": "subscribers",
+          "field": "subscribers",
+          "format": "number",
+          "grouping": false
+        },
+        {
+          "id": "views",
+          "field": "views",
+          "format": "number",
+          "grouping": false
+        },
+        {
+          "id": "total",
+          "field": "total-videos",
+          "format": "number",
+          "grouping": false
+        },
+        {
+          "id": "displayed",
+          "field": "video-count",
+          "format": "number",
+          "grouping": false
+        },
+        {
+          "id": "api",
+          "field": "api-state",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "cadence",
+          "field": "effective-minutes",
+          "format": "number"
+        },
+        {
+          "id": "reads",
+          "field": "budget-reads",
+          "format": "number"
+        },
+        {
+          "id": "searches",
+          "field": "budget-searches",
+          "format": "number"
+        },
+        {
+          "id": "limited",
+          "field": "videos-limited",
+          "format": "text"
+        },
+        {
+          "id": "videos",
+          "field": "videos",
+          "format": "table",
+          "columns": [
+            "title",
+            "published",
+            "duration"
+          ],
+          "rows": 4
+        }
+      ]
+    }
+  ]
+}

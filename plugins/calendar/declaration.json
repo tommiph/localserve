@@ -1,0 +1,953 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "calendar",
+  "name": "Calendar",
+  "version": "1.0.0",
+  "icon": "calendar",
+  "description": "Subscribed calendars, agendas and Task reminders",
+  "defaultCardLayout": "table",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "calendar-id"
+  },
+  "instances": {
+    "setting": "calendars",
+    "stateKey": "calendars",
+    "eventKey": "calendar-id"
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Reminder check interval",
+      "type": "number",
+      "required": true,
+      "default": 1,
+      "min": 1,
+      "max": 5,
+      "enum": [
+        1,
+        2,
+        5
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes"
+      ],
+      "help": "Checks the cached agenda. Task reminders run on the next check after their due time."
+    },
+    {
+      "id": "feed-minutes",
+      "label": "Feed refresh interval",
+      "type": "number",
+      "required": true,
+      "default": 15,
+      "min": 5,
+      "max": 60,
+      "enum": [
+        5,
+        15,
+        30,
+        60
+      ],
+      "enumLabels": [
+        "5 minutes",
+        "15 minutes",
+        "30 minutes",
+        "1 hour"
+      ],
+      "help": "Per enabled calendar. Feed failures pause reminders until a successful refresh."
+    },
+    {
+      "id": "calendars",
+      "label": "Calendars",
+      "type": "list",
+      "itemLabel": "calendar",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name"
+      ],
+      "help": "Add a complete HTTPS or webcal subscription URL. Subscription links can grant access to private events; they remain private settings. Calendars are read-only.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Calendar ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "url",
+          "label": "Subscription URL",
+          "type": "string",
+          "required": true,
+          "format": "secret",
+          "maxLength": 2000,
+          "help": "Complete public HTTPS feed address. webcal links use HTTPS. No sign-in, redirects, attachments or linked pages are opened."
+        },
+        {
+          "id": "reminder-minutes",
+          "label": "Reminder before event (minutes)",
+          "type": "number",
+          "required": true,
+          "default": 10,
+          "min": 0,
+          "max": 1440,
+          "help": "Whole minutes before the start; 0 disables upcoming reminders. Event started and ended remain available to Tasks."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "event-count",
+      "label": "Upcoming cached events",
+      "type": "number",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-count"
+      }
+    },
+    {
+      "id": "row-count",
+      "label": "Displayed events",
+      "type": "number",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "row-count"
+      }
+    },
+    {
+      "id": "agenda-limited",
+      "label": "Agenda limited",
+      "type": "boolean",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "agenda-limited"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful feed reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "checked-at",
+      "label": "Last reminder check",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "checked-at"
+      }
+    },
+    {
+      "id": "attempted-at",
+      "label": "Last attempted feed read",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "attempted-at"
+      }
+    },
+    {
+      "id": "poll-status",
+      "label": "Latest feed status",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "poll-status"
+      }
+    },
+    {
+      "id": "next-title",
+      "label": "Next event",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "next-title"
+      }
+    },
+    {
+      "id": "next-description",
+      "label": "Next event description",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "next-description"
+      }
+    },
+    {
+      "id": "next-location",
+      "label": "Next event location",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "next-location"
+      }
+    },
+    {
+      "id": "next-start",
+      "label": "Next event starts",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "next-start"
+      }
+    },
+    {
+      "id": "next-end",
+      "label": "Next event ends",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "next-end"
+      }
+    },
+    {
+      "id": "next-all-day",
+      "label": "Next event all day",
+      "type": "boolean",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "next-all-day"
+      }
+    },
+    {
+      "id": "event-1-title",
+      "label": "Event 1",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-1-title"
+      }
+    },
+    {
+      "id": "event-2-title",
+      "label": "Event 2",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-2-title"
+      }
+    },
+    {
+      "id": "event-3-title",
+      "label": "Event 3",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-3-title"
+      }
+    },
+    {
+      "id": "event-4-title",
+      "label": "Event 4",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-4-title"
+      }
+    },
+    {
+      "id": "event-5-title",
+      "label": "Event 5",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-5-title"
+      }
+    },
+    {
+      "id": "event-6-title",
+      "label": "Event 6",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-6-title"
+      }
+    },
+    {
+      "id": "event-7-title",
+      "label": "Event 7",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-7-title"
+      }
+    },
+    {
+      "id": "event-8-title",
+      "label": "Event 8",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-8-title"
+      }
+    },
+    {
+      "id": "event-9-title",
+      "label": "Event 9",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-9-title"
+      }
+    },
+    {
+      "id": "event-10-title",
+      "label": "Event 10",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "event-10-title"
+      }
+    },
+    {
+      "id": "agenda",
+      "label": "Agenda",
+      "type": "table",
+      "icon": "calendar",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Event",
+          "type": "string"
+        },
+        {
+          "id": "start",
+          "label": "Starts",
+          "type": "timestamp"
+        },
+        {
+          "id": "end",
+          "label": "Ends",
+          "type": "timestamp"
+        },
+        {
+          "id": "location",
+          "label": "Location",
+          "type": "string"
+        },
+        {
+          "id": "all-day",
+          "label": "All day",
+          "type": "boolean"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "row-count",
+        "rows": [
+          {
+            "title": "event-1-title",
+            "start": "event-1-start",
+            "end": "event-1-end",
+            "location": "event-1-location",
+            "all-day": "event-1-all-day"
+          },
+          {
+            "title": "event-2-title",
+            "start": "event-2-start",
+            "end": "event-2-end",
+            "location": "event-2-location",
+            "all-day": "event-2-all-day"
+          },
+          {
+            "title": "event-3-title",
+            "start": "event-3-start",
+            "end": "event-3-end",
+            "location": "event-3-location",
+            "all-day": "event-3-all-day"
+          },
+          {
+            "title": "event-4-title",
+            "start": "event-4-start",
+            "end": "event-4-end",
+            "location": "event-4-location",
+            "all-day": "event-4-all-day"
+          },
+          {
+            "title": "event-5-title",
+            "start": "event-5-start",
+            "end": "event-5-end",
+            "location": "event-5-location",
+            "all-day": "event-5-all-day"
+          },
+          {
+            "title": "event-6-title",
+            "start": "event-6-start",
+            "end": "event-6-end",
+            "location": "event-6-location",
+            "all-day": "event-6-all-day"
+          },
+          {
+            "title": "event-7-title",
+            "start": "event-7-start",
+            "end": "event-7-end",
+            "location": "event-7-location",
+            "all-day": "event-7-all-day"
+          },
+          {
+            "title": "event-8-title",
+            "start": "event-8-start",
+            "end": "event-8-end",
+            "location": "event-8-location",
+            "all-day": "event-8-all-day"
+          },
+          {
+            "title": "event-9-title",
+            "start": "event-9-start",
+            "end": "event-9-end",
+            "location": "event-9-location",
+            "all-day": "event-9-all-day"
+          },
+          {
+            "title": "event-10-title",
+            "start": "event-10-start",
+            "end": "event-10-end",
+            "location": "event-10-location",
+            "all-day": "event-10-all-day"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "event-1-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-1-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-1-location",
+            "type": "string"
+          },
+          {
+            "key": "event-1-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-2-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-2-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-2-location",
+            "type": "string"
+          },
+          {
+            "key": "event-2-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-3-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-3-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-3-location",
+            "type": "string"
+          },
+          {
+            "key": "event-3-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-4-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-4-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-4-location",
+            "type": "string"
+          },
+          {
+            "key": "event-4-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-5-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-5-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-5-location",
+            "type": "string"
+          },
+          {
+            "key": "event-5-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-6-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-6-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-6-location",
+            "type": "string"
+          },
+          {
+            "key": "event-6-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-7-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-7-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-7-location",
+            "type": "string"
+          },
+          {
+            "key": "event-7-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-8-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-8-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-8-location",
+            "type": "string"
+          },
+          {
+            "key": "event-8-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-9-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-9-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-9-location",
+            "type": "string"
+          },
+          {
+            "key": "event-9-all-day",
+            "type": "boolean"
+          },
+          {
+            "key": "event-10-start",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-10-end",
+            "type": "timestamp"
+          },
+          {
+            "key": "event-10-location",
+            "type": "string"
+          },
+          {
+            "key": "event-10-all-day",
+            "type": "boolean"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Check calendar",
+      "description": "Check cached reminders and refresh the selected feed when its refresh interval allows.",
+      "parameters": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "default": "",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "reading-updated",
+      "name": "Calendar reading updated",
+      "testAction": "refresh",
+      "description": "Successful feed or cached agenda check, including an empty agenda.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "count",
+          "label": "Upcoming cached events",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 32
+        },
+        {
+          "id": "title",
+          "label": "Next event title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "start",
+          "label": "Next event start timestamp",
+          "type": "number",
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        }
+      ]
+    },
+    {
+      "id": "event-upcoming",
+      "name": "Event upcoming",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A known calendar time crossed during active checks. First readings and missed offline checks never replay events.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "title",
+          "label": "Event title",
+          "type": "string",
+          "required": true,
+          "maxLength": 160
+        },
+        {
+          "id": "description",
+          "label": "Description",
+          "type": "string",
+          "maxLength": 240
+        },
+        {
+          "id": "location",
+          "label": "Location",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "start",
+          "label": "Start timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "end",
+          "label": "End timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "all-day",
+          "label": "All day",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "event-started",
+      "name": "Event started",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A known calendar time crossed during active checks. First readings and missed offline checks never replay events.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "title",
+          "label": "Event title",
+          "type": "string",
+          "required": true,
+          "maxLength": 160
+        },
+        {
+          "id": "description",
+          "label": "Description",
+          "type": "string",
+          "maxLength": 240
+        },
+        {
+          "id": "location",
+          "label": "Location",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "start",
+          "label": "Start timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "end",
+          "label": "End timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "all-day",
+          "label": "All day",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "event-ended",
+      "name": "Event ended",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A known calendar time crossed during active checks. First readings and missed offline checks never replay events.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "title",
+          "label": "Event title",
+          "type": "string",
+          "required": true,
+          "maxLength": 160
+        },
+        {
+          "id": "description",
+          "label": "Description",
+          "type": "string",
+          "maxLength": 240
+        },
+        {
+          "id": "location",
+          "label": "Location",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "start",
+          "label": "Start timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "end",
+          "label": "End timestamp",
+          "type": "number",
+          "required": true,
+          "min": -8640000000000000,
+          "max": 8640000000000000
+        },
+        {
+          "id": "all-day",
+          "label": "All day",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "agenda",
+      "name": "Agenda",
+      "sourceLabel": "Calendar",
+      "directory": "cards/agenda",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "next-title",
+          "format": "text"
+        },
+        {
+          "id": "location",
+          "field": "next-location",
+          "format": "text"
+        },
+        {
+          "id": "start",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "agenda",
+          "field": "agenda",
+          "format": "table",
+          "columns": [
+            "title",
+            "start",
+            "location",
+            "all-day"
+          ],
+          "rows": 10
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Webpage adapter/declaration are readable Localserve project source.
+Bundled unmodified upstream dependencies, downloaded from official npm and
+SHA-512 verified during source preparation:
+
+parse5 8.0.1 — MIT
+License: vendor/parse5/LICENSE
+Source/documentation: https://parse5.js.org/
+
+entities 8.1.0 — MIT
+License: vendor/parse5/node_modules/entities/LICENSE
+Source: https://github.com/fb55/entities
+
+No dependencies are fetched, installed or updated by the running plugin.

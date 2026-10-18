@@ -1,0 +1,2608 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "tradfri",
+  "name": "TRÅDFRI",
+  "version": "1.2.1",
+  "description": "Legacy IKEA gateway lights, groups and lighting controls",
+  "icon": "lightbulb",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "host",
+      "label": "Gateway address",
+      "type": "string",
+      "default": "",
+      "maxLength": 15,
+      "help": "Private IPv4 address of the original TRÅDFRI gateway. DIRIGERA is not supported."
+    },
+    {
+      "id": "security-code",
+      "label": "Gateway security code",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 128,
+      "help": "Optional replacement: the code printed on this gateway. A refresh derives a Windows-protected identity/PSK. Clear after success; a nonempty setting remains private plaintext."
+    },
+    {
+      "id": "fade-seconds",
+      "label": "Fade duration (seconds)",
+      "type": "number",
+      "default": 0.4,
+      "min": 0,
+      "max": 60,
+      "help": "Brightness, white temperature and colour transitions, including saved scenes. 0–60 seconds, rounded to 0.1 second; 0 means immediate. Simple on/off commands do not fade."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 1,
+      "min": 0.5,
+      "max": 5,
+      "enum": [
+        0.5,
+        1,
+        5
+      ],
+      "enumLabels": [
+        "30 seconds",
+        "1 minute",
+        "5 minutes"
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "connection-status",
+      "label": "Gateway connection",
+      "type": "string",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "connection-status"
+      }
+    },
+    {
+      "id": "light-count",
+      "label": "Lights",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-count"
+      }
+    },
+    {
+      "id": "lights-on",
+      "label": "Lights on",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "lights-on"
+      }
+    },
+    {
+      "id": "group-count",
+      "label": "Groups",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "group-count"
+      }
+    },
+    {
+      "id": "light-row-count",
+      "label": "Displayed lights 1–10",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-row-count"
+      }
+    },
+    {
+      "id": "light-bank-2-count",
+      "label": "Displayed lights 11–20",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-bank-2-count"
+      }
+    },
+    {
+      "id": "lights-truncated",
+      "label": "Light Lists limited",
+      "type": "boolean",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "lights-truncated"
+      }
+    },
+    {
+      "id": "group-row-count",
+      "label": "Displayed groups",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "group-row-count"
+      }
+    },
+    {
+      "id": "groups-truncated",
+      "label": "Group List limited",
+      "type": "boolean",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "groups-truncated"
+      }
+    },
+    {
+      "id": "lights-summary",
+      "label": "All light readings",
+      "type": "string",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "lights-summary"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "current-time",
+      "label": "Current local time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "clock"
+      }
+    },
+    {
+      "id": "sunrise-time",
+      "label": "Sunrise",
+      "type": "timestamp",
+      "icon": "sun",
+      "source": {
+        "kind": "solar",
+        "event": "sunrise"
+      }
+    },
+    {
+      "id": "sunset-time",
+      "label": "Sunset",
+      "type": "timestamp",
+      "icon": "moon",
+      "source": {
+        "kind": "solar",
+        "event": "sunset"
+      }
+    },
+    {
+      "id": "light-1-brightness",
+      "label": "Bulb 1 brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-1-brightness"
+      }
+    },
+    {
+      "id": "light-1-display-brightness",
+      "label": "Bulb 1 effective brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-1-display-brightness"
+      }
+    },
+    {
+      "id": "light-1-color",
+      "label": "Bulb 1 color",
+      "type": "string",
+      "icon": "palette",
+      "source": {
+        "kind": "state",
+        "key": "light-1-color"
+      }
+    },
+    {
+      "id": "light-2-brightness",
+      "label": "Bulb 2 brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-2-brightness"
+      }
+    },
+    {
+      "id": "light-2-display-brightness",
+      "label": "Bulb 2 effective brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-2-display-brightness"
+      }
+    },
+    {
+      "id": "light-2-color",
+      "label": "Bulb 2 color",
+      "type": "string",
+      "icon": "palette",
+      "source": {
+        "kind": "state",
+        "key": "light-2-color"
+      }
+    },
+    {
+      "id": "light-3-brightness",
+      "label": "Bulb 3 brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-3-brightness"
+      }
+    },
+    {
+      "id": "light-3-display-brightness",
+      "label": "Bulb 3 effective brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-3-display-brightness"
+      }
+    },
+    {
+      "id": "light-3-color",
+      "label": "Bulb 3 color",
+      "type": "string",
+      "icon": "palette",
+      "source": {
+        "kind": "state",
+        "key": "light-3-color"
+      }
+    },
+    {
+      "id": "light-4-brightness",
+      "label": "Bulb 4 brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-4-brightness"
+      }
+    },
+    {
+      "id": "light-4-display-brightness",
+      "label": "Bulb 4 effective brightness (%)",
+      "type": "number",
+      "icon": "lightbulb",
+      "source": {
+        "kind": "state",
+        "key": "light-4-display-brightness"
+      }
+    },
+    {
+      "id": "light-4-color",
+      "label": "Bulb 4 color",
+      "type": "string",
+      "icon": "palette",
+      "source": {
+        "kind": "state",
+        "key": "light-4-color"
+      }
+    },
+    {
+      "id": "lights",
+      "label": "Lights 1–10",
+      "type": "table",
+      "icon": "lightbulb",
+      "columns": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string"
+        },
+        {
+          "id": "name",
+          "label": "Light",
+          "type": "string"
+        },
+        {
+          "id": "room",
+          "label": "Group",
+          "type": "string"
+        },
+        {
+          "id": "on",
+          "label": "On",
+          "type": "boolean"
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number"
+        },
+        {
+          "id": "reachable",
+          "label": "Reachable",
+          "type": "boolean"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "light-row-count",
+        "rows": [
+          {
+            "id": "light-1-id",
+            "name": "light-1-name",
+            "room": "light-1-room",
+            "on": "light-1-on",
+            "brightness": "light-1-brightness",
+            "reachable": "light-1-reachable"
+          },
+          {
+            "id": "light-2-id",
+            "name": "light-2-name",
+            "room": "light-2-room",
+            "on": "light-2-on",
+            "brightness": "light-2-brightness",
+            "reachable": "light-2-reachable"
+          },
+          {
+            "id": "light-3-id",
+            "name": "light-3-name",
+            "room": "light-3-room",
+            "on": "light-3-on",
+            "brightness": "light-3-brightness",
+            "reachable": "light-3-reachable"
+          },
+          {
+            "id": "light-4-id",
+            "name": "light-4-name",
+            "room": "light-4-room",
+            "on": "light-4-on",
+            "brightness": "light-4-brightness",
+            "reachable": "light-4-reachable"
+          },
+          {
+            "id": "light-5-id",
+            "name": "light-5-name",
+            "room": "light-5-room",
+            "on": "light-5-on",
+            "brightness": "light-5-brightness",
+            "reachable": "light-5-reachable"
+          },
+          {
+            "id": "light-6-id",
+            "name": "light-6-name",
+            "room": "light-6-room",
+            "on": "light-6-on",
+            "brightness": "light-6-brightness",
+            "reachable": "light-6-reachable"
+          },
+          {
+            "id": "light-7-id",
+            "name": "light-7-name",
+            "room": "light-7-room",
+            "on": "light-7-on",
+            "brightness": "light-7-brightness",
+            "reachable": "light-7-reachable"
+          },
+          {
+            "id": "light-8-id",
+            "name": "light-8-name",
+            "room": "light-8-room",
+            "on": "light-8-on",
+            "brightness": "light-8-brightness",
+            "reachable": "light-8-reachable"
+          },
+          {
+            "id": "light-9-id",
+            "name": "light-9-name",
+            "room": "light-9-room",
+            "on": "light-9-on",
+            "brightness": "light-9-brightness",
+            "reachable": "light-9-reachable"
+          },
+          {
+            "id": "light-10-id",
+            "name": "light-10-name",
+            "room": "light-10-room",
+            "on": "light-10-on",
+            "brightness": "light-10-brightness",
+            "reachable": "light-10-reachable"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "light-1-id",
+            "type": "string"
+          },
+          {
+            "key": "light-1-name",
+            "type": "string"
+          },
+          {
+            "key": "light-1-room",
+            "type": "string"
+          },
+          {
+            "key": "light-1-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-1-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-1-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-2-id",
+            "type": "string"
+          },
+          {
+            "key": "light-2-name",
+            "type": "string"
+          },
+          {
+            "key": "light-2-room",
+            "type": "string"
+          },
+          {
+            "key": "light-2-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-2-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-2-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-3-id",
+            "type": "string"
+          },
+          {
+            "key": "light-3-name",
+            "type": "string"
+          },
+          {
+            "key": "light-3-room",
+            "type": "string"
+          },
+          {
+            "key": "light-3-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-3-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-3-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-4-id",
+            "type": "string"
+          },
+          {
+            "key": "light-4-name",
+            "type": "string"
+          },
+          {
+            "key": "light-4-room",
+            "type": "string"
+          },
+          {
+            "key": "light-4-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-4-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-4-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-5-id",
+            "type": "string"
+          },
+          {
+            "key": "light-5-name",
+            "type": "string"
+          },
+          {
+            "key": "light-5-room",
+            "type": "string"
+          },
+          {
+            "key": "light-5-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-5-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-5-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-6-id",
+            "type": "string"
+          },
+          {
+            "key": "light-6-name",
+            "type": "string"
+          },
+          {
+            "key": "light-6-room",
+            "type": "string"
+          },
+          {
+            "key": "light-6-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-6-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-6-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-7-id",
+            "type": "string"
+          },
+          {
+            "key": "light-7-name",
+            "type": "string"
+          },
+          {
+            "key": "light-7-room",
+            "type": "string"
+          },
+          {
+            "key": "light-7-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-7-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-7-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-8-id",
+            "type": "string"
+          },
+          {
+            "key": "light-8-name",
+            "type": "string"
+          },
+          {
+            "key": "light-8-room",
+            "type": "string"
+          },
+          {
+            "key": "light-8-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-8-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-8-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-9-id",
+            "type": "string"
+          },
+          {
+            "key": "light-9-name",
+            "type": "string"
+          },
+          {
+            "key": "light-9-room",
+            "type": "string"
+          },
+          {
+            "key": "light-9-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-9-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-9-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-10-id",
+            "type": "string"
+          },
+          {
+            "key": "light-10-name",
+            "type": "string"
+          },
+          {
+            "key": "light-10-room",
+            "type": "string"
+          },
+          {
+            "key": "light-10-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-10-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-10-reachable",
+            "type": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-details",
+      "label": "Light details 1–10",
+      "type": "table",
+      "icon": "lightbulb",
+      "columns": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string"
+        },
+        {
+          "id": "spectrum",
+          "label": "Capability",
+          "type": "string"
+        },
+        {
+          "id": "temperature",
+          "label": "White temperature (%)",
+          "type": "number"
+        },
+        {
+          "id": "hue",
+          "label": "Hue (°)",
+          "type": "number"
+        },
+        {
+          "id": "saturation",
+          "label": "Saturation (%)",
+          "type": "number"
+        },
+        {
+          "id": "firmware",
+          "label": "Firmware",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "light-row-count",
+        "rows": [
+          {
+            "id": "light-1-id",
+            "spectrum": "light-1-spectrum",
+            "temperature": "light-1-temperature",
+            "hue": "light-1-hue",
+            "saturation": "light-1-saturation",
+            "firmware": "light-1-firmware"
+          },
+          {
+            "id": "light-2-id",
+            "spectrum": "light-2-spectrum",
+            "temperature": "light-2-temperature",
+            "hue": "light-2-hue",
+            "saturation": "light-2-saturation",
+            "firmware": "light-2-firmware"
+          },
+          {
+            "id": "light-3-id",
+            "spectrum": "light-3-spectrum",
+            "temperature": "light-3-temperature",
+            "hue": "light-3-hue",
+            "saturation": "light-3-saturation",
+            "firmware": "light-3-firmware"
+          },
+          {
+            "id": "light-4-id",
+            "spectrum": "light-4-spectrum",
+            "temperature": "light-4-temperature",
+            "hue": "light-4-hue",
+            "saturation": "light-4-saturation",
+            "firmware": "light-4-firmware"
+          },
+          {
+            "id": "light-5-id",
+            "spectrum": "light-5-spectrum",
+            "temperature": "light-5-temperature",
+            "hue": "light-5-hue",
+            "saturation": "light-5-saturation",
+            "firmware": "light-5-firmware"
+          },
+          {
+            "id": "light-6-id",
+            "spectrum": "light-6-spectrum",
+            "temperature": "light-6-temperature",
+            "hue": "light-6-hue",
+            "saturation": "light-6-saturation",
+            "firmware": "light-6-firmware"
+          },
+          {
+            "id": "light-7-id",
+            "spectrum": "light-7-spectrum",
+            "temperature": "light-7-temperature",
+            "hue": "light-7-hue",
+            "saturation": "light-7-saturation",
+            "firmware": "light-7-firmware"
+          },
+          {
+            "id": "light-8-id",
+            "spectrum": "light-8-spectrum",
+            "temperature": "light-8-temperature",
+            "hue": "light-8-hue",
+            "saturation": "light-8-saturation",
+            "firmware": "light-8-firmware"
+          },
+          {
+            "id": "light-9-id",
+            "spectrum": "light-9-spectrum",
+            "temperature": "light-9-temperature",
+            "hue": "light-9-hue",
+            "saturation": "light-9-saturation",
+            "firmware": "light-9-firmware"
+          },
+          {
+            "id": "light-10-id",
+            "spectrum": "light-10-spectrum",
+            "temperature": "light-10-temperature",
+            "hue": "light-10-hue",
+            "saturation": "light-10-saturation",
+            "firmware": "light-10-firmware"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "light-1-id",
+            "type": "string"
+          },
+          {
+            "key": "light-1-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-1-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-1-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-1-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-1-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-2-id",
+            "type": "string"
+          },
+          {
+            "key": "light-2-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-2-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-2-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-2-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-2-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-3-id",
+            "type": "string"
+          },
+          {
+            "key": "light-3-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-3-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-3-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-3-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-3-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-4-id",
+            "type": "string"
+          },
+          {
+            "key": "light-4-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-4-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-4-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-4-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-4-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-5-id",
+            "type": "string"
+          },
+          {
+            "key": "light-5-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-5-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-5-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-5-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-5-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-6-id",
+            "type": "string"
+          },
+          {
+            "key": "light-6-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-6-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-6-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-6-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-6-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-7-id",
+            "type": "string"
+          },
+          {
+            "key": "light-7-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-7-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-7-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-7-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-7-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-8-id",
+            "type": "string"
+          },
+          {
+            "key": "light-8-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-8-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-8-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-8-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-8-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-9-id",
+            "type": "string"
+          },
+          {
+            "key": "light-9-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-9-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-9-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-9-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-9-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-10-id",
+            "type": "string"
+          },
+          {
+            "key": "light-10-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-10-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-10-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-10-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-10-firmware",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lights-2",
+      "label": "Lights 11–20",
+      "type": "table",
+      "icon": "lightbulb",
+      "columns": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string"
+        },
+        {
+          "id": "name",
+          "label": "Light",
+          "type": "string"
+        },
+        {
+          "id": "room",
+          "label": "Group",
+          "type": "string"
+        },
+        {
+          "id": "on",
+          "label": "On",
+          "type": "boolean"
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number"
+        },
+        {
+          "id": "reachable",
+          "label": "Reachable",
+          "type": "boolean"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "light-bank-2-count",
+        "rows": [
+          {
+            "id": "light-11-id",
+            "name": "light-11-name",
+            "room": "light-11-room",
+            "on": "light-11-on",
+            "brightness": "light-11-brightness",
+            "reachable": "light-11-reachable"
+          },
+          {
+            "id": "light-12-id",
+            "name": "light-12-name",
+            "room": "light-12-room",
+            "on": "light-12-on",
+            "brightness": "light-12-brightness",
+            "reachable": "light-12-reachable"
+          },
+          {
+            "id": "light-13-id",
+            "name": "light-13-name",
+            "room": "light-13-room",
+            "on": "light-13-on",
+            "brightness": "light-13-brightness",
+            "reachable": "light-13-reachable"
+          },
+          {
+            "id": "light-14-id",
+            "name": "light-14-name",
+            "room": "light-14-room",
+            "on": "light-14-on",
+            "brightness": "light-14-brightness",
+            "reachable": "light-14-reachable"
+          },
+          {
+            "id": "light-15-id",
+            "name": "light-15-name",
+            "room": "light-15-room",
+            "on": "light-15-on",
+            "brightness": "light-15-brightness",
+            "reachable": "light-15-reachable"
+          },
+          {
+            "id": "light-16-id",
+            "name": "light-16-name",
+            "room": "light-16-room",
+            "on": "light-16-on",
+            "brightness": "light-16-brightness",
+            "reachable": "light-16-reachable"
+          },
+          {
+            "id": "light-17-id",
+            "name": "light-17-name",
+            "room": "light-17-room",
+            "on": "light-17-on",
+            "brightness": "light-17-brightness",
+            "reachable": "light-17-reachable"
+          },
+          {
+            "id": "light-18-id",
+            "name": "light-18-name",
+            "room": "light-18-room",
+            "on": "light-18-on",
+            "brightness": "light-18-brightness",
+            "reachable": "light-18-reachable"
+          },
+          {
+            "id": "light-19-id",
+            "name": "light-19-name",
+            "room": "light-19-room",
+            "on": "light-19-on",
+            "brightness": "light-19-brightness",
+            "reachable": "light-19-reachable"
+          },
+          {
+            "id": "light-20-id",
+            "name": "light-20-name",
+            "room": "light-20-room",
+            "on": "light-20-on",
+            "brightness": "light-20-brightness",
+            "reachable": "light-20-reachable"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "light-11-id",
+            "type": "string"
+          },
+          {
+            "key": "light-11-name",
+            "type": "string"
+          },
+          {
+            "key": "light-11-room",
+            "type": "string"
+          },
+          {
+            "key": "light-11-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-11-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-11-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-12-id",
+            "type": "string"
+          },
+          {
+            "key": "light-12-name",
+            "type": "string"
+          },
+          {
+            "key": "light-12-room",
+            "type": "string"
+          },
+          {
+            "key": "light-12-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-12-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-12-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-13-id",
+            "type": "string"
+          },
+          {
+            "key": "light-13-name",
+            "type": "string"
+          },
+          {
+            "key": "light-13-room",
+            "type": "string"
+          },
+          {
+            "key": "light-13-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-13-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-13-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-14-id",
+            "type": "string"
+          },
+          {
+            "key": "light-14-name",
+            "type": "string"
+          },
+          {
+            "key": "light-14-room",
+            "type": "string"
+          },
+          {
+            "key": "light-14-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-14-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-14-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-15-id",
+            "type": "string"
+          },
+          {
+            "key": "light-15-name",
+            "type": "string"
+          },
+          {
+            "key": "light-15-room",
+            "type": "string"
+          },
+          {
+            "key": "light-15-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-15-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-15-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-16-id",
+            "type": "string"
+          },
+          {
+            "key": "light-16-name",
+            "type": "string"
+          },
+          {
+            "key": "light-16-room",
+            "type": "string"
+          },
+          {
+            "key": "light-16-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-16-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-16-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-17-id",
+            "type": "string"
+          },
+          {
+            "key": "light-17-name",
+            "type": "string"
+          },
+          {
+            "key": "light-17-room",
+            "type": "string"
+          },
+          {
+            "key": "light-17-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-17-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-17-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-18-id",
+            "type": "string"
+          },
+          {
+            "key": "light-18-name",
+            "type": "string"
+          },
+          {
+            "key": "light-18-room",
+            "type": "string"
+          },
+          {
+            "key": "light-18-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-18-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-18-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-19-id",
+            "type": "string"
+          },
+          {
+            "key": "light-19-name",
+            "type": "string"
+          },
+          {
+            "key": "light-19-room",
+            "type": "string"
+          },
+          {
+            "key": "light-19-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-19-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-19-reachable",
+            "type": "boolean"
+          },
+          {
+            "key": "light-20-id",
+            "type": "string"
+          },
+          {
+            "key": "light-20-name",
+            "type": "string"
+          },
+          {
+            "key": "light-20-room",
+            "type": "string"
+          },
+          {
+            "key": "light-20-on",
+            "type": "boolean"
+          },
+          {
+            "key": "light-20-brightness",
+            "type": "number"
+          },
+          {
+            "key": "light-20-reachable",
+            "type": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "id": "light-details-2",
+      "label": "Light details 11–20",
+      "type": "table",
+      "icon": "lightbulb",
+      "columns": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string"
+        },
+        {
+          "id": "spectrum",
+          "label": "Capability",
+          "type": "string"
+        },
+        {
+          "id": "temperature",
+          "label": "White temperature (%)",
+          "type": "number"
+        },
+        {
+          "id": "hue",
+          "label": "Hue (°)",
+          "type": "number"
+        },
+        {
+          "id": "saturation",
+          "label": "Saturation (%)",
+          "type": "number"
+        },
+        {
+          "id": "firmware",
+          "label": "Firmware",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "light-bank-2-count",
+        "rows": [
+          {
+            "id": "light-11-id",
+            "spectrum": "light-11-spectrum",
+            "temperature": "light-11-temperature",
+            "hue": "light-11-hue",
+            "saturation": "light-11-saturation",
+            "firmware": "light-11-firmware"
+          },
+          {
+            "id": "light-12-id",
+            "spectrum": "light-12-spectrum",
+            "temperature": "light-12-temperature",
+            "hue": "light-12-hue",
+            "saturation": "light-12-saturation",
+            "firmware": "light-12-firmware"
+          },
+          {
+            "id": "light-13-id",
+            "spectrum": "light-13-spectrum",
+            "temperature": "light-13-temperature",
+            "hue": "light-13-hue",
+            "saturation": "light-13-saturation",
+            "firmware": "light-13-firmware"
+          },
+          {
+            "id": "light-14-id",
+            "spectrum": "light-14-spectrum",
+            "temperature": "light-14-temperature",
+            "hue": "light-14-hue",
+            "saturation": "light-14-saturation",
+            "firmware": "light-14-firmware"
+          },
+          {
+            "id": "light-15-id",
+            "spectrum": "light-15-spectrum",
+            "temperature": "light-15-temperature",
+            "hue": "light-15-hue",
+            "saturation": "light-15-saturation",
+            "firmware": "light-15-firmware"
+          },
+          {
+            "id": "light-16-id",
+            "spectrum": "light-16-spectrum",
+            "temperature": "light-16-temperature",
+            "hue": "light-16-hue",
+            "saturation": "light-16-saturation",
+            "firmware": "light-16-firmware"
+          },
+          {
+            "id": "light-17-id",
+            "spectrum": "light-17-spectrum",
+            "temperature": "light-17-temperature",
+            "hue": "light-17-hue",
+            "saturation": "light-17-saturation",
+            "firmware": "light-17-firmware"
+          },
+          {
+            "id": "light-18-id",
+            "spectrum": "light-18-spectrum",
+            "temperature": "light-18-temperature",
+            "hue": "light-18-hue",
+            "saturation": "light-18-saturation",
+            "firmware": "light-18-firmware"
+          },
+          {
+            "id": "light-19-id",
+            "spectrum": "light-19-spectrum",
+            "temperature": "light-19-temperature",
+            "hue": "light-19-hue",
+            "saturation": "light-19-saturation",
+            "firmware": "light-19-firmware"
+          },
+          {
+            "id": "light-20-id",
+            "spectrum": "light-20-spectrum",
+            "temperature": "light-20-temperature",
+            "hue": "light-20-hue",
+            "saturation": "light-20-saturation",
+            "firmware": "light-20-firmware"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "light-11-id",
+            "type": "string"
+          },
+          {
+            "key": "light-11-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-11-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-11-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-11-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-11-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-12-id",
+            "type": "string"
+          },
+          {
+            "key": "light-12-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-12-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-12-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-12-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-12-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-13-id",
+            "type": "string"
+          },
+          {
+            "key": "light-13-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-13-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-13-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-13-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-13-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-14-id",
+            "type": "string"
+          },
+          {
+            "key": "light-14-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-14-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-14-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-14-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-14-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-15-id",
+            "type": "string"
+          },
+          {
+            "key": "light-15-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-15-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-15-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-15-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-15-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-16-id",
+            "type": "string"
+          },
+          {
+            "key": "light-16-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-16-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-16-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-16-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-16-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-17-id",
+            "type": "string"
+          },
+          {
+            "key": "light-17-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-17-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-17-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-17-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-17-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-18-id",
+            "type": "string"
+          },
+          {
+            "key": "light-18-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-18-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-18-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-18-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-18-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-19-id",
+            "type": "string"
+          },
+          {
+            "key": "light-19-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-19-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-19-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-19-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-19-firmware",
+            "type": "string"
+          },
+          {
+            "key": "light-20-id",
+            "type": "string"
+          },
+          {
+            "key": "light-20-spectrum",
+            "type": "string"
+          },
+          {
+            "key": "light-20-temperature",
+            "type": "number"
+          },
+          {
+            "key": "light-20-hue",
+            "type": "number"
+          },
+          {
+            "key": "light-20-saturation",
+            "type": "number"
+          },
+          {
+            "key": "light-20-firmware",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "groups",
+      "label": "Groups",
+      "type": "table",
+      "icon": "lightbulb",
+      "columns": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string"
+        },
+        {
+          "id": "name",
+          "label": "Group",
+          "type": "string"
+        },
+        {
+          "id": "on",
+          "label": "Reported on",
+          "type": "boolean"
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number"
+        },
+        {
+          "id": "count",
+          "label": "Devices",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "group-row-count",
+        "rows": [
+          {
+            "id": "group-1-id",
+            "name": "group-1-name",
+            "on": "group-1-on",
+            "brightness": "group-1-brightness",
+            "count": "group-1-count"
+          },
+          {
+            "id": "group-2-id",
+            "name": "group-2-name",
+            "on": "group-2-on",
+            "brightness": "group-2-brightness",
+            "count": "group-2-count"
+          },
+          {
+            "id": "group-3-id",
+            "name": "group-3-name",
+            "on": "group-3-on",
+            "brightness": "group-3-brightness",
+            "count": "group-3-count"
+          },
+          {
+            "id": "group-4-id",
+            "name": "group-4-name",
+            "on": "group-4-on",
+            "brightness": "group-4-brightness",
+            "count": "group-4-count"
+          },
+          {
+            "id": "group-5-id",
+            "name": "group-5-name",
+            "on": "group-5-on",
+            "brightness": "group-5-brightness",
+            "count": "group-5-count"
+          },
+          {
+            "id": "group-6-id",
+            "name": "group-6-name",
+            "on": "group-6-on",
+            "brightness": "group-6-brightness",
+            "count": "group-6-count"
+          },
+          {
+            "id": "group-7-id",
+            "name": "group-7-name",
+            "on": "group-7-on",
+            "brightness": "group-7-brightness",
+            "count": "group-7-count"
+          },
+          {
+            "id": "group-8-id",
+            "name": "group-8-name",
+            "on": "group-8-on",
+            "brightness": "group-8-brightness",
+            "count": "group-8-count"
+          },
+          {
+            "id": "group-9-id",
+            "name": "group-9-name",
+            "on": "group-9-on",
+            "brightness": "group-9-brightness",
+            "count": "group-9-count"
+          },
+          {
+            "id": "group-10-id",
+            "name": "group-10-name",
+            "on": "group-10-on",
+            "brightness": "group-10-brightness",
+            "count": "group-10-count"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "group-1-id",
+            "type": "string"
+          },
+          {
+            "key": "group-1-name",
+            "type": "string"
+          },
+          {
+            "key": "group-1-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-1-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-1-count",
+            "type": "number"
+          },
+          {
+            "key": "group-2-id",
+            "type": "string"
+          },
+          {
+            "key": "group-2-name",
+            "type": "string"
+          },
+          {
+            "key": "group-2-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-2-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-2-count",
+            "type": "number"
+          },
+          {
+            "key": "group-3-id",
+            "type": "string"
+          },
+          {
+            "key": "group-3-name",
+            "type": "string"
+          },
+          {
+            "key": "group-3-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-3-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-3-count",
+            "type": "number"
+          },
+          {
+            "key": "group-4-id",
+            "type": "string"
+          },
+          {
+            "key": "group-4-name",
+            "type": "string"
+          },
+          {
+            "key": "group-4-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-4-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-4-count",
+            "type": "number"
+          },
+          {
+            "key": "group-5-id",
+            "type": "string"
+          },
+          {
+            "key": "group-5-name",
+            "type": "string"
+          },
+          {
+            "key": "group-5-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-5-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-5-count",
+            "type": "number"
+          },
+          {
+            "key": "group-6-id",
+            "type": "string"
+          },
+          {
+            "key": "group-6-name",
+            "type": "string"
+          },
+          {
+            "key": "group-6-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-6-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-6-count",
+            "type": "number"
+          },
+          {
+            "key": "group-7-id",
+            "type": "string"
+          },
+          {
+            "key": "group-7-name",
+            "type": "string"
+          },
+          {
+            "key": "group-7-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-7-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-7-count",
+            "type": "number"
+          },
+          {
+            "key": "group-8-id",
+            "type": "string"
+          },
+          {
+            "key": "group-8-name",
+            "type": "string"
+          },
+          {
+            "key": "group-8-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-8-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-8-count",
+            "type": "number"
+          },
+          {
+            "key": "group-9-id",
+            "type": "string"
+          },
+          {
+            "key": "group-9-name",
+            "type": "string"
+          },
+          {
+            "key": "group-9-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-9-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-9-count",
+            "type": "number"
+          },
+          {
+            "key": "group-10-id",
+            "type": "string"
+          },
+          {
+            "key": "group-10-name",
+            "type": "string"
+          },
+          {
+            "key": "group-10-on",
+            "type": "boolean"
+          },
+          {
+            "key": "group-10-brightness",
+            "type": "number"
+          },
+          {
+            "key": "group-10-count",
+            "type": "number"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh lights and groups",
+      "parameters": [],
+      "description": "Read this legacy gateway without changing lights."
+    },
+    {
+      "id": "reconnect",
+      "name": "Reauthenticate gateway",
+      "parameters": [],
+      "description": "Authenticate with the configured printed gateway code and protect the resulting credentials."
+    },
+    {
+      "id": "light-power",
+      "name": "Set light power",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported light ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "on",
+          "label": "On",
+          "type": "boolean",
+          "required": true,
+          "default": true
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "light-brightness",
+      "name": "Set light brightness",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported light ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "value",
+          "label": "Value (%)",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100,
+          "default": 50
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "light-temperature",
+      "name": "Set light white temperature",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported light ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "value",
+          "label": "Value (%)",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100,
+          "default": 50
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "light-color",
+      "name": "Set light color",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported light ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "color",
+          "label": "Color (#RRGGBB)",
+          "type": "string",
+          "required": true,
+          "maxLength": 7,
+          "default": "#ffffff"
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "group-power",
+      "name": "Set group power",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported group ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "on",
+          "label": "On",
+          "type": "boolean",
+          "required": true,
+          "default": true
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "group-brightness",
+      "name": "Set group brightness",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported group ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "value",
+          "label": "Value (%)",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100,
+          "default": 50
+        }
+      ],
+      "description": "Send one explicit lighting command; subsequent readings confirm actual state."
+    },
+    {
+      "id": "light-state",
+      "name": "Restore light state",
+      "description": "Restore captured power, brightness and supported colour settings together in one light command.",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported light ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "on",
+          "label": "On",
+          "type": "boolean",
+          "required": true,
+          "default": true
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "temperature",
+          "label": "White temperature (%) — white bulbs only",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "hue",
+          "label": "Hue (degrees) — RGB bulbs only",
+          "type": "number",
+          "min": 0,
+          "max": 360
+        },
+        {
+          "id": "saturation",
+          "label": "Saturation (%) — RGB bulbs only",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "run-scene",
+      "name": "Run lighting scene",
+      "description": "Run an enabled scene saved on the TRÅDFRI lighting remote, then continue with the next Task step.",
+      "parameters": [
+        {
+          "id": "scene-id",
+          "label": "Lighting scene",
+          "type": "string",
+          "required": true,
+          "maxLength": 161,
+          "pattern": "^[a-zA-Z0-9-]{1,80}/[a-zA-Z0-9-]{1,80}$",
+          "help": "Save and enable scenes under Controls → TRÅDFRI → Scenes. The Controls page must also be enabled."
+        }
+      ]
+    }
+  ],
+  "controls": {
+    "actions": [
+      "refresh",
+      "light-power",
+      "light-brightness",
+      "light-temperature",
+      "light-color",
+      "group-power",
+      "group-brightness",
+      "light-state"
+    ],
+    "lighting": {
+      "lights": [
+        "lights",
+        "lights-2"
+      ],
+      "details": [
+        "light-details",
+        "light-details-2"
+      ],
+      "groups": "groups",
+      "received": "received-at",
+      "identitySetting": "host",
+      "identityState": "gateway-host",
+      "actions": {
+        "lightPower": "light-power",
+        "lightBrightness": "light-brightness",
+        "lightTemperature": "light-temperature",
+        "lightColor": "light-color",
+        "lightState": "light-state",
+        "groupPower": "group-power",
+        "groupBrightness": "group-brightness",
+        "refresh": "refresh"
+      }
+    },
+    "taskSceneAction": "run-scene"
+  },
+  "events": [
+    {
+      "id": "status-updated",
+      "name": "Lights updated",
+      "testAction": "refresh",
+      "description": "A committed gateway reading; typed Task rules retain true-edge behavior.",
+      "payload": [
+        {
+          "id": "light-count",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "lights-on",
+          "type": "number",
+          "min": 0
+        }
+      ]
+    },
+    {
+      "id": "light-changed",
+      "name": "Light changed",
+      "occurrenceKey": "change-id",
+      "description": "An observed reported-light change, claimed before dispatch; first readings establish baselines.",
+      "payload": [
+        {
+          "id": "id",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "name",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "on",
+          "type": "boolean"
+        },
+        {
+          "id": "brightness",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "reachable",
+          "type": "boolean"
+        },
+        {
+          "id": "change-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "nordic",
+      "name": "Nordic",
+      "sourceLabel": "Data source",
+      "directory": "cards/nordic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "on",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "clock",
+          "field": "current-time",
+          "format": "time"
+        },
+        {
+          "id": "sunrise",
+          "field": "sunrise-time",
+          "format": "time"
+        },
+        {
+          "id": "sunset",
+          "field": "sunset-time",
+          "format": "time"
+        },
+        {
+          "id": "bulb-1-brightness",
+          "field": "light-1-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-1-color",
+          "field": "light-1-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-2-brightness",
+          "field": "light-2-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-2-color",
+          "field": "light-2-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-3-brightness",
+          "field": "light-3-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-3-color",
+          "field": "light-3-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-4-brightness",
+          "field": "light-4-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-4-color",
+          "field": "light-4-color",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ],
+      "variant": {
+        "slot": "on",
+        "fallback": "unknown",
+        "choices": {
+          "dark": [
+            "0"
+          ],
+          "lit": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50"
+          ],
+          "lit-many": [
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100"
+          ]
+        }
+      }
+    }
+  ]
+}

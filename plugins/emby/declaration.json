@@ -1,0 +1,1248 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "emby",
+  "name": "Emby",
+  "version": "1.0.0",
+  "description": "Reported playback sessions from your Emby server",
+  "icon": "movie",
+  "defaultCardLayout": "table",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "server-url",
+      "label": "Server URL",
+      "type": "string",
+      "default": "",
+      "maxLength": 200,
+      "help": "Private IPv4 or loopback address with explicit port, for example http://192.168.0.10:8096. HTTPS requires a trusted certificate. No discovery or redirects."
+    },
+    {
+      "id": "api-key",
+      "label": "API key",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 256,
+      "pattern": "^(?:[A-Za-z0-9_-]{16,256})?$",
+      "help": "Paste only the dedicated API key value from the Emby dashboard, without its application name, label or spaces. Used only for read-only session requests; never sent to Cards or Tasks."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "required": true,
+      "default": 0.5,
+      "min": 0.16666666666666666,
+      "max": 1,
+      "enum": [
+        0.16666666666666666,
+        0.5,
+        1
+      ],
+      "enumLabels": [
+        "10 seconds",
+        "30 seconds",
+        "1 minute"
+      ],
+      "help": "Reads reported sessions serially. Playback events are observed changes; no playback commands are sent."
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "session-count",
+      "label": "Reported sessions",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-count"
+      }
+    },
+    {
+      "id": "active-count",
+      "label": "Sessions with media",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "active-count"
+      }
+    },
+    {
+      "id": "playing-count",
+      "label": "Playing sessions",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "playing-count"
+      }
+    },
+    {
+      "id": "paused-count",
+      "label": "Paused sessions",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "paused-count"
+      }
+    },
+    {
+      "id": "row-count",
+      "label": "Displayed sessions",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "row-count"
+      }
+    },
+    {
+      "id": "list-limited",
+      "label": "List limited to ten sessions",
+      "type": "boolean",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "list-limited"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "attempted-at",
+      "label": "Last attempted read",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "attempted-at"
+      }
+    },
+    {
+      "id": "poll-status",
+      "label": "Latest read status",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "poll-status"
+      }
+    },
+    {
+      "id": "current-title",
+      "label": "Title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-title"
+      }
+    },
+    {
+      "id": "current-series",
+      "label": "Series",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-series"
+      }
+    },
+    {
+      "id": "current-type",
+      "label": "Item type",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-type"
+      }
+    },
+    {
+      "id": "current-user",
+      "label": "User",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-user"
+      }
+    },
+    {
+      "id": "current-device",
+      "label": "Device",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-device"
+      }
+    },
+    {
+      "id": "current-client",
+      "label": "Client",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-client"
+      }
+    },
+    {
+      "id": "current-state",
+      "label": "Playback state",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-state"
+      }
+    },
+    {
+      "id": "current-position",
+      "label": "Position (seconds)",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-position"
+      }
+    },
+    {
+      "id": "current-duration",
+      "label": "Duration (seconds)",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-duration"
+      }
+    },
+    {
+      "id": "current-progress",
+      "label": "Progress (%)",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-progress"
+      }
+    },
+    {
+      "id": "current-muted",
+      "label": "Muted",
+      "type": "boolean",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-muted"
+      }
+    },
+    {
+      "id": "current-volume",
+      "label": "Volume (%)",
+      "type": "number",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "current-volume"
+      }
+    },
+    {
+      "id": "session-1-title",
+      "label": "Session 1 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-1-title"
+      }
+    },
+    {
+      "id": "session-2-title",
+      "label": "Session 2 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-2-title"
+      }
+    },
+    {
+      "id": "session-3-title",
+      "label": "Session 3 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-3-title"
+      }
+    },
+    {
+      "id": "session-4-title",
+      "label": "Session 4 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-4-title"
+      }
+    },
+    {
+      "id": "session-5-title",
+      "label": "Session 5 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-5-title"
+      }
+    },
+    {
+      "id": "session-6-title",
+      "label": "Session 6 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-6-title"
+      }
+    },
+    {
+      "id": "session-7-title",
+      "label": "Session 7 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-7-title"
+      }
+    },
+    {
+      "id": "session-8-title",
+      "label": "Session 8 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-8-title"
+      }
+    },
+    {
+      "id": "session-9-title",
+      "label": "Session 9 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-9-title"
+      }
+    },
+    {
+      "id": "session-10-title",
+      "label": "Session 10 title",
+      "type": "string",
+      "icon": "play",
+      "source": {
+        "kind": "state",
+        "key": "session-10-title"
+      }
+    },
+    {
+      "id": "sessions",
+      "label": "Sessions",
+      "type": "table",
+      "icon": "play",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string"
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string"
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string"
+        },
+        {
+          "id": "client",
+          "label": "Client",
+          "type": "string"
+        },
+        {
+          "id": "state",
+          "label": "Playback",
+          "type": "string"
+        },
+        {
+          "id": "position",
+          "label": "Position (seconds)",
+          "type": "number"
+        },
+        {
+          "id": "progress",
+          "label": "Progress (%)",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "row-count",
+        "rows": [
+          {
+            "title": "session-1-title",
+            "user": "session-1-user",
+            "device": "session-1-device",
+            "client": "session-1-client",
+            "state": "session-1-state",
+            "position": "session-1-position",
+            "progress": "session-1-progress"
+          },
+          {
+            "title": "session-2-title",
+            "user": "session-2-user",
+            "device": "session-2-device",
+            "client": "session-2-client",
+            "state": "session-2-state",
+            "position": "session-2-position",
+            "progress": "session-2-progress"
+          },
+          {
+            "title": "session-3-title",
+            "user": "session-3-user",
+            "device": "session-3-device",
+            "client": "session-3-client",
+            "state": "session-3-state",
+            "position": "session-3-position",
+            "progress": "session-3-progress"
+          },
+          {
+            "title": "session-4-title",
+            "user": "session-4-user",
+            "device": "session-4-device",
+            "client": "session-4-client",
+            "state": "session-4-state",
+            "position": "session-4-position",
+            "progress": "session-4-progress"
+          },
+          {
+            "title": "session-5-title",
+            "user": "session-5-user",
+            "device": "session-5-device",
+            "client": "session-5-client",
+            "state": "session-5-state",
+            "position": "session-5-position",
+            "progress": "session-5-progress"
+          },
+          {
+            "title": "session-6-title",
+            "user": "session-6-user",
+            "device": "session-6-device",
+            "client": "session-6-client",
+            "state": "session-6-state",
+            "position": "session-6-position",
+            "progress": "session-6-progress"
+          },
+          {
+            "title": "session-7-title",
+            "user": "session-7-user",
+            "device": "session-7-device",
+            "client": "session-7-client",
+            "state": "session-7-state",
+            "position": "session-7-position",
+            "progress": "session-7-progress"
+          },
+          {
+            "title": "session-8-title",
+            "user": "session-8-user",
+            "device": "session-8-device",
+            "client": "session-8-client",
+            "state": "session-8-state",
+            "position": "session-8-position",
+            "progress": "session-8-progress"
+          },
+          {
+            "title": "session-9-title",
+            "user": "session-9-user",
+            "device": "session-9-device",
+            "client": "session-9-client",
+            "state": "session-9-state",
+            "position": "session-9-position",
+            "progress": "session-9-progress"
+          },
+          {
+            "title": "session-10-title",
+            "user": "session-10-user",
+            "device": "session-10-device",
+            "client": "session-10-client",
+            "state": "session-10-state",
+            "position": "session-10-position",
+            "progress": "session-10-progress"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "session-1-user",
+            "type": "string"
+          },
+          {
+            "key": "session-1-device",
+            "type": "string"
+          },
+          {
+            "key": "session-1-client",
+            "type": "string"
+          },
+          {
+            "key": "session-1-state",
+            "type": "string"
+          },
+          {
+            "key": "session-1-position",
+            "type": "number"
+          },
+          {
+            "key": "session-1-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-2-user",
+            "type": "string"
+          },
+          {
+            "key": "session-2-device",
+            "type": "string"
+          },
+          {
+            "key": "session-2-client",
+            "type": "string"
+          },
+          {
+            "key": "session-2-state",
+            "type": "string"
+          },
+          {
+            "key": "session-2-position",
+            "type": "number"
+          },
+          {
+            "key": "session-2-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-3-user",
+            "type": "string"
+          },
+          {
+            "key": "session-3-device",
+            "type": "string"
+          },
+          {
+            "key": "session-3-client",
+            "type": "string"
+          },
+          {
+            "key": "session-3-state",
+            "type": "string"
+          },
+          {
+            "key": "session-3-position",
+            "type": "number"
+          },
+          {
+            "key": "session-3-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-4-user",
+            "type": "string"
+          },
+          {
+            "key": "session-4-device",
+            "type": "string"
+          },
+          {
+            "key": "session-4-client",
+            "type": "string"
+          },
+          {
+            "key": "session-4-state",
+            "type": "string"
+          },
+          {
+            "key": "session-4-position",
+            "type": "number"
+          },
+          {
+            "key": "session-4-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-5-user",
+            "type": "string"
+          },
+          {
+            "key": "session-5-device",
+            "type": "string"
+          },
+          {
+            "key": "session-5-client",
+            "type": "string"
+          },
+          {
+            "key": "session-5-state",
+            "type": "string"
+          },
+          {
+            "key": "session-5-position",
+            "type": "number"
+          },
+          {
+            "key": "session-5-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-6-user",
+            "type": "string"
+          },
+          {
+            "key": "session-6-device",
+            "type": "string"
+          },
+          {
+            "key": "session-6-client",
+            "type": "string"
+          },
+          {
+            "key": "session-6-state",
+            "type": "string"
+          },
+          {
+            "key": "session-6-position",
+            "type": "number"
+          },
+          {
+            "key": "session-6-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-7-user",
+            "type": "string"
+          },
+          {
+            "key": "session-7-device",
+            "type": "string"
+          },
+          {
+            "key": "session-7-client",
+            "type": "string"
+          },
+          {
+            "key": "session-7-state",
+            "type": "string"
+          },
+          {
+            "key": "session-7-position",
+            "type": "number"
+          },
+          {
+            "key": "session-7-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-8-user",
+            "type": "string"
+          },
+          {
+            "key": "session-8-device",
+            "type": "string"
+          },
+          {
+            "key": "session-8-client",
+            "type": "string"
+          },
+          {
+            "key": "session-8-state",
+            "type": "string"
+          },
+          {
+            "key": "session-8-position",
+            "type": "number"
+          },
+          {
+            "key": "session-8-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-9-user",
+            "type": "string"
+          },
+          {
+            "key": "session-9-device",
+            "type": "string"
+          },
+          {
+            "key": "session-9-client",
+            "type": "string"
+          },
+          {
+            "key": "session-9-state",
+            "type": "string"
+          },
+          {
+            "key": "session-9-position",
+            "type": "number"
+          },
+          {
+            "key": "session-9-progress",
+            "type": "number"
+          },
+          {
+            "key": "session-10-user",
+            "type": "string"
+          },
+          {
+            "key": "session-10-device",
+            "type": "string"
+          },
+          {
+            "key": "session-10-client",
+            "type": "string"
+          },
+          {
+            "key": "session-10-state",
+            "type": "string"
+          },
+          {
+            "key": "session-10-position",
+            "type": "number"
+          },
+          {
+            "key": "session-10-progress",
+            "type": "number"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh Emby sessions",
+      "description": "Read sessions from the configured Emby server. Does not control playback.",
+      "parameters": []
+    }
+  ],
+  "events": [
+    {
+      "id": "reading-updated",
+      "name": "Emby reading updated",
+      "testAction": "refresh",
+      "description": "A successful session read, including no sessions.",
+      "payload": [
+        {
+          "id": "sessions",
+          "label": "Sessions sessions",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "active",
+          "label": "Active sessions",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "playing",
+          "label": "Playing sessions",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "paused",
+          "label": "Paused sessions",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "state",
+          "label": "Playback state",
+          "type": "string",
+          "maxLength": 20
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string",
+          "maxLength": 80
+        }
+      ]
+    },
+    {
+      "id": "playback-started",
+      "name": "Playback started",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A newly observed playback change between recent successful reads. First reads/restarts baseline; no replay.",
+      "payload": [
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "state",
+          "label": "Playback state",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "series",
+          "label": "Series",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "type",
+          "label": "Item type",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "client",
+          "label": "Client",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "position",
+          "label": "Position (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "progress",
+          "label": "Progress (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "label": "Muted",
+          "type": "boolean"
+        },
+        {
+          "id": "volume",
+          "label": "Volume (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "playback-paused",
+      "name": "Playback paused",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A newly observed playback change between recent successful reads. First reads/restarts baseline; no replay.",
+      "payload": [
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "state",
+          "label": "Playback state",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "series",
+          "label": "Series",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "type",
+          "label": "Item type",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "client",
+          "label": "Client",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "position",
+          "label": "Position (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "progress",
+          "label": "Progress (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "label": "Muted",
+          "type": "boolean"
+        },
+        {
+          "id": "volume",
+          "label": "Volume (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "playback-resumed",
+      "name": "Playback resumed",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A newly observed playback change between recent successful reads. First reads/restarts baseline; no replay.",
+      "payload": [
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "state",
+          "label": "Playback state",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "series",
+          "label": "Series",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "type",
+          "label": "Item type",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "client",
+          "label": "Client",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "position",
+          "label": "Position (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "progress",
+          "label": "Progress (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "label": "Muted",
+          "type": "boolean"
+        },
+        {
+          "id": "volume",
+          "label": "Volume (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "playback-stopped",
+      "name": "Playback stopped",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "Previously reported media is now explicitly idle. Missing sessions/data do not prove a stop.",
+      "payload": [
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "state",
+          "label": "Playback state",
+          "type": "string",
+          "required": true,
+          "maxLength": 20
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 160
+        },
+        {
+          "id": "series",
+          "label": "Series",
+          "type": "string",
+          "maxLength": 120
+        },
+        {
+          "id": "type",
+          "label": "Item type",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "user",
+          "label": "User",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "device",
+          "label": "Device",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "client",
+          "label": "Client",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "position",
+          "label": "Position (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "duration",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "progress",
+          "label": "Progress (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "label": "Muted",
+          "type": "boolean"
+        },
+        {
+          "id": "volume",
+          "label": "Volume (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "screening",
+      "name": "Screening room",
+      "directory": "cards/screening",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "current-title",
+          "format": "text"
+        },
+        {
+          "id": "series",
+          "field": "current-series",
+          "format": "text"
+        },
+        {
+          "id": "device",
+          "field": "current-device",
+          "format": "text"
+        },
+        {
+          "id": "playback",
+          "field": "current-state",
+          "format": "text"
+        },
+        {
+          "id": "progress",
+          "field": "current-progress",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "sessions",
+          "field": "sessions",
+          "format": "table",
+          "columns": [
+            "title",
+            "device",
+            "state",
+            "progress"
+          ],
+          "rows": 10
+        }
+      ]
+    }
+  ]
+}

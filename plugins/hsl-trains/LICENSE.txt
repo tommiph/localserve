@@ -1,0 +1,17 @@
+Station catalogue and runtime railway information
+
+Source: Fintraffic / Digitraffic, https://www.digitraffic.fi/
+License: Creative Commons Attribution 4.0 International (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+Legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+Provider terms: https://www.digitraffic.fi/en/terms-of-service/
+
+Bundled stations.json derives from:
+https://rata.digitraffic.fi/api/v1/metadata/stations
+Retrieved 2026-10-13. Filtered to passenger stations, reduced to code/name and
+sorted by Finnish name. Timetables are filtered, bounded and formatted by
+Localserve. Provider data can contain errors or omissions; times/event delivery
+are not guaranteed. Fintraffic advises against safety-critical use of this data.
+
+No third-party code library is included. This notice concerns provider data,
+not a claim of ownership over the upstream material.

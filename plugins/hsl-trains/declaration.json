@@ -1,0 +1,3520 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "hsl-trains",
+  "name": "HSL Trains",
+  "version": "1.0.0",
+  "description": "Finnish passenger train station boards · Source: Fintraffic / Digitraffic, CC BY 4.0",
+  "icon": "train",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "defaultCardLayout": "table",
+  "attribution": {
+    "label": "Fintraffic / Digitraffic",
+    "url": "https://www.digitraffic.fi/en/railway-traffic/",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "licenseLabel": "CC BY 4.0",
+    "notice": "Filtered and formatted by Localserve"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "location-id"
+  },
+  "instances": {
+    "setting": "locations",
+    "stateKey": "locations",
+    "eventKey": "location-id"
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 1,
+      "min": 1,
+      "max": 5,
+      "enum": [
+        1,
+        2,
+        5
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes"
+      ],
+      "help": "Applies per enabled location. Serial requests are staggered; API caching and slow requests can delay events."
+    },
+    {
+      "id": "locations",
+      "label": "Locations",
+      "type": "list",
+      "itemLabel": "location",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name"
+      ],
+      "help": "Named Finnish station boards. Add separate route or line filters at the same station. Source: Fintraffic / Digitraffic (CC BY 4.0).",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "format": "identifier"
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station",
+          "type": "string",
+          "maxLength": 32,
+          "pattern": "^[\\p{L}\\p{N} -]{0,32}$",
+          "suggestions": [
+            {
+              "value": "AIN",
+              "label": "Ainola (AIN)"
+            },
+            {
+              "value": "ALV",
+              "label": "Alavus (ALV)"
+            },
+            {
+              "value": "AVP",
+              "label": "Aviapolis (AVP)"
+            },
+            {
+              "value": "DRA",
+              "label": "Dragsvik (DRA)"
+            },
+            {
+              "value": "EPZ",
+              "label": "Eläinpuisto-Zoo (EPZ)"
+            },
+            {
+              "value": "ENO",
+              "label": "Eno (ENO)"
+            },
+            {
+              "value": "EPO",
+              "label": "Espoo (EPO)"
+            },
+            {
+              "value": "HPJ",
+              "label": "Haapajärvi (HPJ)"
+            },
+            {
+              "value": "HPK",
+              "label": "Haapamäki (HPK)"
+            },
+            {
+              "value": "HPA",
+              "label": "Haaparanta pohjoinen (HPA)"
+            },
+            {
+              "value": "HAA",
+              "label": "Haarajoki (HAA)"
+            },
+            {
+              "value": "HSI",
+              "label": "Haksi (HSI)"
+            },
+            {
+              "value": "HKS",
+              "label": "Hankasalmi (HKS)"
+            },
+            {
+              "value": "HNK",
+              "label": "Hanko asema (HNK)"
+            },
+            {
+              "value": "HKP",
+              "label": "Hanko-Pohjoinen (HKP)"
+            },
+            {
+              "value": "HVA",
+              "label": "Harjavalta (HVA)"
+            },
+            {
+              "value": "HNV",
+              "label": "Heinävesi (HNV)"
+            },
+            {
+              "value": "HKI",
+              "label": "Helsinki asema (HKI)"
+            },
+            {
+              "value": "HNN",
+              "label": "Henna (HNN)"
+            },
+            {
+              "value": "HR",
+              "label": "Herrala (HR)"
+            },
+            {
+              "value": "HKH",
+              "label": "Hiekkaharju (HKH)"
+            },
+            {
+              "value": "HK",
+              "label": "Hikiä (HK)"
+            },
+            {
+              "value": "HLS",
+              "label": "Hillosensalmi (HLS)"
+            },
+            {
+              "value": "HH",
+              "label": "Hinthaara (HH)"
+            },
+            {
+              "value": "HP",
+              "label": "Humppila (HP)"
+            },
+            {
+              "value": "HPL",
+              "label": "Huopalahti (HPL)"
+            },
+            {
+              "value": "HY",
+              "label": "Hyvinkää asema (HY)"
+            },
+            {
+              "value": "HL",
+              "label": "Hämeenlinna (HL)"
+            },
+            {
+              "value": "HM",
+              "label": "Härmä (HM)"
+            },
+            {
+              "value": "HÖL",
+              "label": "Höljäkkä (HÖL)"
+            },
+            {
+              "value": "ILM",
+              "label": "Iisalmi (ILM)"
+            },
+            {
+              "value": "ITA",
+              "label": "Iittala (ITA)"
+            },
+            {
+              "value": "ILA",
+              "label": "Ilmala asema (ILA)"
+            },
+            {
+              "value": "IMR",
+              "label": "Imatra asema (IMR)"
+            },
+            {
+              "value": "IKR",
+              "label": "Inkeroinen (IKR)"
+            },
+            {
+              "value": "IKO",
+              "label": "Inkoo (IKO)"
+            },
+            {
+              "value": "IKY",
+              "label": "Isokyrö (IKY)"
+            },
+            {
+              "value": "JNS",
+              "label": "Joensuu asema (JNS)"
+            },
+            {
+              "value": "JK",
+              "label": "Jokela (JK)"
+            },
+            {
+              "value": "JRS",
+              "label": "Jorvas (JRS)"
+            },
+            {
+              "value": "JTS",
+              "label": "Joutseno (JTS)"
+            },
+            {
+              "value": "JJ",
+              "label": "Juupajoki (JJ)"
+            },
+            {
+              "value": "JY",
+              "label": "Jyväskylä (JY)"
+            },
+            {
+              "value": "JÄS",
+              "label": "Jämsä (JÄS)"
+            },
+            {
+              "value": "JR",
+              "label": "Järvelä (JR)"
+            },
+            {
+              "value": "JP",
+              "label": "Järvenpää asema (JP)"
+            },
+            {
+              "value": "KAJ",
+              "label": "Kajaani (KAJ)"
+            },
+            {
+              "value": "KAN",
+              "label": "Kannelmäki (KAN)"
+            },
+            {
+              "value": "KNS",
+              "label": "Kannus (KNS)"
+            },
+            {
+              "value": "KR",
+              "label": "Karjaa (KR)"
+            },
+            {
+              "value": "KRU",
+              "label": "Karkku (KRU)"
+            },
+            {
+              "value": "KHA",
+              "label": "Kauhava (KHA)"
+            },
+            {
+              "value": "KLH",
+              "label": "Kauklahti asema (KLH)"
+            },
+            {
+              "value": "KNI",
+              "label": "Kauniainen (KNI)"
+            },
+            {
+              "value": "KA",
+              "label": "Kausala (KA)"
+            },
+            {
+              "value": "KEM",
+              "label": "Kemi asema (KEM)"
+            },
+            {
+              "value": "KJÄ",
+              "label": "Kemijärvi (KJÄ)"
+            },
+            {
+              "value": "KML",
+              "label": "Kempele (KML)"
+            },
+            {
+              "value": "KEA",
+              "label": "Kera (KEA)"
+            },
+            {
+              "value": "KE",
+              "label": "Kerava asema (KE)"
+            },
+            {
+              "value": "KIÄ",
+              "label": "Kerimäki (KIÄ)"
+            },
+            {
+              "value": "KTI",
+              "label": "Kesälahti (KTI)"
+            },
+            {
+              "value": "KEU",
+              "label": "Keuruu (KEU)"
+            },
+            {
+              "value": "KIA",
+              "label": "Kiiala (KIA)"
+            },
+            {
+              "value": "KIL",
+              "label": "Kilo (KIL)"
+            },
+            {
+              "value": "KKN",
+              "label": "Kirkkonummi (KKN)"
+            },
+            {
+              "value": "KIT",
+              "label": "Kitee (KIT)"
+            },
+            {
+              "value": "KRV",
+              "label": "Kiuruvesi (KRV)"
+            },
+            {
+              "value": "KTÖ",
+              "label": "Kivistö (KTÖ)"
+            },
+            {
+              "value": "KOH",
+              "label": "Kohtavaara (KOH)"
+            },
+            {
+              "value": "KVH",
+              "label": "Koivuhovi (KVH)"
+            },
+            {
+              "value": "KVY",
+              "label": "Koivukylä (KVY)"
+            },
+            {
+              "value": "KKI",
+              "label": "Kokemäki (KKI)"
+            },
+            {
+              "value": "KOK",
+              "label": "Kokkola (KOK)"
+            },
+            {
+              "value": "KLI",
+              "label": "Kolari (KLI)"
+            },
+            {
+              "value": "KLO",
+              "label": "Kolho (KLO)"
+            },
+            {
+              "value": "KON",
+              "label": "Kontiomäki (KON)"
+            },
+            {
+              "value": "KRA",
+              "label": "Koria (KRA)"
+            },
+            {
+              "value": "KRS",
+              "label": "Korso (KRS)"
+            },
+            {
+              "value": "KTA",
+              "label": "Kotka asema (KTA)"
+            },
+            {
+              "value": "KTS",
+              "label": "Kotkan satama (KTS)"
+            },
+            {
+              "value": "KV",
+              "label": "Kouvola asema (KV)"
+            },
+            {
+              "value": "KUO",
+              "label": "Kuopio asema (KUO)"
+            },
+            {
+              "value": "KUT",
+              "label": "Kupittaa (KUT)"
+            },
+            {
+              "value": "KYN",
+              "label": "Kylänlahti (KYN)"
+            },
+            {
+              "value": "KY",
+              "label": "Kymi (KY)"
+            },
+            {
+              "value": "KLN",
+              "label": "Kyminlinna (KLN)"
+            },
+            {
+              "value": "KÄP",
+              "label": "Käpylä (KÄP)"
+            },
+            {
+              "value": "LH",
+              "label": "Lahti (LH)"
+            },
+            {
+              "value": "LAI",
+              "label": "Laihia (LAI)"
+            },
+            {
+              "value": "LNA",
+              "label": "Lapinlahti (LNA)"
+            },
+            {
+              "value": "LR",
+              "label": "Lappeenranta (LR)"
+            },
+            {
+              "value": "LAA",
+              "label": "Lappila (LAA)"
+            },
+            {
+              "value": "LPO",
+              "label": "Lappohja (LPO)"
+            },
+            {
+              "value": "LPA",
+              "label": "Lapua (LPA)"
+            },
+            {
+              "value": "LNÄ",
+              "label": "Leinelä (LNÄ)"
+            },
+            {
+              "value": "LPÄ",
+              "label": "Lempäälä (LPÄ)"
+            },
+            {
+              "value": "LEN",
+              "label": "Lentoasema (LEN)"
+            },
+            {
+              "value": "LPV",
+              "label": "Leppävaara (LPV)"
+            },
+            {
+              "value": "LIS",
+              "label": "Lieksa (LIS)"
+            },
+            {
+              "value": "LVT",
+              "label": "Lievestuore (LVT)"
+            },
+            {
+              "value": "LM",
+              "label": "Loimaa (LM)"
+            },
+            {
+              "value": "LOH",
+              "label": "Louhela (LOH)"
+            },
+            {
+              "value": "LUS",
+              "label": "Lusto (LUS)"
+            },
+            {
+              "value": "ML",
+              "label": "Malmi (ML)"
+            },
+            {
+              "value": "MLO",
+              "label": "Malminkartano (MLO)"
+            },
+            {
+              "value": "MRL",
+              "label": "Martinlaakso (MRL)"
+            },
+            {
+              "value": "MAS",
+              "label": "Masala (MAS)"
+            },
+            {
+              "value": "MI",
+              "label": "Mikkeli (MI)"
+            },
+            {
+              "value": "MIS",
+              "label": "Misi (MIS)"
+            },
+            {
+              "value": "MLA",
+              "label": "Mommila (MLA)"
+            },
+            {
+              "value": "MVA",
+              "label": "Moskova_(Leningradski) (MVA)"
+            },
+            {
+              "value": "MH",
+              "label": "Muhos (MH)"
+            },
+            {
+              "value": "MUL",
+              "label": "Muurola (MUL)"
+            },
+            {
+              "value": "MKI",
+              "label": "Myllykoski (MKI)"
+            },
+            {
+              "value": "MY",
+              "label": "Myllymäki (MY)"
+            },
+            {
+              "value": "MYR",
+              "label": "Myyrmäki (MYR)"
+            },
+            {
+              "value": "MÄK",
+              "label": "Mäkkylä (MÄK)"
+            },
+            {
+              "value": "MLÄ",
+              "label": "Mäntsälä (MLÄ)"
+            },
+            {
+              "value": "MR",
+              "label": "Mäntyharju (MR)"
+            },
+            {
+              "value": "NSL",
+              "label": "Nastola (NSL)"
+            },
+            {
+              "value": "NLÄ",
+              "label": "Nikkilä (NLÄ)"
+            },
+            {
+              "value": "NVL",
+              "label": "Nivala (NVL)"
+            },
+            {
+              "value": "NOA",
+              "label": "Nokia (NOA)"
+            },
+            {
+              "value": "NRM",
+              "label": "Nurmes (NRM)"
+            },
+            {
+              "value": "OI",
+              "label": "Oitti (OI)"
+            },
+            {
+              "value": "OV",
+              "label": "Orivesi (OV)"
+            },
+            {
+              "value": "OVK",
+              "label": "Orivesi keskusta (OVK)"
+            },
+            {
+              "value": "OU",
+              "label": "Oulainen (OU)"
+            },
+            {
+              "value": "OL",
+              "label": "Oulu asema (OL)"
+            },
+            {
+              "value": "OLK",
+              "label": "Oulunkylä (OLK)"
+            },
+            {
+              "value": "PTI",
+              "label": "Paimenportti (PTI)"
+            },
+            {
+              "value": "PTO",
+              "label": "Paltamo (PTO)"
+            },
+            {
+              "value": "PAR",
+              "label": "Parikkala (PAR)"
+            },
+            {
+              "value": "PKO",
+              "label": "Parkano (PKO)"
+            },
+            {
+              "value": "PRL",
+              "label": "Parola (PRL)"
+            },
+            {
+              "value": "PSL",
+              "label": "Pasila asema (PSL)"
+            },
+            {
+              "value": "PAU",
+              "label": "Pasila autojuna-asema (PAU)"
+            },
+            {
+              "value": "PEL",
+              "label": "Pello (PEL)"
+            },
+            {
+              "value": "PVI",
+              "label": "Petäjävesi (PVI)"
+            },
+            {
+              "value": "PM",
+              "label": "Pieksämäki asema (PM)"
+            },
+            {
+              "value": "PTR",
+              "label": "Pietari_(Finljandski) (PTR)"
+            },
+            {
+              "value": "PTL",
+              "label": "Pietari_(Ladozhski) (PTL)"
+            },
+            {
+              "value": "PH",
+              "label": "Pihlajavesi (PH)"
+            },
+            {
+              "value": "PJM",
+              "label": "Pitäjänmäki (PJM)"
+            },
+            {
+              "value": "POH",
+              "label": "Pohjois-Haaga (POH)"
+            },
+            {
+              "value": "PRI",
+              "label": "Pori (PRI)"
+            },
+            {
+              "value": "PRV",
+              "label": "Porvoo (PRV)"
+            },
+            {
+              "value": "PLA",
+              "label": "Puistola (PLA)"
+            },
+            {
+              "value": "PMK",
+              "label": "Pukinmäki (PMK)"
+            },
+            {
+              "value": "PUN",
+              "label": "Punkaharju (PUN)"
+            },
+            {
+              "value": "PUR",
+              "label": "Purola (PUR)"
+            },
+            {
+              "value": "PHÄ",
+              "label": "Pyhäsalmi (PHÄ)"
+            },
+            {
+              "value": "PNÄ",
+              "label": "Pännäinen (PNÄ)"
+            },
+            {
+              "value": "PKY",
+              "label": "Pääskylahti (PKY)"
+            },
+            {
+              "value": "RKL",
+              "label": "Rekola (RKL)"
+            },
+            {
+              "value": "REE",
+              "label": "Retretti (REE)"
+            },
+            {
+              "value": "RI",
+              "label": "Riihimäki asema (RI)"
+            },
+            {
+              "value": "ROI",
+              "label": "Rovaniemi (ROI)"
+            },
+            {
+              "value": "RNN",
+              "label": "Runni (RNN)"
+            },
+            {
+              "value": "RKI",
+              "label": "Ruukki (RKI)"
+            },
+            {
+              "value": "RY",
+              "label": "Ryttylä (RY)"
+            },
+            {
+              "value": "SLO",
+              "label": "Salo (SLO)"
+            },
+            {
+              "value": "STA",
+              "label": "Santala (STA)"
+            },
+            {
+              "value": "SAU",
+              "label": "Saunakallio (SAU)"
+            },
+            {
+              "value": "SAV",
+              "label": "Savio (SAV)"
+            },
+            {
+              "value": "SL",
+              "label": "Savonlinna asema (SL)"
+            },
+            {
+              "value": "SK",
+              "label": "Seinäjoki asema (SK)"
+            },
+            {
+              "value": "SIJ",
+              "label": "Siilinjärvi asema (SIJ)"
+            },
+            {
+              "value": "SPL",
+              "label": "Simpele (SPL)"
+            },
+            {
+              "value": "STI",
+              "label": "Siuntio (STI)"
+            },
+            {
+              "value": "SGY",
+              "label": "Skogby (SGY)"
+            },
+            {
+              "value": "SKV",
+              "label": "Sukeva (SKV)"
+            },
+            {
+              "value": "SNJ",
+              "label": "Suonenjoki (SNJ)"
+            },
+            {
+              "value": "TMS",
+              "label": "Tammisaari (TMS)"
+            },
+            {
+              "value": "TPE",
+              "label": "Tampere asema (TPE)"
+            },
+            {
+              "value": "TNA",
+              "label": "Tapanila (TNA)"
+            },
+            {
+              "value": "TSL",
+              "label": "Tavastila (TSL)"
+            },
+            {
+              "value": "TK",
+              "label": "Tervajoki (TK)"
+            },
+            {
+              "value": "TRV",
+              "label": "Tervola (TRV)"
+            },
+            {
+              "value": "TSO",
+              "label": "Tesoma (TSO)"
+            },
+            {
+              "value": "TKL",
+              "label": "Tikkurila asema (TKL)"
+            },
+            {
+              "value": "TL",
+              "label": "Toijala (TL)"
+            },
+            {
+              "value": "TOL",
+              "label": "Tolsa (TOL)"
+            },
+            {
+              "value": "TOR",
+              "label": "Tornio (TOR)"
+            },
+            {
+              "value": "TRI",
+              "label": "Tornio-Itäinen (TRI)"
+            },
+            {
+              "value": "TRL",
+              "label": "Tuomarila (TRL)"
+            },
+            {
+              "value": "TU",
+              "label": "Turenki (TU)"
+            },
+            {
+              "value": "TKU",
+              "label": "Turku asema (TKU)"
+            },
+            {
+              "value": "TUS",
+              "label": "Turku satama (TUS)"
+            },
+            {
+              "value": "TUU",
+              "label": "Tuuri (TUU)"
+            },
+            {
+              "value": "TVE",
+              "label": "Tver (TVE)"
+            },
+            {
+              "value": "UIM",
+              "label": "Uimaharju (UIM)"
+            },
+            {
+              "value": "UTJ",
+              "label": "Utajärvi (UTJ)"
+            },
+            {
+              "value": "UKÄ",
+              "label": "Uusikylä (UKÄ)"
+            },
+            {
+              "value": "VAA",
+              "label": "Vaala (VAA)"
+            },
+            {
+              "value": "VS",
+              "label": "Vaasa (VS)"
+            },
+            {
+              "value": "VNA",
+              "label": "Vainikkala asema (VNA)"
+            },
+            {
+              "value": "VMO",
+              "label": "Valimo (VMO)"
+            },
+            {
+              "value": "VMA",
+              "label": "Vammala (VMA)"
+            },
+            {
+              "value": "VKS",
+              "label": "Vantaankoski (VKS)"
+            },
+            {
+              "value": "VAR",
+              "label": "Varkaus (VAR)"
+            },
+            {
+              "value": "VEH",
+              "label": "Vehkala (VEH)"
+            },
+            {
+              "value": "VTI",
+              "label": "Vihanti (VTI)"
+            },
+            {
+              "value": "VIH",
+              "label": "Vihtari (VIH)"
+            },
+            {
+              "value": "VIA",
+              "label": "Viiala (VIA)"
+            },
+            {
+              "value": "VNJ",
+              "label": "Viinijärvi (VNJ)"
+            },
+            {
+              "value": "VYB",
+              "label": "Viipuri (VYB)"
+            },
+            {
+              "value": "VLH",
+              "label": "Villähde (VLH)"
+            },
+            {
+              "value": "VLP",
+              "label": "Vilppula (VLP)"
+            },
+            {
+              "value": "VSL",
+              "label": "Vuonislahti (VSL)"
+            },
+            {
+              "value": "YST",
+              "label": "Ylistaro (YST)"
+            },
+            {
+              "value": "YTR",
+              "label": "Ylitornio (YTR)"
+            },
+            {
+              "value": "YV",
+              "label": "Ylivieska (YV)"
+            },
+            {
+              "value": "ÄHT",
+              "label": "Ähtäri (ÄHT)"
+            }
+          ],
+          "required": true,
+          "default": "KE",
+          "help": "Choose or type a station name/code. Kerava: KE; Pasila: PSL; Helsinki: HKI. Bundled passenger station catalogue; new codes can be typed."
+        },
+        {
+          "id": "direction",
+          "label": "Show trains",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "default": "departures",
+          "enum": [
+            "arrivals",
+            "departures",
+            "both"
+          ],
+          "enumLabels": [
+            "Arrivals",
+            "Departures",
+            "Arrivals and departures"
+          ]
+        },
+        {
+          "id": "other-station",
+          "label": "Route station",
+          "type": "string",
+          "maxLength": 32,
+          "pattern": "^[\\p{L}\\p{N} -]{0,32}$",
+          "suggestions": [
+            {
+              "value": "AIN",
+              "label": "Ainola (AIN)"
+            },
+            {
+              "value": "ALV",
+              "label": "Alavus (ALV)"
+            },
+            {
+              "value": "AVP",
+              "label": "Aviapolis (AVP)"
+            },
+            {
+              "value": "DRA",
+              "label": "Dragsvik (DRA)"
+            },
+            {
+              "value": "EPZ",
+              "label": "Eläinpuisto-Zoo (EPZ)"
+            },
+            {
+              "value": "ENO",
+              "label": "Eno (ENO)"
+            },
+            {
+              "value": "EPO",
+              "label": "Espoo (EPO)"
+            },
+            {
+              "value": "HPJ",
+              "label": "Haapajärvi (HPJ)"
+            },
+            {
+              "value": "HPK",
+              "label": "Haapamäki (HPK)"
+            },
+            {
+              "value": "HPA",
+              "label": "Haaparanta pohjoinen (HPA)"
+            },
+            {
+              "value": "HAA",
+              "label": "Haarajoki (HAA)"
+            },
+            {
+              "value": "HSI",
+              "label": "Haksi (HSI)"
+            },
+            {
+              "value": "HKS",
+              "label": "Hankasalmi (HKS)"
+            },
+            {
+              "value": "HNK",
+              "label": "Hanko asema (HNK)"
+            },
+            {
+              "value": "HKP",
+              "label": "Hanko-Pohjoinen (HKP)"
+            },
+            {
+              "value": "HVA",
+              "label": "Harjavalta (HVA)"
+            },
+            {
+              "value": "HNV",
+              "label": "Heinävesi (HNV)"
+            },
+            {
+              "value": "HKI",
+              "label": "Helsinki asema (HKI)"
+            },
+            {
+              "value": "HNN",
+              "label": "Henna (HNN)"
+            },
+            {
+              "value": "HR",
+              "label": "Herrala (HR)"
+            },
+            {
+              "value": "HKH",
+              "label": "Hiekkaharju (HKH)"
+            },
+            {
+              "value": "HK",
+              "label": "Hikiä (HK)"
+            },
+            {
+              "value": "HLS",
+              "label": "Hillosensalmi (HLS)"
+            },
+            {
+              "value": "HH",
+              "label": "Hinthaara (HH)"
+            },
+            {
+              "value": "HP",
+              "label": "Humppila (HP)"
+            },
+            {
+              "value": "HPL",
+              "label": "Huopalahti (HPL)"
+            },
+            {
+              "value": "HY",
+              "label": "Hyvinkää asema (HY)"
+            },
+            {
+              "value": "HL",
+              "label": "Hämeenlinna (HL)"
+            },
+            {
+              "value": "HM",
+              "label": "Härmä (HM)"
+            },
+            {
+              "value": "HÖL",
+              "label": "Höljäkkä (HÖL)"
+            },
+            {
+              "value": "ILM",
+              "label": "Iisalmi (ILM)"
+            },
+            {
+              "value": "ITA",
+              "label": "Iittala (ITA)"
+            },
+            {
+              "value": "ILA",
+              "label": "Ilmala asema (ILA)"
+            },
+            {
+              "value": "IMR",
+              "label": "Imatra asema (IMR)"
+            },
+            {
+              "value": "IKR",
+              "label": "Inkeroinen (IKR)"
+            },
+            {
+              "value": "IKO",
+              "label": "Inkoo (IKO)"
+            },
+            {
+              "value": "IKY",
+              "label": "Isokyrö (IKY)"
+            },
+            {
+              "value": "JNS",
+              "label": "Joensuu asema (JNS)"
+            },
+            {
+              "value": "JK",
+              "label": "Jokela (JK)"
+            },
+            {
+              "value": "JRS",
+              "label": "Jorvas (JRS)"
+            },
+            {
+              "value": "JTS",
+              "label": "Joutseno (JTS)"
+            },
+            {
+              "value": "JJ",
+              "label": "Juupajoki (JJ)"
+            },
+            {
+              "value": "JY",
+              "label": "Jyväskylä (JY)"
+            },
+            {
+              "value": "JÄS",
+              "label": "Jämsä (JÄS)"
+            },
+            {
+              "value": "JR",
+              "label": "Järvelä (JR)"
+            },
+            {
+              "value": "JP",
+              "label": "Järvenpää asema (JP)"
+            },
+            {
+              "value": "KAJ",
+              "label": "Kajaani (KAJ)"
+            },
+            {
+              "value": "KAN",
+              "label": "Kannelmäki (KAN)"
+            },
+            {
+              "value": "KNS",
+              "label": "Kannus (KNS)"
+            },
+            {
+              "value": "KR",
+              "label": "Karjaa (KR)"
+            },
+            {
+              "value": "KRU",
+              "label": "Karkku (KRU)"
+            },
+            {
+              "value": "KHA",
+              "label": "Kauhava (KHA)"
+            },
+            {
+              "value": "KLH",
+              "label": "Kauklahti asema (KLH)"
+            },
+            {
+              "value": "KNI",
+              "label": "Kauniainen (KNI)"
+            },
+            {
+              "value": "KA",
+              "label": "Kausala (KA)"
+            },
+            {
+              "value": "KEM",
+              "label": "Kemi asema (KEM)"
+            },
+            {
+              "value": "KJÄ",
+              "label": "Kemijärvi (KJÄ)"
+            },
+            {
+              "value": "KML",
+              "label": "Kempele (KML)"
+            },
+            {
+              "value": "KEA",
+              "label": "Kera (KEA)"
+            },
+            {
+              "value": "KE",
+              "label": "Kerava asema (KE)"
+            },
+            {
+              "value": "KIÄ",
+              "label": "Kerimäki (KIÄ)"
+            },
+            {
+              "value": "KTI",
+              "label": "Kesälahti (KTI)"
+            },
+            {
+              "value": "KEU",
+              "label": "Keuruu (KEU)"
+            },
+            {
+              "value": "KIA",
+              "label": "Kiiala (KIA)"
+            },
+            {
+              "value": "KIL",
+              "label": "Kilo (KIL)"
+            },
+            {
+              "value": "KKN",
+              "label": "Kirkkonummi (KKN)"
+            },
+            {
+              "value": "KIT",
+              "label": "Kitee (KIT)"
+            },
+            {
+              "value": "KRV",
+              "label": "Kiuruvesi (KRV)"
+            },
+            {
+              "value": "KTÖ",
+              "label": "Kivistö (KTÖ)"
+            },
+            {
+              "value": "KOH",
+              "label": "Kohtavaara (KOH)"
+            },
+            {
+              "value": "KVH",
+              "label": "Koivuhovi (KVH)"
+            },
+            {
+              "value": "KVY",
+              "label": "Koivukylä (KVY)"
+            },
+            {
+              "value": "KKI",
+              "label": "Kokemäki (KKI)"
+            },
+            {
+              "value": "KOK",
+              "label": "Kokkola (KOK)"
+            },
+            {
+              "value": "KLI",
+              "label": "Kolari (KLI)"
+            },
+            {
+              "value": "KLO",
+              "label": "Kolho (KLO)"
+            },
+            {
+              "value": "KON",
+              "label": "Kontiomäki (KON)"
+            },
+            {
+              "value": "KRA",
+              "label": "Koria (KRA)"
+            },
+            {
+              "value": "KRS",
+              "label": "Korso (KRS)"
+            },
+            {
+              "value": "KTA",
+              "label": "Kotka asema (KTA)"
+            },
+            {
+              "value": "KTS",
+              "label": "Kotkan satama (KTS)"
+            },
+            {
+              "value": "KV",
+              "label": "Kouvola asema (KV)"
+            },
+            {
+              "value": "KUO",
+              "label": "Kuopio asema (KUO)"
+            },
+            {
+              "value": "KUT",
+              "label": "Kupittaa (KUT)"
+            },
+            {
+              "value": "KYN",
+              "label": "Kylänlahti (KYN)"
+            },
+            {
+              "value": "KY",
+              "label": "Kymi (KY)"
+            },
+            {
+              "value": "KLN",
+              "label": "Kyminlinna (KLN)"
+            },
+            {
+              "value": "KÄP",
+              "label": "Käpylä (KÄP)"
+            },
+            {
+              "value": "LH",
+              "label": "Lahti (LH)"
+            },
+            {
+              "value": "LAI",
+              "label": "Laihia (LAI)"
+            },
+            {
+              "value": "LNA",
+              "label": "Lapinlahti (LNA)"
+            },
+            {
+              "value": "LR",
+              "label": "Lappeenranta (LR)"
+            },
+            {
+              "value": "LAA",
+              "label": "Lappila (LAA)"
+            },
+            {
+              "value": "LPO",
+              "label": "Lappohja (LPO)"
+            },
+            {
+              "value": "LPA",
+              "label": "Lapua (LPA)"
+            },
+            {
+              "value": "LNÄ",
+              "label": "Leinelä (LNÄ)"
+            },
+            {
+              "value": "LPÄ",
+              "label": "Lempäälä (LPÄ)"
+            },
+            {
+              "value": "LEN",
+              "label": "Lentoasema (LEN)"
+            },
+            {
+              "value": "LPV",
+              "label": "Leppävaara (LPV)"
+            },
+            {
+              "value": "LIS",
+              "label": "Lieksa (LIS)"
+            },
+            {
+              "value": "LVT",
+              "label": "Lievestuore (LVT)"
+            },
+            {
+              "value": "LM",
+              "label": "Loimaa (LM)"
+            },
+            {
+              "value": "LOH",
+              "label": "Louhela (LOH)"
+            },
+            {
+              "value": "LUS",
+              "label": "Lusto (LUS)"
+            },
+            {
+              "value": "ML",
+              "label": "Malmi (ML)"
+            },
+            {
+              "value": "MLO",
+              "label": "Malminkartano (MLO)"
+            },
+            {
+              "value": "MRL",
+              "label": "Martinlaakso (MRL)"
+            },
+            {
+              "value": "MAS",
+              "label": "Masala (MAS)"
+            },
+            {
+              "value": "MI",
+              "label": "Mikkeli (MI)"
+            },
+            {
+              "value": "MIS",
+              "label": "Misi (MIS)"
+            },
+            {
+              "value": "MLA",
+              "label": "Mommila (MLA)"
+            },
+            {
+              "value": "MVA",
+              "label": "Moskova_(Leningradski) (MVA)"
+            },
+            {
+              "value": "MH",
+              "label": "Muhos (MH)"
+            },
+            {
+              "value": "MUL",
+              "label": "Muurola (MUL)"
+            },
+            {
+              "value": "MKI",
+              "label": "Myllykoski (MKI)"
+            },
+            {
+              "value": "MY",
+              "label": "Myllymäki (MY)"
+            },
+            {
+              "value": "MYR",
+              "label": "Myyrmäki (MYR)"
+            },
+            {
+              "value": "MÄK",
+              "label": "Mäkkylä (MÄK)"
+            },
+            {
+              "value": "MLÄ",
+              "label": "Mäntsälä (MLÄ)"
+            },
+            {
+              "value": "MR",
+              "label": "Mäntyharju (MR)"
+            },
+            {
+              "value": "NSL",
+              "label": "Nastola (NSL)"
+            },
+            {
+              "value": "NLÄ",
+              "label": "Nikkilä (NLÄ)"
+            },
+            {
+              "value": "NVL",
+              "label": "Nivala (NVL)"
+            },
+            {
+              "value": "NOA",
+              "label": "Nokia (NOA)"
+            },
+            {
+              "value": "NRM",
+              "label": "Nurmes (NRM)"
+            },
+            {
+              "value": "OI",
+              "label": "Oitti (OI)"
+            },
+            {
+              "value": "OV",
+              "label": "Orivesi (OV)"
+            },
+            {
+              "value": "OVK",
+              "label": "Orivesi keskusta (OVK)"
+            },
+            {
+              "value": "OU",
+              "label": "Oulainen (OU)"
+            },
+            {
+              "value": "OL",
+              "label": "Oulu asema (OL)"
+            },
+            {
+              "value": "OLK",
+              "label": "Oulunkylä (OLK)"
+            },
+            {
+              "value": "PTI",
+              "label": "Paimenportti (PTI)"
+            },
+            {
+              "value": "PTO",
+              "label": "Paltamo (PTO)"
+            },
+            {
+              "value": "PAR",
+              "label": "Parikkala (PAR)"
+            },
+            {
+              "value": "PKO",
+              "label": "Parkano (PKO)"
+            },
+            {
+              "value": "PRL",
+              "label": "Parola (PRL)"
+            },
+            {
+              "value": "PSL",
+              "label": "Pasila asema (PSL)"
+            },
+            {
+              "value": "PAU",
+              "label": "Pasila autojuna-asema (PAU)"
+            },
+            {
+              "value": "PEL",
+              "label": "Pello (PEL)"
+            },
+            {
+              "value": "PVI",
+              "label": "Petäjävesi (PVI)"
+            },
+            {
+              "value": "PM",
+              "label": "Pieksämäki asema (PM)"
+            },
+            {
+              "value": "PTR",
+              "label": "Pietari_(Finljandski) (PTR)"
+            },
+            {
+              "value": "PTL",
+              "label": "Pietari_(Ladozhski) (PTL)"
+            },
+            {
+              "value": "PH",
+              "label": "Pihlajavesi (PH)"
+            },
+            {
+              "value": "PJM",
+              "label": "Pitäjänmäki (PJM)"
+            },
+            {
+              "value": "POH",
+              "label": "Pohjois-Haaga (POH)"
+            },
+            {
+              "value": "PRI",
+              "label": "Pori (PRI)"
+            },
+            {
+              "value": "PRV",
+              "label": "Porvoo (PRV)"
+            },
+            {
+              "value": "PLA",
+              "label": "Puistola (PLA)"
+            },
+            {
+              "value": "PMK",
+              "label": "Pukinmäki (PMK)"
+            },
+            {
+              "value": "PUN",
+              "label": "Punkaharju (PUN)"
+            },
+            {
+              "value": "PUR",
+              "label": "Purola (PUR)"
+            },
+            {
+              "value": "PHÄ",
+              "label": "Pyhäsalmi (PHÄ)"
+            },
+            {
+              "value": "PNÄ",
+              "label": "Pännäinen (PNÄ)"
+            },
+            {
+              "value": "PKY",
+              "label": "Pääskylahti (PKY)"
+            },
+            {
+              "value": "RKL",
+              "label": "Rekola (RKL)"
+            },
+            {
+              "value": "REE",
+              "label": "Retretti (REE)"
+            },
+            {
+              "value": "RI",
+              "label": "Riihimäki asema (RI)"
+            },
+            {
+              "value": "ROI",
+              "label": "Rovaniemi (ROI)"
+            },
+            {
+              "value": "RNN",
+              "label": "Runni (RNN)"
+            },
+            {
+              "value": "RKI",
+              "label": "Ruukki (RKI)"
+            },
+            {
+              "value": "RY",
+              "label": "Ryttylä (RY)"
+            },
+            {
+              "value": "SLO",
+              "label": "Salo (SLO)"
+            },
+            {
+              "value": "STA",
+              "label": "Santala (STA)"
+            },
+            {
+              "value": "SAU",
+              "label": "Saunakallio (SAU)"
+            },
+            {
+              "value": "SAV",
+              "label": "Savio (SAV)"
+            },
+            {
+              "value": "SL",
+              "label": "Savonlinna asema (SL)"
+            },
+            {
+              "value": "SK",
+              "label": "Seinäjoki asema (SK)"
+            },
+            {
+              "value": "SIJ",
+              "label": "Siilinjärvi asema (SIJ)"
+            },
+            {
+              "value": "SPL",
+              "label": "Simpele (SPL)"
+            },
+            {
+              "value": "STI",
+              "label": "Siuntio (STI)"
+            },
+            {
+              "value": "SGY",
+              "label": "Skogby (SGY)"
+            },
+            {
+              "value": "SKV",
+              "label": "Sukeva (SKV)"
+            },
+            {
+              "value": "SNJ",
+              "label": "Suonenjoki (SNJ)"
+            },
+            {
+              "value": "TMS",
+              "label": "Tammisaari (TMS)"
+            },
+            {
+              "value": "TPE",
+              "label": "Tampere asema (TPE)"
+            },
+            {
+              "value": "TNA",
+              "label": "Tapanila (TNA)"
+            },
+            {
+              "value": "TSL",
+              "label": "Tavastila (TSL)"
+            },
+            {
+              "value": "TK",
+              "label": "Tervajoki (TK)"
+            },
+            {
+              "value": "TRV",
+              "label": "Tervola (TRV)"
+            },
+            {
+              "value": "TSO",
+              "label": "Tesoma (TSO)"
+            },
+            {
+              "value": "TKL",
+              "label": "Tikkurila asema (TKL)"
+            },
+            {
+              "value": "TL",
+              "label": "Toijala (TL)"
+            },
+            {
+              "value": "TOL",
+              "label": "Tolsa (TOL)"
+            },
+            {
+              "value": "TOR",
+              "label": "Tornio (TOR)"
+            },
+            {
+              "value": "TRI",
+              "label": "Tornio-Itäinen (TRI)"
+            },
+            {
+              "value": "TRL",
+              "label": "Tuomarila (TRL)"
+            },
+            {
+              "value": "TU",
+              "label": "Turenki (TU)"
+            },
+            {
+              "value": "TKU",
+              "label": "Turku asema (TKU)"
+            },
+            {
+              "value": "TUS",
+              "label": "Turku satama (TUS)"
+            },
+            {
+              "value": "TUU",
+              "label": "Tuuri (TUU)"
+            },
+            {
+              "value": "TVE",
+              "label": "Tver (TVE)"
+            },
+            {
+              "value": "UIM",
+              "label": "Uimaharju (UIM)"
+            },
+            {
+              "value": "UTJ",
+              "label": "Utajärvi (UTJ)"
+            },
+            {
+              "value": "UKÄ",
+              "label": "Uusikylä (UKÄ)"
+            },
+            {
+              "value": "VAA",
+              "label": "Vaala (VAA)"
+            },
+            {
+              "value": "VS",
+              "label": "Vaasa (VS)"
+            },
+            {
+              "value": "VNA",
+              "label": "Vainikkala asema (VNA)"
+            },
+            {
+              "value": "VMO",
+              "label": "Valimo (VMO)"
+            },
+            {
+              "value": "VMA",
+              "label": "Vammala (VMA)"
+            },
+            {
+              "value": "VKS",
+              "label": "Vantaankoski (VKS)"
+            },
+            {
+              "value": "VAR",
+              "label": "Varkaus (VAR)"
+            },
+            {
+              "value": "VEH",
+              "label": "Vehkala (VEH)"
+            },
+            {
+              "value": "VTI",
+              "label": "Vihanti (VTI)"
+            },
+            {
+              "value": "VIH",
+              "label": "Vihtari (VIH)"
+            },
+            {
+              "value": "VIA",
+              "label": "Viiala (VIA)"
+            },
+            {
+              "value": "VNJ",
+              "label": "Viinijärvi (VNJ)"
+            },
+            {
+              "value": "VYB",
+              "label": "Viipuri (VYB)"
+            },
+            {
+              "value": "VLH",
+              "label": "Villähde (VLH)"
+            },
+            {
+              "value": "VLP",
+              "label": "Vilppula (VLP)"
+            },
+            {
+              "value": "VSL",
+              "label": "Vuonislahti (VSL)"
+            },
+            {
+              "value": "YST",
+              "label": "Ylistaro (YST)"
+            },
+            {
+              "value": "YTR",
+              "label": "Ylitornio (YTR)"
+            },
+            {
+              "value": "YV",
+              "label": "Ylivieska (YV)"
+            },
+            {
+              "value": "ÄHT",
+              "label": "Ähtäri (ÄHT)"
+            }
+          ],
+          "default": "",
+          "help": "Optional: departures must stop here later; arrivals must have stopped here earlier. Kerava → Pasila: Station KE, Departures, Route station PSL. Direct trains only."
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16,
+          "default": "",
+          "pattern": "^[A-Za-z0-9 -]{0,16}$",
+          "help": "Optional single line, for example K, R, I, P or Z. Blank includes all matching lines."
+        },
+        {
+          "id": "category",
+          "label": "Train category",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "default": "Commuter",
+          "enum": [
+            "Commuter",
+            "passenger"
+          ],
+          "enumLabels": [
+            "Commuter trains",
+            "All passenger trains"
+          ]
+        },
+        {
+          "id": "advance-minutes",
+          "label": "Advance notice (minutes)",
+          "type": "number",
+          "required": true,
+          "default": 2,
+          "min": 0,
+          "max": 30,
+          "help": "Upcoming events use the estimate, or scheduled time when no estimate exists. Zero fires only when a poll observes that time; use confirmed events for reported movements."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "trains",
+      "label": "Trains",
+      "type": "table",
+      "icon": "clipboard-list",
+      "columns": [
+        {
+          "id": "train",
+          "label": "Train",
+          "type": "string"
+        },
+        {
+          "id": "route",
+          "label": "Direction / route",
+          "type": "string"
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string"
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "id": "time",
+          "label": "Time",
+          "type": "timestamp",
+          "format": "time",
+          "position": "last"
+        },
+        {
+          "id": "arrives",
+          "label": "Arrives",
+          "type": "timestamp",
+          "format": "time",
+          "position": "last"
+        },
+        {
+          "id": "in-minutes",
+          "label": "In",
+          "type": "timestamp",
+          "format": "minutes-until",
+          "position": "last"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "train-count",
+        "rows": [
+          {
+            "train": "train-1-train",
+            "route": "train-1-route",
+            "time": "train-1-time",
+            "track": "train-1-track",
+            "status": "train-1-status",
+            "arrives": "train-1-arrives",
+            "in-minutes": "train-1-due-at"
+          },
+          {
+            "train": "train-2-train",
+            "route": "train-2-route",
+            "time": "train-2-time",
+            "track": "train-2-track",
+            "status": "train-2-status",
+            "arrives": "train-2-arrives",
+            "in-minutes": "train-2-due-at"
+          },
+          {
+            "train": "train-3-train",
+            "route": "train-3-route",
+            "time": "train-3-time",
+            "track": "train-3-track",
+            "status": "train-3-status",
+            "arrives": "train-3-arrives",
+            "in-minutes": "train-3-due-at"
+          },
+          {
+            "train": "train-4-train",
+            "route": "train-4-route",
+            "time": "train-4-time",
+            "track": "train-4-track",
+            "status": "train-4-status",
+            "arrives": "train-4-arrives",
+            "in-minutes": "train-4-due-at"
+          },
+          {
+            "train": "train-5-train",
+            "route": "train-5-route",
+            "time": "train-5-time",
+            "track": "train-5-track",
+            "status": "train-5-status",
+            "arrives": "train-5-arrives",
+            "in-minutes": "train-5-due-at"
+          },
+          {
+            "train": "train-6-train",
+            "route": "train-6-route",
+            "time": "train-6-time",
+            "track": "train-6-track",
+            "status": "train-6-status",
+            "arrives": "train-6-arrives",
+            "in-minutes": "train-6-due-at"
+          },
+          {
+            "train": "train-7-train",
+            "route": "train-7-route",
+            "time": "train-7-time",
+            "track": "train-7-track",
+            "status": "train-7-status",
+            "arrives": "train-7-arrives",
+            "in-minutes": "train-7-due-at"
+          },
+          {
+            "train": "train-8-train",
+            "route": "train-8-route",
+            "time": "train-8-time",
+            "track": "train-8-track",
+            "status": "train-8-status",
+            "arrives": "train-8-arrives",
+            "in-minutes": "train-8-due-at"
+          },
+          {
+            "train": "train-9-train",
+            "route": "train-9-route",
+            "time": "train-9-time",
+            "track": "train-9-track",
+            "status": "train-9-status",
+            "arrives": "train-9-arrives",
+            "in-minutes": "train-9-due-at"
+          },
+          {
+            "train": "train-10-train",
+            "route": "train-10-route",
+            "time": "train-10-time",
+            "track": "train-10-track",
+            "status": "train-10-status",
+            "arrives": "train-10-arrives",
+            "in-minutes": "train-10-due-at"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "train-1-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-2-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-3-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-4-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-5-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-6-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-7-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-8-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-9-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-10-arrives",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-1-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-2-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-3-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-4-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-5-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-6-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-7-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-8-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-9-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "train-10-due-at",
+            "type": "timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "train-count",
+      "label": "Displayed train count",
+      "type": "number",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-count"
+      }
+    },
+    {
+      "id": "station-name",
+      "label": "Requested station",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "station-name"
+      }
+    },
+    {
+      "id": "route-station",
+      "label": "Route station",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "route-station"
+      }
+    },
+    {
+      "id": "line-filter",
+      "label": "Train line filter",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "line-filter"
+      }
+    },
+    {
+      "id": "updated-at",
+      "label": "Last successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "updated-at"
+      }
+    },
+    {
+      "id": "attribution",
+      "label": "Data source / license",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "attribution"
+      }
+    },
+    {
+      "id": "train-1-train",
+      "label": "Train 1 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-1-train"
+      }
+    },
+    {
+      "id": "train-1-route",
+      "label": "Train 1 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-1-route"
+      }
+    },
+    {
+      "id": "train-1-time",
+      "label": "Train 1 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-1-time"
+      }
+    },
+    {
+      "id": "train-1-due-at",
+      "label": "Train 1 · Departure countdown",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-1-due-at"
+      }
+    },
+    {
+      "id": "train-1-track",
+      "label": "Train 1 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-1-track"
+      }
+    },
+    {
+      "id": "train-1-status",
+      "label": "Train 1 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-1-status"
+      }
+    },
+    {
+      "id": "train-2-train",
+      "label": "Train 2 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-2-train"
+      }
+    },
+    {
+      "id": "train-2-route",
+      "label": "Train 2 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-2-route"
+      }
+    },
+    {
+      "id": "train-2-time",
+      "label": "Train 2 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-2-time"
+      }
+    },
+    {
+      "id": "train-2-track",
+      "label": "Train 2 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-2-track"
+      }
+    },
+    {
+      "id": "train-2-status",
+      "label": "Train 2 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-2-status"
+      }
+    },
+    {
+      "id": "train-3-train",
+      "label": "Train 3 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-3-train"
+      }
+    },
+    {
+      "id": "train-3-route",
+      "label": "Train 3 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-3-route"
+      }
+    },
+    {
+      "id": "train-3-time",
+      "label": "Train 3 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-3-time"
+      }
+    },
+    {
+      "id": "train-3-track",
+      "label": "Train 3 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-3-track"
+      }
+    },
+    {
+      "id": "train-3-status",
+      "label": "Train 3 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-3-status"
+      }
+    },
+    {
+      "id": "train-4-train",
+      "label": "Train 4 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-4-train"
+      }
+    },
+    {
+      "id": "train-4-route",
+      "label": "Train 4 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-4-route"
+      }
+    },
+    {
+      "id": "train-4-time",
+      "label": "Train 4 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-4-time"
+      }
+    },
+    {
+      "id": "train-4-track",
+      "label": "Train 4 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-4-track"
+      }
+    },
+    {
+      "id": "train-4-status",
+      "label": "Train 4 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-4-status"
+      }
+    },
+    {
+      "id": "train-5-train",
+      "label": "Train 5 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-5-train"
+      }
+    },
+    {
+      "id": "train-5-route",
+      "label": "Train 5 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-5-route"
+      }
+    },
+    {
+      "id": "train-5-time",
+      "label": "Train 5 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-5-time"
+      }
+    },
+    {
+      "id": "train-5-track",
+      "label": "Train 5 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-5-track"
+      }
+    },
+    {
+      "id": "train-5-status",
+      "label": "Train 5 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-5-status"
+      }
+    },
+    {
+      "id": "train-6-train",
+      "label": "Train 6 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-6-train"
+      }
+    },
+    {
+      "id": "train-6-route",
+      "label": "Train 6 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-6-route"
+      }
+    },
+    {
+      "id": "train-6-time",
+      "label": "Train 6 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-6-time"
+      }
+    },
+    {
+      "id": "train-6-track",
+      "label": "Train 6 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-6-track"
+      }
+    },
+    {
+      "id": "train-6-status",
+      "label": "Train 6 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-6-status"
+      }
+    },
+    {
+      "id": "train-7-train",
+      "label": "Train 7 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-7-train"
+      }
+    },
+    {
+      "id": "train-7-route",
+      "label": "Train 7 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-7-route"
+      }
+    },
+    {
+      "id": "train-7-time",
+      "label": "Train 7 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-7-time"
+      }
+    },
+    {
+      "id": "train-7-track",
+      "label": "Train 7 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-7-track"
+      }
+    },
+    {
+      "id": "train-7-status",
+      "label": "Train 7 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-7-status"
+      }
+    },
+    {
+      "id": "train-8-train",
+      "label": "Train 8 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-8-train"
+      }
+    },
+    {
+      "id": "train-8-route",
+      "label": "Train 8 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-8-route"
+      }
+    },
+    {
+      "id": "train-8-time",
+      "label": "Train 8 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-8-time"
+      }
+    },
+    {
+      "id": "train-8-track",
+      "label": "Train 8 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-8-track"
+      }
+    },
+    {
+      "id": "train-8-status",
+      "label": "Train 8 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-8-status"
+      }
+    },
+    {
+      "id": "train-9-train",
+      "label": "Train 9 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-9-train"
+      }
+    },
+    {
+      "id": "train-9-route",
+      "label": "Train 9 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-9-route"
+      }
+    },
+    {
+      "id": "train-9-time",
+      "label": "Train 9 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-9-time"
+      }
+    },
+    {
+      "id": "train-9-track",
+      "label": "Train 9 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-9-track"
+      }
+    },
+    {
+      "id": "train-9-status",
+      "label": "Train 9 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-9-status"
+      }
+    },
+    {
+      "id": "train-10-train",
+      "label": "Train 10 · Train",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-10-train"
+      }
+    },
+    {
+      "id": "train-10-route",
+      "label": "Train 10 · Direction / route",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-10-route"
+      }
+    },
+    {
+      "id": "train-10-time",
+      "label": "Train 10 · Time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "train-10-time"
+      }
+    },
+    {
+      "id": "train-10-track",
+      "label": "Train 10 · Track",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-10-track"
+      }
+    },
+    {
+      "id": "train-10-status",
+      "label": "Train 10 · Status",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "train-10-status"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh trains",
+      "description": "Fetch one enabled station board; existing movement claims prevent repeated events.",
+      "parameters": [
+        {
+          "id": "location-id",
+          "label": "Location",
+          "type": "string",
+          "maxLength": 64,
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "train-arriving",
+      "name": "Train arriving",
+      "description": "Upcoming arrival within the configured advance notice.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    },
+    {
+      "id": "train-departing",
+      "name": "Train departing",
+      "description": "Upcoming departure within the configured advance notice.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    },
+    {
+      "id": "train-arriving-or-departing",
+      "name": "Train arriving or departing",
+      "description": "Either upcoming movement within the configured advance notice.",
+      "occurrenceKey": "movement-id",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    },
+    {
+      "id": "train-arrived",
+      "name": "Train arrived",
+      "description": "A recent arrival confirmed by the provider actualTime.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    },
+    {
+      "id": "train-departed",
+      "name": "Train departed",
+      "description": "A recent departure confirmed by the provider actualTime.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    },
+    {
+      "id": "train-arrived-or-departed",
+      "name": "Train arrived or departed",
+      "description": "Either recent movement confirmed by the provider actualTime.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "station",
+          "label": "Station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "station-name",
+          "label": "Station name",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "line",
+          "label": "Train line",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "train-number",
+          "label": "Train number",
+          "type": "number",
+          "required": true,
+          "min": 1,
+          "max": 999999
+        },
+        {
+          "id": "origin",
+          "label": "Origin station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "destination",
+          "label": "Destination station code",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual",
+            "unknown"
+          ]
+        },
+        {
+          "id": "track",
+          "label": "Track",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "delay-minutes",
+          "label": "Delay (minutes)",
+          "type": "number",
+          "min": -1440,
+          "max": 1440
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "platform",
+      "name": "Platform",
+      "sourceLabel": "Location",
+      "directory": "cards/platform",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "station",
+          "field": "station-name",
+          "format": "text"
+        },
+        {
+          "id": "next-train",
+          "field": "train-1-train",
+          "format": "text"
+        },
+        {
+          "id": "next-route",
+          "field": "train-1-route",
+          "format": "text"
+        },
+        {
+          "id": "next-track",
+          "field": "train-1-track",
+          "format": "text"
+        },
+        {
+          "id": "next-status",
+          "field": "train-1-status",
+          "format": "text"
+        },
+        {
+          "id": "next-time",
+          "field": "train-1-time",
+          "format": "time"
+        },
+        {
+          "id": "next-in",
+          "field": "train-1-due-at",
+          "format": "minutes-until"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

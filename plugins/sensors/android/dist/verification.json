@@ -1,0 +1,17 @@
+{
+  "file": "plugins/sensors/android/dist/localserve-sensors.apk",
+  "bytes": 3205771,
+  "sha256": "878ea9dc9aba99a44f2ccd682348b0a0ebf260aa970cbb0f0f84079bf8261655",
+  "minSdk": 26,
+  "targetSdk": 35,
+  "version": "1.2.0",
+  "vendorArtifacts": 33,
+  "javaResources": 459,
+  "checks": [
+    "Android sender address checks passed.",
+    "Region geometry, uncertainty and transition checks passed.",
+    "Activity SDK classes and runtime resources linked.",
+    "No missing DEX runtime classes"
+  ],
+  "verification": "Verifies\r\nVerified using v1 scheme (JAR signing): false\r\nVerified using v2 scheme (APK Signature Scheme v2): true\r\nVerified using v3 scheme (APK Signature Scheme v3): true\r\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\r\nVerified using v4 scheme (APK Signature Scheme v4): false\r\nVerified for SourceStamp: false\r\nNumber of signers: 1\r\nSigner #1 certificate DN: CN=Localserve Sensors Development\r\nSigner #1 certificate SHA-256 digest: 74caecea6040c04ad47fe225302449dbd0e4a5f94931f4cbfeeece2a9d147737\r\nSigner #1 certificate SHA-1 digest: 163d1038a7524777c6626f359fb2d5d19a870cda\r\nSigner #1 certificate MD5 digest: 921eb45cf4fe397c07ab7049ea20d0e0\r\nSigner #1 key algorithm: RSA\r\nSigner #1 key size (bits): 3072\r\nSigner #1 public key SHA-256 digest: c60f21d1b56102325fd78a969764f36685c24d70783af17772aa04c62f64a645\r\nSigner #1 public key SHA-1 digest: 79dab4b1c8fb837248d66a2ee582399e411e2eb5\r\nSigner #1 public key MD5 digest: f2037b1c7723cd322a77d9f562e6880d"
+}

@@ -1,0 +1,12 @@
+Oculus Go adapter, declaration, direct ADB client and native credential helper
+are readable Localserve project source. The data parser/temperature mapping is
+adapted from the user's existing Glance integration. No Glance live state, Cards
+or server implementation is copied. A one-time authorized credential migration
+saves only this plugin's independent CurrentUser DPAPI key copy.
+
+ADB framing and RSA challenge signing were checked against the Android Open
+Source Project protocol/authentication documentation (Apache-2.0 reference):
+https://raw.githubusercontent.com/aosp-mirror/platform_system_core/android-8.1.0_r1/adb/protocol.txt
+https://raw.githubusercontent.com/aosp-mirror/platform_system_core/android-8.1.0_r1/adb/adb_auth_host.cpp
+No third-party runtime code, platform-tools binary or dependency is bundled.
+The implementation uses bundled Node.js and built-in Windows .NET/DPAPI only.

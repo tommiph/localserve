@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <title>Sensor axes and signal rings</title>
+  <!-- Original local artwork: a phone inside a three-axis instrument. -->
+  <g stroke="#b5a6ff" stroke-width="2">
+    <circle cx="240" cy="240" r="190" stroke-dasharray="3 12"/>
+    <ellipse cx="240" cy="240" rx="168" ry="70" transform="rotate(-30 240 240)"/>
+    <ellipse cx="240" cy="240" rx="168" ry="70" transform="rotate(60 240 240)"/>
+    <circle cx="240" cy="240" r="125" opacity=".35"/>
+    <path d="M60 328L417 152M240 440V44M91 137L400 350" stroke-dasharray="5 8"/>
+    <path d="M405 151l12 1-5 13M231 54l9-10 9 10M386 349l14 1-5-13"/>
+    <rect x="195" y="157" width="90" height="166" rx="17" stroke-width="4" fill="#252a45"/>
+    <path d="M224 170h32M228 309h24" stroke-linecap="round"/>
+    <circle cx="240" cy="236" r="19"/>
+    <path d="M240 205v62M209 236h62"/>
+    <circle cx="90" cy="316" r="7" fill="#a2e6d2" stroke="none"/>
+    <circle cx="363" cy="153" r="7" fill="#e8bc8e" stroke="none"/>
+    <circle cx="240" cy="75" r="7" fill="#b5a6ff" stroke="none"/>
+  </g>
+</svg>

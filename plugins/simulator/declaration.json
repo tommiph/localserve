@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "simulator",
+  "name": "Simulator",
+  "version": "1.0.0",
+  "description": "Local actions, values, and events",
+  "icon": "plug",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "settings": [
+    {
+      "id": "configuration-complete",
+      "label": "Configuration complete",
+      "type": "boolean",
+      "default": true,
+      "required": true
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "value",
+      "label": "Current value",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "value"
+      }
+    },
+    {
+      "id": "pulse-count",
+      "label": "Pulse count",
+      "type": "number",
+      "icon": "tower-broadcast",
+      "source": {
+        "kind": "state",
+        "key": "sequence"
+      }
+    },
+    {
+      "id": "signal-message",
+      "label": "Latest signal message",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "event",
+        "eventId": "signal",
+        "key": "message"
+      }
+    },
+    {
+      "id": "signal-time",
+      "label": "Last signal time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "event-time",
+        "eventId": "signal"
+      }
+    },
+    {
+      "id": "changed-value",
+      "label": "Last changed value",
+      "type": "number",
+      "icon": "chart-line",
+      "source": {
+        "kind": "event",
+        "eventId": "value-changed",
+        "key": "value"
+      }
+    },
+    {
+      "id": "previous-value",
+      "label": "Previous value",
+      "type": "number",
+      "icon": "arrows-rotate",
+      "source": {
+        "kind": "event",
+        "eventId": "value-changed",
+        "key": "previous"
+      }
+    },
+    {
+      "id": "value-time",
+      "label": "Last value change time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "event-time",
+        "eventId": "value-changed"
+      }
+    },
+    {
+      "id": "pulse-sequence",
+      "label": "Latest pulse sequence",
+      "type": "number",
+      "icon": "tower-broadcast",
+      "source": {
+        "kind": "event",
+        "eventId": "pulse",
+        "key": "sequence"
+      }
+    },
+    {
+      "id": "pulse-time",
+      "label": "Last pulse time",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "event-time",
+        "eventId": "pulse"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "log",
+      "name": "Log message",
+      "description": "Write a message to the plugin log and Activity.",
+      "parameters": [
+        {
+          "id": "message",
+          "label": "Message",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000,
+          "default": "Simulator message"
+        },
+        {
+          "id": "level",
+          "label": "Level",
+          "type": "string",
+          "enum": [
+            "info",
+            "success",
+            "warning"
+          ],
+          "default": "info"
+        }
+      ]
+    },
+    {
+      "id": "set-value",
+      "name": "Set value",
+      "description": "Save a value and emit Value changed when it changes.",
+      "parameters": [
+        {
+          "id": "value",
+          "label": "Value",
+          "type": "number",
+          "min": -1000000,
+          "max": 1000000,
+          "required": true,
+          "default": 0
+        }
+      ]
+    },
+    {
+      "id": "emit-signal",
+      "name": "Emit signal",
+      "description": "Emit a Signal event with a message.",
+      "parameters": [
+        {
+          "id": "message",
+          "label": "Message",
+          "type": "string",
+          "maxLength": 2000,
+          "default": "Test signal"
+        }
+      ]
+    },
+    {
+      "id": "pulse",
+      "name": "Emit pulse",
+      "description": "Increment the persistent pulse count and emit Pulse.",
+      "parameters": []
+    },
+    {
+      "id": "wait",
+      "name": "Wait",
+      "description": "Wait up to 10 seconds, respecting pause and cancellation.",
+      "parameters": [
+        {
+          "id": "seconds",
+          "label": "Duration (seconds)",
+          "type": "number",
+          "min": 0.01,
+          "max": 10,
+          "required": true,
+          "default": 1
+        }
+      ]
+    },
+    {
+      "id": "fail",
+      "name": "Fail action",
+      "description": "Fail deliberately to test Task failure handling.",
+      "parameters": [
+        {
+          "id": "message",
+          "label": "Failure message",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000,
+          "default": "Simulator failure"
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "signal",
+      "name": "Signal",
+      "testAction": "emit-signal",
+      "description": "A manually or Task-generated signal.",
+      "payload": [
+        {
+          "id": "message",
+          "type": "string",
+          "maxLength": 2000,
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "value-changed",
+      "name": "Value changed",
+      "testAction": "set-value",
+      "description": "The saved numeric value changed.",
+      "payload": [
+        {
+          "id": "value",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "previous",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "id": "pulse",
+      "name": "Pulse",
+      "testAction": "pulse",
+      "description": "A pulse with a persistent sequence number.",
+      "payload": [
+        {
+          "id": "sequence",
+          "type": "number",
+          "required": true,
+          "min": 1
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "signal-lab",
+      "name": "Signal lab",
+      "sourceLabel": "Data source",
+      "directory": "cards/signal-lab",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "value",
+          "field": "value",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "pulses",
+          "field": "pulse-count",
+          "format": "number"
+        },
+        {
+          "id": "signal",
+          "field": "signal-message",
+          "format": "text"
+        },
+        {
+          "id": "signal-time",
+          "field": "signal-time",
+          "format": "datetime"
+        },
+        {
+          "id": "previous",
+          "field": "previous-value",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "value-time",
+          "format": "datetime"
+        },
+        {
+          "id": "pulse-time",
+          "field": "pulse-time",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

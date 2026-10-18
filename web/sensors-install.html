@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sensors · Android app</title>
+  <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/sensors/install.css">
+  <script src="/assets/sensors/install.js" defer></script>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/assets/controls/app-icon-192.png" alt="Localserve">
+    <h1>Sensors</h1>
+    <p>Android 8.0 or later</p>
+    <a class="download" href="/downloads/localserve-sensors.apk" download="localserve-sensors.apk">Download Android APK</a>
+    <ol>
+      <li>Open this page on Android, download the APK and open the downloaded file. Allow installation from your browser if Android asks.</li>
+      <li>Enable the Sensors plugin in Localserve.</li>
+      <li>Enter this server address in the Android app, choose your sensors or phone events and tap Start. Grant access for your selected sources when Android asks.</li>
+    </ol>
+    <label for="server-address">Server address</label>
+    <input id="server-address" readonly aria-label="Server address">
+    <p id="lan-hint"></p>
+    <p>Devices appear automatically in Sensors. Configure per-device Task rules in Tasks. Stop streaming from the app or its notification.</p>
+    <p>Location and named regions run during explicit streaming. Activity transitions require Google Play services. Install updates over the existing app to retain its device identity and settings.</p>
+    <p class="detail">Reports use the local network without pairing credentials. Sampling and reporting rates can differ; each report contains the latest raw sensor values. Sensor availability depends on the Android device and granted permissions.</p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+html { color-scheme:dark; font:16px/1.6 Arial,sans-serif; background:#10151c; color:#e0e8f2; }
+body { margin:0; }
+main { max-width:600px; margin:0 auto; padding:32px 22px; }
+.logo { width:64px; height:64px; border-radius:12px; }
+h1 { margin:16px 0 0; font-size:28px; }
+p { color:#aebdd0; }
+.download { display:inline-block; margin:12px 0; background:#a9cfff; color:#0c1b2e; padding:12px 20px; border-radius:8px; font-weight:bold; text-decoration:none; }
+li { margin:12px 0; }
+ol { padding-left:22px; }
+label { display:block; margin-bottom:8px; }
+input { box-sizing:border-box; width:100%; font:inherit; color:#eef5ff; background:#192331; border:1px solid #41566f; border-radius:8px; padding:12px; }
+.detail { font-size:14px; }

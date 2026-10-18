@@ -1,0 +1,1698 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "finavia",
+  "name": "Finavia",
+  "version": "1.0.0",
+  "description": "Finnish airport flight boards · Source: Finavia Public Flights",
+  "icon": "flight-takeoff",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "defaultCardLayout": "table",
+  "attribution": {
+    "label": "Finavia",
+    "url": "https://apiportal.finavia.fi/",
+    "licenseUrl": "https://apiportal.finavia.fi/signup",
+    "licenseLabel": "API terms",
+    "notice": "Filtered and formatted by Localserve"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "location-id"
+  },
+  "instances": {
+    "setting": "locations",
+    "stateKey": "locations",
+    "eventKey": "location-id"
+  },
+  "settings": [
+    {
+      "id": "api-key",
+      "label": "API key",
+      "type": "string",
+      "maxLength": 128,
+      "default": "",
+      "format": "secret",
+      "help": "Private Finavia subscription key. Sent only in the authentication header; never included in Cards or Vistas."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 1,
+      "min": 1,
+      "max": 5,
+      "enum": [
+        1,
+        2,
+        5
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes"
+      ],
+      "help": "Applies per enabled location. Serial requests are staggered; provider caching and slow requests can delay events."
+    },
+    {
+      "id": "locations",
+      "label": "Locations",
+      "type": "list",
+      "itemLabel": "location",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name"
+      ],
+      "help": "Named Finnish airport boards with optional route and flight filters. Source: Finavia Public Flights.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "format": "identifier"
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport",
+          "type": "string",
+          "maxLength": 3,
+          "default": "HEL",
+          "required": true,
+          "pattern": "^[A-Za-z]{3}$",
+          "suggestions": [
+            {
+              "value": "HEL",
+              "label": "Helsinki Airport (HEL)"
+            },
+            {
+              "value": "IVL",
+              "label": "Ivalo (IVL)"
+            },
+            {
+              "value": "JOE",
+              "label": "Joensuu (JOE)"
+            },
+            {
+              "value": "JYV",
+              "label": "Jyväskylä (JYV)"
+            },
+            {
+              "value": "KAJ",
+              "label": "Kajaani (KAJ)"
+            },
+            {
+              "value": "KEM",
+              "label": "Kemi-Tornio (KEM)"
+            },
+            {
+              "value": "KTT",
+              "label": "Kittilä (KTT)"
+            },
+            {
+              "value": "KOK",
+              "label": "Kokkola-Pietarsaari (KOK)"
+            },
+            {
+              "value": "KAO",
+              "label": "Kuusamo (KAO)"
+            },
+            {
+              "value": "KUO",
+              "label": "Kuopio (KUO)"
+            },
+            {
+              "value": "MHQ",
+              "label": "Mariehamn (MHQ)"
+            },
+            {
+              "value": "OUL",
+              "label": "Oulu (OUL)"
+            },
+            {
+              "value": "POR",
+              "label": "Pori (POR)"
+            },
+            {
+              "value": "RVN",
+              "label": "Rovaniemi (RVN)"
+            },
+            {
+              "value": "SVL",
+              "label": "Savonlinna (SVL)"
+            },
+            {
+              "value": "TMP",
+              "label": "Tampere-Pirkkala (TMP)"
+            },
+            {
+              "value": "TKU",
+              "label": "Turku (TKU)"
+            },
+            {
+              "value": "VAA",
+              "label": "Vaasa (VAA)"
+            }
+          ],
+          "help": "Choose a Finnish airport or type its three-letter IATA code, for example HEL, OUL or RVN."
+        },
+        {
+          "id": "direction",
+          "label": "Show flights",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "default": "departures",
+          "enum": [
+            "arrivals",
+            "departures",
+            "both"
+          ],
+          "enumLabels": [
+            "Arrivals",
+            "Departures",
+            "Arrivals and departures"
+          ]
+        },
+        {
+          "id": "other-airport",
+          "label": "Route airport",
+          "type": "string",
+          "maxLength": 3,
+          "default": "",
+          "pattern": "^(?:[A-Za-z]{3})?$",
+          "help": "Optional route stop IATA code, for example LHR. Blank includes all routes. No transfer planning."
+        },
+        {
+          "id": "flight",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "default": "",
+          "pattern": "^[A-Za-z0-9]{0,16}$",
+          "help": "Optional exact flight or codeshare number, for example AY1331. Blank includes all flights."
+        },
+        {
+          "id": "advance-minutes",
+          "label": "Advance notice (minutes)",
+          "type": "number",
+          "required": true,
+          "default": 2,
+          "min": 0,
+          "max": 30,
+          "help": "Upcoming events use the current estimate, or schedule when no estimate exists. Confirmed events require a provider actual movement time."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "flights",
+      "label": "Flights",
+      "type": "table",
+      "icon": "plane",
+      "columns": [
+        {
+          "id": "flight",
+          "label": "Flight",
+          "type": "string"
+        },
+        {
+          "id": "route",
+          "label": "Direction / route",
+          "type": "string"
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string"
+        },
+        {
+          "id": "status",
+          "label": "Status",
+          "type": "string"
+        },
+        {
+          "id": "scheduled",
+          "label": "Scheduled",
+          "type": "timestamp",
+          "format": "time",
+          "position": "last"
+        },
+        {
+          "id": "time",
+          "label": "Time",
+          "type": "timestamp",
+          "format": "time",
+          "position": "last"
+        },
+        {
+          "id": "in-minutes",
+          "label": "In",
+          "type": "timestamp",
+          "format": "minutes-until",
+          "position": "last"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "flight-count",
+        "rows": [
+          {
+            "flight": "flight-1-flight",
+            "route": "flight-1-route",
+            "gate": "flight-1-gate",
+            "status": "flight-1-status",
+            "scheduled": "flight-1-scheduled",
+            "time": "flight-1-time",
+            "in-minutes": "flight-1-due-at"
+          },
+          {
+            "flight": "flight-2-flight",
+            "route": "flight-2-route",
+            "gate": "flight-2-gate",
+            "status": "flight-2-status",
+            "scheduled": "flight-2-scheduled",
+            "time": "flight-2-time",
+            "in-minutes": "flight-2-due-at"
+          },
+          {
+            "flight": "flight-3-flight",
+            "route": "flight-3-route",
+            "gate": "flight-3-gate",
+            "status": "flight-3-status",
+            "scheduled": "flight-3-scheduled",
+            "time": "flight-3-time",
+            "in-minutes": "flight-3-due-at"
+          },
+          {
+            "flight": "flight-4-flight",
+            "route": "flight-4-route",
+            "gate": "flight-4-gate",
+            "status": "flight-4-status",
+            "scheduled": "flight-4-scheduled",
+            "time": "flight-4-time",
+            "in-minutes": "flight-4-due-at"
+          },
+          {
+            "flight": "flight-5-flight",
+            "route": "flight-5-route",
+            "gate": "flight-5-gate",
+            "status": "flight-5-status",
+            "scheduled": "flight-5-scheduled",
+            "time": "flight-5-time",
+            "in-minutes": "flight-5-due-at"
+          },
+          {
+            "flight": "flight-6-flight",
+            "route": "flight-6-route",
+            "gate": "flight-6-gate",
+            "status": "flight-6-status",
+            "scheduled": "flight-6-scheduled",
+            "time": "flight-6-time",
+            "in-minutes": "flight-6-due-at"
+          },
+          {
+            "flight": "flight-7-flight",
+            "route": "flight-7-route",
+            "gate": "flight-7-gate",
+            "status": "flight-7-status",
+            "scheduled": "flight-7-scheduled",
+            "time": "flight-7-time",
+            "in-minutes": "flight-7-due-at"
+          },
+          {
+            "flight": "flight-8-flight",
+            "route": "flight-8-route",
+            "gate": "flight-8-gate",
+            "status": "flight-8-status",
+            "scheduled": "flight-8-scheduled",
+            "time": "flight-8-time",
+            "in-minutes": "flight-8-due-at"
+          },
+          {
+            "flight": "flight-9-flight",
+            "route": "flight-9-route",
+            "gate": "flight-9-gate",
+            "status": "flight-9-status",
+            "scheduled": "flight-9-scheduled",
+            "time": "flight-9-time",
+            "in-minutes": "flight-9-due-at"
+          },
+          {
+            "flight": "flight-10-flight",
+            "route": "flight-10-route",
+            "gate": "flight-10-gate",
+            "status": "flight-10-status",
+            "scheduled": "flight-10-scheduled",
+            "time": "flight-10-time",
+            "in-minutes": "flight-10-due-at"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "flight-1-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-1-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-2-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-2-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-3-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-3-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-4-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-4-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-5-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-5-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-6-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-6-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-7-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-7-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-8-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-8-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-9-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-9-due-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-10-scheduled",
+            "type": "timestamp"
+          },
+          {
+            "key": "flight-10-due-at",
+            "type": "timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "flight-count",
+      "label": "Displayed flight count",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-count"
+      }
+    },
+    {
+      "id": "airport",
+      "label": "Airport",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "airport"
+      }
+    },
+    {
+      "id": "route-filter",
+      "label": "Route airport filter",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "route-filter"
+      }
+    },
+    {
+      "id": "flight-filter",
+      "label": "Flight number filter",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-filter"
+      }
+    },
+    {
+      "id": "updated-at",
+      "label": "Last successful refresh",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "updated-at"
+      }
+    },
+    {
+      "id": "attribution",
+      "label": "Data attribution",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "attribution"
+      }
+    },
+    {
+      "id": "flight-1-flight",
+      "label": "Flight 1 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-1-flight"
+      }
+    },
+    {
+      "id": "flight-1-route",
+      "label": "Flight 1 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-1-route"
+      }
+    },
+    {
+      "id": "flight-1-gate",
+      "label": "Flight 1 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-1-gate"
+      }
+    },
+    {
+      "id": "flight-1-status",
+      "label": "Flight 1 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-1-status"
+      }
+    },
+    {
+      "id": "flight-1-time",
+      "label": "Flight 1 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-1-time"
+      }
+    },
+    {
+      "id": "flight-2-flight",
+      "label": "Flight 2 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-2-flight"
+      }
+    },
+    {
+      "id": "flight-2-route",
+      "label": "Flight 2 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-2-route"
+      }
+    },
+    {
+      "id": "flight-2-gate",
+      "label": "Flight 2 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-2-gate"
+      }
+    },
+    {
+      "id": "flight-2-status",
+      "label": "Flight 2 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-2-status"
+      }
+    },
+    {
+      "id": "flight-2-time",
+      "label": "Flight 2 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-2-time"
+      }
+    },
+    {
+      "id": "flight-3-flight",
+      "label": "Flight 3 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-3-flight"
+      }
+    },
+    {
+      "id": "flight-3-route",
+      "label": "Flight 3 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-3-route"
+      }
+    },
+    {
+      "id": "flight-3-gate",
+      "label": "Flight 3 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-3-gate"
+      }
+    },
+    {
+      "id": "flight-3-status",
+      "label": "Flight 3 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-3-status"
+      }
+    },
+    {
+      "id": "flight-3-time",
+      "label": "Flight 3 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-3-time"
+      }
+    },
+    {
+      "id": "flight-4-flight",
+      "label": "Flight 4 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-4-flight"
+      }
+    },
+    {
+      "id": "flight-4-route",
+      "label": "Flight 4 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-4-route"
+      }
+    },
+    {
+      "id": "flight-4-gate",
+      "label": "Flight 4 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-4-gate"
+      }
+    },
+    {
+      "id": "flight-4-status",
+      "label": "Flight 4 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-4-status"
+      }
+    },
+    {
+      "id": "flight-4-time",
+      "label": "Flight 4 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-4-time"
+      }
+    },
+    {
+      "id": "flight-5-flight",
+      "label": "Flight 5 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-5-flight"
+      }
+    },
+    {
+      "id": "flight-5-route",
+      "label": "Flight 5 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-5-route"
+      }
+    },
+    {
+      "id": "flight-5-gate",
+      "label": "Flight 5 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-5-gate"
+      }
+    },
+    {
+      "id": "flight-5-status",
+      "label": "Flight 5 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-5-status"
+      }
+    },
+    {
+      "id": "flight-5-time",
+      "label": "Flight 5 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-5-time"
+      }
+    },
+    {
+      "id": "flight-6-flight",
+      "label": "Flight 6 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-6-flight"
+      }
+    },
+    {
+      "id": "flight-6-route",
+      "label": "Flight 6 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-6-route"
+      }
+    },
+    {
+      "id": "flight-6-gate",
+      "label": "Flight 6 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-6-gate"
+      }
+    },
+    {
+      "id": "flight-6-status",
+      "label": "Flight 6 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-6-status"
+      }
+    },
+    {
+      "id": "flight-6-time",
+      "label": "Flight 6 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-6-time"
+      }
+    },
+    {
+      "id": "flight-7-flight",
+      "label": "Flight 7 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-7-flight"
+      }
+    },
+    {
+      "id": "flight-7-route",
+      "label": "Flight 7 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-7-route"
+      }
+    },
+    {
+      "id": "flight-7-gate",
+      "label": "Flight 7 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-7-gate"
+      }
+    },
+    {
+      "id": "flight-7-status",
+      "label": "Flight 7 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-7-status"
+      }
+    },
+    {
+      "id": "flight-7-time",
+      "label": "Flight 7 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-7-time"
+      }
+    },
+    {
+      "id": "flight-8-flight",
+      "label": "Flight 8 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-8-flight"
+      }
+    },
+    {
+      "id": "flight-8-route",
+      "label": "Flight 8 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-8-route"
+      }
+    },
+    {
+      "id": "flight-8-gate",
+      "label": "Flight 8 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-8-gate"
+      }
+    },
+    {
+      "id": "flight-8-status",
+      "label": "Flight 8 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-8-status"
+      }
+    },
+    {
+      "id": "flight-8-time",
+      "label": "Flight 8 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-8-time"
+      }
+    },
+    {
+      "id": "flight-9-flight",
+      "label": "Flight 9 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-9-flight"
+      }
+    },
+    {
+      "id": "flight-9-route",
+      "label": "Flight 9 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-9-route"
+      }
+    },
+    {
+      "id": "flight-9-gate",
+      "label": "Flight 9 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-9-gate"
+      }
+    },
+    {
+      "id": "flight-9-status",
+      "label": "Flight 9 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-9-status"
+      }
+    },
+    {
+      "id": "flight-9-time",
+      "label": "Flight 9 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-9-time"
+      }
+    },
+    {
+      "id": "flight-10-flight",
+      "label": "Flight 10 flight",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-10-flight"
+      }
+    },
+    {
+      "id": "flight-10-route",
+      "label": "Flight 10 direction / route",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-10-route"
+      }
+    },
+    {
+      "id": "flight-10-gate",
+      "label": "Flight 10 gate",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-10-gate"
+      }
+    },
+    {
+      "id": "flight-10-status",
+      "label": "Flight 10 status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-10-status"
+      }
+    },
+    {
+      "id": "flight-10-time",
+      "label": "Flight 10 time",
+      "type": "timestamp",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "flight-10-time"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh flights",
+      "description": "Read one enabled airport board from Finavia.",
+      "parameters": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "flight-arriving",
+      "name": "Flight arriving",
+      "description": "Upcoming arrival within the configured advance notice.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "id": "flight-departing",
+      "name": "Flight departing",
+      "description": "Upcoming departure within the configured advance notice.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "id": "flight-arriving-or-departing",
+      "name": "Flight arriving or departing",
+      "description": "Either upcoming movement within advance notice.",
+      "occurrenceKey": "movement-id",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "id": "flight-arrived",
+      "name": "Flight arrived",
+      "description": "A recent landing confirmed by the provider act_d time.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "id": "flight-departed",
+      "name": "Flight departed",
+      "description": "A recent takeoff confirmed by the provider act_d time.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    },
+    {
+      "id": "flight-arrived-or-departed",
+      "name": "Flight arrived or departed",
+      "description": "Either recent movement confirmed by the provider act_d time.",
+      "occurrenceKey": "movement-id",
+      "payload": [
+        {
+          "id": "location-id",
+          "label": "Location ID",
+          "type": "string",
+          "maxLength": 64,
+          "required": true
+        },
+        {
+          "id": "location-name",
+          "label": "Location name",
+          "type": "string",
+          "maxLength": 32,
+          "required": true
+        },
+        {
+          "id": "movement-id",
+          "label": "Movement ID",
+          "type": "string",
+          "maxLength": 160,
+          "required": true
+        },
+        {
+          "id": "airport",
+          "label": "Airport code",
+          "type": "string",
+          "maxLength": 3,
+          "required": true
+        },
+        {
+          "id": "direction",
+          "label": "Direction",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        {
+          "id": "flight-number",
+          "label": "Flight number",
+          "type": "string",
+          "maxLength": 16,
+          "required": true
+        },
+        {
+          "id": "route",
+          "label": "Route airport codes",
+          "type": "string",
+          "maxLength": 100
+        },
+        {
+          "id": "scheduled-at",
+          "label": "Scheduled time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "expected-at",
+          "label": "Expected time (epoch milliseconds)",
+          "type": "number",
+          "min": 0,
+          "required": true
+        },
+        {
+          "id": "actual-at",
+          "label": "Reported time (epoch milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "time-basis",
+          "label": "Time basis",
+          "type": "string",
+          "maxLength": 64,
+          "required": true,
+          "enum": [
+            "scheduled",
+            "estimated",
+            "actual"
+          ]
+        },
+        {
+          "id": "gate",
+          "label": "Gate",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "status",
+          "label": "Provider status",
+          "type": "string",
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "departure-lounge",
+      "name": "Departure lounge",
+      "sourceLabel": "Location",
+      "directory": "cards/departure-lounge",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "airport",
+          "field": "airport",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "board",
+          "field": "flights",
+          "format": "table",
+          "columns": [
+            "flight",
+            "route",
+            "gate",
+            "status",
+            "time",
+            "in-minutes"
+          ],
+          "rows": 1
+        }
+      ]
+    }
+  ]
+}

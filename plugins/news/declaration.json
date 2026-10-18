@@ -1,0 +1,811 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "news",
+  "name": "News",
+  "version": "1.1.0",
+  "description": "Headlines from Google News RSS",
+  "icon": "newspaper",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "search-id"
+  },
+  "instances": {
+    "setting": "searches",
+    "stateKey": "searches",
+    "eventKey": "search-id",
+    "queryUrlMigration": {
+      "baseUrl": "https://news.google.com/rss/search",
+      "queryParameter": "q",
+      "parameters": [
+        {
+          "setting": "language",
+          "parameter": "hl",
+          "default": "fi-FI"
+        },
+        {
+          "setting": "country",
+          "parameter": "gl",
+          "default": "FI"
+        },
+        {
+          "setting": "edition",
+          "parameter": "ceid",
+          "default": "FI:fi"
+        }
+      ]
+    }
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 60,
+      "min": 15,
+      "max": 60,
+      "enum": [
+        15,
+        30,
+        45,
+        60
+      ],
+      "enumLabels": [
+        "15 minutes",
+        "30 minutes",
+        "45 minutes",
+        "1 hour"
+      ],
+      "help": "Applies to each enabled search. Requests are staggered across the interval."
+    },
+    {
+      "id": "searches",
+      "label": "Searches",
+      "type": "list",
+      "itemLabel": "search",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name",
+        "query"
+      ],
+      "help": "Add named locations or topics for separate headlines, card fields, and Task events.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Search ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "query",
+          "label": "Feed URL",
+          "type": "string",
+          "required": true,
+          "default": "https://news.google.com/rss/search?q=Kerava&hl=fi-FI&gl=FI&ceid=FI:fi",
+          "maxLength": 2000,
+          "pattern": "^https://news\\.google\\.com/rss(?:[/?][^\\u0000-\\u001f\\u007f]*)?$",
+          "help": "Paste the whole Google News RSS Feed URL, including all query parameters. Use the complete URL generated for your specific Google News search, topic, language, or edition. Example: https://news.google.com/rss/search?q=Kerava&hl=fi-FI&gl=FI&ceid=FI:fi"
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "articles",
+      "label": "Articles",
+      "type": "table",
+      "icon": "newspaper",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string"
+        },
+        {
+          "id": "date",
+          "label": "Date",
+          "type": "timestamp"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "article-count",
+        "sort": {
+          "column": "date",
+          "direction": "desc"
+        },
+        "rows": [
+          {
+            "title": "article-1-title",
+            "date": "article-1-published-at"
+          },
+          {
+            "title": "article-2-title",
+            "date": "article-2-published-at"
+          },
+          {
+            "title": "article-3-title",
+            "date": "article-3-published-at"
+          },
+          {
+            "title": "article-4-title",
+            "date": "article-4-published-at"
+          },
+          {
+            "title": "article-5-title",
+            "date": "article-5-published-at"
+          },
+          {
+            "title": "article-6-title",
+            "date": "article-6-published-at"
+          },
+          {
+            "title": "article-7-title",
+            "date": "article-7-published-at"
+          },
+          {
+            "title": "article-8-title",
+            "date": "article-8-published-at"
+          },
+          {
+            "title": "article-9-title",
+            "date": "article-9-published-at"
+          },
+          {
+            "title": "article-10-title",
+            "date": "article-10-published-at"
+          }
+        ]
+      }
+    },
+    {
+      "id": "requested-query",
+      "label": "Requested feed URL",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "requested-query"
+      }
+    },
+    {
+      "id": "feed-title",
+      "label": "Feed title",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "feed-title"
+      }
+    },
+    {
+      "id": "feed-language",
+      "label": "Feed language",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "feed-language"
+      }
+    },
+    {
+      "id": "feed-country",
+      "label": "Feed country",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "feed-country"
+      }
+    },
+    {
+      "id": "feed-edition",
+      "label": "Feed edition",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "feed-edition"
+      }
+    },
+    {
+      "id": "article-count",
+      "label": "Article count",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "article-count"
+      }
+    },
+    {
+      "id": "headlines",
+      "label": "Headlines",
+      "type": "string",
+      "icon": "clipboard-list",
+      "source": {
+        "kind": "state",
+        "key": "headlines"
+      }
+    },
+    {
+      "id": "updated-at",
+      "label": "Last successful refresh",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "updated-at"
+      }
+    },
+    {
+      "id": "article-1-title",
+      "label": "Article 1 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-1-title"
+      }
+    },
+    {
+      "id": "article-1-publisher",
+      "label": "Article 1 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-1-publisher"
+      }
+    },
+    {
+      "id": "article-1-link",
+      "label": "Article 1 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-1-link"
+      }
+    },
+    {
+      "id": "article-1-published-at",
+      "label": "Article 1 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-1-published-at"
+      }
+    },
+    {
+      "id": "article-2-title",
+      "label": "Article 2 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-2-title"
+      }
+    },
+    {
+      "id": "article-2-publisher",
+      "label": "Article 2 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-2-publisher"
+      }
+    },
+    {
+      "id": "article-2-link",
+      "label": "Article 2 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-2-link"
+      }
+    },
+    {
+      "id": "article-2-published-at",
+      "label": "Article 2 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-2-published-at"
+      }
+    },
+    {
+      "id": "article-3-title",
+      "label": "Article 3 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-3-title"
+      }
+    },
+    {
+      "id": "article-3-publisher",
+      "label": "Article 3 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-3-publisher"
+      }
+    },
+    {
+      "id": "article-3-link",
+      "label": "Article 3 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-3-link"
+      }
+    },
+    {
+      "id": "article-3-published-at",
+      "label": "Article 3 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-3-published-at"
+      }
+    },
+    {
+      "id": "article-4-title",
+      "label": "Article 4 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-4-title"
+      }
+    },
+    {
+      "id": "article-4-publisher",
+      "label": "Article 4 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-4-publisher"
+      }
+    },
+    {
+      "id": "article-4-link",
+      "label": "Article 4 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-4-link"
+      }
+    },
+    {
+      "id": "article-4-published-at",
+      "label": "Article 4 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-4-published-at"
+      }
+    },
+    {
+      "id": "article-5-title",
+      "label": "Article 5 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-5-title"
+      }
+    },
+    {
+      "id": "article-5-publisher",
+      "label": "Article 5 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-5-publisher"
+      }
+    },
+    {
+      "id": "article-5-link",
+      "label": "Article 5 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-5-link"
+      }
+    },
+    {
+      "id": "article-5-published-at",
+      "label": "Article 5 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-5-published-at"
+      }
+    },
+    {
+      "id": "article-6-title",
+      "label": "Article 6 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-6-title"
+      }
+    },
+    {
+      "id": "article-6-publisher",
+      "label": "Article 6 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-6-publisher"
+      }
+    },
+    {
+      "id": "article-6-link",
+      "label": "Article 6 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-6-link"
+      }
+    },
+    {
+      "id": "article-6-published-at",
+      "label": "Article 6 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-6-published-at"
+      }
+    },
+    {
+      "id": "article-7-title",
+      "label": "Article 7 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-7-title"
+      }
+    },
+    {
+      "id": "article-7-publisher",
+      "label": "Article 7 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-7-publisher"
+      }
+    },
+    {
+      "id": "article-7-link",
+      "label": "Article 7 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-7-link"
+      }
+    },
+    {
+      "id": "article-7-published-at",
+      "label": "Article 7 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-7-published-at"
+      }
+    },
+    {
+      "id": "article-8-title",
+      "label": "Article 8 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-8-title"
+      }
+    },
+    {
+      "id": "article-8-publisher",
+      "label": "Article 8 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-8-publisher"
+      }
+    },
+    {
+      "id": "article-8-link",
+      "label": "Article 8 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-8-link"
+      }
+    },
+    {
+      "id": "article-8-published-at",
+      "label": "Article 8 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-8-published-at"
+      }
+    },
+    {
+      "id": "article-9-title",
+      "label": "Article 9 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-9-title"
+      }
+    },
+    {
+      "id": "article-9-publisher",
+      "label": "Article 9 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-9-publisher"
+      }
+    },
+    {
+      "id": "article-9-link",
+      "label": "Article 9 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-9-link"
+      }
+    },
+    {
+      "id": "article-9-published-at",
+      "label": "Article 9 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-9-published-at"
+      }
+    },
+    {
+      "id": "article-10-title",
+      "label": "Article 10 · Title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "article-10-title"
+      }
+    },
+    {
+      "id": "article-10-publisher",
+      "label": "Article 10 · Publisher",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "article-10-publisher"
+      }
+    },
+    {
+      "id": "article-10-link",
+      "label": "Article 10 · Link",
+      "type": "string",
+      "icon": "eye",
+      "source": {
+        "kind": "state",
+        "key": "article-10-link"
+      }
+    },
+    {
+      "id": "article-10-published-at",
+      "label": "Article 10 · Published",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "article-10-published-at"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh news",
+      "description": "Fetch Google News RSS for one enabled search.",
+      "parameters": [
+        {
+          "id": "search-id",
+          "label": "Search",
+          "type": "string",
+          "default": "",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "news-updated",
+      "name": "News updated",
+      "description": "A news feed was fetched and saved successfully, including an empty result.",
+      "testAction": "refresh",
+      "payload": [
+        {
+          "id": "search-id",
+          "label": "Search ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "search-name",
+          "label": "Search name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "query",
+          "label": "Feed URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000
+        },
+        {
+          "id": "article-count",
+          "label": "Article count",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 10
+        },
+        {
+          "id": "first-title",
+          "label": "First article title",
+          "type": "string",
+          "maxLength": 300
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "front-page",
+      "name": "Front page",
+      "sourceLabel": "Search",
+      "directory": "cards/front-page",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "feed",
+          "field": "feed-title",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-1",
+          "field": "article-1-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-1",
+          "field": "article-1-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-1",
+          "field": "article-1-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-2",
+          "field": "article-2-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-2",
+          "field": "article-2-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-2",
+          "field": "article-2-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-3",
+          "field": "article-3-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-3",
+          "field": "article-3-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-3",
+          "field": "article-3-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-4",
+          "field": "article-4-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-4",
+          "field": "article-4-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-4",
+          "field": "article-4-published-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

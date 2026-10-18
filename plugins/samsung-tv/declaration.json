@@ -1,0 +1,1059 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "samsung-tv",
+  "name": "Samsung TV",
+  "version": "1.1.0",
+  "description": "Local Samsung TV readings, apps and remote controls",
+  "icon": "display",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "host",
+      "label": "TV address",
+      "type": "string",
+      "default": "",
+      "maxLength": 15,
+      "help": "This TV’s private IPv4 address. No network discovery or fallback target."
+    },
+    {
+      "id": "port",
+      "label": "Remote port",
+      "type": "number",
+      "default": 8002,
+      "enum": [
+        8002,
+        8001
+      ],
+      "enumLabels": [
+        "8002 · TLS",
+        "8001 · plain local WebSocket"
+      ]
+    },
+    {
+      "id": "fingerprint",
+      "label": "TV certificate fingerprint (SHA-256)",
+      "type": "string",
+      "default": "",
+      "maxLength": 95,
+      "help": "Port 8002 remote actions verify this exact self-signed certificate before sending the token. Changing it never happens automatically."
+    },
+    {
+      "id": "remote-name",
+      "label": "Remote name",
+      "type": "string",
+      "default": "Living room remote",
+      "maxLength": 100,
+      "help": "Name presented to the TV by this Localserve installation."
+    },
+    {
+      "id": "token",
+      "label": "Saved TV pairing token",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 512,
+      "help": "Optional replacement: an already authorized TV token. After a successful remote read/action, clear this setting; the Windows-protected copy remains. Nonempty settings are private plaintext. Status polls do not pair."
+    },
+    {
+      "id": "mac",
+      "label": "Wired MAC address",
+      "type": "string",
+      "default": "",
+      "maxLength": 17,
+      "help": "Used only by the explicit Wake TV action. A wake packet does not confirm power-on."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 1,
+      "min": 0.5,
+      "max": 5,
+      "enum": [
+        0.5,
+        1,
+        5
+      ],
+      "enumLabels": [
+        "30 seconds",
+        "1 minute",
+        "5 minutes"
+      ]
+    },
+    {
+      "id": "youtube-playback",
+      "label": "YouTube playback",
+      "type": "boolean",
+      "default": false,
+      "help": "Allows Play YouTube video to read this TV’s private screen ID and send it to YouTube for a temporary playback session. No Google account or API key is used. Off by default."
+    },
+    {
+      "id": "youtube-port",
+      "label": "YouTube control port",
+      "type": "number",
+      "default": 8080,
+      "min": 1,
+      "max": 65535,
+      "help": "Explicit port on this same TV for /ws/app/YouTube. No discovery, fallback port or automatic retry."
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "connection-status",
+      "label": "Connection",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "connection-status"
+      }
+    },
+    {
+      "id": "tv-name",
+      "label": "TV name",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "tv-name"
+      }
+    },
+    {
+      "id": "model",
+      "label": "Model",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "model"
+      }
+    },
+    {
+      "id": "model-description",
+      "label": "Model description",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "model-description"
+      }
+    },
+    {
+      "id": "operating-system",
+      "label": "Operating system",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "operating-system"
+      }
+    },
+    {
+      "id": "resolution",
+      "label": "Resolution",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "resolution"
+      }
+    },
+    {
+      "id": "network-type",
+      "label": "Network type",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "network-type"
+      }
+    },
+    {
+      "id": "firmware-version",
+      "label": "Firmware",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "firmware-version"
+      }
+    },
+    {
+      "id": "reported-power",
+      "label": "Reported power",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "reported-power"
+      }
+    },
+    {
+      "id": "volume",
+      "label": "Volume (%)",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "volume"
+      }
+    },
+    {
+      "id": "muted",
+      "label": "Muted",
+      "type": "boolean",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "muted"
+      }
+    },
+    {
+      "id": "playback-state",
+      "label": "Playback state",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "playback-state"
+      }
+    },
+    {
+      "id": "playback-position",
+      "label": "Playback position",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "playback-position"
+      }
+    },
+    {
+      "id": "playback-duration",
+      "label": "Playback duration",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "playback-duration"
+      }
+    },
+    {
+      "id": "details-status",
+      "label": "Read sections",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "details-status"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "last-command",
+      "label": "Last sent command",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "last-command"
+      }
+    },
+    {
+      "id": "command-sent-at",
+      "label": "Command sent",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "command-sent-at"
+      }
+    },
+    {
+      "id": "app-count",
+      "label": "Reported installed apps",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "app-count"
+      }
+    },
+    {
+      "id": "app-row-count",
+      "label": "Displayed installed apps",
+      "type": "number",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "app-row-count"
+      }
+    },
+    {
+      "id": "apps-truncated",
+      "label": "App List limited",
+      "type": "boolean",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "apps-truncated"
+      }
+    },
+    {
+      "id": "apps-received-at",
+      "label": "App reception",
+      "type": "timestamp",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "apps-received-at"
+      }
+    },
+    {
+      "id": "apps",
+      "label": "Installed apps",
+      "type": "table",
+      "icon": "display",
+      "columns": [
+        {
+          "id": "id",
+          "label": "App ID",
+          "type": "string"
+        },
+        {
+          "id": "name",
+          "label": "App",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "app-row-count",
+        "rows": [
+          {
+            "id": "app-1-id",
+            "name": "app-1-name",
+            "type": "app-1-type"
+          },
+          {
+            "id": "app-2-id",
+            "name": "app-2-name",
+            "type": "app-2-type"
+          },
+          {
+            "id": "app-3-id",
+            "name": "app-3-name",
+            "type": "app-3-type"
+          },
+          {
+            "id": "app-4-id",
+            "name": "app-4-name",
+            "type": "app-4-type"
+          },
+          {
+            "id": "app-5-id",
+            "name": "app-5-name",
+            "type": "app-5-type"
+          },
+          {
+            "id": "app-6-id",
+            "name": "app-6-name",
+            "type": "app-6-type"
+          },
+          {
+            "id": "app-7-id",
+            "name": "app-7-name",
+            "type": "app-7-type"
+          },
+          {
+            "id": "app-8-id",
+            "name": "app-8-name",
+            "type": "app-8-type"
+          },
+          {
+            "id": "app-9-id",
+            "name": "app-9-name",
+            "type": "app-9-type"
+          },
+          {
+            "id": "app-10-id",
+            "name": "app-10-name",
+            "type": "app-10-type"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "app-1-id",
+            "type": "string"
+          },
+          {
+            "key": "app-1-name",
+            "type": "string"
+          },
+          {
+            "key": "app-1-type",
+            "type": "string"
+          },
+          {
+            "key": "app-2-id",
+            "type": "string"
+          },
+          {
+            "key": "app-2-name",
+            "type": "string"
+          },
+          {
+            "key": "app-2-type",
+            "type": "string"
+          },
+          {
+            "key": "app-3-id",
+            "type": "string"
+          },
+          {
+            "key": "app-3-name",
+            "type": "string"
+          },
+          {
+            "key": "app-3-type",
+            "type": "string"
+          },
+          {
+            "key": "app-4-id",
+            "type": "string"
+          },
+          {
+            "key": "app-4-name",
+            "type": "string"
+          },
+          {
+            "key": "app-4-type",
+            "type": "string"
+          },
+          {
+            "key": "app-5-id",
+            "type": "string"
+          },
+          {
+            "key": "app-5-name",
+            "type": "string"
+          },
+          {
+            "key": "app-5-type",
+            "type": "string"
+          },
+          {
+            "key": "app-6-id",
+            "type": "string"
+          },
+          {
+            "key": "app-6-name",
+            "type": "string"
+          },
+          {
+            "key": "app-6-type",
+            "type": "string"
+          },
+          {
+            "key": "app-7-id",
+            "type": "string"
+          },
+          {
+            "key": "app-7-name",
+            "type": "string"
+          },
+          {
+            "key": "app-7-type",
+            "type": "string"
+          },
+          {
+            "key": "app-8-id",
+            "type": "string"
+          },
+          {
+            "key": "app-8-name",
+            "type": "string"
+          },
+          {
+            "key": "app-8-type",
+            "type": "string"
+          },
+          {
+            "key": "app-9-id",
+            "type": "string"
+          },
+          {
+            "key": "app-9-name",
+            "type": "string"
+          },
+          {
+            "key": "app-9-type",
+            "type": "string"
+          },
+          {
+            "key": "app-10-id",
+            "type": "string"
+          },
+          {
+            "key": "app-10-name",
+            "type": "string"
+          },
+          {
+            "key": "app-10-type",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh TV readings",
+      "parameters": [],
+      "description": "Read the configured TV without changing its screen."
+    },
+    {
+      "id": "refresh-apps",
+      "name": "Read installed apps",
+      "parameters": [],
+      "description": "Read the configured TV without changing its screen."
+    },
+    {
+      "id": "key",
+      "name": "Send remote key",
+      "parameters": [
+        {
+          "id": "key",
+          "label": "Remote key",
+          "type": "string",
+          "required": true,
+          "default": "KEY_HOME",
+          "enum": [
+            "KEY_POWER",
+            "KEY_POWEROFF",
+            "KEY_UP",
+            "KEY_DOWN",
+            "KEY_LEFT",
+            "KEY_RIGHT",
+            "KEY_ENTER",
+            "KEY_RETURN",
+            "KEY_HOME",
+            "KEY_EXIT",
+            "KEY_MENU",
+            "KEY_SOURCE",
+            "KEY_HDMI",
+            "KEY_HDMI1",
+            "KEY_HDMI2",
+            "KEY_HDMI3",
+            "KEY_HDMI4",
+            "KEY_TV",
+            "KEY_VOLUP",
+            "KEY_VOLDOWN",
+            "KEY_MUTE",
+            "KEY_CHUP",
+            "KEY_CHDOWN",
+            "KEY_GUIDE",
+            "KEY_INFO",
+            "KEY_PLAY",
+            "KEY_PAUSE",
+            "KEY_STOP",
+            "KEY_REWIND",
+            "KEY_FF",
+            "KEY_0",
+            "KEY_1",
+            "KEY_2",
+            "KEY_3",
+            "KEY_4",
+            "KEY_5",
+            "KEY_6",
+            "KEY_7",
+            "KEY_8",
+            "KEY_9"
+          ],
+          "enumLabels": [
+            "POWER",
+            "POWEROFF",
+            "UP",
+            "DOWN",
+            "LEFT",
+            "RIGHT",
+            "ENTER",
+            "RETURN",
+            "HOME",
+            "EXIT",
+            "MENU",
+            "SOURCE",
+            "HDMI",
+            "HDMI1",
+            "HDMI2",
+            "HDMI3",
+            "HDMI4",
+            "TV",
+            "VOLUP",
+            "VOLDOWN",
+            "MUTE",
+            "CHUP",
+            "CHDOWN",
+            "GUIDE",
+            "INFO",
+            "PLAY",
+            "PAUSE",
+            "STOP",
+            "REWIND",
+            "FF",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9"
+          ]
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "volume",
+      "name": "Set volume",
+      "parameters": [
+        {
+          "id": "value",
+          "label": "Volume (%)",
+          "type": "number",
+          "required": true,
+          "default": 20,
+          "min": 0,
+          "max": 100
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "mute",
+      "name": "Set mute",
+      "parameters": [
+        {
+          "id": "muted",
+          "label": "Muted",
+          "type": "boolean",
+          "required": true,
+          "default": true
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "input",
+      "name": "Select input",
+      "parameters": [
+        {
+          "id": "input",
+          "label": "Input",
+          "type": "string",
+          "required": true,
+          "default": "TV",
+          "enum": [
+            "TV",
+            "HDMI1",
+            "HDMI2",
+            "HDMI3",
+            "HDMI4"
+          ]
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "show-notice",
+      "name": "Show TV notice",
+      "description": "Show Notice, Alarm, Alert or Warning with optional automatic close and looping sound. Untimed notices show elapsed time until dismissed. One notice at a time; delivery does not confirm display/audio.",
+      "parameters": [
+        {
+          "id": "template",
+          "label": "Template",
+          "type": "string",
+          "default": "Notice",
+          "enum": [
+            "Notice",
+            "Alarm",
+            "Alert",
+            "Warning"
+          ]
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "required": true,
+          "maxLength": 120
+        },
+        {
+          "id": "message",
+          "label": "Message",
+          "type": "string",
+          "format": "multiline",
+          "required": true,
+          "maxLength": 2000
+        },
+        {
+          "id": "auto-close",
+          "label": "Close automatically",
+          "type": "boolean",
+          "default": true,
+          "help": "Turn off to keep the notice open until dismissed. The screen shows elapsed time. Back or Tasks → Dismiss notice closes it."
+        },
+        {
+          "id": "seconds",
+          "label": "Display time (seconds)",
+          "type": "number",
+          "min": 1,
+          "max": 3600,
+          "default": 10
+        },
+        {
+          "id": "sound",
+          "label": "Play distinctive sound",
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "id": "loop-sound",
+          "label": "Loop audible chime",
+          "type": "boolean",
+          "default": false,
+          "help": "Requires Play distinctive sound. Repeats the selected template’s chime until this notice closes; TV volume and mute are unchanged."
+        }
+      ]
+    },
+    {
+      "id": "launch-app",
+      "name": "Launch installed app",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported app ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 128
+        },
+        {
+          "id": "mode",
+          "label": "Launch mode",
+          "type": "string",
+          "default": "DEEP_LINK",
+          "enum": [
+            "DEEP_LINK",
+            "NATIVE_LAUNCH"
+          ]
+        },
+        {
+          "id": "arguments",
+          "label": "App arguments",
+          "type": "string",
+          "default": "",
+          "maxLength": 2048
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "play-youtube",
+      "name": "Play YouTube video",
+      "description": "Play a Video ID through the TV YouTube app. Requires YouTube playback enabled in Samsung TV Settings; no wake or retry.",
+      "parameters": [
+        {
+          "id": "video-id",
+          "label": "Video ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_-]{11}$",
+          "help": "Select Video ID from a Video released Event, or enter an eleven-character ID."
+        },
+        {
+          "id": "app-id",
+          "label": "YouTube app ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 128,
+          "default": "111299001912",
+          "pattern": "^[\\w.-]{1,128}$"
+        }
+      ]
+    },
+    {
+      "id": "open-browser",
+      "name": "Open TV browser URL",
+      "parameters": [
+        {
+          "id": "url",
+          "label": "HTTP or HTTPS URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 2048
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "play-media",
+      "name": "Play media URL",
+      "parameters": [
+        {
+          "id": "url",
+          "label": "HTTP or HTTPS URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 2048
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "play",
+      "name": "Resume media",
+      "parameters": [],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "pause",
+      "name": "Pause media",
+      "parameters": [],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "stop",
+      "name": "Stop media",
+      "parameters": [],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "send-text",
+      "name": "Send text",
+      "parameters": [
+        {
+          "id": "text",
+          "label": "Text",
+          "type": "string",
+          "required": true,
+          "maxLength": 1000
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "pointer",
+      "name": "Move pointer",
+      "parameters": [
+        {
+          "id": "x",
+          "label": "Horizontal movement",
+          "type": "number",
+          "required": true,
+          "default": 0,
+          "min": -2000,
+          "max": 2000
+        },
+        {
+          "id": "y",
+          "label": "Vertical movement",
+          "type": "number",
+          "required": true,
+          "default": 0,
+          "min": -2000,
+          "max": 2000
+        }
+      ],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "power-off",
+      "name": "Power off",
+      "parameters": [],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "wake",
+      "name": "Wake TV",
+      "parameters": [],
+      "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    }
+  ],
+  "controls": {
+    "actions": [
+      "refresh",
+      "refresh-apps",
+      "key",
+      "volume",
+      "mute",
+      "input",
+      "launch-app",
+      "open-browser",
+      "play-media",
+      "play",
+      "pause",
+      "stop",
+      "send-text",
+      "pointer",
+      "power-off",
+      "wake"
+    ],
+    "television": true
+  },
+  "events": [
+    {
+      "id": "status-updated",
+      "name": "TV readings updated",
+      "testAction": "refresh",
+      "description": "A committed device-info refresh; unknown or failed sections are omitted from typed payloads.",
+      "payload": [
+        {
+          "id": "volume",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "type": "boolean"
+        },
+        {
+          "id": "playback",
+          "type": "string",
+          "maxLength": 40
+        }
+      ]
+    },
+    {
+      "id": "tv-changed",
+      "name": "Reported TV state changed",
+      "occurrenceKey": "change-id",
+      "description": "An observed volume/mute/playback change, claimed before dispatch. First known readings establish baselines.",
+      "payload": [
+        {
+          "id": "volume",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "muted",
+          "type": "boolean"
+        },
+        {
+          "id": "playback",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "change-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "home-cinema",
+      "name": "Home cinema",
+      "sourceLabel": "Data source",
+      "directory": "cards/home-cinema",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "name",
+          "field": "tv-name",
+          "format": "text"
+        },
+        {
+          "id": "model",
+          "field": "model",
+          "format": "text"
+        },
+        {
+          "id": "resolution",
+          "field": "resolution",
+          "format": "text"
+        },
+        {
+          "id": "power",
+          "field": "reported-power",
+          "format": "text"
+        },
+        {
+          "id": "connection",
+          "field": "connection-status",
+          "format": "text"
+        },
+        {
+          "id": "volume",
+          "field": "volume",
+          "format": "number"
+        },
+        {
+          "id": "muted",
+          "field": "muted",
+          "format": "text"
+        },
+        {
+          "id": "playback",
+          "field": "playback-state",
+          "format": "text"
+        },
+        {
+          "id": "position",
+          "field": "playback-position",
+          "format": "text"
+        },
+        {
+          "id": "duration",
+          "field": "playback-duration",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "details",
+          "field": "details-status",
+          "format": "text"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "localserve",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": ".\\runtime\\node.exe server.mjs",
+    "test": ".\\runtime\\node.exe --test tests/universe.test.mjs tests/universe-viewer.test.mjs tests/universe-ui.test.mjs tests/vistas-legacy.test.mjs tests/games.test.mjs tests/source.test.mjs"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

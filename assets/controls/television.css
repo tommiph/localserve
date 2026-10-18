@@ -1,0 +1,371 @@
+/* Mobile TV remote, sharing Localserve theme tokens and local glyphs. */
+.television-viewer {
+   padding: 20px 16px;
+  
+}
+.television-viewer .controls-viewer-header,.television-viewer #controls-board,.television-viewer .controls-feedback {
+   max-width: 800px;
+   margin-left: auto;
+   margin-right: auto;
+  
+}
+.television-viewer .controls-viewer-header {
+   margin-bottom: 22px;
+  
+}
+.television-viewer .controls-viewer-header > div {
+   text-align: right;
+  
+}
+.television-viewer .controls-viewer-header h1 {
+   font-size: calc(15px * var(--font-scale));
+  
+}
+.tv-heading {
+   display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:24px 28px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:radial-gradient(ellipse at right,#66c9ad18,transparent 70%),var(--surface);
+  
+}
+.tv-heading p {
+   margin:0 0 8px;
+  font-size:11px;
+  letter-spacing:.16em;
+  color:var(--muted);
+  
+}
+.tv-heading h2 {
+   margin:0 0 8px;
+  font-size:calc(29px * var(--font-scale));
+  font-weight:600;
+  letter-spacing:-.04em;
+  
+}
+.tv-heading span {
+   font-size:12px;
+  color:var(--muted);
+  
+}
+.tv-screen-art {
+   font-size:55px;
+  color:var(--accent);
+  padding:10px;
+  
+}
+.tv-tabs {
+   display:flex;
+  gap:5px;
+  padding:5px;
+  margin:20px 0;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  
+}
+.tv-tabs button {
+   flex:1;
+  min-height:44px;
+  border:0;
+  background:none;
+  border-radius:9px;
+  font:inherit;
+  font-size:13px;
+  color:var(--muted);
+  cursor:pointer;
+  
+}
+.tv-tabs button[aria-current="page"] {
+   background:var(--surface-hover);
+  color:var(--text);
+  
+}
+.tv-remote-layout {
+   display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+  
+}
+.tv-pad-panel,.tv-secondary {
+   min-width:0;
+  padding:20px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--surface);
+  
+}
+.tv-key {
+   display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:8px;
+  min-width:0;
+  min-height:56px;
+  padding:12px 8px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--surface-muted);
+  color:var(--text);
+  font:inherit;
+  cursor:pointer;
+  
+}
+.tv-key i {
+   font-size:18px;
+  
+}
+.tv-key span {
+   font-size:calc(10px * var(--font-scale));
+  overflow-wrap:anywhere;
+  
+}
+.tv-key:hover:not(:disabled) {
+   background:var(--surface-hover);
+  border-color:var(--accent);
+  
+}
+.tv-key:active:not(:disabled) {
+   transform:scale(.97);
+  
+}
+.tv-key:focus-visible,.tv-tabs button:focus-visible {
+   outline:2px solid var(--accent);
+  outline-offset:3px;
+  
+}
+.tv-power-row,.tv-navigation-row,.tv-media-row {
+   display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  
+}
+.tv-power-off {
+   color:var(--danger);
+  
+}
+.tv-direction-pad {
+   display:grid;
+  grid-template-columns:repeat(3,1fr);
+  grid-template-rows:repeat(3,70px);
+  gap:6px;
+  margin:24px auto;
+  max-width:270px;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  background:var(--canvas);
+  
+}
+.tv-direction-pad .tv-key {
+   border:0;
+  background:none;
+  border-radius:50%;
+  
+}
+.tv-direction-pad .tv-key > span {
+   position:absolute;
+  width:1px;
+  height:1px;
+  clip-path:inset(50%);
+  overflow:hidden;
+  
+}
+.tv-direction-pad .tv-up {
+   grid-column:2;
+  grid-row:1;
+  
+}.tv-direction-pad .tv-left {
+   grid-column:1;
+  grid-row:2;
+  
+}.tv-direction-pad .tv-enter {
+   grid-column:2;
+  grid-row:2;
+  background:var(--accent-soft);
+  border:1px solid var(--accent);
+  color:var(--accent);
+  
+}
+.tv-direction-pad .tv-enter > span {
+   position:static;
+  width:auto;
+  height:auto;
+  clip-path:none;
+  font-size:15px;
+  font-weight:600;
+  
+}.tv-enter > i {
+   display:none;
+  
+}
+.tv-direction-pad .tv-right {
+   grid-column:3;
+  grid-row:2;
+  
+}.tv-direction-pad .tv-down {
+   grid-column:2;
+  grid-row:3;
+  
+}
+.tv-rockers {
+   display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  
+}
+.tv-rockers section {
+   display:grid;
+  gap:7px;
+  
+}.tv-rockers h3 {
+   margin:0 0 6px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:500;
+  
+}
+.tv-rockers .tv-key {
+   min-height:54px;
+  
+}.tv-media-row {
+   margin:18px 0;
+  
+}
+.tv-secondary .control-surface {
+   margin-top:12px;
+  padding:14px;
+  
+}.tv-secondary .control-target {
+   flex-wrap:wrap;
+  
+}.tv-secondary input[type="range"] {
+   min-height:44px;
+  flex-basis:100%;
+  
+}
+.tv-section-heading {
+   display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:22px 0;
+  
+}.tv-section-heading h3 {
+   margin:0;
+  font-size:18px;
+  
+}.tv-section-heading span {
+   color:var(--muted);
+  font-size:11px;
+  
+}
+.tv-search {
+   display:flex;
+  align-items:center;
+  gap:12px;
+  padding-left:16px;
+  margin-bottom:18px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  color:var(--muted);
+  
+}.tv-search input {
+   width:100%;
+  min-height:46px;
+  border:0;
+  background:none;
+  
+}
+.tv-app-grid,.tv-more-grid {
+   display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px;
+  
+}.tv-app-grid .tv-key {
+   min-height:100px;
+  
+}.tv-app-grid .tv-key i {
+   color:var(--accent);
+  font-size:25px;
+  
+}.tv-app-grid .tv-key span {
+   font-size:12px;
+  
+}
+.tv-more-grid {
+   margin:16px 0;
+  
+}.tv-extra {
+   margin-top:18px;
+  
+}.tv-extra summary {
+   padding:16px;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:13px;
+  
+}
+.tv-footnote {
+   color:var(--muted);
+  font-size:11px;
+  line-height:1.7;
+  margin:22px 0;
+  
+}.television-viewer [hidden] {
+   display:none!important;
+  
+}
+@media(max-width:600px) {
+  
+ .television-viewer .controls-viewer-header {
+   flex-direction:row;
+  align-items:center;
+  gap:10px;
+  
+}.television-viewer .brand {
+   font-size:14px;
+  gap:8px;
+  
+}.television-viewer .brand img {
+   width:34px;
+  height:24px;
+  
+}.television-viewer #controls-status {
+   font-size:10px;
+  
+}
+ .tv-heading {
+   padding:20px 22px;
+  
+}.tv-heading h2 {
+   font-size:26px;
+  
+}.tv-screen-art {
+   font-size:44px;
+  
+}
+ .tv-remote-layout {
+   grid-template-columns:minmax(0,1fr);
+  gap:14px;
+  
+}.tv-pad-panel,.tv-secondary {
+   padding:18px;
+  
+}.tv-direction-pad {
+   max-width:260px;
+  grid-template-rows:repeat(3,65px);
+  
+}
+ .tv-app-grid,.tv-more-grid {
+   grid-template-columns:repeat(2,minmax(0,1fr));
+  
+}.tv-section-heading {
+   flex-wrap:wrap;
+  
+}
+}

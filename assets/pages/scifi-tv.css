@@ -1,0 +1,38 @@
+/* The supplied display's Grid and gap layout needs a Flexbox fallback on older
+   Tizen. Literal colors and spacing keep it readable without CSS variables. */
+body { background: #020408; color: #00f3ff; font-family: "Courier New", monospace; }
+header, main, footer, main > div, main > div > div { min-width: 0; min-height: 0; }
+main.grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  gap: 0;
+}
+main > div { width: 100%; }
+.space-y-4 > * + * { margin-top: 16px; }
+.space-y-3 > * + * { margin-top: 12px; }
+.space-y-1\.5 > * + * { margin-top: 6px; }
+.space-x-6 > * + * { margin-left: 24px; }
+.space-x-3 > * + * { margin-left: 12px; }
+.space-x-2 > * + * { margin-left: 8px; }
+main > div > .grid {
+  display: -webkit-flex;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  flex-wrap: wrap;
+  gap: 0;
+}
+main > div > .grid > button { width: 48%; margin: 8px 2% 0 0; }
+#view-canvas { background: #030712; }
+#view-canvas > div { box-shadow: 0 0 25px rgba(0, 243, 255, 0.18); }
+@media (min-width: 768px) {
+  main.grid { -webkit-flex-wrap: nowrap; flex-wrap: nowrap; }
+  main > div:first-child { width: 32%; margin-right: 16px; }
+  main > div:last-child { width: 68%; }
+  main > div > .grid > button { width: 23%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "webpage",
+  "name": "Webpage",
+  "version": "1.3.0",
+  "description": "Embedded webpages, parsed text and page change events",
+  "icon": "language",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "defaultCardLayout": "webpage",
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "page-id"
+  },
+  "instances": {
+    "setting": "pages",
+    "stateKey": "pages",
+    "eventKey": "page-id"
+  },
+  "listActions": [
+    {
+      "setting": "pages",
+      "actionId": "open-on-tv",
+      "targetParameter": "page-id"
+    }
+  ],
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 60,
+      "min": 5,
+      "max": 1440,
+      "enum": [
+        5,
+        10,
+        15,
+        30,
+        60,
+        120,
+        180,
+        360,
+        720,
+        1440
+      ],
+      "enumLabels": [
+        "5 minutes",
+        "10 minutes",
+        "15 minutes",
+        "30 minutes",
+        "1 hour",
+        "2 hours",
+        "3 hours",
+        "6 hours",
+        "12 hours",
+        "24 hours"
+      ],
+      "help": "Applies to public webpages. Localserve display pages are display-only and are not polled. Successful public refreshes reload embedded Cards; page-change events compare downloaded HTML."
+    },
+    {
+      "id": "pages",
+      "label": "Pages",
+      "type": "list",
+      "itemLabel": "page",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name",
+        "query"
+      ],
+      "help": "Use public HTTP/HTTPS URLs, /assets/pages/name.html for a local display, /universe for Universe, or /phone-information for phone readings. Local displays support Open on TV without polling or parsed readings. Copies start disabled.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Page ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "query",
+          "label": "Webpage URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000,
+          "default": "https://example.com/",
+          "help": "Public URL without passwords/custom ports, /assets/pages/name.html, /universe, or /phone-information. Other local/private URLs remain unavailable. Use the final public URL when a site redirects."
+        },
+        {
+          "id": "parse-text",
+          "label": "Parse text",
+          "type": "boolean",
+          "required": true,
+          "default": false
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "page",
+      "label": "Whole webpage",
+      "type": "webpage",
+      "icon": "display",
+      "source": {
+        "kind": "webpage",
+        "urlSetting": "query",
+        "urlKey": "page-url",
+        "revisionKey": "received-at"
+      }
+    },
+    {
+      "id": "page-url",
+      "label": "Requested URL",
+      "type": "string",
+      "icon": "display",
+      "source": {
+        "kind": "state",
+        "key": "page-url"
+      }
+    },
+    {
+      "id": "title",
+      "label": "Page title",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "title"
+      }
+    },
+    {
+      "id": "text",
+      "label": "Parsed text",
+      "type": "string",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "text"
+      }
+    },
+    {
+      "id": "text-truncated",
+      "label": "Text truncated",
+      "type": "boolean",
+      "icon": "comment",
+      "source": {
+        "kind": "state",
+        "key": "text-truncated"
+      }
+    },
+    {
+      "id": "response-bytes",
+      "label": "Response size (bytes)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "response-bytes"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "changed-at",
+      "label": "Last page change",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "changed-at"
+      }
+    },
+    {
+      "id": "change-count",
+      "label": "Detected changes",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "change-count"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh webpage",
+      "description": "Check one enabled page and update its public readings.",
+      "parameters": [
+        {
+          "id": "page-id",
+          "label": "Page",
+          "type": "string",
+          "default": "",
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "open-on-tv",
+      "name": "Open on TV",
+      "description": "Open the selected saved page fullscreen in the Vista Tizen app. Requires Samsung TV configured and enabled, the app installed and the TV already on. Sites may block embedding; no wake or retry.",
+      "parameters": [
+        {
+          "id": "page-id",
+          "label": "Page",
+          "type": "string",
+          "default": "",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "page-changed",
+      "name": "Page changed",
+      "testAction": "refresh",
+      "occurrenceKey": "change-id",
+      "description": "Downloaded HTML differs from the previous successful response for this URL. The first response establishes a baseline.",
+      "payload": [
+        {
+          "id": "page-id",
+          "label": "Page ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "page-name",
+          "label": "Page name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "url",
+          "label": "URL",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000
+        },
+        {
+          "id": "change-id",
+          "label": "Change ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "title",
+          "label": "Title",
+          "type": "string",
+          "maxLength": 300
+        },
+        {
+          "id": "change-count",
+          "label": "Detected changes",
+          "type": "number",
+          "required": true,
+          "min": 1
+        }
+      ]
+    }
+  ]
+}

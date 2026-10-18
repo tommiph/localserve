@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 1,
+  "id": "example-tv-remote",
+  "revision": 1,
+  "name": "TV remote example",
+  "slug": "remote",
+  "enabled": false,
+  "icon": "display",
+  "columns": 3,
+  "presentation": "television",
+  "items": [
+    {
+      "id": "power",
+      "label": "Power",
+      "icon": "power-off",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_POWER"
+          }
+        }
+      ]
+    },
+    {
+      "id": "source",
+      "label": "Source",
+      "icon": "display",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_SOURCE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "home",
+      "label": "Home",
+      "icon": "home",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_HOME"
+          }
+        }
+      ]
+    },
+    {
+      "id": "up",
+      "label": "Up",
+      "icon": "arrow-up",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_UP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "menu",
+      "label": "Menu",
+      "icon": "bars",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_MENU"
+          }
+        }
+      ]
+    },
+    {
+      "id": "left",
+      "label": "Left",
+      "icon": "arrow-left",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_LEFT"
+          }
+        }
+      ]
+    },
+    {
+      "id": "enter",
+      "label": "Enter",
+      "icon": "check",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_ENTER"
+          }
+        }
+      ]
+    },
+    {
+      "id": "right",
+      "label": "Right",
+      "icon": "arrow-right",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_RIGHT"
+          }
+        }
+      ]
+    },
+    {
+      "id": "back",
+      "label": "Back",
+      "icon": "arrow-left",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_RETURN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "down",
+      "label": "Down",
+      "icon": "arrow-down",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_DOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "exit",
+      "label": "Exit",
+      "icon": "xmark",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_EXIT"
+          }
+        }
+      ]
+    },
+    {
+      "id": "volume-up",
+      "label": "Volume +",
+      "icon": "volume-high",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_VOLUP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "volume-down",
+      "label": "Volume −",
+      "icon": "volume-low",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_VOLDOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "mute",
+      "label": "Mute",
+      "icon": "volume-xmark",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_MUTE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "channel-up",
+      "label": "Channel +",
+      "icon": "plus",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_CHUP"
+          }
+        }
+      ]
+    },
+    {
+      "id": "channel-down",
+      "label": "Channel −",
+      "icon": "minus",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_CHDOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "info",
+      "label": "Info",
+      "icon": "circle-info",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_INFO"
+          }
+        }
+      ]
+    },
+    {
+      "id": "guide",
+      "label": "Guide",
+      "icon": "list",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_GUIDE"
+          }
+        }
+      ]
+    },
+    {
+      "id": "rewind",
+      "label": "Rewind",
+      "icon": "fast-rewind",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_REWIND"
+          }
+        }
+      ]
+    },
+    {
+      "id": "forward",
+      "label": "Fast forward",
+      "icon": "forward",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "key",
+          "parameters": {
+            "key": "KEY_FF"
+          }
+        }
+      ]
+    },
+    {
+      "id": "play",
+      "label": "Play",
+      "icon": "play",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "play",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "id": "pause",
+      "label": "Pause",
+      "icon": "pause",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "pause",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "id": "stop",
+      "label": "Stop",
+      "icon": "stop",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "stop",
+          "parameters": {}
+        }
+      ]
+    },
+    {
+      "id": "volume",
+      "label": "Volume",
+      "icon": "volume-high",
+      "kind": "range",
+      "enabled": true,
+      "parameter": "value",
+      "binding": {
+        "field": "volume"
+      },
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "volume",
+          "parameters": {
+            "value": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "muted",
+      "label": "Muted",
+      "icon": "volume-xmark",
+      "kind": "toggle",
+      "enabled": true,
+      "parameter": "muted",
+      "binding": {
+        "field": "muted"
+      },
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "mute",
+          "parameters": {
+            "muted": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "input",
+      "label": "Input",
+      "icon": "display",
+      "kind": "select",
+      "enabled": true,
+      "parameter": "input",
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "input",
+          "parameters": {
+            "input": "TV"
+          }
+        }
+      ]
+    },
+    {
+      "id": "refresh",
+      "label": "Refresh",
+      "icon": "rotate",
+      "kind": "button",
+      "enabled": true,
+      "parameter": null,
+      "binding": null,
+      "steps": [
+        {
+          "id": "command",
+          "actionId": "refresh",
+          "parameters": {}
+        }
+      ]
+    }
+  ]
+}

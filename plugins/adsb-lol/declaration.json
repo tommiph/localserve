@@ -1,0 +1,970 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "adsb-lol",
+  "name": "adsb.lol",
+  "version": "1.0.0",
+  "description": "Nearby aircraft from adsb.lol public position reports",
+  "icon": "plane",
+  "defaultCardLayout": "table",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "area-id"
+  },
+  "instances": {
+    "setting": "areas",
+    "stateKey": "areas",
+    "eventKey": "area-id"
+  },
+  "attribution": {
+    "label": "Aircraft data: adsb.lol",
+    "url": "https://www.adsb.lol/",
+    "licenseLabel": "ODbL 1.0",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "notice": "Aircraft positions may be incomplete or delayed. Not for navigation."
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "required": true,
+      "default": 2,
+      "min": 1,
+      "max": 15,
+      "enum": [
+        1,
+        2,
+        5,
+        10,
+        15
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes",
+        "10 minutes",
+        "15 minutes"
+      ],
+      "help": "Per enabled area, staggered serial reads. Provider backoff can slow refreshes."
+    },
+    {
+      "id": "areas",
+      "label": "Areas",
+      "type": "list",
+      "itemLabel": "area",
+      "maxItems": 20,
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "name"
+      ],
+      "help": "Named search areas. Coordinates are sent to adsb.lol only when this plugin and area are enabled or explicitly refreshed.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Area ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "coordinates",
+          "label": "Coordinates (latitude, longitude)",
+          "type": "string",
+          "required": true,
+          "maxLength": 64,
+          "defaultFrom": "server-location",
+          "help": "Decimal degrees, for example 60.3,25.0. New entries prefill Server location; saved areas remain independent."
+        },
+        {
+          "id": "radius",
+          "label": "Radius (nautical miles)",
+          "type": "number",
+          "required": true,
+          "default": 25,
+          "min": 1,
+          "max": 250
+        },
+        {
+          "id": "position-age",
+          "label": "Maximum reported position age",
+          "type": "number",
+          "required": true,
+          "default": 60,
+          "min": 30,
+          "max": 300,
+          "enum": [
+            30,
+            60,
+            120,
+            300
+          ],
+          "enumLabels": [
+            "30 seconds",
+            "1 minute",
+            "2 minutes",
+            "5 minutes"
+          ]
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "aircraft-count",
+      "label": "Aircraft with recent positions",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-count"
+      }
+    },
+    {
+      "id": "row-count",
+      "label": "Displayed aircraft",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "row-count"
+      }
+    },
+    {
+      "id": "list-limited",
+      "label": "List limited to ten aircraft",
+      "type": "boolean",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "list-limited"
+      }
+    },
+    {
+      "id": "excluded-count",
+      "label": "Reports excluded by position/radius/age",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "excluded-count"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "attempted-at",
+      "label": "Last attempted read",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "attempted-at"
+      }
+    },
+    {
+      "id": "reported-area",
+      "label": "Last successful area coordinates",
+      "type": "string",
+      "icon": "house",
+      "source": {
+        "kind": "state",
+        "key": "reported-area"
+      }
+    },
+    {
+      "id": "radius-nm",
+      "label": "Last successful radius (NM)",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "radius-nm"
+      }
+    },
+    {
+      "id": "poll-status",
+      "label": "Latest read status",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "poll-status"
+      }
+    },
+    {
+      "id": "nearest-callsign",
+      "label": "Nearest aircraft",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "nearest-callsign"
+      }
+    },
+    {
+      "id": "nearest-distance",
+      "label": "Nearest calculated distance (NM)",
+      "type": "number",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "nearest-distance"
+      }
+    },
+    {
+      "id": "aircraft-1-callsign",
+      "label": "Aircraft 1",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-1-callsign"
+      }
+    },
+    {
+      "id": "aircraft-2-callsign",
+      "label": "Aircraft 2",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-2-callsign"
+      }
+    },
+    {
+      "id": "aircraft-3-callsign",
+      "label": "Aircraft 3",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-3-callsign"
+      }
+    },
+    {
+      "id": "aircraft-4-callsign",
+      "label": "Aircraft 4",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-4-callsign"
+      }
+    },
+    {
+      "id": "aircraft-5-callsign",
+      "label": "Aircraft 5",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-5-callsign"
+      }
+    },
+    {
+      "id": "aircraft-6-callsign",
+      "label": "Aircraft 6",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-6-callsign"
+      }
+    },
+    {
+      "id": "aircraft-7-callsign",
+      "label": "Aircraft 7",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-7-callsign"
+      }
+    },
+    {
+      "id": "aircraft-8-callsign",
+      "label": "Aircraft 8",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-8-callsign"
+      }
+    },
+    {
+      "id": "aircraft-9-callsign",
+      "label": "Aircraft 9",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-9-callsign"
+      }
+    },
+    {
+      "id": "aircraft-10-callsign",
+      "label": "Aircraft 10",
+      "type": "string",
+      "icon": "plane",
+      "source": {
+        "kind": "state",
+        "key": "aircraft-10-callsign"
+      }
+    },
+    {
+      "id": "aircraft",
+      "label": "Nearby aircraft",
+      "type": "table",
+      "icon": "plane",
+      "columns": [
+        {
+          "id": "callsign",
+          "label": "Aircraft",
+          "type": "string"
+        },
+        {
+          "id": "registration",
+          "label": "Registration",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        },
+        {
+          "id": "altitude-label",
+          "label": "Altitude (ft)",
+          "type": "string"
+        },
+        {
+          "id": "speed",
+          "label": "Speed (kt)",
+          "type": "number"
+        },
+        {
+          "id": "distance",
+          "label": "Distance (NM, calculated)",
+          "type": "number"
+        },
+        {
+          "id": "hex",
+          "label": "ICAO / address",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "row-count",
+        "rows": [
+          {
+            "callsign": "aircraft-1-callsign",
+            "registration": "aircraft-1-registration",
+            "type": "aircraft-1-type",
+            "altitude-label": "aircraft-1-altitude-label",
+            "speed": "aircraft-1-speed",
+            "distance": "aircraft-1-distance",
+            "hex": "aircraft-1-hex"
+          },
+          {
+            "callsign": "aircraft-2-callsign",
+            "registration": "aircraft-2-registration",
+            "type": "aircraft-2-type",
+            "altitude-label": "aircraft-2-altitude-label",
+            "speed": "aircraft-2-speed",
+            "distance": "aircraft-2-distance",
+            "hex": "aircraft-2-hex"
+          },
+          {
+            "callsign": "aircraft-3-callsign",
+            "registration": "aircraft-3-registration",
+            "type": "aircraft-3-type",
+            "altitude-label": "aircraft-3-altitude-label",
+            "speed": "aircraft-3-speed",
+            "distance": "aircraft-3-distance",
+            "hex": "aircraft-3-hex"
+          },
+          {
+            "callsign": "aircraft-4-callsign",
+            "registration": "aircraft-4-registration",
+            "type": "aircraft-4-type",
+            "altitude-label": "aircraft-4-altitude-label",
+            "speed": "aircraft-4-speed",
+            "distance": "aircraft-4-distance",
+            "hex": "aircraft-4-hex"
+          },
+          {
+            "callsign": "aircraft-5-callsign",
+            "registration": "aircraft-5-registration",
+            "type": "aircraft-5-type",
+            "altitude-label": "aircraft-5-altitude-label",
+            "speed": "aircraft-5-speed",
+            "distance": "aircraft-5-distance",
+            "hex": "aircraft-5-hex"
+          },
+          {
+            "callsign": "aircraft-6-callsign",
+            "registration": "aircraft-6-registration",
+            "type": "aircraft-6-type",
+            "altitude-label": "aircraft-6-altitude-label",
+            "speed": "aircraft-6-speed",
+            "distance": "aircraft-6-distance",
+            "hex": "aircraft-6-hex"
+          },
+          {
+            "callsign": "aircraft-7-callsign",
+            "registration": "aircraft-7-registration",
+            "type": "aircraft-7-type",
+            "altitude-label": "aircraft-7-altitude-label",
+            "speed": "aircraft-7-speed",
+            "distance": "aircraft-7-distance",
+            "hex": "aircraft-7-hex"
+          },
+          {
+            "callsign": "aircraft-8-callsign",
+            "registration": "aircraft-8-registration",
+            "type": "aircraft-8-type",
+            "altitude-label": "aircraft-8-altitude-label",
+            "speed": "aircraft-8-speed",
+            "distance": "aircraft-8-distance",
+            "hex": "aircraft-8-hex"
+          },
+          {
+            "callsign": "aircraft-9-callsign",
+            "registration": "aircraft-9-registration",
+            "type": "aircraft-9-type",
+            "altitude-label": "aircraft-9-altitude-label",
+            "speed": "aircraft-9-speed",
+            "distance": "aircraft-9-distance",
+            "hex": "aircraft-9-hex"
+          },
+          {
+            "callsign": "aircraft-10-callsign",
+            "registration": "aircraft-10-registration",
+            "type": "aircraft-10-type",
+            "altitude-label": "aircraft-10-altitude-label",
+            "speed": "aircraft-10-speed",
+            "distance": "aircraft-10-distance",
+            "hex": "aircraft-10-hex"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "aircraft-1-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-1-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-1-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-1-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-1-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-1-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-2-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-2-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-2-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-2-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-2-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-2-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-3-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-3-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-3-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-3-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-3-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-3-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-4-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-4-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-4-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-4-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-4-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-4-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-5-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-5-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-5-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-5-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-5-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-5-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-6-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-6-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-6-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-6-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-6-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-6-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-7-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-7-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-7-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-7-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-7-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-7-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-8-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-8-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-8-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-8-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-8-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-8-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-9-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-9-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-9-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-9-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-9-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-9-hex",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-10-registration",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-10-type",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-10-altitude-label",
+            "type": "string"
+          },
+          {
+            "key": "aircraft-10-speed",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-10-distance",
+            "type": "number"
+          },
+          {
+            "key": "aircraft-10-hex",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh aircraft",
+      "description": "Read one enabled area from adsb.lol. Respects persisted provider cooldowns.",
+      "parameters": [
+        {
+          "id": "area-id",
+          "label": "Area",
+          "type": "string",
+          "maxLength": 64,
+          "default": ""
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "reading-updated",
+      "name": "Aircraft reading updated",
+      "testAction": "refresh",
+      "description": "A successful area read, including empty results. Counts use qualifying recent positions.",
+      "payload": [
+        {
+          "id": "area-id",
+          "label": "Area",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "area-name",
+          "label": "Area name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "count",
+          "label": "Aircraft count",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 2000
+        },
+        {
+          "id": "nearest-hex",
+          "label": "Nearest aircraft address",
+          "type": "string",
+          "maxLength": 7
+        },
+        {
+          "id": "nearest-callsign",
+          "label": "Nearest callsign",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "nearest-distance",
+          "label": "Nearest calculated distance (NM)",
+          "type": "number",
+          "min": 0,
+          "max": 250
+        }
+      ]
+    },
+    {
+      "id": "aircraft-detected",
+      "name": "Aircraft first observed",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "New address in a successful area response with a qualifying position. First/changed-area reads baseline; at most ten events per refresh. Not a confirmed border crossing.",
+      "payload": [
+        {
+          "id": "area-id",
+          "label": "Area",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "area-name",
+          "label": "Area name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "hex",
+          "label": "ICAO / address",
+          "type": "string",
+          "required": true,
+          "maxLength": 7
+        },
+        {
+          "id": "callsign",
+          "label": "Callsign",
+          "type": "string",
+          "maxLength": 16
+        },
+        {
+          "id": "registration",
+          "label": "Registration",
+          "type": "string",
+          "maxLength": 24
+        },
+        {
+          "id": "type",
+          "label": "Aircraft type",
+          "type": "string",
+          "maxLength": 12
+        },
+        {
+          "id": "distance",
+          "label": "Calculated distance (NM)",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 250
+        },
+        {
+          "id": "altitude",
+          "label": "Reported barometric altitude (ft)",
+          "type": "number",
+          "min": -2000,
+          "max": 100000
+        },
+        {
+          "id": "speed",
+          "label": "Reported ground speed (kt)",
+          "type": "number",
+          "min": 0,
+          "max": 3000
+        },
+        {
+          "id": "track",
+          "label": "Reported ground track (degrees)",
+          "type": "number",
+          "min": 0,
+          "max": 360
+        },
+        {
+          "id": "ground",
+          "label": "Reported on ground",
+          "type": "boolean"
+        },
+        {
+          "id": "latitude",
+          "label": "Reported latitude",
+          "type": "number",
+          "min": -90,
+          "max": 90
+        },
+        {
+          "id": "longitude",
+          "label": "Reported longitude",
+          "type": "number",
+          "min": -180,
+          "max": 180
+        },
+        {
+          "id": "position-age",
+          "label": "Reported position age (seconds)",
+          "type": "number",
+          "min": 0,
+          "max": 300
+        },
+        {
+          "id": "squawk",
+          "label": "Reported squawk",
+          "type": "string",
+          "maxLength": 4
+        },
+        {
+          "id": "emergency",
+          "label": "Reported emergency",
+          "type": "string",
+          "maxLength": 32
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "airspace",
+      "name": "Airspace",
+      "sourceLabel": "Area",
+      "directory": "cards/airspace",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "count",
+          "field": "aircraft-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "nearest",
+          "field": "nearest-callsign",
+          "format": "text"
+        },
+        {
+          "id": "distance",
+          "field": "nearest-distance",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "traffic",
+          "field": "aircraft",
+          "format": "table",
+          "columns": [
+            "callsign",
+            "type",
+            "altitude-label",
+            "speed",
+            "distance"
+          ],
+          "rows": 1
+        }
+      ]
+    }
+  ]
+}

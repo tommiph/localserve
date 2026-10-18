@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "example-lighting-remote",
+  "revision": 1,
+  "name": "Lights example",
+  "slug": "lights",
+  "enabled": false,
+  "icon": "lightbulb",
+  "columns": 3,
+  "presentation": "lighting",
+  "items": []
+}

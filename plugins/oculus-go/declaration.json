@@ -1,0 +1,1744 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "oculus-go",
+  "name": "Oculus Go",
+  "version": "1.0.0",
+  "description": "Read-only Wi-Fi headset diagnostics",
+  "icon": "vr-cardboard",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "address",
+      "label": "Wi-Fi address",
+      "type": "string",
+      "default": "",
+      "maxLength": 32,
+      "help": "The headset’s local IPv4 address and ADB port, for example 192.168.0.7:5555. No automatic network scan."
+    },
+    {
+      "id": "serial",
+      "label": "Headset serial",
+      "type": "string",
+      "default": "",
+      "maxLength": 100,
+      "help": "Readings require this exact serial; an address reused by another device is rejected."
+    },
+    {
+      "id": "adb-key",
+      "label": "Authorized ADB key (Base64)",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 4000,
+      "help": "Optional replacement: Base64 of a 2048-bit RSA PEM key already authorized by the headset. After a successful refresh, clear this field; the Windows-protected key remains. Nonempty settings are saved privately as plaintext."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Polling interval",
+      "type": "number",
+      "default": 0.25,
+      "min": 0.25,
+      "max": 1,
+      "enum": [
+        0.25,
+        0.5,
+        1
+      ],
+      "enumLabels": [
+        "15 seconds",
+        "30 seconds",
+        "1 minute"
+      ],
+      "help": "Serial supervised reads. Failed polls retain successful readings and do not retry immediately."
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh diagnostics",
+      "description": "Read the configured headset’s battery, state, app, storage and sensors.",
+      "parameters": []
+    }
+  ],
+  "events": [
+    {
+      "id": "status-updated",
+      "name": "Status updated",
+      "testAction": "refresh",
+      "description": "A successful diagnostic refresh; filtered Task rules retain true-edge behavior.",
+      "payload": [
+        {
+          "id": "state",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "battery",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "charging",
+          "type": "boolean"
+        },
+        {
+          "id": "package",
+          "type": "string",
+          "maxLength": 200
+        }
+      ]
+    },
+    {
+      "id": "headset-changed",
+      "name": "Headset changed",
+      "occurrenceKey": "change-id",
+      "description": "An observed headset-state or foreground-package transition, committed before dispatch.",
+      "payload": [
+        {
+          "id": "state",
+          "type": "string",
+          "maxLength": 32
+        },
+        {
+          "id": "battery",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "charging",
+          "type": "boolean"
+        },
+        {
+          "id": "package",
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "id": "change-id",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "connection-status",
+      "label": "Connection",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "connection-status"
+      }
+    },
+    {
+      "id": "connection-type",
+      "label": "Connection type",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "connection-type"
+      }
+    },
+    {
+      "id": "address",
+      "label": "Wi-Fi address",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "address"
+      }
+    },
+    {
+      "id": "headset-state",
+      "label": "Headset state",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "headset-state"
+      }
+    },
+    {
+      "id": "active-app",
+      "label": "Foreground app",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "active-app"
+      }
+    },
+    {
+      "id": "active-app-display",
+      "label": "Foreground app display",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "active-app-display"
+      }
+    },
+    {
+      "id": "active-package",
+      "label": "Foreground package",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "active-package"
+      }
+    },
+    {
+      "id": "foreground-minutes",
+      "label": "Current foreground app open (minutes)",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "foreground-minutes"
+      }
+    },
+    {
+      "id": "battery-percent",
+      "label": "Battery (%)",
+      "type": "number",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "battery-percent"
+      }
+    },
+    {
+      "id": "charging",
+      "label": "External power connected",
+      "type": "boolean",
+      "icon": "plug",
+      "source": {
+        "kind": "state",
+        "key": "charging"
+      }
+    },
+    {
+      "id": "battery-status",
+      "label": "Battery status",
+      "type": "string",
+      "icon": "bolt",
+      "source": {
+        "kind": "state",
+        "key": "battery-status"
+      }
+    },
+    {
+      "id": "battery-temperature",
+      "label": "Battery temperature (°C)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "battery-temperature"
+      }
+    },
+    {
+      "id": "chip-temperature-max",
+      "label": "Highest chip temperature (°C)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "chip-temperature-max"
+      }
+    },
+    {
+      "id": "chip-temperature-min",
+      "label": "Lowest chip temperature (°C)",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "chip-temperature-min"
+      }
+    },
+    {
+      "id": "thermal-summary",
+      "label": "All thermal readings",
+      "type": "string",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "thermal-summary"
+      }
+    },
+    {
+      "id": "storage-total-gib",
+      "label": "Storage total (GiB)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "storage-total-gib"
+      }
+    },
+    {
+      "id": "storage-free-gib",
+      "label": "Storage free (GiB)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "storage-free-gib"
+      }
+    },
+    {
+      "id": "storage-free-percent",
+      "label": "Storage free (%)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "storage-free-percent"
+      }
+    },
+    {
+      "id": "storage-used-percent",
+      "label": "Storage used (%)",
+      "type": "number",
+      "icon": "server",
+      "source": {
+        "kind": "state",
+        "key": "storage-used-percent"
+      }
+    },
+    {
+      "id": "controller-status",
+      "label": "Controller data",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "controller-status"
+      }
+    },
+    {
+      "id": "sensor-count",
+      "label": "Reported thermal sensors",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensor-count"
+      }
+    },
+    {
+      "id": "sensors-truncated",
+      "label": "Sensor list limited",
+      "type": "boolean",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensors-truncated"
+      }
+    },
+    {
+      "id": "sensor-row-count",
+      "label": "Displayed thermal sensors",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensor-row-count"
+      }
+    },
+    {
+      "id": "details-status",
+      "label": "Diagnostic sections",
+      "type": "string",
+      "icon": "vr-cardboard",
+      "source": {
+        "kind": "state",
+        "key": "details-status"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Successful reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "sensors",
+      "label": "Thermal sensors 1–10",
+      "type": "table",
+      "icon": "gauge",
+      "columns": [
+        {
+          "id": "zone",
+          "label": "Zone",
+          "type": "string"
+        },
+        {
+          "id": "label",
+          "label": "Sensor",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        },
+        {
+          "id": "raw",
+          "label": "Raw value",
+          "type": "number"
+        },
+        {
+          "id": "celsius",
+          "label": "Temperature (°C)",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "sensor-row-count",
+        "rows": [
+          {
+            "zone": "sensor-1-zone",
+            "label": "sensor-1-label",
+            "type": "sensor-1-type",
+            "raw": "sensor-1-raw",
+            "celsius": "sensor-1-celsius"
+          },
+          {
+            "zone": "sensor-2-zone",
+            "label": "sensor-2-label",
+            "type": "sensor-2-type",
+            "raw": "sensor-2-raw",
+            "celsius": "sensor-2-celsius"
+          },
+          {
+            "zone": "sensor-3-zone",
+            "label": "sensor-3-label",
+            "type": "sensor-3-type",
+            "raw": "sensor-3-raw",
+            "celsius": "sensor-3-celsius"
+          },
+          {
+            "zone": "sensor-4-zone",
+            "label": "sensor-4-label",
+            "type": "sensor-4-type",
+            "raw": "sensor-4-raw",
+            "celsius": "sensor-4-celsius"
+          },
+          {
+            "zone": "sensor-5-zone",
+            "label": "sensor-5-label",
+            "type": "sensor-5-type",
+            "raw": "sensor-5-raw",
+            "celsius": "sensor-5-celsius"
+          },
+          {
+            "zone": "sensor-6-zone",
+            "label": "sensor-6-label",
+            "type": "sensor-6-type",
+            "raw": "sensor-6-raw",
+            "celsius": "sensor-6-celsius"
+          },
+          {
+            "zone": "sensor-7-zone",
+            "label": "sensor-7-label",
+            "type": "sensor-7-type",
+            "raw": "sensor-7-raw",
+            "celsius": "sensor-7-celsius"
+          },
+          {
+            "zone": "sensor-8-zone",
+            "label": "sensor-8-label",
+            "type": "sensor-8-type",
+            "raw": "sensor-8-raw",
+            "celsius": "sensor-8-celsius"
+          },
+          {
+            "zone": "sensor-9-zone",
+            "label": "sensor-9-label",
+            "type": "sensor-9-type",
+            "raw": "sensor-9-raw",
+            "celsius": "sensor-9-celsius"
+          },
+          {
+            "zone": "sensor-10-zone",
+            "label": "sensor-10-label",
+            "type": "sensor-10-type",
+            "raw": "sensor-10-raw",
+            "celsius": "sensor-10-celsius"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "sensor-1-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-1-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-1-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-1-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-1-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-2-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-2-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-2-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-2-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-2-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-3-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-3-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-3-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-3-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-3-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-4-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-4-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-4-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-4-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-4-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-5-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-5-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-5-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-5-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-5-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-6-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-6-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-6-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-6-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-6-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-7-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-7-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-7-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-7-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-7-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-8-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-8-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-8-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-8-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-8-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-9-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-9-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-9-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-9-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-9-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-10-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-10-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-10-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-10-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-10-celsius",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sensor-bank-2-count",
+      "label": "Displayed sensors 11–20",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensor-bank-2-count"
+      }
+    },
+    {
+      "id": "sensors-2",
+      "label": "Thermal sensors 11–20",
+      "type": "table",
+      "icon": "gauge",
+      "columns": [
+        {
+          "id": "zone",
+          "label": "Zone",
+          "type": "string"
+        },
+        {
+          "id": "label",
+          "label": "Sensor",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        },
+        {
+          "id": "raw",
+          "label": "Raw value",
+          "type": "number"
+        },
+        {
+          "id": "celsius",
+          "label": "Temperature (°C)",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "sensor-bank-2-count",
+        "rows": [
+          {
+            "zone": "sensor-11-zone",
+            "label": "sensor-11-label",
+            "type": "sensor-11-type",
+            "raw": "sensor-11-raw",
+            "celsius": "sensor-11-celsius"
+          },
+          {
+            "zone": "sensor-12-zone",
+            "label": "sensor-12-label",
+            "type": "sensor-12-type",
+            "raw": "sensor-12-raw",
+            "celsius": "sensor-12-celsius"
+          },
+          {
+            "zone": "sensor-13-zone",
+            "label": "sensor-13-label",
+            "type": "sensor-13-type",
+            "raw": "sensor-13-raw",
+            "celsius": "sensor-13-celsius"
+          },
+          {
+            "zone": "sensor-14-zone",
+            "label": "sensor-14-label",
+            "type": "sensor-14-type",
+            "raw": "sensor-14-raw",
+            "celsius": "sensor-14-celsius"
+          },
+          {
+            "zone": "sensor-15-zone",
+            "label": "sensor-15-label",
+            "type": "sensor-15-type",
+            "raw": "sensor-15-raw",
+            "celsius": "sensor-15-celsius"
+          },
+          {
+            "zone": "sensor-16-zone",
+            "label": "sensor-16-label",
+            "type": "sensor-16-type",
+            "raw": "sensor-16-raw",
+            "celsius": "sensor-16-celsius"
+          },
+          {
+            "zone": "sensor-17-zone",
+            "label": "sensor-17-label",
+            "type": "sensor-17-type",
+            "raw": "sensor-17-raw",
+            "celsius": "sensor-17-celsius"
+          },
+          {
+            "zone": "sensor-18-zone",
+            "label": "sensor-18-label",
+            "type": "sensor-18-type",
+            "raw": "sensor-18-raw",
+            "celsius": "sensor-18-celsius"
+          },
+          {
+            "zone": "sensor-19-zone",
+            "label": "sensor-19-label",
+            "type": "sensor-19-type",
+            "raw": "sensor-19-raw",
+            "celsius": "sensor-19-celsius"
+          },
+          {
+            "zone": "sensor-20-zone",
+            "label": "sensor-20-label",
+            "type": "sensor-20-type",
+            "raw": "sensor-20-raw",
+            "celsius": "sensor-20-celsius"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "sensor-11-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-11-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-11-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-11-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-11-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-12-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-12-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-12-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-12-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-12-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-13-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-13-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-13-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-13-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-13-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-14-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-14-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-14-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-14-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-14-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-15-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-15-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-15-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-15-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-15-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-16-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-16-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-16-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-16-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-16-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-17-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-17-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-17-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-17-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-17-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-18-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-18-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-18-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-18-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-18-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-19-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-19-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-19-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-19-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-19-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-20-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-20-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-20-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-20-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-20-celsius",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sensor-bank-3-count",
+      "label": "Displayed sensors 21–30",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensor-bank-3-count"
+      }
+    },
+    {
+      "id": "sensors-3",
+      "label": "Thermal sensors 21–30",
+      "type": "table",
+      "icon": "gauge",
+      "columns": [
+        {
+          "id": "zone",
+          "label": "Zone",
+          "type": "string"
+        },
+        {
+          "id": "label",
+          "label": "Sensor",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        },
+        {
+          "id": "raw",
+          "label": "Raw value",
+          "type": "number"
+        },
+        {
+          "id": "celsius",
+          "label": "Temperature (°C)",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "sensor-bank-3-count",
+        "rows": [
+          {
+            "zone": "sensor-21-zone",
+            "label": "sensor-21-label",
+            "type": "sensor-21-type",
+            "raw": "sensor-21-raw",
+            "celsius": "sensor-21-celsius"
+          },
+          {
+            "zone": "sensor-22-zone",
+            "label": "sensor-22-label",
+            "type": "sensor-22-type",
+            "raw": "sensor-22-raw",
+            "celsius": "sensor-22-celsius"
+          },
+          {
+            "zone": "sensor-23-zone",
+            "label": "sensor-23-label",
+            "type": "sensor-23-type",
+            "raw": "sensor-23-raw",
+            "celsius": "sensor-23-celsius"
+          },
+          {
+            "zone": "sensor-24-zone",
+            "label": "sensor-24-label",
+            "type": "sensor-24-type",
+            "raw": "sensor-24-raw",
+            "celsius": "sensor-24-celsius"
+          },
+          {
+            "zone": "sensor-25-zone",
+            "label": "sensor-25-label",
+            "type": "sensor-25-type",
+            "raw": "sensor-25-raw",
+            "celsius": "sensor-25-celsius"
+          },
+          {
+            "zone": "sensor-26-zone",
+            "label": "sensor-26-label",
+            "type": "sensor-26-type",
+            "raw": "sensor-26-raw",
+            "celsius": "sensor-26-celsius"
+          },
+          {
+            "zone": "sensor-27-zone",
+            "label": "sensor-27-label",
+            "type": "sensor-27-type",
+            "raw": "sensor-27-raw",
+            "celsius": "sensor-27-celsius"
+          },
+          {
+            "zone": "sensor-28-zone",
+            "label": "sensor-28-label",
+            "type": "sensor-28-type",
+            "raw": "sensor-28-raw",
+            "celsius": "sensor-28-celsius"
+          },
+          {
+            "zone": "sensor-29-zone",
+            "label": "sensor-29-label",
+            "type": "sensor-29-type",
+            "raw": "sensor-29-raw",
+            "celsius": "sensor-29-celsius"
+          },
+          {
+            "zone": "sensor-30-zone",
+            "label": "sensor-30-label",
+            "type": "sensor-30-type",
+            "raw": "sensor-30-raw",
+            "celsius": "sensor-30-celsius"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "sensor-21-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-21-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-21-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-21-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-21-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-22-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-22-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-22-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-22-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-22-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-23-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-23-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-23-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-23-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-23-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-24-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-24-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-24-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-24-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-24-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-25-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-25-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-25-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-25-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-25-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-26-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-26-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-26-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-26-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-26-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-27-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-27-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-27-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-27-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-27-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-28-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-28-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-28-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-28-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-28-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-29-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-29-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-29-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-29-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-29-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-30-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-30-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-30-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-30-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-30-celsius",
+            "type": "number"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sensor-bank-4-count",
+      "label": "Displayed sensors 31–40",
+      "type": "number",
+      "icon": "gauge",
+      "source": {
+        "kind": "state",
+        "key": "sensor-bank-4-count"
+      }
+    },
+    {
+      "id": "sensors-4",
+      "label": "Thermal sensors 31–40",
+      "type": "table",
+      "icon": "gauge",
+      "columns": [
+        {
+          "id": "zone",
+          "label": "Zone",
+          "type": "string"
+        },
+        {
+          "id": "label",
+          "label": "Sensor",
+          "type": "string"
+        },
+        {
+          "id": "type",
+          "label": "Type",
+          "type": "string"
+        },
+        {
+          "id": "raw",
+          "label": "Raw value",
+          "type": "number"
+        },
+        {
+          "id": "celsius",
+          "label": "Temperature (°C)",
+          "type": "number"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "sensor-bank-4-count",
+        "rows": [
+          {
+            "zone": "sensor-31-zone",
+            "label": "sensor-31-label",
+            "type": "sensor-31-type",
+            "raw": "sensor-31-raw",
+            "celsius": "sensor-31-celsius"
+          },
+          {
+            "zone": "sensor-32-zone",
+            "label": "sensor-32-label",
+            "type": "sensor-32-type",
+            "raw": "sensor-32-raw",
+            "celsius": "sensor-32-celsius"
+          },
+          {
+            "zone": "sensor-33-zone",
+            "label": "sensor-33-label",
+            "type": "sensor-33-type",
+            "raw": "sensor-33-raw",
+            "celsius": "sensor-33-celsius"
+          },
+          {
+            "zone": "sensor-34-zone",
+            "label": "sensor-34-label",
+            "type": "sensor-34-type",
+            "raw": "sensor-34-raw",
+            "celsius": "sensor-34-celsius"
+          },
+          {
+            "zone": "sensor-35-zone",
+            "label": "sensor-35-label",
+            "type": "sensor-35-type",
+            "raw": "sensor-35-raw",
+            "celsius": "sensor-35-celsius"
+          },
+          {
+            "zone": "sensor-36-zone",
+            "label": "sensor-36-label",
+            "type": "sensor-36-type",
+            "raw": "sensor-36-raw",
+            "celsius": "sensor-36-celsius"
+          },
+          {
+            "zone": "sensor-37-zone",
+            "label": "sensor-37-label",
+            "type": "sensor-37-type",
+            "raw": "sensor-37-raw",
+            "celsius": "sensor-37-celsius"
+          },
+          {
+            "zone": "sensor-38-zone",
+            "label": "sensor-38-label",
+            "type": "sensor-38-type",
+            "raw": "sensor-38-raw",
+            "celsius": "sensor-38-celsius"
+          },
+          {
+            "zone": "sensor-39-zone",
+            "label": "sensor-39-label",
+            "type": "sensor-39-type",
+            "raw": "sensor-39-raw",
+            "celsius": "sensor-39-celsius"
+          },
+          {
+            "zone": "sensor-40-zone",
+            "label": "sensor-40-label",
+            "type": "sensor-40-type",
+            "raw": "sensor-40-raw",
+            "celsius": "sensor-40-celsius"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "sensor-31-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-31-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-31-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-31-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-31-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-32-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-32-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-32-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-32-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-32-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-33-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-33-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-33-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-33-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-33-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-34-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-34-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-34-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-34-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-34-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-35-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-35-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-35-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-35-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-35-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-36-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-36-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-36-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-36-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-36-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-37-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-37-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-37-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-37-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-37-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-38-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-38-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-38-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-38-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-38-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-39-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-39-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-39-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-39-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-39-celsius",
+            "type": "number"
+          },
+          {
+            "key": "sensor-40-zone",
+            "type": "string"
+          },
+          {
+            "key": "sensor-40-label",
+            "type": "string"
+          },
+          {
+            "key": "sensor-40-type",
+            "type": "string"
+          },
+          {
+            "key": "sensor-40-raw",
+            "type": "number"
+          },
+          {
+            "key": "sensor-40-celsius",
+            "type": "number"
+          }
+        ]
+      }
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "orbital",
+      "name": "Orbital",
+      "sourceLabel": "Data source",
+      "directory": "cards/orbital",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "app",
+          "field": "active-app-display",
+          "format": "text"
+        },
+        {
+          "id": "state",
+          "field": "headset-state",
+          "format": "text"
+        },
+        {
+          "id": "charging",
+          "field": "battery-status",
+          "format": "text"
+        },
+        {
+          "id": "battery",
+          "field": "battery-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "storage",
+          "field": "storage-used-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "battery-temp",
+          "field": "battery-temperature",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "storage-free",
+          "field": "storage-free-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "temperature",
+          "field": "chip-temperature-max",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "temperature-min",
+          "field": "chip-temperature-min",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "free",
+          "field": "storage-free-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "storage-total",
+          "field": "storage-total-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

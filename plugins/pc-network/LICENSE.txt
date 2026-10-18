@@ -1,0 +1,14 @@
+PC and Network plugin provenance
+
+Declaration, adapter, collector and build script: authored for this Localserve
+project. The runtime lifecycle reuses the existing Simulator contract. No live
+plugin data or third-party monitoring code was copied.
+
+Runtime: Localserve's bundled Node executable and its root runtime/LICENSE.txt.
+Native helper: compiled from native/Collector.cs using Windows' existing .NET
+Framework compiler. The executable stays inside this plugin. It uses Windows'
+system .NET Framework, kernel32.dll, iphlpapi.dll, dxgi.dll and pdh.dll; those are OS components,
+not redistributed third-party assets. No additional library or SDK is bundled.
+
+Monitoring is read-only and scoped to this PC and explicit DNS/known local
+neighbor-cache name lookups. No third-party service credential is required.

@@ -1,0 +1,47 @@
+/* Four original visual identities share one readable TV layout. Literal colors
+   and Flexbox also work on the installed TV's CSS-variable-free browser. */
+html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+body { background: #0b1b29; color: #edf7ff; font-family: "Segoe UI", Arial, sans-serif; }
+.notice { position: absolute; top: 9%; bottom: 9%; left: 7%; right: 7%; border: 1px solid #3b718b; border-radius: 24px; background: #0f2536; box-shadow: 0 30px 100px #0008; overflow: hidden; }
+header, footer { position: absolute; left: 5%; right: 5%; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+header { top: 6%; -webkit-justify-content: space-between; justify-content: space-between; color: #95d9fb; font-size: 18px; letter-spacing: .14em; text-transform: uppercase; }
+#server-name { letter-spacing: 0; text-transform: none; opacity: .7; }
+.notice-content { position: absolute; top: 21%; bottom: 22%; left: 5%; right: 5%; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+.symbol { -webkit-flex: 0 0 160px; flex: 0 0 160px; width: 160px; height: 160px; margin-right: 5%; border-radius: 50%; border: 1px solid #477d96; background: #16374d; color: #95d9fb; box-shadow: 0 0 50px #55bfff20; }
+.symbol svg { width: 100%; height: 100%; }
+.glyph { display: none; fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+[data-template="notice"] .glyph-notice, [data-template="alarm"] .glyph-alarm, [data-template="alert"] .glyph-alert, [data-template="warning"] .glyph-warning { display: block; }
+.copy { -webkit-flex: 1 1 auto; flex: 1 1 auto; min-width: 0; max-height: 100%; overflow: auto; }
+h1 { font-size: 64px; line-height: 1.07; font-weight: 500; letter-spacing: -.035em; margin: 0 0 24px; overflow-wrap: break-word; }
+#notice-message { font-size: 30px; line-height: 1.45; color: #c3d8e7; margin: 0; white-space: pre-wrap; overflow-wrap: break-word; }
+footer { bottom: 7%; color: #a8c1d3; font-size: 18px; }
+#countdown { margin-left: auto; }
+#sound-status { margin-left: 20px; }
+.remaining-track { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #ffffff15; }
+#remaining { width: 100%; height: 100%; background: #95d9fb; }
+.motif { position: absolute; width: 800px; height: 800px; top: -230px; right: -180px; color: #70c9ed; opacity: .3; }
+.orbit { position: absolute; border: 1px solid currentColor; border-radius: 50%; }
+.orbit-one { top: 10%; left: 10%; width: 80%; height: 80%; }
+.orbit-two { top: 22%; left: 22%; width: 56%; height: 56%; border-style: dashed; animation: revolve 45s linear infinite; }
+.orbit-three { top: 34%; left: 34%; width: 32%; height: 32%; animation: breathe 5s ease-in-out infinite; }
+.beam { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: currentColor; transform: rotate(35deg); }
+.circuit { position: absolute; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1; }
+[data-template="alarm"] { background: #230d17; }
+[data-template="alarm"] .notice { background: #321420; border-color: #824458; }
+[data-template="alarm"] header, [data-template="alarm"] .symbol, [data-template="alarm"] .motif { color: #ff839c; }
+[data-template="alarm"] .symbol { background: #4a1d2e; border-color: #a45067; animation: breathe 2s ease-in-out infinite; }
+[data-template="alarm"] #remaining { background: #ff839c; }
+[data-template="alert"] { background: #160e29; }
+[data-template="alert"] .notice { background: #231836; border-color: #70538c; }
+[data-template="alert"] header, [data-template="alert"] .symbol, [data-template="alert"] .motif { color: #c7a3ff; }
+[data-template="alert"] .symbol { background: #352149; border-color: #8965ae; }
+[data-template="alert"] #remaining { background: #c7a3ff; }
+[data-template="warning"] { background: #241b0d; }
+[data-template="warning"] .notice { background: #322719; border-color: #8b7147; }
+[data-template="warning"] header, [data-template="warning"] .symbol, [data-template="warning"] .motif { color: #f7ce85; }
+[data-template="warning"] .symbol { background: #493923; border-color: #9b7a44; }
+[data-template="warning"] #remaining { background: #f7ce85; }
+@keyframes revolve { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { opacity: .75; } 50% { opacity: 1; } }
+@media (max-width: 850px) { .notice { left: 4%; right: 4%; } .symbol { -webkit-flex-basis: 100px; flex-basis: 100px; width: 100px; height: 100px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; } }

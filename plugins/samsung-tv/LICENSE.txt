@@ -1,0 +1,10 @@
+Samsung TV adapter/declaration/native credential helper are readable Localserve
+project source, adapted from the user's Home Control TV integration.
+Bundled ws 8.21.3 (MIT) retains its upstream LICENSE/source/package metadata under
+vendor/node_modules/ws; exact version is in vendor/packages.json.
+https://github.com/websockets/ws
+Bundled sax 1.6.1 (BlueOak-1.0.0) retains LICENSE.md and source in vendor/sax.
+https://github.com/isaacs/sax-js
+Samsung protocol reference: https://github.com/xchwarze/samsung-tv-ws-api
+No third-party executable or dependency installation is used at startup.
+The native helper uses built-in Windows .NET and CurrentUser DPAPI.
