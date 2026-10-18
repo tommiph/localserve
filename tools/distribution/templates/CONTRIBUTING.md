@@ -14,17 +14,26 @@ requires no frontend build step or npm dependency install.
 
 ```powershell
 .\runtime\node.exe tools/initialize-settings.mjs
-.\runtime\node.exe --test tests/universe.test.mjs tests/universe-viewer.test.mjs tests/universe-ui.test.mjs tests/vistas-legacy.test.mjs tests/source.test.mjs
+.\runtime\node.exe tools/testing/run.mjs
 .\runtime\node.exe server.mjs
 ```
 
 Use Ctrl+C to stop a console instance. Do not also start its tray server. Tests
 use temporary roots under tests/.tmp and need no real credentials/devices. These
-tests cover shared displays and basic source/declaration contracts, not every
-provider/device behavior. Add focused isolated tests alongside new capabilities.
+tests cover Tasks, Event values, reruns, quiet hours, Controls, Simulator, Recipes,
+displays and packaging contracts, not every provider/device behavior. The list
+in tools/testing/public-tests.mjs also drives clean-release verification.
+Add focused isolated tests alongside new capabilities.
 Running a checkout creates private files; keep them out of commits.
 
 ## Code map
+
+The Windows checks workflow runs on pushes and pull requests using a pinned
+checkout action and read-only repository permissions. It runs the public tests,
+builds clean packages and exercises installation in its own disposable instance.
+It does not publish releases or configure devices. The hosted Windows runner
+provides independent environment evidence; it does not replace testing on a
+consumer PC, physical Android phone or compatible TV.
 
 For each completed code change, advance the affected server/plugin version with
 `tools/version.mjs`, then run its `--check`. See [VERSIONING.md](VERSIONING.md).
