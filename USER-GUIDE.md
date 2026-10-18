@@ -28,6 +28,12 @@ no Google Fonts connection is needed while using Localserve.
 
 ## Build a Task
 
+For guided setup, open Recipes and enable it. Its Create page offers a cloud of
+ideas. Choose one, personalize it, then choose when it should happen. Tap either
+part of the finished sentence to change it. Create task saves it turned off;
+enable it in Tasks when ready. More options and the detailed editor are available
+when needed. See [Recipes](plugins/recipes/README.md).
+
 Administration → Variables lists supported Event tags, Card bindings, List
 columns, ready-made slots, action parameters and start rules. Filter by owner or
 context, search and copy code. File references are relative to the installation

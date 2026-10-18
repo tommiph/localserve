@@ -252,11 +252,11 @@ const TaskUI = {
     </article>`;
   },
 
-  openEditor(id, copy = false) {
+  openEditor(id, copy = false, draft = null) {
     // Capture the original revision in dialogContext. Polling may update saved
     // state while this modal is open; it must not advance the draft's revision.
     const existing = state.tasks.find(task => task.id === id);
-    const task = existing || { name: '', enabled: false, starts: [], steps: [] };
+    const task = existing || draft || { name: '', enabled: false, starts: [], steps: [] };
     this.editorStarts = task.starts;
     this.librarySearch = ''; this.libraryCategory = 'all';
     showDialog(`<form id="editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} task` : 'Add task')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>

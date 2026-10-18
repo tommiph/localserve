@@ -3,6 +3,12 @@
 Read README.md, INSTALL.md and CONTRIBUTING.md before editing. These instructions
 apply to this repository, including plugins, Android and optional TV source.
 
+- Advance server/plugin software versions for every completed source change.
+  Use tools/version.mjs and VERSIONING.md: patch for fixes/UI, minor for compatible
+  features, major for breaking changes. Advance only affected components, append
+  a public summary and run --check. Keep software versions separate from stored
+  revisions, schema/API numbers, cache versions and APK/widget identities.
+
 - Implement changes in the real application. Use readable names and comments
   explaining contracts, state transitions and non-obvious limits. Update the
   relevant user guide in the same change; do not add conversation history.

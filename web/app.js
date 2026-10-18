@@ -28,6 +28,7 @@ function hydrate(data) {
   // while their queued saves are pending instead of replacing them on each poll.
   const previousTimeFormat = config?.timeFormat;
   state = data; config = data.config;
+  AdminDOM.text(document.querySelector('#server-version'),'v'+config.version);
   if (previousTimeFormat && previousTimeFormat !== config.timeFormat) {
     TimeUI.refreshFormat();
     dialog.querySelectorAll('.task-block').forEach(card => TaskUI.updateSummary(card));
@@ -330,6 +331,7 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
+    if(action==='plugin-task-builder')return await PluginUI.openTaskBuilder(state.services.find(service=>service.id===currentView),control.dataset.intent);
     if (action === 'navigation-toggle' || action === 'navigation-close') {
       setNavigationOpen(action === 'navigation-toggle' && document.body.dataset.navigationOpen !== 'true'); return;
     }
@@ -628,6 +630,7 @@ function showDialog(content, context) {
   dialog.classList.toggle('card-editor', context.kind === 'card');
   dialog.classList.toggle('vista-editor', context.kind === 'vista' || context.kind === 'universe');
   dialog.classList.toggle('controls-editor', context.kind === 'controls');
+  dialog.classList.toggle('task-builder-editor', context.kind === 'task-builder');
   document.querySelector('#dialog-content').innerHTML = content;
   const form = dialog.querySelector('form');
   initialFormValues = form ? serializeForm(form) : '';
@@ -663,6 +666,9 @@ for (const type of ['input', 'change', 'click']) document.addEventListener(type,
 
 
 function serializeForm(form) {
+  // Optional builders keep one canonical draft across their changing pages.
+  // Navigation/search are presentation; only meaningful choices affect discard.
+  if(form.id==='recipe-builder-form'&&form.querySelector('[data-task-builder-draft]'))return form.querySelector('[data-task-builder-draft]').value;
   if (form.id === 'universe-editor-form') return JSON.stringify(UniverseUI.readDraft());
   if (form.id === 'vista-editor-form') return JSON.stringify(VistaUI.readDraft());
   if (form.id === 'card-editor-form') return JSON.stringify(CardDesigner.readDraft());

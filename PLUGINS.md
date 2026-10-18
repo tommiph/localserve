@@ -14,6 +14,7 @@ All start disabled with fresh defaults. No live settings or saved Cards are incl
 | [Oculus Go](plugins/oculus-go/README.md) | Read-only Wi-Fi headset diagnostics | Orbital |
 | [PC and Network](plugins/pc-network/README.md) | Windows CPU, GPU, memory, storage, adapters and network name lookups | Observatory |
 | [PlayStation](plugins/playstation/README.md) | PSN presence, active game, playtime and trophies | Gaming lounge |
+| [Recipes](plugins/recipes/README.md) | Build Tasks by choosing what you want and when it should happen | Ordinary Cards |
 | [Samsung TV](plugins/samsung-tv/README.md) | Local Samsung TV readings, apps and remote controls | Home cinema |
 | [Sensors](plugins/sensors/README.md) | Selected sensor and phone reports from trusted Android devices on the local network | Sensorium |
 | [Simulator](plugins/simulator/README.md) | Local actions, values, and events | Signal lab |

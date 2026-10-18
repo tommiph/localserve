@@ -25,8 +25,11 @@ import { TvNotices } from './server/tv-notices.mjs';
 import { defaultDoNotDisturb, validateDoNotDisturb, doNotDisturbStatus } from './server/do-not-disturb.mjs';
 import {localDisplayPath, requireLocalDisplay} from './server/local-pages.mjs';
 import { controlAppManifest, controlAppHead } from './server/control-apps.mjs';
+import packageMetadata from './package.json' with { type: 'json' };
 
-export const defaultConfig = { name: 'Localserve', version: '0.2.0', theme: 'dark', fontScale: 100, vistaFontScale: 100, timeFormat: '24', location: null, activityRetentionDays: 30,
+// Software identity comes from the installed package, never an old preference.
+export const serverVersion = packageMetadata.version;
+export const defaultConfig = { name: 'Localserve', version: serverVersion, theme: 'dark', fontScale: 100, vistaFontScale: 100, timeFormat: '24', location: null, activityRetentionDays: 30,
   doNotDisturb: defaultDoNotDisturb, listen: { host: '127.0.0.1', port: 0 }, maxConcurrentRuns: 8 };
 const contentTypes = { '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.m4a':'audio/mp4', '.wav': 'audio/wav', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.png': 'image/png', '.webp': 'image/webp' };
@@ -180,7 +183,7 @@ export async function createLocalserve(root, options = {}) {
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: config.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { config: {...config.snapshot(),version:serverVersion}, games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -416,11 +419,14 @@ export async function createLocalserve(root, options = {}) {
         webFiles.add('sensors-install.html');
         webFiles.add('phone-information.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
-        const file = webFiles.has(relative) ? path.join(root, 'web', relative) : path.resolve(root, relative);
+        const builderMatch=/^plugin-task-builders\/([a-z][a-z0-9-]{0,63})\.(js|css)$/.exec(relative);
+        const builderPlugin=builderMatch&&registry.services().find(plugin=>plugin.id===builderMatch[1]&&plugin.taskBuilder&&plugin.enabled);
+        const file = builderPlugin ? path.join(root,'plugins',builderPlugin.folder,'admin/task-builder.'+builderMatch[2]) : webFiles.has(relative) ? path.join(root, 'web', relative) : path.resolve(root, relative);
         if (localDisplayPath('/' + relative)) await requireLocalDisplay(root, '/' + relative);
-        if (!webFiles.has(relative) && relative !== 'styles.css' && !(relative.startsWith('assets/') && Object.hasOwn(contentTypes, path.extname(file)))) throw new HttpError(404, 'File not found.');
+        if (!builderPlugin&&!webFiles.has(relative) && relative !== 'styles.css' && !(relative.startsWith('assets/') && Object.hasOwn(contentTypes, path.extname(file)))) throw new HttpError(404, 'File not found.');
         const realRoot = await fs.realpath(root), realFile = await fs.realpath(file);
         if (!realFile.startsWith(realRoot + path.sep)) throw new HttpError(404, 'File not found.');
+        if(builderPlugin&&!realFile.startsWith((await fs.realpath(path.join(root,'plugins',builderPlugin.folder)))+path.sep))throw new HttpError(404,'Task builder unavailable.');
         let content = await fs.readFile(realFile);
         if(relative==='maze.html'){
           games.viewer();

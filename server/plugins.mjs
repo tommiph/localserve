@@ -69,6 +69,7 @@ export function validateDeclaration(value) {
   if (reservedIds.has(value.id)) throw new Error('This plugin id is reserved for server navigation.');
   if (value.schemaVersion !== undefined && value.schemaVersion !== 1) throw new Error('Unsupported declaration schema version.');
   const settings = validateFields(value.settings);
+  if(value.taskBuilder!==undefined&&value.taskBuilder!==true)throw new Error('Task builder must explicitly opt in.');
   const settingsGuide = validateSettingsGuide(value.settingsGuide);
   if (settings.some(field => ['name', 'enabled', 'icon', 'revision'].includes(field.id))) throw new Error('A plugin setting uses a reserved identifier.');
   let runtime = null;
@@ -168,6 +169,7 @@ export function validateDeclaration(value) {
     apiVersion: runtime ? 1 : null, runtime, settings, polling, instances,
     defaultCardLayout: value.defaultCardLayout || 'grid', ...(attribution ? { attribution } : {}),
     ...(settingsGuide ? {settingsGuide} : {}),
+    ...(value.taskBuilder ? {taskBuilder:true} : {}),
     ...(listActions ? {listActions} : {}),
     events, actions, ...(settingsLookup ? {settingsLookup} : {}), controls: validateControlsDeclaration(value.controls, actions, runtime, cardFields), cardFields,
     cardTemplates: validateCardTemplates(value.cardTemplates, cardFields),

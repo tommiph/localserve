@@ -1,5 +1,10 @@
 # Developing Localserve
 
+Write documentation, source comments and change descriptions for users and
+contributors. Describe current behavior, requirements and technical contracts.
+Keep private conversations, planning notes, approval records and session
+summaries out of repository content and publication messages.
+
 ## Start a project
 
 Clone the complete repository into a writable folder. Read AGENTS.md before
@@ -20,6 +25,10 @@ provider/device behavior. Add focused isolated tests alongside new capabilities.
 Running a checkout creates private files; keep them out of commits.
 
 ## Code map
+
+For each completed code change, advance the affected server/plugin version with
+`tools/version.mjs`, then run its `--check`. See [VERSIONING.md](VERSIONING.md).
+Keep the metadata, public version entry and updated guide in the same commit.
 
 | Path | Responsibility |
 | --- | --- |

@@ -1,11 +1,12 @@
 {
   "name": "localserve",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "scripts": {
     "start": ".\\runtime\\node.exe server.mjs",
-    "test": ".\\runtime\\node.exe --test tests/universe.test.mjs tests/universe-viewer.test.mjs tests/universe-ui.test.mjs tests/vistas-legacy.test.mjs tests/games.test.mjs tests/source.test.mjs"
+    "test": ".\\runtime\\node.exe --test --test-concurrency=1 tests/universe.test.mjs tests/universe-viewer.test.mjs tests/universe-ui.test.mjs tests/vistas-legacy.test.mjs tests/games.test.mjs tests/source.test.mjs tests/version.test.mjs",
+    "version:check": ".\\runtime\\node.exe tools/version.mjs --check"
   },
   "engines": {
     "node": ">=24"

@@ -1,14 +1,19 @@
-# Installation-specific data and secrets; never publish after configuring.
+# Installation records are generated locally, never source inputs.
 /config.json
 /data/
 /plugins/*/data/
 /tray/settings.json
-/tv-tizen/private/
-/tv-tizen/dist/
-/tv-tizen/app/author-signature.xml
-/tv-tizen/app/signature*.xml
-/tools/tizen/
+/backups/
+/work/
+/reference/
 /dist/
+/tests/.tmp/
+/.codex/
+/.agents/
+/.env
+/.env.*
+
+# Credentials, signatures, private tools and build workspaces.
 *.dpapi
 *.p12
 *.pfx
@@ -16,19 +21,15 @@
 *.log
 *.jsonl
 *.tmp
-
-# User content, tool caches and private build files.
-/backups/
-/work/
-/reference/
-/.codex/
-/.agents/
-/.env
-/.env.*
-/tests/.tmp/
-/assets/pages/*
-!/assets/pages/README.md
+**/.env
+**/.env.*
+/tv-tizen/private/
+/tv-tizen/dist/
+/tv-tizen/app/author-signature.xml
+/tv-tizen/app/signature*.xml
+/tools/tizen/
 /tools/github-cli/
+/tools/sunshine/
 /tools/android-build/downloads/
 /tools/android-build/jdk/
 /tools/android-build/build-tools/
@@ -36,10 +37,9 @@
 /tools/android-build/private/
 /plugins/sensors/android/build/
 
-/assets/games/music/*
-!/assets/games/music/README.md
-
-# Bundled generic display examples.
+# User content is excluded. Only these generic display assets are bundled.
+/assets/pages/*
+!/assets/pages/README.md
 !/assets/pages/scifi.html
 !/assets/pages/scifi-display.js
 !/assets/pages/scifi-tv.css
@@ -47,3 +47,5 @@
 !/assets/pages/solar-system.html
 !/assets/pages/solar-system.js
 !/assets/pages/vendor/
+/assets/games/music/*
+!/assets/games/music/README.md

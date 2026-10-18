@@ -7,6 +7,89 @@ const PluginUI = {
   glyphSearch: '',
   valueInstances: new Map(),
   openGuides: new Set(),
+  builders: new Map(),
+
+  taskBuilderCatalog(){
+    const actions=actionCatalog.filter(action=>!action.parameters?.some(field=>field.format==='secret')).map(action=>{
+      const owner=state.services.find(service=>service.id===action.pluginId);
+      let parameters=structuredClone(action.parameters);
+      if(action.type==='show-vista'){
+        const vistas=(state.vistas||[]).filter(vista=>vista.enabled);
+        parameters=[{id:'vistaId',label:'Vista',type:'string',required:true,enum:vistas.map(vista=>vista.id),enumLabels:vistas.map(vista=>vista.name),help:vistas.length?'':'Create and enable a Vista first.'}];
+      }
+      // Named choices come from declared public tables, never private state or
+      // guessed IDs. Missing device readings remain explicitly unselectable.
+      const lighting=owner?.controls?.lighting;
+      const lightingRole=lighting&&Object.entries(lighting.actions).find(([,id])=>id===action.actionId)?.[0];
+      const rows=keys=>keys.flatMap(key=>owner?.cardData?.values?.[key]?.available?owner.cardData.values[key].value:[]);
+      let targets=null;
+      if(lightingRole?.startsWith('light'))targets=rows(lighting.lights);
+      if(lightingRole?.startsWith('group'))targets=rows([lighting.groups]);
+      if(owner?.controls?.television&&action.actionId==='launch-app')targets=rows(['apps']);
+      if(targets!==null)parameters=parameters.map(field=>field.id==='id'?{...field,enum:targets.filter(row=>typeof row.id==='string').map(row=>row.id),enumLabels:targets.filter(row=>typeof row.id==='string').map(row=>row.name||'Unnamed device'),help:targets.length?'': 'No devices reported yet. Refresh the device connection, then come back.'}:field);
+      return {id:action.id,type:action.type,name:action.name,pluginId:action.pluginId,actionId:action.actionId,icon:action.icon,pluginName:action.pluginName||'Server',description:action.description,available:action.available,unavailableReason:action.unavailableReason,defaults:action.defaults,parameters};
+    });
+    const events=(state.taskEvents||[]).map(event=>({id:event.id,eventId:event.eventId,pluginId:event.pluginId,pluginName:event.pluginName,icon:state.services.find(owner=>owner.id===event.pluginId)?.icon,name:event.name,occurrenceKey:event.occurrenceKey,available:event.available,unavailableReason:event.unavailableReason,payload:event.payload.filter(field=>field.format!=='secret')}));
+    return {actions,events,hasLocation:Boolean(config.location)};
+  },
+
+  async loadTaskBuilder(service){
+    if(!service?.enabled||!service.taskBuilder)throw Error('Enable this plugin first.');
+    let entry=this.builders.get(service.id);
+    if(!entry){
+      entry={};this.builders.set(service.id,entry);
+      const url=`/plugin-task-builders/${encodeURIComponent(service.id)}`;
+      const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=url+'.css';
+      stylesheet.dataset.taskBuilder=service.id;document.head.append(stylesheet);
+      // Load failure stays inside this optional feature; the rest of the
+      // administrator and server continue using their existing contracts.
+      entry.pending=import(url+'.js').then(module=>{entry.module=module;return module;}).catch(error=>{entry.error=true;throw error;});
+    }
+    return entry.module||entry.pending;
+  },
+
+  taskBuilderHome(service){
+    if(!service.enabled)return `<section class="task-builder-welcome"><span class="service-icon">${icon(service.icon)}</span><h2>A little idea.<br>A useful little task.</h2><p>Make something happen with a few simple choices.</p><button class="button primary" data-action="toggle-service" data-id="${escapeHtml(service.id)}">Enable ${escapeHtml(service.name)}</button></section>`;
+    const entry=this.builders.get(service.id);
+    if(entry?.module?.landing){
+      try{return entry.module.landing({...this.taskBuilderCatalog(),escape:escapeHtml,icon});}
+      catch{return '<div class="empty-state">This builder could not open. Settings and your saved Tasks are still available.</div>';}
+    }
+    if(!entry)this.loadTaskBuilder(service).then(()=>{if(currentView===service.id)renderView();}).catch(()=>{if(currentView===service.id)renderView();});
+    return `<div class="empty-state">${entry?.error?'This builder could not load. Reload the page to try again.':'Getting your ideas ready…'}</div>`;
+  },
+
+  async openTaskBuilder(service,intent){
+    const module=await this.loadTaskBuilder(service);
+    const current=()=>state.services.find(item=>item.id===service.id&&item.enabled&&item.taskBuilder);
+    const check=draft=>{
+      if(!current())throw Error('This builder has been turned off.');
+      const capability=draft.steps[0]?.capabilityId||draft.steps[0]?.type;
+      if(!actionCatalog.some(action=>action.id===capability&&action.available!==false))throw Error('That action is no longer available. Check its connection and try again.');
+      if(draft.starts.some(rule=>rule.type==='event'&&!state.taskEvents.some(event=>event.id===rule.eventId&&event.available!==false)))throw Error('That signal is no longer available. Choose another one.');
+    };
+    if(!current())throw Error('This builder has been turned off.');
+    let context,creating=false,savedTaskId=null;
+    module.open({...this.taskBuilderCatalog(),escape:escapeHtml,icon,time:value=>TimeUI.render(value),formatTime:value=>TimeUI.format(value),intent,
+      show:body=>{showDialog(`<form id="recipe-builder-form" novalidate>${body}</form>`,{kind:'task-builder'});context=dialogContext;},
+      error:message=>{if(dialogContext===context)showFormError(message);},
+      review:draft=>{check(draft);TaskUI.openEditor(null,false,{...draft,enabled:false});},
+      create:async draft=>{
+        if(creating||savedTaskId)throw Error('This task is already being saved.');
+        if(dialogContext!==context)throw Error('This builder is no longer open.');
+        check(draft);creating=true;
+        try{
+          const before=new Set(state.tasks.map(task=>task.id));
+          await mutate('api/tasks',{...draft,enabled:false});
+          savedTaskId=state.tasks.find(task=>!before.has(task.id)&&task.name===draft.name)?.id;
+          if(!savedTaskId)throw Error('Check Tasks to confirm that your task was saved.');
+          if(dialogContext===context)initialFormValues=serializeForm(dialog.querySelector('form'));
+          return {id:savedTaskId};
+        }finally{creating=false;}
+      },
+      editSaved:()=>{if(savedTaskId&&dialogContext===context)TaskUI.openEditor(savedTaskId);},
+    });
+  },
 
   field(field, value, prefix) {
     const id = `${prefix}-${field.id}`;
@@ -54,21 +137,24 @@ const PluginUI = {
 
   render(service) {
     const tabNames = [
+      ...(service.taskBuilder ? [['create','Create','auto-awesome']] : []),
       ['settings', 'Settings', 'sliders'],
-      ['cards', 'Card designer', 'table-cells'],
+      ...(!service.taskBuilder ? [['cards', 'Card designer', 'table-cells']] : []),
       ...(service.controls ? [['controls', 'Controls', 'gamepad']] : []),
       ...(service.events.length ? [['events', 'Events', 'tower-broadcast']] : []),
       ['log', 'Log', 'clipboard-list'],
     ];
     const remembered = this.tabs.get(service.id);
-    const selected = tabNames.some(([id]) => id === remembered) ? remembered : 'settings';
+    const selected = tabNames.some(([id]) => id === remembered) ? remembered : service.taskBuilder?'create':'settings';
+    this.tabs.set(service.id,selected);
     const status = serviceStatus(service);
-    const heading = `<div class="page-heading"><div class="plugin-heading"><span class="service-icon">${icon(service.icon)}</span><div><h1>${escapeHtml(service.name)}</h1><div class="plugin-readiness">${statusPill(status.label, status.className)}</div></div></div></div>`;
+    const heading = `<div class="page-heading"><div class="plugin-heading"><span class="service-icon">${icon(service.icon)}</span><div><h1>${escapeHtml(service.name)} <small class="plugin-version" title="Plugin version">v${escapeHtml(service.version)}</small></h1><div class="plugin-readiness">${statusPill(status.label, status.className)}</div></div></div></div>`;
     const tabs = `<div class="tabs" role="tablist" aria-label="${escapeHtml(service.name)} workspace">${tabNames.map(([id, label, glyph]) => `<button type="button" id="plugin-tab-${id}" class="tab" role="tab" aria-selected="${selected === id}" aria-controls="plugin-panel" tabindex="${selected === id ? 0 : -1}" data-action="plugin-tab" data-id="${id}">${icon(glyph)}${label}</button>`).join('')}</div>`;
     const error = `<div id="plugin-error" class="form-error" role="alert" ${service.error ? '' : 'hidden'}>${escapeHtml(service.error)}</div>`;
-    const panel = selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
+    const panel = selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
       : selected === 'events' ? this.events(service) : this.settings(service);
-    renderWorkspace(heading + `<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>` + tabs + error + `<div id="plugin-panel" role="tabpanel" aria-labelledby="plugin-tab-${selected}">${panel}</div>`);
+    const evidence=selected==='create'?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
+    renderWorkspace(heading + evidence + tabs + error + `<div id="plugin-panel" role="tabpanel" aria-labelledby="plugin-tab-${selected}">${panel}</div>`);
     renderSaveFeedback();
   },
 
@@ -84,7 +170,7 @@ const PluginUI = {
 
   settings(service) {
     if (!service.config) return '<section class="panel"><div class="empty-state">Plugin data could not be loaded.</div></section>';
-    return `<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
+    return `${service.taskBuilder?`<section class="panel plugin-task-builder"><div class="panel-body"><h2>I want… when…</h2><p>Choose an action and when it should happen, then review your Task before saving.</p><button class="button primary" data-action="plugin-task-builder" ${service.enabled?'':'disabled'}>Build a task</button>${!service.enabled?'<p class="field-help">Enable this plugin below to begin.</p>':''}</div></section>`:''}<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
       ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Android app</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
       <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${service.settings.map(field => this.field(field, service.config.settings[field.id] ?? field.default, 'plugin-setting')).join('')}</fieldset></form>
       <div class="plugin-setting-row"><span>${icon('toggle-on')}Enabled</span><button type="button" class="switch" role="switch" aria-checked="${service.enabled}" aria-label="${escapeHtml(service.name)} enabled" data-action="toggle-service" data-id="${escapeHtml(service.id)}"></button></div>
