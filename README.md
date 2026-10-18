@@ -2,6 +2,7 @@
 
 Localserve is a Windows automation server with a browser administrator, plugins,
 step-by-step Tasks, mobile device remotes and read-only information displays.
+Demo: https://youtu.be/iRawtvXB6DQ
 
 ## Install and start
 
