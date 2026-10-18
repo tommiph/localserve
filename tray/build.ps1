@@ -1,8 +1,15 @@
+param([ValidateSet('LocalserveTray.exe','LocalserveTray.next.exe')][string]$OutputName = 'LocalserveTray.exe')
 # Build using Windows' .NET Framework compiler and graphics APIs without runtime
 # downloads or installation. Paths resolve from this script's folder.
 $ErrorActionPreference = 'Stop'
 $trayFolder = $PSScriptRoot
 $projectFolder = Split-Path -Parent $trayFolder
+function Get-SourceHash([string]$file) {
+    $stream = [System.IO.File]::OpenRead($file)
+    $hasher = [System.Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($hasher.ComputeHash($stream)).Replace('-', '').ToLowerInvariant() }
+    finally { $stream.Dispose(); $hasher.Dispose() }
+}
 $frameworkFolder = Join-Path ([Environment]::GetFolderPath('Windows')) 'Microsoft.NET\Framework64\v4.0.30319'
 $compiler = Join-Path $frameworkFolder 'csc.exe'
 if (-not (Test-Path -LiteralPath $compiler)) { throw 'The Windows .NET Framework 4 compiler is unavailable.' }
@@ -68,7 +75,15 @@ $iconFolder = Join-Path $trayFolder 'assets'
 New-Item -ItemType Directory -Path $iconFolder -Force | Out-Null
 New-LogoIcon (Join-Path $iconFolder 'logo.ico') $false
 New-LogoIcon (Join-Path $iconFolder 'logo-dark.ico') $true
-& $compiler /nologo /target:winexe /optimize+ /platform:x64 "/out:$trayFolder\LocalserveTray.exe" "/win32icon:$iconFolder\logo.ico" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "$trayFolder\LocalserveTray.cs"
+$version = (Get-Content -LiteralPath (Join-Path $projectFolder 'package.json') -Raw | ConvertFrom-Json).version
+if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use a numeric package version before building the tray.' }
+$metadataFolder = Join-Path $trayFolder '.build'
+New-Item -ItemType Directory -Path $metadataFolder -Force | Out-Null
+$metadataFile = Join-Path $metadataFolder 'version-info.cs'
+('[assembly:System.Reflection.AssemblyTitle("Localserve")][assembly:System.Reflection.AssemblyProduct("Localserve")][assembly:System.Reflection.AssemblyVersion("' + $version + '.0")][assembly:System.Reflection.AssemblyFileVersion("' + $version + '.0")]') | Set-Content -LiteralPath $metadataFile -Encoding utf8
+& $compiler /nologo /target:winexe /optimize+ /platform:x64 "/out:$trayFolder\$OutputName" "/win32icon:$iconFolder\logo.ico" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "$trayFolder\LocalserveTray.cs" $metadataFile
 if ($LASTEXITCODE -ne 0) { throw 'Tray compilation failed.' }
-Write-Output 'Built tray/LocalserveTray.exe and application icons.'
+Remove-Item -LiteralPath $metadataFile
+@{version=$version;binary=('tray/' + $OutputName);sourceSha256=(Get-SourceHash (Join-Path $trayFolder 'LocalserveTray.cs'));binarySha256=(Get-SourceHash (Join-Path $trayFolder $OutputName))} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $trayFolder 'build-result.json') -Encoding utf8
+Write-Output ('Built tray/' + $OutputName + ' and application icons.')
 

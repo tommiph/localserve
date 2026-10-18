@@ -3,6 +3,13 @@
 Read README.md, INSTALL.md and CONTRIBUTING.md before editing. These instructions
 apply to this repository, including plugins, Android and optional TV source.
 
+- Windows Setup is per-user and accepts only a verified clean payload. Preserve
+  settings, maintenance/instance guards, cooperative shutdown and default data
+  retention; never force processes or configure devices/firewall during setup.
+  Run installer checks with its separate test identity. Keep compiler caches,
+  build receipts and signing keys out of source. README demo links derive from
+  project-info.json. Native binary versions follow package.json.
+
 - Advance server/plugin software versions for every completed source change.
   Use tools/version.mjs and VERSIONING.md: patch for fixes/UI, minor for compatible
   features, major for breaking changes. Advance only affected components, append

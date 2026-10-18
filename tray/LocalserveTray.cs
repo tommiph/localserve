@@ -108,6 +108,7 @@ namespace LocalserveDesktop
 
         public Dictionary<string, object> Start()
         {
+            RequireNoMaintenance();
             // GUI and command-line callers share a per-installation startup gate.
             // A live PID is never killed/adopted merely because it holds a lock.
             using (Mutex gate = new Mutex(false, "Local\\LocalserveStart-" + Identity))
@@ -117,6 +118,7 @@ namespace LocalserveDesktop
                 {
                     try { acquired = gate.WaitOne(3000); } catch (AbandonedMutexException) { acquired = true; }
                     if (!acquired) throw new IOException("Another Localserve start is in progress.");
+                    RequireNoMaintenance();
                     Dictionary<string, object> current = Status();
                     if (current.ContainsKey("pid")) return current;
                     if (Text(current, "unmanaged") == "True") throw new IOException("A Localserve lock is active. Stop its console instance before starting from the tray.");
@@ -186,6 +188,38 @@ namespace LocalserveDesktop
             }
         }
 
+        public void RequireNoMaintenance()
+        {
+            try { using (Mutex gate = Mutex.OpenExisting("Local\\LocalserveMaintenance-" + Identity)) { } }
+            catch (WaitHandleCannotBeOpenedException) { return; }
+            throw new IOException("Localserve installation maintenance is in progress. Try again after Setup finishes.");
+        }
+
+        public void StopAndExit()
+        {
+            Stop();
+            EventWaitHandle signal;
+            if (EventWaitHandle.TryOpenExisting("Local\\LocalserveTrayExit-" + Identity, out signal))
+                using (signal) signal.Set();
+            DateTime deadline = DateTime.UtcNow.AddSeconds(10);
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    using (Mutex instance = Mutex.OpenExisting("Local\\LocalserveTray-" + Identity))
+                    {
+                        bool acquired = false;
+                        try { try { acquired = instance.WaitOne(0); } catch (AbandonedMutexException) { acquired = true; } }
+                        finally { if (acquired) instance.ReleaseMutex(); }
+                        if (acquired) return;
+                    }
+                }
+                catch (WaitHandleCannotBeOpenedException) { return; }
+                Thread.Sleep(100);
+            }
+            throw new TimeoutException("The owned tray is still closing. No process was force-stopped.");
+        }
+
         private string StartupName { get { return "LocalserveTray-" + Identity; } }
         private string StartupCommand { get { return "\"" + FileAt("tray/LocalserveTray.exe") + "\" --autostart"; } }
         public bool WindowsStartup
@@ -228,9 +262,12 @@ namespace LocalserveDesktop
         private bool busy, refreshing, initialized;
         private Icon logo;
 
-        public TrayContext(ServerHost server)
+        private readonly EventWaitHandle exitSignal;
+
+        public TrayContext(ServerHost server, bool openOnStart)
         {
             host = server;
+            exitSignal = new EventWaitHandle(false, EventResetMode.ManualReset, "Local\\LocalserveTrayExit-" + host.Identity);
             ContextMenuStrip menu = new ContextMenuStrip();
             status = new ToolStripMenuItem("Localserve — Checking") { Enabled = false };
             start = new ToolStripMenuItem("Start server", null, async (s, e) => await RunCommand(() => host.Start()));
@@ -251,10 +288,13 @@ namespace LocalserveDesktop
             tray.DoubleClick += async (s, e) => await RunCommand(() => host.OpenAdministrator());
             timer = new System.Windows.Forms.Timer { Interval = 500 };
             timer.Tick += async (s, e) => {
+                if (exitSignal.WaitOne(0)) { ExitThread(); return; }
                 if (!initialized)
                 {
                     initialized = true; timer.Interval = 3000;
-                    if (host.AutoStartServer) await RunCommand(() => host.Start());
+                    if (host.AutoStartServer || openOnStart)
+                        if (await RunCommand(() => host.Start()))
+                            if (openOnStart) await RunCommand(() => host.OpenAdministrator());
                 }
                 await Refresh();
             };
@@ -328,6 +368,7 @@ namespace LocalserveDesktop
         protected override void ExitThreadCore()
         {
             timer.Stop(); timer.Dispose();
+            exitSignal.Dispose();
             tray.Visible = false; tray.Dispose();
             if (logo != null) logo.Dispose();
             base.ExitThreadCore();
@@ -343,13 +384,18 @@ namespace LocalserveDesktop
             ServerHost host = new ServerHost(root);
             try
             {
-                if (args.Length > 0 && args[0] != "--autostart")
+                if (args.Length == 2 && args[0] == "--identity")
+                {
+                    Console.WriteLine(new ServerHost(args[1]).Identity); return 0;
+                }
+                if (args.Length > 0 && args[0] != "--autostart" && args[0] != "--open")
                 {
                     switch (args[0])
                     {
                         case "--status": Console.WriteLine(host.Json(host.Status())); break;
                         case "--start": Console.WriteLine(host.Json(host.Start())); break;
                         case "--stop": host.Stop(); Console.WriteLine("{\"ok\":true}"); break;
+                        case "--stop-and-exit": host.StopAndExit(); Console.WriteLine("{\"ok\":true}"); break;
                         case "--restart": host.Stop(); Console.WriteLine(host.Json(host.Start())); break;
                         case "--pause": Console.WriteLine(host.Json(host.Command("pause"))); break;
                         case "--resume": Console.WriteLine(host.Json(host.Command("resume"))); break;
@@ -360,12 +406,13 @@ namespace LocalserveDesktop
                     }
                     return 0;
                 }
+                host.RequireNoMaintenance();
                 using (Mutex single = new Mutex(false, "Local\\LocalserveTray-" + host.Identity))
                 {
                     bool acquired;
                     try { acquired = single.WaitOne(0); } catch (AbandonedMutexException) { acquired = true; }
-                    if (!acquired) return 0;
-                    try { Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false); Application.Run(new TrayContext(host)); }
+                    if (!acquired) { if (args.Length > 0 && args[0] == "--open") { host.Start(); host.OpenAdministrator(); } return 0; }
+                    try { Application.EnableVisualStyles(); Application.SetCompatibleTextRenderingDefault(false); Application.Run(new TrayContext(host, args.Length > 0 && args[0] == "--open")); }
                     finally { single.ReleaseMutex(); }
                 }
                 return 0;

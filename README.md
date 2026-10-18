@@ -1,9 +1,18 @@
 # Localserve
 
+<!-- demo:start -->
+[Watch the Localserve demo on YouTube](https://youtu.be/iRawtvXB6DQ)
+<!-- demo:end -->
+
 Localserve is a Windows automation server with a browser administrator, plugins,
 step-by-step Tasks, mobile device remotes and read-only information displays.
 
 ## Install and start
+
+The per-user Windows Setup executable adds shortcuts and opens the administrator
+after setup. Portable/source installation is also available as described below.
+See [setup details](tools/installer/README.md) for prerequisites, upgrades and
+data retention. Unsigned preview builds still need normal Windows trust checks.
 
 1. Clone or download the complete repository into a writable folder on a Windows
    10/11 x64 PC. Extract a downloaded ZIP before running anything.
@@ -26,6 +35,9 @@ devices before enabling them. [Local display examples](assets/pages/README.md)
 include a sci-fi screen and solar-system screensaver.
 
 ## Features
+
+- **Recipes:** a visual step-by-step builder for actions, device conditions and
+  schedules, with editable intent summaries and optional detailed editing.
 
 - **Tasks:** manual starts, schedules, timers, intervals, sunrise/sunset and plugin
   Events; ordered actions, delays, Event-value substitutions and manual Rerun.

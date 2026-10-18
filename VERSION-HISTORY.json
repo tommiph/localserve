@@ -35,6 +35,13 @@
       "from": "0.3.0",
       "version": "0.3.1",
       "summary": "Automate verified clean source preparation and preserve Git history during publication"
+    },
+    {
+      "date": "2026-10-18T17:29:46.465Z",
+      "component": "server",
+      "from": "0.3.1",
+      "version": "0.4.0",
+      "summary": "Add per-user Windows setup with settings retention and configurable README demo video"
     }
   ]
 }

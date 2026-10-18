@@ -14,6 +14,11 @@
 /.env.*
 
 # Credentials, signatures, private tools and build workspaces.
+/tray/LocalserveTray.next.exe
+/tray/build-result.json
+/tray/.build/
+/tools/installer/compiler/
+/tools/installer/downloads/
 *.dpapi
 *.p12
 *.pfx

@@ -14,6 +14,22 @@ build, not a signed Windows installer or a guarantee of device compatibility.
 
 ## First start
 
+### Setup executable
+
+When using a Localserve Setup executable, run it as your normal Windows user.
+It installs into a writable per-user folder, adds Start menu/uninstall entries
+and initializes missing private settings. **Open Localserve** starts the tray
+and opens the administrator after the server is ready. **Start when I sign in**
+is optional and starts unchecked. Existing installation settings survive upgrades.
+
+Setup only updates folders it owns; choose an empty folder when starting from
+a portable copy. Uninstall keeps private data by default and offers explicit
+deletion. See [setup details](tools/installer/README.md). Preview executables may
+be unsigned; check their signature/checksum. Device/plugin configuration and LAN
+access remain separate from installing the application.
+
+### Portable or source download
+
 1. Clone the repository or extract its ZIP using **Extract all**. Keep the complete folder
    together in a writable location. Do not run directly inside the ZIP, overwrite
    an existing installation, or place it in a read-only system folder.
