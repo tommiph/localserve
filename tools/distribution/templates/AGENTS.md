@@ -3,6 +3,13 @@
 Read README.md, INSTALL.md and CONTRIBUTING.md before editing. These instructions
 apply to this repository, including plugins, Android and optional TV source.
 
+- Demo setup is explicit, authenticated and empty-install-only. Preserve the
+  Simulator-only action allowlist, authored Task/Card/Vista identities, no start
+  rules, no shared-display change and no automatic execution. Journal before
+  writes, serialize setup against administrator mutations, retain edited data and
+  drain setup before shutdown releases the folder lock. Invalid metadata disables
+  only demo setup. Test using disposable roots, never a configured installation.
+
 - Windows Setup is per-user and accepts only a verified clean payload. Preserve
   settings, maintenance/instance guards, cooperative shutdown and default data
   retention; never force processes or configure devices/firewall during setup.

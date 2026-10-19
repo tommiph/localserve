@@ -63,6 +63,13 @@
       "from": "0.4.2",
       "version": "0.4.3",
       "summary": "Resolve owned numbered uninstallers and preserve independent verification diagnostics"
+    },
+    {
+      "date": "2026-10-18T23:54:06.690Z",
+      "component": "server",
+      "from": "0.4.3",
+      "version": "0.5.0",
+      "summary": "Add optional Simulator demo with a linked Task, ready-made Card and Vista"
     }
   ]
 }

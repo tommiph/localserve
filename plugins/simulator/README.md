@@ -4,7 +4,7 @@ Local actions, values, and events
 
 ## Setup
 
-Enable for local test actions, values and events without a device. Leave Configuration complete on unless testing readiness behavior. No example Tasks or Card instances are installed.
+Enable for local test actions, values and events without a device. Leave Configuration complete on unless testing readiness behavior. On an empty installation, Overview offers an optional Create demo button for an editable Task, Signal lab Card and Vista; nothing runs automatically.
 
 Starts disabled with fresh default settings, no cached readings, saved Cards or Controls. Configure through the shared administrator; do not copy credentials from someone else's installation.
 

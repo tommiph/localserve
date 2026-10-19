@@ -13,6 +13,7 @@ import { PluginRegistry } from './server/plugins.mjs';
 import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
 import { VistaStore } from './server/vistas.mjs';
+import { DemoSetup } from './server/demo.mjs';
 import { UniverseStore } from './server/universe.mjs';
 import { GamesStore,requireMazeDisplay } from './server/games.mjs';
 import { SensorIngress } from './server/sensor-ingress.mjs';
@@ -157,6 +158,8 @@ export async function createLocalserve(root, options = {}) {
     const controls = await new ControlsStore(root, registry, config, activity).load();
     registry.controls = controls;
     engine.vistas = vistas;
+    const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
+    let administratorWrites=0,demoInstalling=false,demoOperation=null;
     const token = randomBytes(32).toString('hex');
     let origin, closing = false, discoveryBusy = false, closePromise;
     const startedAt = Date.now();
@@ -183,7 +186,7 @@ export async function createLocalserve(root, options = {}) {
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: {...config.snapshot(),version:serverVersion}, games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { config: {...config.snapshot(),version:serverVersion}, demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -249,8 +252,21 @@ export async function createLocalserve(root, options = {}) {
           if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin));
           if (request.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
           if (request.headers.origin !== browserOrigin || request.headers['x-localserve-token'] !== token) throw new HttpError(403, 'Refresh this administration page before making changes.');
+          if(demoInstalling)throw new HttpError(409,'Demo setup is in progress. Try again when it finishes.');
+          administratorWrites++;
+          try {
           const values = await readBody(request);
-          if (url.pathname === '/api/games/maze') {
+          if(closing)throw new HttpError(503,'Server is stopping.');
+          if(url.pathname==='/api/demo/install'){
+            // Reserve the empty installation before any awaited setup write.
+            // In-flight editors finish independently; setup refuses to race them.
+            if(administratorWrites!==1)throw new HttpError(409,'Another change is in progress. Try demo setup again when it finishes.');
+            demoInstalling=true;
+            demoOperation=demo.install(values);
+            try{await demoOperation;}finally{demoInstalling=false;demoOperation=null;}
+          }else if(url.pathname==='/api/demo/run'){
+            await demo.run(values);
+          }else if (url.pathname === '/api/games/maze') {
             await games.save(values);
           } else if (url.pathname === '/api/games/maze/open-on-tv') {
             if(Object.keys(values).length!==1||!Number.isSafeInteger(values.revision))throw new HttpError(400,'Use the current game settings revision.');
@@ -363,6 +379,7 @@ export async function createLocalserve(root, options = {}) {
           }
           await controls.sync();
           return json(response, 200, snapshot(browserOrigin));
+          }finally{administratorWrites--;}
         }
         if (!['GET', 'HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
         const cardAsset = /^\/plugin-card-assets\/([a-z0-9-]+)\/([a-z0-9-]+)\/([a-z0-9/.\-]+)$/.exec(url.pathname);
@@ -417,6 +434,7 @@ export async function createLocalserve(root, options = {}) {
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
         webFiles.add('sensors-install.html');
+        webFiles.add('demo-ui.js');
         webFiles.add('phone-information.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
         const builderMatch=/^plugin-task-builders\/([a-z][a-z0-9-]{0,63})\.(js|css)$/.exec(relative);
@@ -510,6 +528,9 @@ export async function createLocalserve(root, options = {}) {
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
         if (!closePromise) closePromise = (async () => {
           closing = true; clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
+          // Finish owned example writes before shutting down their stores or
+          // releasing the installation lock. Setup never admits device effects.
+          if(demoOperation)await demoOperation.catch(()=>{});
           registry.beginClose();
           await sensorIngress.queue;
           await controls.close();

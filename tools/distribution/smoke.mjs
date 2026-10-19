@@ -34,6 +34,9 @@ try {
   assert.equal(snapshot.vistas.length,0);
   assert.equal(snapshot.controls.flatMap(plugin => plugin.pages).length,0);
   assert.equal(snapshot.runs.length,0);
+  assert.equal(snapshot.demo.status,'not-installed');
+  assert.equal(snapshot.demo.available,true);
+  assert.equal(await fs.stat(path.join(root,'data/demo.json')).then(()=>true,()=>false),false);
   assert.equal(snapshot.server.discoveryErrors.length,0);
   assert.equal(snapshot.vistaDisplay.vistaId,null);
   assert.equal(snapshot.universe.world,'space');

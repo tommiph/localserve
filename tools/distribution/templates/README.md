@@ -42,6 +42,14 @@ include a sci-fi screen and solar-system screensaver.
 
 ## Your first Task
 
+For a finished example, choose **Create demo** on Overview in an empty
+installation. It enables only Simulator and creates an editable Task, Signal lab
+Card and Vista. Open the demo screen, then choose **Run demo Task** to watch its
+value, pulse count and message change. Nothing runs automatically and no devices
+or provider accounts are needed. Existing content is never replaced.
+
+To start from scratch instead:
+
 1. Open **Simulator**, leave **Configuration complete** on, and enable the plugin.
 2. Open **Tasks**, create a Task and name it **First Task**.
 3. Add **Log activity**, enter a short message, enable the Task and save it.

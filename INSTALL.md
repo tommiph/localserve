@@ -52,6 +52,23 @@ Ready-made **designs** are installed, not preconfigured Card instances.
 
 ## Try the editor without a device
 
+On an empty installation, Overview offers **Create demo**. This is optional and
+does not run during installation or startup. It enables Simulator and creates
+**Run the demo**, a ready-made **Signal lab** Card and the **Localserve demo**
+Vista at `/vistas/localserve-demo`. Open that screen and press **Run demo Task**
+in Overview. Its values update through the real Task engine.
+
+The example has no schedules or event rules, never opens the TV and does not
+change `/display`, other plugin settings or server preferences. Existing content,
+prior plugin configuration and server pause prevent demo setup. Interrupted
+setup can be explicitly resumed if its authored content remains unchanged.
+All examples use the normal editors. Delete their Task, Vista and Simulator
+Card individually when finished, then disable Simulator if no longer needed.
+No reset of other content is required. Edited Tasks are run from Tasks after
+review; the demo shortcut refuses to execute changed definitions.
+
+To create your own examples instead:
+
 Enable Simulator, leaving Configuration complete on. Create your own Task with
 Log activity or a Simulator action, then run it manually. Add schedules or other
 rules when ready. To create a display, make a Card in a plugin's Card designer

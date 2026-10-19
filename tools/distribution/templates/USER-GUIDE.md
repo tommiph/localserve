@@ -28,6 +28,13 @@ no Google Fonts connection is needed while using Localserve.
 
 ## Build a Task
 
+An empty installation offers **Create demo** on Overview. The optional example
+connects a Simulator Task, Signal lab Card and Vista. Open its screen, then run
+the Task to see real changes. It requires no device or account and never starts
+automatically. Edit the Task in its normal editor and explore its Card/Vista
+through the plugin and Vistas pages. The demo shortcut only runs its original
+definition; after editing, review and run it in Tasks.
+
 For guided setup, open Recipes and enable it. Its Create page offers a cloud of
 ideas. Choose one, personalize it, then choose when it should happen. Tap either
 part of the finished sentence to change it. Create task saves it turned off;
