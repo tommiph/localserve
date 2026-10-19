@@ -166,3 +166,16 @@ test('demo presentation is explicit, uses normal editors and holds no browser de
   assert.match(ui.render(),/rel="noopener"/);assert.match(ui.render(),/data-action="edit-task"/);
   context.state.demo={status:'not-installed',available:false};assert.equal(ui.render(),'');
 });
+
+test('Overview remains usable without the optional demo script or backend capability',async()=>{
+  const source=await fs.readFile(new URL('../web/app.js',import.meta.url),'utf8');
+  const overview=source.slice(source.indexOf('function renderOverview()'),source.indexOf('function runsPanel()'));
+  let rendered='';
+  const context={state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
+    renderWorkspace:value=>{rendered=value;},pageHeading:()=>'<h1>Overview</h1>',statusPill:()=>'',metric:()=>'',servicesPanel:()=>'',activityPanel:()=>'',icon:()=>'',formatDuration:()=>'',escapeHtml:String};
+  vm.createContext(context);vm.runInContext(overview,context);
+  context.renderOverview();assert.match(rendered,/<h1>Overview<\/h1>/);assert.match(rendered,/Server controls/);
+  context.state.demo={available:true};context.renderOverview();assert.match(rendered,/Server controls/);
+  context.DemoUI={render:()=>'<section>Demo setup</section>'};context.renderOverview();assert.match(rendered,/Demo setup/);
+  delete context.state.demo;context.renderOverview();assert.doesNotMatch(rendered,/Demo setup/);
+});

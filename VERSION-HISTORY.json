@@ -70,6 +70,13 @@
       "from": "0.4.3",
       "version": "0.5.0",
       "summary": "Add optional Simulator demo with a linked Task, ready-made Card and Vista"
+    },
+    {
+      "date": "2026-10-19T00:17:28.584Z",
+      "component": "server",
+      "from": "0.5.0",
+      "version": "0.5.1",
+      "summary": "Keep administrator Overview usable when the optional demo interface is unavailable"
     }
   ]
 }

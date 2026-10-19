@@ -212,7 +212,7 @@ function renderOverview() {
   const pollsPerHour = polling.reduce((sum, service) => sum + 3600 / service.pollSeconds * (service.pollTargets ?? 1), 0);
   const warnings = state.server.discoveryErrors.length + state.services.filter(service => !service.configurationReady || ['error', 'restart-required'].includes(service.health) || service.enabled && service.pollObservation?.status === 'failed').length;
   renderWorkspace(pageHeading('Overview','Server status and services',`<button class="button" data-action="refresh">${icon('rotate')}Refresh</button>`) + `
-    ${DemoUI.render()}
+    ${state.demo && typeof DemoUI !== 'undefined' ? DemoUI.render() : ''}
     <section class="server-strip ${state.paused ? 'paused':''}" aria-label="Server controls"><div class="strip-identity"><span class="strip-icon">${icon(state.paused ? 'pause':'server')}</span><div><div class="strip-title">Server ${state.paused ? 'paused':'running'} ${statusPill(state.paused ? 'Paused':'Operational',state.paused ? 'waiting':'running')}</div><p class="strip-description">${state.server.runningTasks} active Tasks · ${configured.length} ready services</p></div></div><div class="server-toggle"><div class="server-toggle-text">Enabled</div><button class="switch" role="switch" aria-checked="${!state.paused}" data-action="toggle-server" aria-label="Server functions enabled"></button></div></section>
     <div class="metrics-grid">${metric('Active services',state.paused ? 0:configured.length,`/ ${state.services.length}`,'Configured and enabled','layer-group')}${metric('Polling rate',Number(pollsPerHour.toFixed(2)),'/ hour',polling.length ? 'Configured automatic rate' : 'No active polling services','arrows-rotate')}${metric('Server uptime',formatDuration(state.server.uptimeSeconds),'','','clock')}${metric('Needs attention',warnings,'',warnings ? 'Review configuration and Activity':'No service warnings','triangle-exclamation')}</div>
     <div class="dashboard-grid"><div class="dashboard-main">${servicesPanel()}${activityPanel()}</div><div class="dashboard-aside"><section class="panel"><div class="panel-header"><h2>Server details</h2>${icon('server')}</div><div class="panel-body"><dl class="facts"><div><dt>Name</dt><dd>${escapeHtml(config.name)}</dd></div><div><dt>Version</dt><dd>${escapeHtml(config.version)}</dd></div><div><dt>Address</dt><dd>${escapeHtml(state.server.address)}</dd></div><div><dt>Tasks</dt><dd>${state.tasks.filter(task=>task.enabled).length} enabled</dd></div><div><dt>Process CPU</dt><dd>${state.server.cpuPercent}%</dd></div><div><dt>Process memory</dt><dd>${Math.round(state.server.memoryBytes/1048576)} MB</dd></div></dl><div class="aside-note"><button class="text-button" data-view="settings">Server settings ${icon('arrow-right')}</button></div></div></section></div></div>`);
@@ -332,7 +332,10 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
-    if(action==='demo-install'||action==='demo-run')return await DemoUI.handle(action);
+    if(action==='demo-install'||action==='demo-run'){
+      if(!state.demo||typeof DemoUI==='undefined')throw new Error('Demo setup is unavailable. Refresh the administrator.');
+      return await DemoUI.handle(action);
+    }
     if(action==='plugin-task-builder')return await PluginUI.openTaskBuilder(state.services.find(service=>service.id===currentView),control.dataset.intent);
     if (action === 'navigation-toggle' || action === 'navigation-close') {
       setNavigationOpen(action === 'navigation-toggle' && document.body.dataset.navigationOpen !== 'true'); return;

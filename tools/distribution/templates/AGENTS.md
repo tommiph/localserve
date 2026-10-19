@@ -3,6 +3,13 @@
 Read README.md, INSTALL.md and CONTRIBUTING.md before editing. These instructions
 apply to this repository, including plugins, Android and optional TV source.
 
+- Keep deployed interface files compatible with the running backend. New script
+  routes may need a cooperative server restart before updated HTML uses them.
+  Optional interface features must tolerate missing scripts/capabilities without
+  breaking administration. Check actual served assets and browser startup as
+  well as fresh disposable installations; never treat retained data alone as
+  proof that a running interface remains usable.
+
 - Demo setup is explicit, authenticated and empty-install-only. Preserve the
   Simulator-only action allowlist, authored Task/Card/Vista identities, no start
   rules, no shared-display change and no automatic execution. Journal before
