@@ -54,3 +54,11 @@
 !/assets/pages/vendor/
 /assets/games/music/*
 !/assets/games/music/README.md
+
+# User APK libraries
+library/
+
+/tools/oculus-build/downloads/
+/tools/oculus-build/packages/
+/tools/oculus-build/ndk/
+/plugins/oculus-go/android/build/

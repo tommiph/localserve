@@ -1,0 +1,8 @@
+{
+  "packageName": "org.localserve.go",
+  "name": "# Localserve #",
+  "version": "1.0.0",
+  "versionCode": 1,
+  "minSdk": 25,
+  "targetSdk": 25
+}

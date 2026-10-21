@@ -22,7 +22,7 @@ Starts disabled with fresh default settings, no cached readings, saved Cards or 
 
 ## Actions and events
 
-Actions: Refresh TV readings; Read installed apps; Send remote key; Set volume; Set mute; Select input; Show TV notice; Launch installed app; Play YouTube video; Open TV browser URL; Play media URL; Resume media; Pause media; Stop media; Send text; Move pointer; Power off; Wake TV.
+Actions: Refresh TV readings; Read installed apps; Send remote key; Set volume; Set mute; Select input; Show TV notice; Launch installed app; Play YouTube video; Open TV browser URL; Play media URL; Resume media; Pause media; Stop media; Send text; Move pointer; Power off; Wake TV; Test connection; Update pairing address.
 
 Events: TV readings updated; Reported TV state changed.
 

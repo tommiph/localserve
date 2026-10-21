@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -903,6 +903,20 @@
       "name": "Wake TV",
       "parameters": [],
       "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
+    },
+    {
+      "id": "test-connection",
+      "name": "Test connection",
+      "description": "Verify saved authorization and device identity without changing the screen or emitting Task events.",
+      "parameters": [],
+      "settingsOnly": true
+    },
+    {
+      "id": "repair-connection",
+      "name": "Update pairing address",
+      "description": "Move an existing TLS pairing to the configured address only after matching its saved certificate and verifying authorization. No TV screen changes.",
+      "parameters": [],
+      "settingsOnly": true
     }
   ],
   "controls": {
@@ -1055,5 +1069,40 @@
         }
       ]
     }
-  ]
+  ],
+  "connectionSetup": {
+    "addressSetting": "host",
+    "testAction": "test-connection",
+    "repairAction": "repair-connection",
+    "help": "Status polling and remote control use separate connections. Test connection verifies remote authorization without changing the TV screen. After an IP change, keep the saved certificate and use Update pairing address."
+  },
+  "settingsGuide": {
+    "title": "Connection setup and recovery",
+    "sections": [
+      {
+        "title": "Connect",
+        "steps": [
+          "Enter the TV address, remote port and remote name. For TLS port 8002, supply the verified SHA-256 certificate fingerprint.",
+          "Enter an already authorized pairing token if no protected pairing is saved. Enable the plugin and select Test connection.",
+          "After a successful test, clear the token field. The protected pairing remains available on this Windows account."
+        ]
+      },
+      {
+        "title": "Address changed",
+        "steps": [
+          "Change TV address and keep the verified certificate fingerprint. Select Update pairing address.",
+          "The protected pairing must already contain a verified TLS certificate. For an older pairing, test the previous address first if available, or supply an authorized replacement token at the new address and select Test connection.",
+          "Port 8001 cannot verify a certificate. Supply an authorized replacement token after changing its address."
+        ]
+      },
+      {
+        "title": "Connection failed",
+        "steps": [
+          "Confirm the TV is on, is on the same network and has the saved address. Status polling does not prove remote authorization.",
+          "If authorization was rejected, check the TV’s external-device permissions and obtain an authorized replacement token. If the certificate changed, verify the physical TV before replacing the fingerprint.",
+          "Tests do not wake the TV, launch apps or replay failed Tasks."
+        ]
+      }
+    ]
+  }
 }

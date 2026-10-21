@@ -11,7 +11,7 @@ All start disabled with fresh defaults. No live settings or saved Cards are incl
 | [Fingrid](plugins/fingrid/README.md) | Finland electricity system datasets and latest readings | Grid |
 | [HSL Trains](plugins/hsl-trains/README.md) | Finnish passenger train station boards · Source: Fintraffic / Digitraffic, CC BY 4.0 | Platform |
 | [News](plugins/news/README.md) | Headlines from Google News RSS | Front page |
-| [Oculus Go](plugins/oculus-go/README.md) | Read-only Wi-Fi headset diagnostics | Orbital |
+| [Oculus Go](plugins/oculus-go/README.md) | Wi-Fi headset diagnostics and a manual APK library | Orbital |
 | [PC and Network](plugins/pc-network/README.md) | Windows CPU, GPU, memory, storage, adapters and network name lookups | Observatory |
 | [PlayStation](plugins/playstation/README.md) | PSN presence, active game, playtime and trophies | Gaming lounge |
 | [Recipes](plugins/recipes/README.md) | Build Tasks by choosing what you want and when it should happen | Ordinary Cards |

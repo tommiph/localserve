@@ -476,6 +476,61 @@ const TaskUI = {
     finally { if (button.isConnected) button.disabled = false; }
   },
 
+  rerunPreview(preview) {
+    const value = input => escapeHtml(typeof input === 'boolean' ? input ? 'Yes' : 'No' : input);
+    const values = preview.event?.values || [];
+    const title = values.find(field => field.id === 'title' && typeof field.value === 'string');
+    return `<p>Starts the current Task from step one, including steps that already succeeded.${preview.manualTvEffects ? ' This is a manual run; Do not disturb does not prevent its TV actions.' : ''}</p>
+      <p class="field-help">Task revision ${preview.revision}${preview.sourceTaskRevision !== null && preview.sourceTaskRevision !== preview.revision ? ` · The original run used revision ${preview.sourceTaskRevision}` : ''}.</p>
+      ${title ? `<h3 class="rerun-event-title">${value(title.value)}</h3>` : ''}
+      ${preview.event ? `<p class="field-help">${escapeHtml(preview.event.pluginName)} · ${escapeHtml(preview.event.name)} · ${Number.isFinite(preview.event.occurredAt) ? escapeHtml(formatServerTimestamp(preview.event.occurredAt)) : 'Event time not recorded'}</p><details class="rerun-values"><summary>Captured Event values · ${values.length}</summary><dl class="event-values">${values.map(field => `<div><dt>${escapeHtml(field.label)}</dt><dd>${value(field.value)}</dd></div>`).join('')}</dl></details>` : '<p>No Event values were captured. This run uses the current Task’s literal settings.</p>'}
+      <h3>Running order</h3><ol class="run-steps">${preview.steps.map(step => `<li><div><strong>${step.number}. ${escapeHtml(step.label)}</strong><span>${step.enabled ? 'Enabled' : 'Disabled · skipped'}</span></div>${step.parameters.length ? `<details><summary>Values for this step</summary><dl class="event-values">${step.parameters.map(field => `<div><dt>${escapeHtml(field.label)}</dt><dd>${value(field.value)}</dd></div>`).join('')}</dl></details>` : ''}</li>`).join('')}</ol>
+      ${preview.stepCount > preview.steps.length ? `<p class="aside-note">Showing the first ${preview.steps.length} of ${preview.stepCount} steps. Rerun starts the complete Task.</p>` : ''}`;
+  },
+
+  async openRerun(id, revision) {
+    const run = state.runs.find(run => run.id === id);
+    if (!run) return notify('This run is no longer in history.');
+    showDialog(`<form id="task-rerun-form">${dialogHeader('Rerun task', run.name)}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div><div id="rerun-preview" aria-live="polite">Checking the current Task and captured values…</div></div>${dialogFooter('Rerun from step one')}</form>`, {kind:'task-rerun', runId:id, revision});
+    const context = dialogContext, form = dialog.querySelector('#task-rerun-form');
+    form.querySelector('[type="submit"]').disabled = true;
+    try {
+      const reply = await request(`api/runs/${id}/preview`, {revision});
+      if (dialogContext !== context || !form.isConnected) return;
+      form.querySelector('#rerun-preview').innerHTML = this.rerunPreview(reply.preview);
+      context.previewReady = true;
+      form.querySelector('[type="submit"]').disabled = false;
+    } catch (error) {
+      if (dialogContext === context && form.isConnected) {
+        form.querySelector('#rerun-preview').textContent = 'Rerun is unavailable. Nothing has been started.';
+        showFormError(error.message);
+      }
+    }
+  },
+
+  async submitRerun(form) {
+    const context = dialogContext;
+    if (context?.kind !== 'task-rerun' || !context.previewReady || context.submitting
+      || !form.isConnected || form !== dialog.querySelector('#task-rerun-form')) return;
+    context.submitting = true;
+    const button = form.querySelector('[type="submit"]'); button.disabled = true;
+    try {
+      // Submit only the historical run ID and captured revision. Displayed
+      // values never become an editable or caller-supplied Event payload.
+      await mutate(`api/runs/${context.runId}/rerun`, {revision:context.revision});
+      if (dialogContext === context && form.isConnected) { closeDialog(); renderView(); notify('Task restarted from step one'); }
+    } catch (error) {
+      if (dialogContext === context && form.isConnected) {
+        showFormError(`${error.message} Check Task runs before reopening Rerun.`);
+        // Reopen to obtain a new validated preview after any rejection.
+        context.previewReady = false;
+      }
+    } finally {
+      context.submitting = false;
+      if (dialogContext === context && form.isConnected) button.disabled = !context.previewReady;
+    }
+  },
+
   async handleAction(action, id, control) {
     if (action === 'task-dismiss-notice') {
       control.disabled = true;
@@ -484,12 +539,7 @@ const TaskUI = {
       return;
     }
     if (action === 'task-rerun') {
-      control.disabled = true;
-      try {
-        await mutate(`api/runs/${id}/rerun`, {revision: Number(control.dataset.revision)});
-        notify('Task restarted');
-      } finally { if (control.isConnected) control.disabled = false; }
-      return;
+      return this.openRerun(id, Number(control.dataset.revision));
     }
     if (action === 'task-preview-notice') {
       const parameters = PluginUI.readFields(actionCatalog.find(item => item.id === 'plugin:samsung-tv:show-notice').parameters, control.closest('.task-block'));

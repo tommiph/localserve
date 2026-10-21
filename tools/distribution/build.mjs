@@ -107,7 +107,7 @@ function fieldList(fields) {
 }
 
 async function pluginGuide(declaration) {
-  if(declaration.taskBuilder){await write(`plugins/${declaration.id}/README.md`,await fs.readFile(path.join(root,'plugins',declaration.id,'README.md')));return;}
+  if(declaration.taskBuilder || declaration.id === 'oculus-go'){await write(`plugins/${declaration.id}/README.md`,await fs.readFile(path.join(root,'plugins',declaration.id,'README.md')));return;}
   const templates = declaration.cardTemplates?.map(item => item.name).join(', ') || 'No fixed ready-made design; use the ordinary Card designer.';
   await write(`plugins/${declaration.id}/README.md`, `# ${declaration.name}\n\n${declaration.description}\n\n## Setup\n\n${setup[declaration.id] || 'Configure declared Settings before enabling.'}\n\nStarts disabled with fresh default settings, no cached readings, saved Cards or Controls. Configure through the shared administrator; do not copy credentials from someone else\'s installation.\n\n## Settings\n\n${fieldList(declaration.settings)}\n\n## Actions and events\n\nActions: ${declaration.actions.map(item => item.name).join('; ') || 'None'}.\n\nEvents: ${declaration.events.map(item => item.name).join('; ') || 'None'}.\n\nPlugin actions appear in global Tasks only when the plugin is enabled and ready. Explicit device actions can have real effects. Polling failures retain successful same-target readings; missing values remain explicit and uncertain effects are not automatically retried/replayed.\n\n## Cards\n\nReady-made designs: ${templates}. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.\n\n${declaration.attribution ? `## Data attribution\n\n${declaration.attribution.label}: ${declaration.attribution.url}\n\n${declaration.attribution.licenseLabel || ''} ${declaration.attribution.licenseUrl || ''}\n\n${declaration.attribution.notice || ''}\n\n` : ''}See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin\'s data folder.\n`);
 }
@@ -226,6 +226,11 @@ try {
     }
     try { await copyFile(folder+'/LICENSE.txt'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
     if (declaration.id === 'hsl-trains') await copyFile(folder+'/stations.json');
+    if (declaration.id === 'oculus-go') {
+      for (const directory of ['src','res','assets','native','vendor','test']) await copyTree(folder+'/android/'+directory);
+      for (const file of ['app.json','AndroidManifest.xml','build.mjs','README.md','dist/localserve-go.apk','dist/localserve-go.apk.sha256','dist/verification.json']) await copyFile(folder+'/android/'+file);
+      for (const file of ['prepare.ps1','README.md']) await copyFile('tools/oculus-build/'+file);
+    }
     if (declaration.id === 'sensors') {
       for (const directory of ['src','res','test']) await copyTree(folder+'/android/'+directory);
       for (const file of ['AndroidManifest.xml','build.mjs','prepare-vendor.mjs','README.md','dist/localserve-sensors.apk','dist/localserve-sensors.apk.sha256','dist/verification.json','vendor/lock.json','vendor/README.md']) await copyFile(folder+'/android/'+file);

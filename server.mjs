@@ -14,6 +14,7 @@ import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
 import { VistaStore } from './server/vistas.mjs';
 import { DemoSetup } from './server/demo.mjs';
+import {ApkLibrary, nativeLibraryRoute, serveNativeLibrary, libraryAdminOperation} from './server/apk-library.mjs';
 import { UniverseStore } from './server/universe.mjs';
 import { GamesStore,requireMazeDisplay } from './server/games.mjs';
 import { SensorIngress } from './server/sensor-ingress.mjs';
@@ -160,6 +161,7 @@ export async function createLocalserve(root, options = {}) {
     engine.vistas = vistas;
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
     let administratorWrites=0,demoInstalling=false,demoOperation=null;
+    const apkLibrary = await new ApkLibrary(root, registry).load();
     const token = randomBytes(32).toString('hex');
     let origin, closing = false, discoveryBusy = false, closePromise;
     const startedAt = Date.now();
@@ -210,6 +212,25 @@ export async function createLocalserve(root, options = {}) {
         // Tokens/capabilities still guard writes; this is not account authentication.
         const browserOrigin = requestOrigin(request, server.address().port);
         const url = new URL(request.url, browserOrigin);
+        if(url.pathname==='/api/vr-client/enroll'){
+          if(request.method!=='POST'||url.search)throw new HttpError(405,'Use the Localserve Go connection screen.');
+          const values=await readBody(request);
+          if(closing)throw new HttpError(503,'Server is stopping.');
+          return json(response,200,await apkLibrary.enroll(request,values));
+        }
+        if(['GET','HEAD'].includes(request.method)&&url.pathname==='/api/vr-library/client-apk'){
+          const apk=await apkLibrary.clientDownload();response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':apk.length,'Content-Disposition':'attachment; filename="localserve-go.apk"'});return response.end(request.method==='HEAD'?undefined:apk);
+        }
+        if (nativeLibraryRoute(url.pathname)) return await serveNativeLibrary(apkLibrary,request,response,url,{json,readBody});
+        if (request.method === 'GET' && url.pathname === '/api/vr-library') {
+          const current = apkLibrary.snapshot();
+          if (current.available && !current.lastScan && !current.scanning) apkLibrary.scan(current.revision);
+          return json(response,200,apkLibrary.snapshot());
+        }
+        const libraryArt = /^\/api\/vr-library\/art\/([A-Za-z][A-Za-z0-9_.]{1,199})$/.exec(url.pathname);
+        if (request.method === 'GET' && libraryArt) {
+          const image = await apkLibrary.art(libraryArt[1]); response.writeHead(200,{'Content-Type':image.type}); return response.end(image.data);
+        }
         const noticeApi = /^\/api\/tv-notices\/([a-f0-9]{48})$/.exec(url.pathname);
         if (noticeApi) {
           // The unguessable per-notice URL grants only its bounded text and
@@ -257,7 +278,13 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(url.pathname==='/api/demo/install'){
+          if(/^\/api\/vr-library\/[a-z-]+$/.test(url.pathname)) {
+            const controller = new AbortController();
+            const cancelled = () => { if (!response.writableEnded) controller.abort(new Error('Client disconnected.')); };
+            response.once('close',cancelled);
+            try { return json(response,200,await libraryAdminOperation(apkLibrary,url.pathname.split('/').at(-1),values,controller.signal)); }
+            finally { response.removeListener('close',cancelled); }
+          }else if(url.pathname==='/api/demo/install'){
             // Reserve the empty installation before any awaited setup write.
             // In-flight editors finish independently; setup refuses to race them.
             if(administratorWrites!==1)throw new HttpError(409,'Another change is in progress. Try demo setup again when it finishes.');
@@ -335,9 +362,13 @@ export async function createLocalserve(root, options = {}) {
             await engine.syncRuleClocks();
             await activity.add(`Task created: ${task.name}`, { taskId: task.id });
           } else {
-            const match = /^\/api\/(tasks|runs|plugins)\/([^/]+)(?:\/(run|rerun|cancel|delete|enabled))?$/.exec(url.pathname);
+            const match = /^\/api\/(tasks|runs|plugins)\/([^/]+)(?:\/(run|rerun|preview|cancel|delete|enabled))?$/.exec(url.pathname);
             if (!match) throw new HttpError(404, 'Operation not found.');
             const [, collection, id, operation] = match;
+            if (collection === 'runs' && operation === 'preview') {
+              if (!values || Object.keys(values).some(key => key !== 'revision') || !Number.isSafeInteger(values.revision)) throw new HttpError(400, 'Use the current Task revision to preview a rerun.');
+              return json(response, 200, {preview: engine.previewRerun(id, values)});
+            }
             if (collection === 'tasks' && operation === 'run') {
               if (!values || Object.keys(values).some(key => !['revision', 'eventRunId'].includes(key))
                 || values.revision !== undefined && !Number.isSafeInteger(values.revision)
@@ -428,13 +459,14 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = url.pathname === '/vr-library' ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
+        webFiles.add('vr-library-ui.js');
         webFiles.add('phone-information.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
         const builderMatch=/^plugin-task-builders\/([a-z][a-z0-9-]{0,63})\.(js|css)$/.exec(relative);
@@ -486,6 +518,9 @@ export async function createLocalserve(root, options = {}) {
         response.writeHead(200, { 'Content-Type': contentTypes[path.extname(realFile)] });
         response.end(request.method === 'HEAD' ? undefined : content);
       } catch (error) {
+        // A cancelled streamed download has already sent its headers. Close
+        // that response instead of attempting a second JSON response.
+        if (response.headersSent || response.destroyed) { response.destroy(); return; }
         const status = error.status || (error.code === 'ENOENT' ? 404 : 500);
         if (status === 500) console.error('Localserve request failed:', error.message);
         json(response, status, { error: status === 500 ? 'Unable to save or read server data. Original data was retained.' : error.message });
@@ -522,7 +557,7 @@ export async function createLocalserve(root, options = {}) {
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, snapshot, cleanupActivity,
+    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, apkLibrary, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
@@ -531,6 +566,7 @@ export async function createLocalserve(root, options = {}) {
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
+          await apkLibrary.close();
           registry.beginClose();
           await sensorIngress.queue;
           await controls.close();

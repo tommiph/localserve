@@ -13,6 +13,10 @@ A completed check can use cached data. Not reported means the plugin has no
 available declared reception timestamp. Switches, sliders and inline plugin
 fields save automatically; popup editors use Save. Save feedback is separate
 from connection status. On a small screen, Menu opens labelled navigation.
+The current server version appears in the mobile header and at the bottom of
+the menu. The menu scrolls independently while its server status stays visible.
+Disabled plugins waiting for configuration do not count as Overview warnings;
+runtime errors and enabled services needing attention still do.
 
 Settings controls your server name, theme, separate administrator/Vista font
 sizes, time format, server location, LAN address, Activity retention and Do not
@@ -70,9 +74,16 @@ shows captured values only after you select a saved Event; it does not substitut
 current readings or emit a new Event.
 
 Run starts an enabled ready Task manually. An Event-based manual run can select
-retained matching Event history. A finished run's Rerun starts the current Task
-from step one with that run's captured Event values. It does not resume an old
-step or rewind triggers. Pause, readiness and overlap checks still apply.
+retained matching Event history. A finished run's Rerun opens a preview of the
+current Task, captured Event values and resolved public values for its steps.
+Opening the preview does not run anything. Select Rerun from step one to start
+with that run's captured Event values, including steps that previously succeeded.
+It does not resume an old step or rewind triggers. Pause, readiness, revision
+and overlap checks still apply. Manual TV actions can run during Do not disturb.
+
+Failed runs show their recorded failed step and following steps not run in the
+list. Recognized connection errors offer a shortcut to the plugin's Connection
+panel. This shortcut does not test a connection or rerun a Task automatically.
 
 Task runs can be filtered by Task or result. Details shows the trigger, captured
 Event values, step results and durations where recorded. Completed means the
@@ -202,3 +213,28 @@ of your own private settings/data; Windows DPAPI stores are account-bound.
 Extract updates separately and review compatibility before transferring private
 data. Never upload a backup or configured folder to GitHub. Ignore rules are
 a safeguard, not a substitute for reviewing commits.
+
+## Reconnect a TV or Oculus Go
+
+Open the plugin’s Settings and use its Connection panel. Test connection checks
+remote authorization separately from status polling and reports the result and
+test time. It does not launch apps or trigger Tasks.
+
+For a Samsung TV IP change, update TV address, retain the verified certificate
+and select Update pairing address. This requires a protected TLS pairing with a
+previously verified certificate. An older pairing must first pass Test connection
+at its old address, or use an authorized replacement token at the new address.
+Port 8001 requires an authorized replacement token after address changes.
+
+For Oculus Go, update Wi-Fi address and select Test connection. The saved key is
+reused and the configured headset serial must match. Wireless ADB must already
+be enabled and the key authorized on the headset. Localserve does not enable
+wireless ADB or restart the PC’s shared ADB service. Expand Connection setup and
+recovery for detailed steps. Clear replacement credential fields after a
+successful test; protected credentials remain available on this Windows account.
+
+## Oculus Go application library
+
+Enable Oculus Go and its APK library, select your own APK folder, then open SERVER → VR library. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
+
+For the native VR interface, download the generic Go app from VR library and install it with your authorized headset tools. It appears as **# Localserve #**. Select Connect headset in the administrator, then enter the LAN address and one-use code in the app's Settings. Browse Library, filter Installed or Updates, search, favorite titles and play locally installed apps. Codes expire after five minutes. See [Localserve Go](plugins/oculus-go/android/README.md) for controls, compatibility and build instructions. Existing Home VR clients can also connect with their matching token; see [Oculus Go](plugins/oculus-go/README.md).

@@ -1,0 +1,5 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.localserve.go.tests">
+  <uses-sdk android:minSdkVersion="25" android:targetSdkVersion="25" />
+  <application android:label="Localserve Go checks" android:allowBackup="false" />
+  <instrumentation android:name="org.localserve.go.GoSmoke" android:targetPackage="org.localserve.go" />
+</manifest>

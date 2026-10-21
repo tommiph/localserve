@@ -130,3 +130,38 @@ test('run rows offer Rerun for finished enabled Tasks and explain unavailable st
   state.tasks=[];assert.match(panel(),/Task has been deleted/);
   state.runs[0].status='running';assert.match(panel(),/cancel-run/);assert.doesNotMatch(panel(),/task-rerun/);
 });
+
+test('rerun preview projects current public values without reserving work or changing history',async t=>{
+  const f=await fixture(t);await f.call('/api/tasks',definition());const task=f.app.tasks.snapshot()[0];
+  await f.app.state.update(state=>{state.runs.push({id:'saved',taskId:task.id,taskRevision:0,status:'failed',event:{pluginId:'example',eventId:'changed',occurredAt:0,
+    payload:{'source-id':'one',title:'Original',value:0,enabled:false,private:'PRIVATE_EVENT',removed:'REMOVED_VALUE'}}});state.eventConditions={unchanged:{matched:true}};});
+  f.app.registry.actions=()=>[{...action,name:'Record',parameters:[...action.parameters,{id:'password',type:'string',format:'secret',default:'PRIVATE_PARAMETER'}]}];
+  f.app.registry.events=()=>[{...source,pluginName:'Example',name:'Changed',payload:[...source.payload,{id:'added',type:'number',default:42}]}];
+  const before={state:f.app.state.snapshot(),tasks:f.app.tasks.snapshot(),activity:f.app.activity.latest(100)};
+  const response=await f.call('/api/runs/saved/preview',{revision:task.revision});assert.equal(response.status,200);
+  const p=response.body.preview;assert.equal(p.revision,task.revision);assert.equal(p.sourceTaskRevision,0);assert.equal(p.event.occurredAt,0);
+  assert.deepEqual(p.event.values.find(field=>field.id==='value').value,0);assert.equal(p.event.values.find(field=>field.id==='enabled').value,false);
+  assert.equal(p.steps[0].parameters[0].value,'Original / 0 / false');assert.equal(p.steps[2].parameters[0].value,'Original');
+  assert.equal(p.manualTvEffects,false);assert.doesNotMatch(JSON.stringify(p),/PRIVATE_EVENT|PRIVATE_PARAMETER|REMOVED_VALUE|"added"/);
+  assert.deepEqual({state:f.app.state.snapshot(),tasks:f.app.tasks.snapshot(),activity:f.app.activity.latest(100)},before);
+  assert.equal(f.app.engine.pending.size,0);assert.equal(f.app.engine.active.size,0);assert.equal(f.effects.length,0);
+});
+
+test('preview uses normal authorization and admission guards and never makes a stale rerun valid',async t=>{
+  const f=await fixture(t);await f.call('/api/tasks',definition());const task=f.app.tasks.snapshot()[0];
+  await f.app.state.update(state=>state.runs.push({id:'saved',taskId:task.id,status:'failed',event:{pluginId:'example',eventId:'changed',payload:{'source-id':'one',title:'Original',value:1,enabled:true}}}));
+  const route='/api/runs/saved/preview',values={revision:task.revision};
+  assert.equal((await f.call(route,{...values,event:{payload:{title:'Injected'}}})).status,400);
+  assert.equal((await f.call(route,values,{Origin:'https://outside.example'})).status,403);
+  assert.equal((await f.call(route,values,{'X-Localserve-Token':'wrong'})).status,403);
+  assert.equal((await f.call('/api/runs/missing/preview',values)).status,404);
+  await f.app.engine.setPaused(true);assert.equal((await f.call(route,values)).status,409);await f.app.engine.setPaused(false);
+  f.app.engine.pending.add(task.id);assert.equal((await f.call(route,values)).status,409);f.app.engine.pending.clear();
+  await f.app.tasks.update(items=>{items[0].enabled=false;});assert.equal((await f.call(route,values)).status,409);
+  await f.app.tasks.update(items=>{items[0].enabled=true;});
+  f.app.registry.events=()=>[];assert.equal((await f.call(route,values)).status,409);f.app.registry.events=()=>[source];
+  assert.equal((await f.call(route,values)).status,200);
+  await f.app.tasks.update(items=>{items[0].revision++;});
+  assert.equal((await f.call('/api/runs/saved/rerun',values)).status,409);assert.equal((await f.call(route,values)).status,409);
+  assert.equal(f.effects.length,0);
+});

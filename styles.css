@@ -379,6 +379,7 @@ h3 {
 .sidebar-footer {
   padding: 20px 25px;
   border-top: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .sidebar-status {
@@ -421,6 +422,10 @@ h3 {
   font-size: calc(12px * var(--font-scale));
   color: var(--muted);
   min-width: 0;
+}
+
+.mobile-server-version {
+  display: none;
 }
 
 #breadcrumb-name {
@@ -2204,7 +2209,7 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
     justify-content: center;
     height: 65px;
   }
-  .brand > #brand-name, .nav-label, .nav-item > span:not(.status-dot), .sidebar-footer, .sidebar-meta {
+  .brand > #brand-name, .nav-label, .nav-item > span:not(.status-dot) {
     display: none;
   }
   .sidebar-body {
@@ -2265,6 +2270,11 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
     align-items: flex-start;
     gap: 15px;
   }
+  .heading-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
   .server-strip {
     align-items: flex-start;
     flex-direction: column;
@@ -2314,6 +2324,12 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
   }
   .settings-text {
     min-width: 150px;
+  }
+  .settings-item > .button, .settings-item > .switch, .settings-item > .font-scale-control {
+    margin-left: auto;
+  }
+  .settings-text p {
+    overflow-wrap: anywhere;
   }
   .workspace-footer {
     padding: 5px 16px 18px;
@@ -3018,7 +3034,7 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
     display:inline-flex;
     min-height:44px;
     flex-shrink:0;
-    margin-right:12px
+    margin-right:0
   }
 
   .mobile-navigation-close {
@@ -3048,6 +3064,15 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
 
   .sidebar .brand>#brand-name,.sidebar .nav-label,.sidebar .nav-item>span:not(.status-dot) {
     display:initial
+  }
+
+  .sidebar .nav-label {
+    display:block
+  }
+
+  .sidebar .plugins-label,.sidebar .settings-label {
+    margin-top:24px;
+    margin-bottom:8px
   }
 
   .sidebar .nav-count {
@@ -3080,6 +3105,11 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
     overscroll-behavior-y:contain
   }
 
+  .sidebar .sidebar-footer {
+    padding:14px 18px;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))
+  }
+
   .sidebar #plugin-navigation {
     margin-top:0
   }
@@ -3098,16 +3128,43 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
   }
 
   .topbar {
-    gap:6px;
-    flex-wrap:wrap;
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    gap:6px 12px;
     min-height:72px;
     height:auto;
     padding-top:8px;
     padding-bottom:8px
   }
 
+  .breadcrumbs {
+    gap:8px;
+    overflow:hidden
+  }
+
+  #breadcrumb-page {
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+  }
+
+  .mobile-server-version {
+    display:inline-flex;
+    justify-self:end;
+    padding:3px 7px;
+    border:1px solid var(--border);
+    border-radius:5px;
+    color:var(--muted);
+    font-size:calc(11px * var(--font-scale));
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap
+  }
+
   .server-clock {
-    margin-left:auto;
+    grid-column:1 / -1;
+    justify-self:end;
+    margin-left:0;
     font-size:calc(11px * var(--font-scale))
   }
 
@@ -3191,3 +3248,40 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
 .demo-choice{font-size:.8rem;opacity:.65}
 .demo-copy .demo-feedback{font-size:.8rem;margin-top:.5rem;min-height:1.2em}
 @media(max-width:640px){.demo-start{align-items:flex-start;gap:1rem;padding:1.2rem}.demo-art{width:3.5rem;min-width:3.5rem;height:3.5rem;border-radius:.8rem}.demo-copy h2{font-size:1.15rem}.demo-buttons{align-items:stretch;flex-direction:column}.demo-buttons .button{justify-content:center}.demo-choice{line-height:1.4}}
+.connection-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.connection-result { margin-top: .75rem; overflow-wrap: anywhere; }
+.run-card .run-outcome { margin-top: 10px; }
+.run-card .run-outcome p { white-space: normal; overflow-wrap: anywhere; margin-top: 5px; }
+.run-card .run-outcome .run-outcome-title { color: var(--text); font-weight: 600; }
+.run-card .run-event-title { color: var(--text); font-weight: 600; overflow-wrap: anywhere; white-space: normal; }
+.run-outcome .button { margin-top: 10px; max-width: 100%; white-space: normal; }
+.rerun-event-title { overflow-wrap: anywhere; margin: 18px 0 10px; }
+.rerun-values { margin: 16px 0; }
+.rerun-values summary, #rerun-preview .run-steps summary { cursor: pointer; margin-top: 8px; }
+.plugin-connection { margin-bottom: 20px; }
+/* The VR catalogue keeps large artwork, readable metadata and manual actions
+   usable on a phone without changing the shared administrator controls. */
+.vr-library-intro { margin-bottom: 1rem; }
+.vr-library-section { margin-bottom: 1rem; }
+.vr-library-summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+.vr-library-summary > div:first-child { display:flex; align-items:center; flex-wrap:wrap; gap:.8rem; }
+.vr-library-summary h2 { margin:0; }
+.vr-library-filters { display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:1rem; margin-bottom:1.3rem; }
+.vr-library-filters label { display:flex; flex-direction:column; align-items:stretch; text-align:left; gap:.5rem; min-width:0; }
+.vr-library-filters input,.vr-library-filters select { width:100%; }
+.vr-library-filters input { min-height:40px; border:1px solid var(--border); border-radius:8px; padding:.6rem .8rem; background:var(--surface); color:var(--text); font:inherit; }
+.vr-library-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr)); gap:1.1rem; }
+.vr-app { border:1px solid var(--border); border-radius:14px; overflow:hidden; min-width:0; background:var(--surface); }
+.vr-app-art { position:relative; display:flex; align-items:center; justify-content:center; height:160px; background:linear-gradient(130deg,#20283c,#41405b); color:#d5dcff; }
+.vr-app-art > i { font-size:3rem; }
+.vr-app-art img { position:absolute; width:100%; height:100%; object-fit:cover; }
+.vr-app-art img[hidden] { display:none; }
+.vr-app-copy { padding:1rem; }
+.vr-app-copy h3 { margin:0 0 .5rem; }
+.vr-app-copy > p:not(.field-help) { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
+.vr-installed-list { max-height:32rem; overflow:auto; }
+.vr-installed-list .settings-text { overflow-wrap:anywhere; min-width:0; }
+@media(max-width:800px) { .vr-library-filters { grid-template-columns:1fr 1fr; } }
+@media(max-width:400px) { .vr-library-filters { grid-template-columns:1fr; } }
+
+.vr-connection-code { font-size:2.5rem; letter-spacing:.2em; font-variant-numeric:tabular-nums; color:var(--accent); }

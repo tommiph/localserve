@@ -179,3 +179,17 @@ test('Overview remains usable without the optional demo script or backend capabi
   context.DemoUI={render:()=>'<section>Demo setup</section>'};context.renderOverview();assert.match(rendered,/Demo setup/);
   delete context.state.demo;context.renderOverview();assert.doesNotMatch(rendered,/Demo setup/);
 });
+
+test('Overview attention excludes disabled configuration but retains runtime and enabled-service failures',async()=>{
+  const source=await fs.readFile(new URL('../web/app.js',import.meta.url),'utf8');
+  const overview=source.slice(source.indexOf('function renderOverview()'),source.indexOf('function runsPanel()'));
+  const metrics=new Map(),context={state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
+    renderWorkspace:()=>{},pageHeading:()=>'',statusPill:()=>'',metric:(label,value)=>{metrics.set(label,value);return '';},servicesPanel:()=>'',activityPanel:()=>'',icon:()=>'',formatDuration:()=>'',escapeHtml:String};
+  vm.createContext(context);vm.runInContext(overview,context);
+  const disabled={enabled:false,configurationReady:false,health:'idle',pollObservation:{status:'failed'}};
+  context.state.services=[disabled];context.renderOverview();assert.equal(metrics.get('Needs attention'),0);
+  for(const service of [{...disabled,enabled:true},{...disabled,health:'error'},{...disabled,health:'restart-required'},{enabled:true,configurationReady:true,health:'ready',pollObservation:{status:'failed'}}]){
+    context.state.services=[service];context.renderOverview();assert.equal(metrics.get('Needs attention'),1);
+  }
+  context.state.services=[];context.state.server.discoveryErrors=['Unreadable plugin'];context.renderOverview();assert.equal(metrics.get('Needs attention'),1);
+});

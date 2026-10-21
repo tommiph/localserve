@@ -6,7 +6,7 @@ export function assertPublicPath(file,{seeds=false}={}) {
     if(seeds)return;
     throw Error('Installation settings cannot be committed: '+file);
   }
-  if(/^(?:data|work|dist|backups|reference|\.git|\.codex|\.agents)\//.test(file)
+  if(/^(?:data|work|dist|backups|reference|library|\.git|\.codex|\.agents)\//.test(file)
     ||/(?:^|\/)(?:data|private|\.git|\.tmp|\.cache)\//.test(file)
     ||/(?:^|\/)\.env(?:\.[^/]*)?$/.test(file)
     ||/(?:^|\/)(?:credentials|secrets|tokens)\.json$/i.test(file)
@@ -16,6 +16,8 @@ export function assertPublicPath(file,{seeds=false}={}) {
     ||/^tray\/\.build\//.test(file)
     ||file.startsWith('tools/android-build/')&&!['tools/android-build/prepare.ps1','tools/android-build/README.md'].includes(file)
     ||/^plugins\/sensors\/android\/build\//.test(file)
+    ||/^plugins\/oculus-go\/android\/build\//.test(file)
+    ||/^tools\/oculus-build\//.test(file)&&!['tools/oculus-build/prepare.ps1','tools/oculus-build/README.md'].includes(file)
     ||/^tv-tizen\/dist\//.test(file)
     ||/\.(?:dpapi|p12|pfx|pwd|wgt|log|jsonl|tmp)$/i.test(file)
     ||/(?:author-signature|signature1)\.xml$/.test(file))throw Error('Private/generated release path: '+file);

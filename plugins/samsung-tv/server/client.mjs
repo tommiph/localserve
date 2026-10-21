@@ -103,7 +103,7 @@ export async function connectRemote(settings, auth, signal, { saveToken = async 
   const fail = error => { if (failure) return; failure = error; connectReject(error); pendingApps?.reject(error); pendingApps = null; close(); };
   const abort = () => fail(signal.reason || new Error('TV action cancelled.'));
   signal.addEventListener('abort', abort, { once: true });
-  socket.on('error', () => fail(new Error('Samsung TV remote connection failed.')));
+  socket.on('error', () => fail(new Error('Samsung TV remote connection failed. Check that the TV is on, its address and remote port are correct, and remote access is allowed.')));
   socket.on('close', () => fail(new Error('Samsung TV closed the remote connection.')));
   socket.on('message', raw => {
     void (async () => {
@@ -116,8 +116,12 @@ export async function connectRemote(settings, auth, signal, { saveToken = async 
         // Claim this handshake before the asynchronous vault write. Duplicate
         // provider messages cannot race credential rotation or command release.
         acceptingConnection = true;
-        if (message.data?.token && validToken(String(message.data.token)) && String(message.data.token) !== auth.token) {
-          await saveToken({ host: settings.host, port: settings.port, token: String(message.data.token) }, signal);
+        const nextToken = message.data?.token && validToken(String(message.data.token)) ? String(message.data.token) : auth.token;
+        // Bind an authorized TLS session to the certificate actually checked by
+        // the pinned agent. A later address repair must match this saved identity.
+        if (nextToken !== auth.token || settings.port === 8002 && auth.fingerprint !== settings.fingerprint) {
+          await saveToken({ host: settings.host, port: settings.port, token: nextToken,
+            ...(settings.port === 8002 ? {fingerprint: settings.fingerprint} : {}) }, signal);
         }
         signal.throwIfAborted(); ready = true; connectResolve();
       }

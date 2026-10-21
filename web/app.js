@@ -7,7 +7,7 @@ const dialog = document.querySelector('#editor-dialog');
 const confirmationDialog = document.querySelector('#confirmation-dialog');
 let confirmationReturnFocus = null;
 let state, config, actionCatalog;
-let currentView = 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
+let currentView = location.pathname === '/vr-library' ? 'vr-library' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
 let returnFocus = null, toastTimer, preferencesPending = 0, settingsQueue = Promise.resolve();
 const fontTimers = new Map();
 let csrfToken = '';
@@ -28,7 +28,7 @@ function hydrate(data) {
   // while their queued saves are pending instead of replacing them on each poll.
   const previousTimeFormat = config?.timeFormat;
   state = data; config = data.config;
-  AdminDOM.text(document.querySelector('#server-version'),'v'+config.version);
+  document.querySelectorAll('#server-version, [data-server-version]').forEach(node => AdminDOM.text(node,'v'+config.version));
   if (previousTimeFormat && previousTimeFormat !== config.timeFormat) {
     TimeUI.refreshFormat();
     dialog.querySelectorAll('.task-block').forEach(card => TaskUI.updateSummary(card));
@@ -177,6 +177,7 @@ function serviceEvidence(service) {
 }
 
 function renderNavigation() {
+  document.querySelector('[data-view="vr-library"]').hidden = !state.services.some(service => service.id === 'oculus-go' && service.actions.some(action => action.id === 'library-install'));
   AdminDOM.update(document.querySelector('#plugin-navigation'),state.services.map(service => {
     const status = serviceStatus(service);
     return `<button class="nav-item ${currentView === service.id ? 'selected' : ''}" data-view="${escapeHtml(service.id)}" aria-label="${escapeHtml(service.name)}">${icon(service.icon)}<span>${escapeHtml(service.name)}</span><span class="status-dot ${status.className}"></span></button>`;
@@ -210,7 +211,7 @@ function renderOverview() {
   const configured = state.services.filter(service => service.enabled && service.configurationReady && service.health === 'ready');
   const polling = state.paused ? [] : configured.filter(service => service.pollSeconds > 0);
   const pollsPerHour = polling.reduce((sum, service) => sum + 3600 / service.pollSeconds * (service.pollTargets ?? 1), 0);
-  const warnings = state.server.discoveryErrors.length + state.services.filter(service => !service.configurationReady || ['error', 'restart-required'].includes(service.health) || service.enabled && service.pollObservation?.status === 'failed').length;
+  const warnings = state.server.discoveryErrors.length + state.services.filter(service => ['error', 'restart-required'].includes(service.health) || service.enabled && (!service.configurationReady || service.pollObservation?.status === 'failed')).length;
   renderWorkspace(pageHeading('Overview','Server status and services',`<button class="button" data-action="refresh">${icon('rotate')}Refresh</button>`) + `
     ${state.demo && typeof DemoUI !== 'undefined' ? DemoUI.render() : ''}
     <section class="server-strip ${state.paused ? 'paused':''}" aria-label="Server controls"><div class="strip-identity"><span class="strip-icon">${icon(state.paused ? 'pause':'server')}</span><div><div class="strip-title">Server ${state.paused ? 'paused':'running'} ${statusPill(state.paused ? 'Paused':'Operational',state.paused ? 'waiting':'running')}</div><p class="strip-description">${state.server.runningTasks} active Tasks · ${configured.length} ready services</p></div></div><div class="server-toggle"><div class="server-toggle-text">Enabled</div><button class="switch" role="switch" aria-checked="${!state.paused}" data-action="toggle-server" aria-label="Server functions enabled"></button></div></section>
@@ -227,8 +228,8 @@ function runsPanel() {
       : state.paused ? 'Enable server functions to rerun.' : busy ? 'This Task is already running.' : '';
     const control = run.status === 'running'
       ? `<button class="button" data-action="cancel-run" data-id="${escapeHtml(run.id)}">Cancel run</button>`
-      : `<button class="button" data-action="task-rerun" data-id="${escapeHtml(run.id)}" data-revision="${task?.revision || 0}" aria-label="Rerun ${escapeHtml(run.name)}" title="${escapeHtml(unavailable || 'Run the current Task from step one using this run’s saved Event values.')}" ${unavailable ? 'disabled' : ''}>${icon('arrow-rotate-left')}Rerun</button>`;
-    return `<article class="run-card" data-live-key="run:${escapeHtml(run.id)}"><div class="settings-item"><div class="settings-text"><h3>${escapeHtml(run.name)}</h3><p>${escapeHtml(run.reason)} · ${escapeHtml(formatServerTimestamp(run.startedAt))} · ${RunUI.elapsed(run.startedAt, run.finishedAt)}${run.error ? ` · ${escapeHtml(run.error)}` : ''}${run.status === 'running' ? ` · Step ${run.step}` : ''}</p></div>${statusPill(state.paused && run.status === 'running' ? 'Paused' : run.status, run.status === 'failed' ? 'waiting' : run.status === 'running' ? 'running' : 'paused')}<button class="button" data-action="runs-details" data-id="${escapeHtml(run.id)}" aria-expanded="${RunUI.opened.has(run.id)}" aria-controls="run-details-${escapeHtml(run.id)}">Details</button>${control}</div>${RunUI.details(run)}</article>`;
+      : `<button class="button" data-action="task-rerun" data-id="${escapeHtml(run.id)}" data-revision="${task?.revision || 0}" aria-label="Rerun ${escapeHtml(run.name)}" title="${escapeHtml(unavailable || 'Review the current Task and this run’s saved Event values before rerunning.')}" ${unavailable ? 'disabled' : ''}>${icon('arrow-rotate-left')}Rerun</button>`;
+    return `<article class="run-card" data-live-key="run:${escapeHtml(run.id)}"><div class="settings-item"><div class="settings-text"><h3>${escapeHtml(run.name)}</h3><p>${escapeHtml(run.reason)} · ${escapeHtml(formatServerTimestamp(run.startedAt))} · ${RunUI.elapsed(run.startedAt, run.finishedAt)}${run.status === 'running' ? ` · Step ${run.step}` : ''}</p>${RunUI.outcome(run)}</div>${statusPill(state.paused && run.status === 'running' ? 'Paused' : run.status, run.status === 'failed' ? 'waiting' : run.status === 'running' ? 'running' : 'paused')}<button class="button" data-action="runs-details" data-id="${escapeHtml(run.id)}" aria-expanded="${RunUI.opened.has(run.id)}" aria-controls="run-details-${escapeHtml(run.id)}">Details</button>${control}</div>${RunUI.details(run)}</article>`;
   });
   return `<section class="panel plugin-log"><div class="panel-header"><h2>Task runs</h2><span>${filtered.length} retained</span></div>${RunUI.controls()}${rows.join('') || '<div class="empty-state">No runs match these filters.</div>'}${filtered.length > RunUI.limit ? '<div class="panel-body"><button class="button" data-action="runs-more">Show more runs</button></div>' : ''}</section>`;
 }
@@ -262,10 +263,10 @@ function renderView() {
   const focusRegion = focused?.closest('#admin-navigation') ? document.querySelector('#admin-navigation') : workspace;
   const signature = node => JSON.stringify([node.tagName, node.dataset, node.getAttribute('aria-label'), node.getAttribute('href'), node.getAttribute('name'), node.closest('[data-activity-details]')?.dataset.activityDetails, node.closest('[data-variable-details]')?.dataset.variableDetails]);
   const focusSignature = focused?.matches('button,a,summary,input,select') ? signature(focused) : null;
-  if (!['overview','tasks','vistas','universe','controls','activity','settings','variables','games'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
+  if (!['overview','tasks','vistas','universe','controls','activity','settings','variables','games','vr-library'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
   renderNavigation();
   const plugin = state.services.find(service=>service.id===currentView);
-  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games'})[currentView] || 'Overview';
+  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library'})[currentView] || 'Overview';
   AdminDOM.text(document.querySelector('#breadcrumb-page'),title);
   if (plugin) renderPlugin(plugin);
   else if (currentView==='tasks') renderWorkspace(TaskUI.renderTasks() + runsPanel());
@@ -276,6 +277,7 @@ function renderView() {
   else if (currentView==='settings') renderSettings();
   else if (currentView==='variables') renderWorkspace(VariablesUI.render());
   else if (currentView==='games') renderWorkspace(GamesUI.render());
+  else if (currentView==='vr-library') renderWorkspace(VrLibraryUI.render());
   else renderOverview();
   // Retained controls keep focus. If a structural change replaces one, restore
   // the matching semantic control without moving its scroll container.
@@ -340,6 +342,7 @@ document.addEventListener('click', async event=>{
     if (action === 'navigation-toggle' || action === 'navigation-close') {
       setNavigationOpen(action === 'navigation-toggle' && document.body.dataset.navigationOpen !== 'true'); return;
     }
+    if (action.startsWith('vr-')) return await VrLibraryUI.action(action,control);
     if (action.startsWith('game-')) return await GamesUI.action(action);
     if (action.startsWith('universe-')) return await UniverseUI.handleAction(action, control);
     if (action.startsWith('vista-') || action.endsWith('-vista')) return await VistaUI.handleAction(action,id,control);
@@ -397,6 +400,7 @@ document.addEventListener('submit',async event=>{
   if (event.target.id === 'plugin-item-form') return PluginUI.submitItem(event.target);
   if (event.target.id === 'plugin-lookup-form') return PluginUI.submitLookup(event.target);
   if (event.target.id === 'task-run-form') return TaskUI.submitRun(event.target);
+  if (event.target.id === 'task-rerun-form') return TaskUI.submitRerun(event.target);
   if (event.target.matches('.plugin-event-form')) return PluginUI.submit(event.target);
   if (event.target.id==='editor-form') return TaskUI.submit(event.target);
   if (event.target.id!=='settings-form') return;
@@ -648,7 +652,7 @@ function showDialog(content, context) {
 // Selecting a captured run or inspecting a lookup changes no saved definition.
 // Keep both the draft hint and close guard on the same definition boundary.
 function isDefinitionEditor(form) {
-  return form && !['task-run', 'task-simulation', 'plugin-lookup'].includes(dialogContext?.kind)
+  return form && !['task-run', 'task-rerun', 'task-simulation', 'plugin-lookup', 'vr-install', 'vr-uninstall'].includes(dialogContext?.kind)
     && dialogContext?.operation !== 'delete' && !form.id.includes('delete');
 }
 

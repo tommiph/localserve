@@ -75,6 +75,28 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
       let reading = sameTarget ? structuredClone(previous) : {};
       let remotePhase = null;
       try {
+        if (actionId === 'test-connection' || actionId === 'repair-connection') {
+          const repairing = actionId === 'repair-connection';
+          if (!auth || !validToken(auth.token)) throw new Error('Configure an authorized TV pairing token first.');
+          if (repairing) {
+            if (settings.token || settings.port !== 8002 || auth.port !== 8002) throw new Error('Configure the existing protected TLS pairing before updating its address. Plain port 8001 needs an authorized replacement token.');
+            if (!validPin(auth.fingerprint)) throw new Error('Configure a verified pairing first: test the previous TV address, or supply an authorized replacement token and test the connection.');
+            if (auth.fingerprint.toUpperCase() !== settings.fingerprint.toUpperCase()) throw new Error('TV certificate fingerprint changed. Keep the verified certificate when updating this TV’s address.');
+          }
+          // Only this explicit setup action may move a protected pairing. The
+          // pinned transport checks identity before releasing any token bytes.
+          const candidate = repairing ? {...auth, host: settings.host} : auth;
+          let verified = candidate, connection;
+          try {
+            connection = await remote(settings, candidate, signal, {saveToken: async next => {verified = next;}});
+            signal.throwIfAborted();
+            await connection.apps();
+            await context.wait(0.01); signal.throwIfAborted();
+            await vault.save(verified, signal); auth = verified;
+          } finally { connection?.close(); }
+          await context.log(repairing ? 'TV pairing address updated and remote connection verified.' : 'TV remote connection verified.', 'success');
+          return {connected: true, message: repairing ? 'Pairing address updated. Remote control is connected.' : 'Remote control is connected. The TV accepted its saved pairing.'};
+        }
         if (actionId === 'play-youtube') {
           if (settings['youtube-playback'] !== true) throw new YouTubeControlError('Enable YouTube playback in Samsung TV Settings first.');
           if (!/^[A-Za-z0-9_-]{11}$/.test(parameters['video-id'] || '')) throw new YouTubeControlError('Enter an eleven-character YouTube Video ID.');

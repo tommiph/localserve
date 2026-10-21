@@ -1,9 +1,10 @@
-/** Small read-only legacy ADB transport. Connects only to the configured Go;
- * never starts/contacts the shared host ADB server, scans or exposes a shell.
+/** Legacy ADB transport. Connects only to the configured Go; never contacts
+ * the shared host ADB server, scans or exposes an arbitrary shell endpoint.
  * Wire framing/auth follow AOSP's Android 8.1 protocol, with Node crypto/net.
  */
 import net from 'node:net';
 import { createPrivateKey, privateEncrypt, constants } from 'node:crypto';
+import {validPackage, protectedPackage} from './apk.mjs';
 
 export const commands = Object.freeze({
   identity: 'getprop ro.serialno',
@@ -50,7 +51,7 @@ export function packet(name, a = 0, b = 0, value = Buffer.alloc(0)) {
   return Buffer.concat([header, data]);
 }
 
-export async function connectAdb(address, key, signal, { socketFactory = net.createConnection } = {}) {
+export async function connectAdb(address, key, signal, { socketFactory = net.createConnection, management = false } = {}) {
   signal.throwIfAborted();
   const target = targetAddress(address);
   if (!target || !validKey(key)) throw new Error('Configure a local Wi-Fi address and an authorized ADB key.');
@@ -104,8 +105,75 @@ export async function connectAdb(address, key, signal, { socketFactory = net.cre
     }
     if (frame.name === 'AUTH') throw new Error('The headset has not authorized this ADB key.');
     if (frame.name !== 'CNXN' || frame.a < 0x01000000 || frame.b < 4096) throw new Error('The target is not a compatible ADB device.');
+    const maximum = Math.min(frame.b, 256 * 1024);
+    async function stream(service, source, size = 0, wait = async () => {}, limit = 512 * 1024) {
+      const id = ++nextId, chunks = []; let remote = null, total = 0, written = 0;
+      send('OPEN', id, 0, service + '\0');
+      const output = reply => {
+        if (reply.name !== 'WRTE' || reply.a !== remote) throw Error('ADB stream is invalid.');
+        total += reply.data.length;
+        if (total > limit) throw Error('Headset output exceeds its limit.');
+        chunks.push(reply.data); send('OKAY', id, remote);
+      };
+      while (remote === null) {
+        const reply = await receive(); if (reply.b !== id) continue;
+        if (reply.name !== 'OKAY' || !reply.a) throw Error('Headset rejected this package operation.');
+        remote = reply.a;
+      }
+      if (source) for await (const buffer of source) {
+        for (let at = 0; at < buffer.length; at += maximum) {
+          await wait(); signal.throwIfAborted();
+          const part = buffer.subarray(at, at + maximum);
+          written += part.length; if (written > size) throw Error('APK changed during transfer.');
+          send('WRTE', id, remote, part);
+          while (true) {
+            const reply = await receive(); if (reply.b !== id) continue;
+            if (reply.a !== remote) throw Error('ADB package stream identity changed.');
+            if (reply.name === 'OKAY') break;
+            if (reply.name === 'CLSE') throw Error('APK transfer ended early; check the installed application before retrying.');
+            output(reply);
+          }
+        }
+      }
+      if (written !== size) throw Error('APK transfer size changed.');
+      while (true) {
+        const reply = await receive(); if (reply.b !== id) continue;
+        if (reply.a !== remote) throw Error('ADB package stream identity changed.');
+        if (reply.name === 'CLSE') { send('CLSE', id, remote); return new TextDecoder('utf-8', {fatal: true}).decode(Buffer.concat(chunks)); }
+        output(reply);
+      }
+    }
     return {
       close,
+      ...(management ? {
+        async packages() {
+          const text = await stream('shell:pm list packages -3');
+          const packages = text.split(/\r?\n/).filter(Boolean).map(line => line.startsWith('package:') ? line.slice(8).trim() : '');
+          if (packages.length > 2000 || packages.some(value => !validPackage(value))) throw Error('Headset package inventory is invalid.');
+          return [...new Set(packages)];
+        },
+        async packageInfo(packageName) {
+          if (!validPackage(packageName)) throw Error('Invalid package name.');
+          const text = await stream('shell:dumpsys package ' + packageName, null, 0, undefined, 2 * 1024 * 1024);
+          // Match the named package block, not a similarly named permission or
+          // a historical disabled-system entry elsewhere in dumpsys output.
+          const escaped = packageName.replaceAll('.', '\\.');
+          const block = new RegExp('Package \\[' + escaped + '\\][\\s\\S]*?(?=\\n\\s*Package \\[|$)').exec(text)?.[0];
+          const version = block && /\bversionCode=(\d+)/.exec(block);
+          if (version && !/(?:pkgFlags|flags)=\[[^\]]*\]/.test(block)) throw Error('Headset did not report application flags; package changes are unavailable.');
+          return version ? {packageName, versionCode: Number(version[1]), system: /(?:pkgFlags|flags)=\[[^\]]*\bSYSTEM\b/.test(block)} : null;
+        },
+        async install(source, size, wait) {
+          if (!Number.isSafeInteger(size) || size <= 0 || size > 8 * 1024 ** 3) throw Error('Invalid APK size.');
+          const result = await stream('exec:cmd package install -r -S ' + size, source, size, wait, 65536);
+          if (!/^Success\s*$/m.test(result)) throw Error('Android rejected installation: ' + result.replace(/[\r\n]+/g, ' ').slice(0, 500));
+        },
+        async uninstall(packageName) {
+          if (protectedPackage(packageName)) throw Error('This package is protected.');
+          const result = await stream('shell:pm uninstall ' + packageName, null, 0, undefined, 65536);
+          if (!/^Success\s*$/m.test(result)) throw Error('Android rejected removal: ' + result.replace(/[\r\n]+/g, ' ').slice(0, 500));
+        },
+      } : {}),
       async read(section) {
         if (!Object.hasOwn(commands, section)) throw new Error('Unsupported Oculus Go read.');
         const id = ++nextId, chunks = [];

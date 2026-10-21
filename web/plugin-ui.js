@@ -7,6 +7,9 @@ const PluginUI = {
   glyphSearch: '',
   valueInstances: new Map(),
   openGuides: new Set(),
+  // Test receipts belong to the current Settings revision, not telemetry or
+  // durable device state. Polling cannot turn a past test into current proof.
+  connectionResults: new Map(),
   builders: new Map(),
 
   taskBuilderCatalog(){
@@ -168,7 +171,48 @@ const PluginUI = {
     return `<details class="plugin-setup-guide" data-plugin-guide="${escapeHtml(service.id)}" ${this.openGuides.has(service.id) ? 'open' : ''}><summary>${escapeHtml(guide.title)}</summary>${guide.sections.map(section => `<section><h3>${escapeHtml(section.title)}</h3><ol>${section.steps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}</ol></section>`).join('')}</details>`;
   },
 
+  connectionPanel(service) {
+    const setup = service.connectionSetup;
+    if (!setup || !service.config) return '';
+    const result = this.connectionResults.get(service.id);
+    const current = result?.revision === service.config.revision ? result : null;
+    const actions = [setup.testAction, setup.repairAction].filter(Boolean).map(id => service.actions.find(action => action.id === id)).filter(Boolean);
+    const reason = state.paused ? 'Enable server functions first.' : !service.enabled ? 'Enable this plugin first.' : !service.configurationReady ? 'Complete the connection settings below first.' : '';
+    return `<section class="panel plugin-connection" id="plugin-connection-panel" tabindex="-1" aria-label="Connection" data-live-key="connection:${escapeHtml(service.id)}"><div class="panel-header"><h2>${icon('link')} Connection</h2></div><div class="panel-body">
+      <p><strong>${escapeHtml(service.config.settings[setup.addressSetting] || 'No address configured')}</strong></p>
+      <p class="field-help">${escapeHtml(setup.help)}</p>
+      <div class="connection-actions">${actions.map(action => `<button type="button" id="connection-${escapeHtml(action.id)}" class="button" data-action="plugin-connection" data-capability="${escapeHtml(action.id)}" data-revision="${service.config.revision}" ${this.pending || reason || action.available === false ? 'disabled' : ''}>${icon(action.id === setup.repairAction ? 'arrows-rotate' : 'link')}${escapeHtml(action.name)}</button>`).join('')}</div>
+      ${reason ? `<p class="field-help">${escapeHtml(reason)}</p>` : ''}
+      <div class="connection-result ${current?.error ? 'evidence-error' : ''}" role="status" aria-live="polite">${current ? `${escapeHtml(current.message)}${current.at ? ` · ${escapeHtml(formatServerTimestamp(current.at))}` : ''}` : 'Connection has not been tested for these settings.'}</div>
+    </div></section>`;
+  },
+
+  async testConnection(service, control) {
+    if (this.pending) return;
+    const revision = Number(control.dataset.revision), actionId = control.dataset.capability;
+    if (![service.connectionSetup?.testAction, service.connectionSetup?.repairAction].includes(actionId)) return;
+    this.pending = true;
+    this.connectionResults.set(service.id, {revision, message: 'Checking connection…'});
+    this.render(service);
+    try {
+      const reply = await mutate(`api/plugins/${service.id}/actions/${actionId}`, {revision, parameters: {}});
+      this.connectionResults.set(service.id, {revision, message: reply.result?.message || 'Connection verified.', at: state.server?.now ?? Date.now()});
+    } catch (error) {
+      this.connectionResults.set(service.id, {revision, error: true, message: error.message, at: state.server?.now ?? Date.now()});
+    } finally {
+      this.pending = false;
+      if (currentView === service.id) {
+        this.render(state.services.find(candidate => candidate.id === service.id));
+        document.getElementById(`connection-${actionId}`)?.focus({preventScroll: true});
+      }
+    }
+  },
+
   settings(service) {
+    return this.connectionPanel(service) + (service.id === "oculus-go" && service.actions.some(action => action.id === "library-install") ? '<section class="panel"><div class="panel-body"><h2>Applications</h2><p>Browse your APK library, read installed apps and manage applications on the configured headset.</p><button class="button" data-view="vr-library">Open VR library</button></div></section>' : "") + this.settingsBody(service);
+  },
+
+  settingsBody(service) {
     if (!service.config) return '<section class="panel"><div class="empty-state">Plugin data could not be loaded.</div></section>';
     return `${service.taskBuilder?`<section class="panel plugin-task-builder"><div class="panel-body"><h2>I want… when…</h2><p>Choose an action and when it should happen, then review your Task before saving.</p><button class="button primary" data-action="plugin-task-builder" ${service.enabled?'':'disabled'}>Build a task</button>${!service.enabled?'<p class="field-help">Enable this plugin below to begin.</p>':''}</div></section>`:''}<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
       ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Android app</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
@@ -417,7 +461,9 @@ const PluginUI = {
 
   async handleAction(action, id, control) {
     const service = state.services.find(service => service.id === currentView);
-    if (action === 'plugin-source-action') {
+    if (action === 'plugin-connection') {
+      await this.testConnection(service, control);
+    } else if (action === 'plugin-source-action') {
       await this.runSourceAction(service, control);
     } else if (action === 'plugin-find-source') {
       this.openLookup(service);

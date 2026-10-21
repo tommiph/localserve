@@ -77,6 +77,10 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   optional phone, location, region and activity events over your trusted LAN.
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
+- **Oculus Go:** manual APK library and a separate **# Localserve #** VR client
+  with search, favorites, local launch and confirmed package management. Supply
+  your own compatible APKs; no application collection is included. See
+  [headset setup](plugins/oculus-go/android/README.md).
 
 All bundled plugins start disabled. Tasks, Vistas, selected Universe Cards,
 Card instances, remotes, scenes, devices and logs start empty. Ready-made Card
@@ -102,8 +106,9 @@ keys, accounts, saved user content or private signing keys are included.
 
 Source is under server/, web/, plugins/, tray/ and tv-tizen/. Local assets and
 dependencies remain alongside their licenses. Android source, its APK and
-pinned client libraries are under plugins/sensors/android/; optional SDK/JDK
-preparation is separate from running the server. Tizen source requires your
+pinned client libraries are under plugins/sensors/android/. The separate Oculus
+Go client, generic APK and VrApi license are under plugins/oculus-go/android/.
+Optional SDK/JDK preparation is separate from running the server. Tizen source requires your
 own SDK, signing identity and compatible TV.
 
 Localserve-authored code is available under the [MIT License](LICENSE).

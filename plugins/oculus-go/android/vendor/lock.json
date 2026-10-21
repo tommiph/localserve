@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "runtime": "Oculus Mobile VrApi 1.14",
+  "files": [
+    {
+      "file": "licenses/Android-NDK-NOTICE.txt",
+      "sha256": "31b13387e6bde5c7e7006b63ea762020ce583be32e4d62417584c03ac3d3f19a"
+    },
+    {
+      "file": "licenses/Oculus-Mobile-SDK.txt",
+      "sha256": "9de1680aa8ca904e111cd5deb758ec22802b8d62c270ba9c02a9ef9340b2cbee"
+    },
+    {
+      "file": "licenses/VrApi-provenance.json",
+      "sha256": "e956dd74f1455fa1d2110c36c5a044f19894b7401f1883681f158d7ec7359120"
+    },
+    {
+      "file": "vrapi/Include/VrApi.h",
+      "sha256": "2b4277784819b19633cd50943c88b1e92223bb08ace5682a0f7eba0d75c45ea3"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Config.h",
+      "sha256": "dc5ee86bfc130255d9cc7227938cdd29d64141e05b5eb74bdd7280a160945e08"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Ext.h",
+      "sha256": "e02fbfb28204103d1d04bc6597ae5c86f2b4c8ab5f442c7b199ca45927288772"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Helpers.h",
+      "sha256": "d062851d5170d683405446f5027455d25922ab670c8121a673cf922ce4a23a20"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Input.h",
+      "sha256": "8db11007e20f7ad0382ae57e88a0ba338dd34933ca6dd4f879362d8c3b19e6ec"
+    },
+    {
+      "file": "vrapi/Include/VrApi_SystemUtils.h",
+      "sha256": "c339792130e1345491519b0c2ef9466e55878194ade24ea38d36e7821a909c14"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Types.h",
+      "sha256": "e57ad0db23f1ce3fe2b0e2f82760fca9cb68aaceec52e7b4d000368d8d4f3a0b"
+    },
+    {
+      "file": "vrapi/Include/VrApi_Version.h",
+      "sha256": "9fe5abbe18b89a52465e82ae7bebd0fe7e4671d26b258fea5cd9b66999a586c9"
+    },
+    {
+      "file": "vrapi/lib/libvrapi.so",
+      "sha256": "bf5a2d8727b13fbb925b2410f3324751c2effda216e47b60f8bd13ca34fb5658"
+    }
+  ]
+}

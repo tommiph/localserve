@@ -4,6 +4,45 @@
 const RunUI = {
   task: '', status: '', limit: 20, opened: new Set(),
 
+  eventSource(event) {
+    return event && (state.taskEvents || []).find(source => source.pluginId === event.pluginId && source.eventId === event.eventId
+      && (!source.instanceId || event.payload?.[source.instanceKey] === source.instanceId)
+      && (!source.sensorId || event.payload?.['sensor-id'] === source.sensorId));
+  },
+
+  failureEvidence(run) {
+    const step = (run.steps || []).find(step => ['failed', 'cancelled', 'interrupted'].includes(step.status));
+    const reason = step?.reason || run.error || '';
+    let pluginId = step?.capabilityId?.match(/^plugin:([a-z0-9-]+):/)?.[1];
+    // Older receipts lack capability identity. Only explicit device names in
+    // their recorded error can identify a recovery target; never use edited steps.
+    if (!pluginId && /Samsung TV|TV remote|TV certificate|The TV declined/i.test(reason)) pluginId = 'samsung-tv';
+    if (!pluginId && /Oculus Go|headset.*(?:ADB|serial)|Wi-Fi target.*headset/i.test(reason)) pluginId = 'oculus-go';
+    const plugin = (state.services || []).find(plugin => plugin.id === pluginId);
+    const connection = run.status === 'failed' && plugin?.connectionSetup
+      && /connect|pairing|certificate|authoriz|ADB|Wi-Fi|serial|address|timed out|did not respond/i.test(reason);
+    return {step, reason, plugin:connection ? plugin : null};
+  },
+
+  outcome(run) {
+    const {step, reason, plugin} = this.failureEvidence(run);
+    const source = this.eventSource(run.event);
+    const titleField = source?.payload?.find(field => field.id === 'title' && field.type === 'string' && field.format !== 'secret');
+    const title = titleField && typeof run.event.payload?.title === 'string' ? run.event.payload.title : '';
+    const titleHtml = title ? `<p class="run-event-title">${escapeHtml(title)}</p>` : '';
+    let summary = '';
+    if (run.status === 'failed') summary = `${run.automatic === true ? 'Triggered, but ' : 'Stopped: '}${plugin ? `${plugin.name} connection failed` : step ? `step ${step.number} failed` : 'the Task failed'}.`;
+    else if (run.status === 'interrupted') summary = 'Run interrupted. It will not resume automatically.';
+    else if (run.status === 'cancelled') summary = 'Run cancelled.';
+    else if (run.status === 'completed' && run.steps?.some(step => step.reason === 'Do not disturb')) summary = 'Completed with TV actions skipped by Do not disturb.';
+    if (!summary) return titleHtml;
+    const later = (run.steps || []).filter(item => item.status === 'not-run').length;
+    return `${titleHtml}<div class="run-outcome"><p class="run-outcome-title">${escapeHtml(summary)}</p>
+      ${step ? `<p>${escapeHtml(`Step ${step.number}: ${step.label}`)}${later ? ` · ${later} following step${later === 1 ? '' : 's'} not run${run.stepCount > run.steps.length ? ' in the recorded receipts' : ''}` : ''}</p>` : ''}
+      ${reason ? `<p class="evidence-error">${escapeHtml(reason)}</p>` : ''}
+      ${plugin ? `<button type="button" class="button" data-action="runs-connection" data-id="${escapeHtml(plugin.id)}">${icon('link')}Open ${escapeHtml(plugin.name)} Connection</button>` : ''}</div>`;
+  },
+
   elapsed(start, end) {
     if (!Number.isFinite(start)) return 'Not recorded';
     const milliseconds = Math.max(0, (end ?? state.server?.now ?? Date.now()) - start);
@@ -23,10 +62,9 @@ const RunUI = {
 
   details(run) {
     const event = run.event;
-    const declaration = event && (state.taskEvents || []).find(source => source.pluginId === event.pluginId && source.eventId === event.eventId
-      && (!source.instanceId || event.payload?.[source.instanceKey] === source.instanceId)
-      && (!source.sensorId || event.payload?.['sensor-id'] === source.sensorId));
-    const values = event ? Object.entries(event.payload || {}).filter(([, value]) => ['string', 'number', 'boolean'].includes(typeof value)) : [];
+    const declaration = this.eventSource(event);
+    const values = (declaration?.payload || []).filter(field => field.format !== 'secret' && ['string','number','boolean'].includes(field.type)
+      && typeof event?.payload?.[field.id] === field.type).map(field => [field.id, event.payload[field.id]]);
     const origin = run.rerunOf ? 'Manual rerun' : run.automatic === true ? 'Automatic' : run.automatic === false ? 'Manual' : 'Not recorded';
     const trigger = !run.reason || origin === run.reason ? origin : `${origin} · ${run.reason}`;
     const time = value => Number.isFinite(value) ? escapeHtml(formatServerTimestamp(value)) : 'Not recorded';
@@ -43,8 +81,15 @@ document.addEventListener('change', event => {
 });
 
 document.addEventListener('click', event => {
-  const button = event.target.closest('[data-action="runs-details"], [data-action="runs-more"]');
+  const button = event.target.closest('[data-action="runs-details"], [data-action="runs-more"], [data-action="runs-connection"]');
   if (!button) return;
+  if (button.dataset.action === 'runs-connection') {
+    const plugin = (state.services || []).find(plugin => plugin.id === button.dataset.id && plugin.connectionSetup);
+    if (!plugin) return;
+    PluginUI.tabs.set(plugin.id, 'settings'); currentView = plugin.id; renderView();
+    const panel = document.getElementById('plugin-connection-panel');
+    panel?.scrollIntoView({block:'start'}); panel?.focus({preventScroll:true}); return;
+  }
   if (button.dataset.action === 'runs-more') { RunUI.limit += 20; renderView(); return; }
   const id = button.dataset.id;
   if (RunUI.opened.has(id)) RunUI.opened.delete(id); else RunUI.opened.add(id);

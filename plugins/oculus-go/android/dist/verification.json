@@ -1,0 +1,14 @@
+{
+  "packageName": "org.localserve.go",
+  "version": "1.0.0",
+  "versionCode": 1,
+  "label": "# Localserve #",
+  "minSdk": 25,
+  "targetSdk": 25,
+  "abi": "armeabi-v7a",
+  "size": 1053610,
+  "sha256": "aba330f54b451d8129996b3c2fd23e75cd1faeefb9679db87f8f2f71c978ab11",
+  "unconfigured": true,
+  "signatureVerified": true,
+  "verification": "Verifies\r\nVerified using v1 scheme (JAR signing): false\r\nVerified using v2 scheme (APK Signature Scheme v2): true\r\nVerified using v3 scheme (APK Signature Scheme v3): true\r\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\r\nVerified using v4 scheme (APK Signature Scheme v4): false\r\nVerified for SourceStamp: false\r\nNumber of signers: 1\r\nSigner #1 certificate DN: CN=Localserve Go\r\nSigner #1 certificate SHA-256 digest: b2a3775664b78dacd068f71ebdbcf71c2a64240bebbd1df868ef2c0646f1f51d\r\nSigner #1 certificate SHA-1 digest: 95c2a58e92d3d8c99766ae342262d1011c247755\r\nSigner #1 certificate MD5 digest: 58316994b603e193dd8f42d652e08c3c\r\nSigner #1 key algorithm: RSA\r\nSigner #1 key size (bits): 3072\r\nSigner #1 public key SHA-256 digest: 1f9536f266d1c07404bd259bafba0093516e21e9cadc6624c48b59d7da8fee7b\r\nSigner #1 public key SHA-1 digest: 0245eec2c311fbe13838e49a261fcd42aaedc237\r\nSigner #1 public key MD5 digest: 31189afe756620324f763ef94e7a9439"
+}

@@ -16,7 +16,7 @@ import { doNotDisturbStatus, isTvAction, tvDoNotDisturbError } from './do-not-di
 import {localDisplayPath, requireLocalDisplay, requireUniverseDisplay,requirePhoneDisplay} from './local-pages.mjs';
 import {reportedSensors,vectorSensorTypes,isDiscreteSensor} from './sensor-protocol.mjs';
 
-const reservedIds = new Set(['overview', 'tasks', 'vistas', 'universe', 'controls', 'activity', 'settings', 'server', 'all']);
+const reservedIds = new Set(['overview', 'tasks', 'vistas', 'universe', 'controls', 'activity', 'settings', 'server', 'all', 'vr-library']);
 
 function validateSettingsGuide(value) {
   if (value === undefined) return undefined;
@@ -47,6 +47,10 @@ function capabilities(values, kind) {
       if (value.settingsOnly !== undefined) {
         if (value.settingsOnly !== true) throw new Error('Settings-only actions must explicitly opt in.');
         result.settingsOnly = true;
+      }
+      if (value.timeoutSeconds !== undefined) {
+        if (!result.settingsOnly || !Number.isInteger(value.timeoutSeconds) || value.timeoutSeconds < 30 || value.timeoutSeconds > 1200) throw Error('Extended deadlines require a Settings-only action and 30–1200 seconds.');
+        result.timeoutSeconds = value.timeoutSeconds;
       }
     } else {
       result.payload = validateFields(value.payload, true);
@@ -93,6 +97,16 @@ export function validateDeclaration(value) {
   }
   const actions = capabilities(value.actions || [], 'Action');
   const events = capabilities(value.events || [], 'Event');
+  let connectionSetup;
+  if (value.connectionSetup !== undefined) {
+    const setup = value.connectionSetup;
+    const field = settings.find(field => field.id === setup?.addressSetting && field.type === 'string' && field.format !== 'secret');
+    const validAction = id => actions.some(action => action.id === id && action.settingsOnly && action.parameters.length === 0);
+    if (!runtime || !field || !validAction(setup.testAction) || setup.repairAction !== undefined && (!validAction(setup.repairAction) || setup.repairAction === setup.testAction)
+      || typeof setup.help !== 'string' || !setup.help.trim() || setup.help.length > 1000) throw new Error('Connection setup needs an address and parameter-free Settings actions.');
+    connectionSetup = {addressSetting: field.id, testAction: setup.testAction, help: setup.help,
+      ...(setup.repairAction ? {repairAction: setup.repairAction} : {})};
+  }
   let listActions;
   if (value.listActions !== undefined) {
     if (!Array.isArray(value.listActions) || value.listActions.length > 8) throw new Error('Invalid Settings list actions.');
@@ -143,7 +157,7 @@ export function validateDeclaration(value) {
       || lookup.readingFields.some(id => !cardFields.some(field => field.id === id))) throw new Error('Settings lookup needs a declared setup action, list value and public reading fields.');
     settingsLookup = {setting:list.id, actionId:action.id, queryParameter:lookup.queryParameter, valueField:lookup.valueField, readingFields:[...lookup.readingFields]};
   }
-  if (events.some(event => event.testAction && !actions.some(action => action.id === event.testAction))) throw new Error('Event test actions must be declared actions.');
+  if (events.some(event => event.testAction && !actions.some(action => action.id === event.testAction && !action.settingsOnly))) throw new Error('Event test actions must be declared non-Settings actions.');
   let polling = null;
   if (value.polling !== undefined) {
     const action = actions.find(action => action.id === value.polling?.actionId);
@@ -151,7 +165,7 @@ export function validateDeclaration(value) {
     // Polling invokes an ordinary supervised action with its declared defaults.
     // Intervals are bounded numeric minutes; there is no arbitrary timer code
     // or HTTP endpoint in this optional declaration-driven scheduling contract.
-    if (!runtime || !action || !interval || interval.type !== 'number'
+    if (!runtime || !action || action.settingsOnly || !interval || interval.type !== 'number'
       || !Number.isFinite(interval.min) || interval.min <= 0
       || !Number.isFinite(interval.max) || interval.max > 525600
       || !Number.isFinite(interval.default)) throw new Error('Polling requires a runtime action and bounded minute setting.');
@@ -169,6 +183,7 @@ export function validateDeclaration(value) {
     apiVersion: runtime ? 1 : null, runtime, settings, polling, instances,
     defaultCardLayout: value.defaultCardLayout || 'grid', ...(attribution ? { attribution } : {}),
     ...(settingsGuide ? {settingsGuide} : {}),
+    ...(connectionSetup ? {connectionSetup} : {}),
     ...(value.taskBuilder ? {taskBuilder:true} : {}),
     ...(listActions ? {listActions} : {}),
     events, actions, ...(settingsLookup ? {settingsLookup} : {}), controls: validateControlsDeclaration(value.controls, actions, runtime, cardFields), cardFields,
@@ -720,7 +735,8 @@ export class PluginRegistry {
       const readiness = this.actionAvailability(id, actionId);
       if (!readiness.available) throw new HttpError(409, readiness.unavailableReason);
     }
-    if (action.settingsOnly && context.taskId) throw new HttpError(400, 'This action is available only in plugin Settings.');
+    if (action.settingsOnly && (context.taskId || context.automatic)) throw new HttpError(400, 'This action is available only in plugin Settings.');
+    if (id === 'oculus-go' && actionId.startsWith('library-') && !context.packageLibrary) throw new HttpError(400, 'Use the VR library page to manage applications.');
     const validated = validateValues(action.parameters, parameters, true);
     const targetParameter = actionId === record.plugin.polling?.actionId ? record.plugin.polling.targetParameter : null;
     if (targetParameter && !validated[targetParameter]) {
@@ -750,8 +766,8 @@ export class PluginRegistry {
       if (pollAction && targetClock) targetClock.lastAt = record.lastPollAt;
       const watchdog = new AbortController();
       // Measure the action deadline in running time; global pause does not consume
-      // the 30-second budget. Cancellation stays responsive while paused/queued.
-      void this.engine.gate.delay(30000, watchdog.signal).then(() => {
+      // declared manual-action budget. Cancellation stays responsive while paused/queued.
+      void this.engine.gate.delay((action.timeoutSeconds || 30) * 1000, watchdog.signal).then(() => {
         controller.abort(new Error('Plugin action timed out; outcome may be unknown.'));
       }).catch(() => {});
       try {

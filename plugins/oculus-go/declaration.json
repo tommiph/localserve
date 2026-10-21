@@ -3,8 +3,8 @@
   "apiVersion": 1,
   "id": "oculus-go",
   "name": "Oculus Go",
-  "version": "1.0.0",
-  "description": "Read-only Wi-Fi headset diagnostics",
+  "version": "1.3.0",
+  "description": "Wi-Fi headset diagnostics and a manual APK library",
   "icon": "vr-cardboard",
   "runtime": {
     "entry": "server/index.mjs"
@@ -57,6 +57,37 @@
         "1 minute"
       ],
       "help": "Serial supervised reads. Failed polls retain successful readings and do not retry immediately."
+    },
+    {
+      "id": "library-enabled",
+      "label": "APK library",
+      "type": "boolean",
+      "default": false,
+      "help": "Enable the VR library page for manual APK installation and confirmed removal. No automatic package operations."
+    },
+    {
+      "id": "library-folder",
+      "label": "APK library folder",
+      "type": "string",
+      "default": "library/oculus-go",
+      "maxLength": 500,
+      "help": "Folder containing your standalone APK files. Relative paths start at the Localserve folder; an absolute path may select your own external library. Subfolder links are ignored. APKs are private user content."
+    },
+    {
+      "id": "home-vr-enabled",
+      "label": "Home VR headset access",
+      "type": "boolean",
+      "default": false,
+      "help": "Allow the existing Home VR app to browse and manage this library with its matching protected token. Use Change address in Home VR to enter this server IP and port. No automatic discovery or package changes."
+    },
+    {
+      "id": "home-vr-token",
+      "label": "Home VR token (optional replacement)",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 512,
+      "help": "Use the token belonging to your own Home VR APK. Clear this field after saving it from the VR library page; the Windows-protected copy remains. Nonempty Settings values are stored privately as plaintext."
     }
   ],
   "actions": [
@@ -65,6 +96,69 @@
       "name": "Refresh diagnostics",
       "description": "Read the configured headset’s battery, state, app, storage and sensors.",
       "parameters": []
+    },
+    {
+      "id": "test-connection",
+      "name": "Test connection",
+      "description": "Verify saved authorization and device identity without changing the screen or emitting Task events.",
+      "parameters": [],
+      "settingsOnly": true
+    },
+    {
+      "id": "library-inventory",
+      "name": "Read installed apps",
+      "description": "Manual VR library operation. Not available to Tasks.",
+      "settingsOnly": true,
+      "timeoutSeconds": 30,
+      "parameters": []
+    },
+    {
+      "id": "library-inspect",
+      "name": "Inspect installed app",
+      "description": "Manual VR library operation. Not available to Tasks.",
+      "settingsOnly": true,
+      "timeoutSeconds": 30,
+      "parameters": [
+        {
+          "id": "package",
+          "label": "Package name",
+          "type": "string",
+          "required": true,
+          "maxLength": 200
+        }
+      ]
+    },
+    {
+      "id": "library-install",
+      "name": "Install APK",
+      "description": "Manual VR library operation. Not available to Tasks.",
+      "settingsOnly": true,
+      "timeoutSeconds": 1200,
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Library file",
+          "type": "string",
+          "required": true,
+          "maxLength": 24
+        }
+      ]
+    },
+    {
+      "id": "library-uninstall",
+      "name": "Remove installed app",
+      "description": "Manual VR library operation. Not available to Tasks.",
+      "settingsOnly": true,
+      "timeoutSeconds": 120,
+      "parameters": [
+        {
+          "id": "package",
+          "label": "Package name",
+          "type": "string",
+          "required": true,
+          "maxLength": 200
+        }
+      ]
     }
   ],
   "events": [
@@ -1740,5 +1834,40 @@
         }
       ]
     }
-  ]
+  ],
+  "connectionSetup": {
+    "addressSetting": "address",
+    "testAction": "test-connection",
+    "help": "Test connection verifies the saved ADB key and headset serial without emitting Task events. After an IP change, edit Wi-Fi address and test again. If wireless ADB is disabled, enable it on the headset first."
+  },
+  "settingsGuide": {
+    "title": "Connection setup and recovery",
+    "sections": [
+      {
+        "title": "Connect",
+        "steps": [
+          "Enable wireless ADB on the headset and authorize this computer’s ADB key. Localserve uses legacy ADB TCP, not Android’s wireless pairing-code flow.",
+          "Enter the headset Wi-Fi address with port, normally :5555, and its exact serial. Supply an already authorized RSA key as Base64 if no protected key is saved.",
+          "Enable the plugin and select Test connection. After success, clear the key field; the protected key remains available on this Windows account."
+        ]
+      },
+      {
+        "title": "Reconnect",
+        "steps": [
+          "If the headset address changes, update Wi-Fi address and select Test connection. The saved key is reused and the serial must match.",
+          "If unavailable, check the current address, network and whether wireless ADB is enabled. If necessary, enable wireless ADB again through your device setup tools. Localserve does not control the shared PC ADB service.",
+          "If the key is rejected, authorize it on the headset or supply an already authorized replacement. A serial mismatch means the configured device identity must be checked; do not replace it just to bypass the check.",
+          "Scheduled diagnostics resume on the next poll when the device is available. A failed connection does not prove the headset is asleep or powered off."
+        ]
+      },
+      {
+        "title": "VR library",
+        "steps": [
+          "Enable APK library, set the folder containing your own APKs, then open VR library in the server menu. Scan finds standalone APKs; no files are uploaded or downloaded from the internet.",
+          "Read installed apps to inspect the configured headset. Install replaces an existing compatible version without requesting a downgrade. Uninstall requires confirmation and deletes the application’s saved data.",
+          "For an existing Home VR APK, enable Home VR headset access and supply its matching token. In the VR library page select Save Home VR token, then clear the replacement setting. On the headset use Settings → Change address and enter this server IP:port."
+        ]
+      }
+    ]
+  }
 }

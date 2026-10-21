@@ -77,6 +77,69 @@
       "from": "0.5.0",
       "version": "0.5.1",
       "summary": "Keep administrator Overview usable when the optional demo interface is unavailable"
+    },
+    {
+      "date": "2026-10-19T11:47:44.250Z",
+      "component": "server",
+      "from": "0.5.1",
+      "version": "0.5.2",
+      "summary": "Improve mobile version visibility, navigation spacing and Overview attention counts"
+    },
+    {
+      "date": "2026-10-21T06:10:24.261Z",
+      "component": "server",
+      "from": "0.5.2",
+      "version": "0.6.0",
+      "summary": "Add guided, revision-scoped plugin connection tests and recovery panels"
+    },
+    {
+      "date": "2026-10-21T06:10:24.374Z",
+      "component": "samsung-tv",
+      "from": "1.1.0",
+      "version": "1.2.0",
+      "summary": "Add pinned pairing-address recovery and read-only remote authorization tests"
+    },
+    {
+      "date": "2026-10-21T06:10:24.480Z",
+      "component": "oculus-go",
+      "from": "1.0.0",
+      "version": "1.1.0",
+      "summary": "Add identity-only connection tests and headset recovery guidance"
+    },
+    {
+      "date": "2026-10-21T06:36:08.107Z",
+      "component": "server",
+      "from": "0.6.0",
+      "version": "0.7.0",
+      "summary": "Add actionable Task failure summaries and validated manual Rerun previews"
+    },
+    {
+      "date": "2026-10-21T07:20:53.277Z",
+      "component": "server",
+      "from": "0.7.0",
+      "version": "0.8.0",
+      "summary": "Add a manual VR application library with Home VR client access and cancellable, verified package jobs."
+    },
+    {
+      "date": "2026-10-21T07:20:54.552Z",
+      "component": "oculus-go",
+      "from": "1.1.0",
+      "version": "1.2.0",
+      "summary": "Add standalone APK indexing, installed-app inventory, streamed replacement installs and confirmed user-app removal."
+    },
+    {
+      "date": "2026-10-21T08:12:48.259Z",
+      "component": "server",
+      "from": "0.8.0",
+      "version": "0.9.0",
+      "summary": "Add Localserve Go client download and one-use LAN enrollment codes for native headset library access."
+    },
+    {
+      "date": "2026-10-21T08:12:48.361Z",
+      "component": "oculus-go",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Add a separate native Localserve Go app with a neon cockpit, library browsing, favorites and reviewed package management."
     }
   ]
 }
