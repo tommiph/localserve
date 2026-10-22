@@ -263,16 +263,17 @@ function renderView() {
   const focusRegion = focused?.closest('#admin-navigation') ? document.querySelector('#admin-navigation') : workspace;
   const signature = node => JSON.stringify([node.tagName, node.dataset, node.getAttribute('aria-label'), node.getAttribute('href'), node.getAttribute('name'), node.closest('[data-activity-details]')?.dataset.activityDetails, node.closest('[data-variable-details]')?.dataset.variableDetails]);
   const focusSignature = focused?.matches('button,a,summary,input,select') ? signature(focused) : null;
-  if (!['overview','tasks','vistas','universe','controls','activity','settings','variables','games','vr-library'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
+  if (!['overview','tasks','vistas','universe','controls','phone-home','activity','settings','variables','games','vr-library'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
   renderNavigation();
   const plugin = state.services.find(service=>service.id===currentView);
-  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library'})[currentView] || 'Overview';
+  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls','phone-home':'Phone home',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library'})[currentView] || 'Overview';
   AdminDOM.text(document.querySelector('#breadcrumb-page'),title);
   if (plugin) renderPlugin(plugin);
   else if (currentView==='tasks') renderWorkspace(TaskUI.renderTasks() + runsPanel());
   else if (currentView==='vistas') renderWorkspace(VistaUI.render());
   else if (currentView==='universe') renderWorkspace(UniverseUI.render());
   else if (currentView==='controls') renderWorkspace(ControlsUI.render());
+  else if (currentView==='phone-home') renderWorkspace(PhoneHomeUI.render());
   else if (currentView==='activity') renderWorkspace(pageHeading('Activity','Server and Task activity') + activityPanel(state.activity,true));
   else if (currentView==='settings') renderSettings();
   else if (currentView==='variables') renderWorkspace(VariablesUI.render());
@@ -334,6 +335,7 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
+    if(action==='phone-home-edit')return PhoneHomeUI.edit();
     if(action==='demo-install'||action==='demo-run'){
       if(!state.demo||typeof DemoUI==='undefined')throw new Error('Demo setup is unavailable. Refresh the administrator.');
       return await DemoUI.handle(action);
@@ -675,6 +677,7 @@ for (const type of ['input', 'change', 'click']) document.addEventListener(type,
 
 
 function serializeForm(form) {
+  if(form.id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked})));
   // Optional builders keep one canonical draft across their changing pages.
   // Navigation/search are presentation; only meaningful choices affect discard.
   if(form.id==='recipe-builder-form'&&form.querySelector('[data-task-builder-draft]'))return form.querySelector('[data-task-builder-draft]').value;

@@ -261,7 +261,8 @@ const CardRenderer = (() => {
     const variant = template.variant;
     const variantValue = variant ? Object.entries(variant.choices).find(([, values]) => values.includes(String(slots[variant.slot]?.raw)))?.[0] || variant.fallback : 'default';
     const payload = { slots, variant: variantValue, name: selection.source.name, status: options.connected === false ? 'Disconnected · retained reading' : !selection.source.enabled ? 'Data source disabled' : data.status || 'Unavailable',
-      connected: options.connected !== false, theme: options.theme || 'dark', fontScale: options.fontScale || 100 };
+      connected: options.connected !== false, theme: options.theme || 'dark', fontScale: options.fontScale || 100,
+      previewUrl: template.previewUrl, previewActive: options.connected !== false && selection.source.enabled && data.status === 'Ready' };
     return `<article class="display-card display-card-readymade" aria-label="${escape(card.name)}"><div class="display-card-fields" role="region" aria-label="Card information"><iframe class="display-card-ready-frame" title="${escape(card.name)}" src="${escape(template.url)}" sandbox="allow-same-origin" referrerpolicy="no-referrer" data-ready-card="${escape(JSON.stringify(payload))}"></iframe></div></article>`;
   }
 
@@ -271,6 +272,7 @@ const CardRenderer = (() => {
       // The child has no scripts or administrator data. Only declaration-owned
       // text slots and bounded scene tokens are filled; provider HTML stays text.
       if (!document?.querySelector('[data-ready-made]')) return;
+      globalThis.LocalserveCardPreview?.attach(frame, payload.previewUrl, payload.previewActive);
       const root = document.documentElement;
       root.dataset.variant = payload.variant;
       root.dataset.theme = payload.theme;

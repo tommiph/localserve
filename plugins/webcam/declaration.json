@@ -1,0 +1,480 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "webcam",
+  "name": "Webcam",
+  "version": "1.0.0",
+  "icon": "videocam",
+  "description": "Local Windows webcam preview, movement detection and relative lighting measurements",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "preview": "jpeg-v1"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "device-index",
+      "label": "Camera index",
+      "type": "number",
+      "min": 0,
+      "max": 31,
+      "default": 0,
+      "help": "First camera is 0. Use List cameras in Settings to read names and indices. Indices may change after USB devices are added or removed."
+    },
+    {
+      "id": "width",
+      "label": "Maximum preview width",
+      "type": "number",
+      "min": 160,
+      "max": 1280,
+      "default": 640
+    },
+    {
+      "id": "height",
+      "label": "Maximum preview height",
+      "type": "number",
+      "min": 120,
+      "max": 720,
+      "default": 360
+    },
+    {
+      "id": "fps",
+      "label": "Preview frames per second",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "default": 5
+    },
+    {
+      "id": "quality",
+      "label": "JPEG quality",
+      "type": "number",
+      "min": 20,
+      "max": 90,
+      "default": 70
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Reading interval (minutes)",
+      "type": "number",
+      "min": 0.05,
+      "max": 0.1,
+      "default": 0.05,
+      "help": "Readings and Tasks refresh approximately every 3–6 seconds; the video preview updates separately."
+    },
+    {
+      "id": "motion-threshold",
+      "label": "Movement threshold (% changed pixels)",
+      "type": "number",
+      "min": 0.5,
+      "max": 80,
+      "default": 4
+    },
+    {
+      "id": "pixel-threshold",
+      "label": "Minimum pixel change (0–255)",
+      "type": "number",
+      "min": 5,
+      "max": 100,
+      "default": 20
+    },
+    {
+      "id": "motion-confirm-frames",
+      "label": "Movement confirmation frames",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "default": 2
+    },
+    {
+      "id": "motion-hold-seconds",
+      "label": "Movement hold (seconds)",
+      "type": "number",
+      "min": 1,
+      "max": 60,
+      "default": 4
+    },
+    {
+      "id": "compensate-lighting",
+      "label": "Reduce movement from uniform brightness changes",
+      "type": "boolean",
+      "default": true
+    },
+    {
+      "id": "dark-threshold",
+      "label": "Dark below brightness (%)",
+      "type": "number",
+      "min": 0,
+      "max": 95,
+      "default": 20
+    },
+    {
+      "id": "bright-threshold",
+      "label": "Bright above brightness (%)",
+      "type": "number",
+      "min": 5,
+      "max": 100,
+      "default": 75
+    },
+    {
+      "id": "light-hysteresis",
+      "label": "Lighting hysteresis (%)",
+      "type": "number",
+      "min": 0,
+      "max": 15,
+      "default": 3
+    },
+    {
+      "id": "light-confirm-frames",
+      "label": "Lighting confirmation frames",
+      "type": "number",
+      "min": 1,
+      "max": 10,
+      "default": 3
+    }
+  ],
+  "settingsGuide": {
+    "title": "Connect a webcam",
+    "sections": [
+      {
+        "title": "Camera and privacy",
+        "steps": [
+          "Connect a Windows-compatible USB or built-in camera. Allow desktop apps to use the camera in Windows privacy settings.",
+          "Choose the camera index and enable Webcam. Capture starts on its next refresh; the camera activity light may illuminate. Use List cameras in Settings to read their names and indices.",
+          "Disable the plugin or pause Localserve to stop capture. No audio, recordings, snapshots or image history are stored."
+        ]
+      },
+      {
+        "title": "Cards and Tasks",
+        "steps": [
+          "In Cards, add the ready-made Camera monitor design, then include it in a Vista. The same Vista works with the Tizen TV viewer.",
+          "Use Movement detected, Movement ended, Lighting changed or Camera readings in Tasks. Compare Brightness (%) directly for a lighting threshold.",
+          "Brightness is relative processed-image luminance, not calibrated lux. Auto-exposure, shadows and camera movement can affect these measurements."
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh readings",
+      "description": "Read the current camera measurements; start the configured capture if needed.",
+      "parameters": []
+    },
+    {
+      "id": "list-cameras",
+      "name": "List cameras",
+      "description": "Read Windows camera names and indices without opening another capture.",
+      "parameters": []
+    }
+  ],
+  "events": [
+    {
+      "id": "motion-detected",
+      "name": "Movement detected",
+      "description": "Movement crossed the configured threshold and confirmation count.",
+      "payload": [
+        {
+          "id": "motion",
+          "label": "Movement active",
+          "type": "boolean"
+        },
+        {
+          "id": "motion-percent",
+          "label": "Changed pixels (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "captured-at",
+          "label": "Frame received time",
+          "type": "number"
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 80
+        }
+      ],
+      "occurrenceKey": "occurrence-id"
+    },
+    {
+      "id": "motion-ended",
+      "name": "Movement ended",
+      "description": "The movement hold period expired on fresh frames.",
+      "payload": [
+        {
+          "id": "motion",
+          "label": "Movement active",
+          "type": "boolean"
+        },
+        {
+          "id": "motion-percent",
+          "label": "Changed pixels (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "captured-at",
+          "label": "Frame received time",
+          "type": "number"
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 80
+        }
+      ],
+      "occurrenceKey": "occurrence-id"
+    },
+    {
+      "id": "lighting-changed",
+      "name": "Lighting changed",
+      "description": "The confirmed relative lighting classification changed.",
+      "payload": [
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "condition",
+          "label": "Lighting condition",
+          "type": "string",
+          "enum": [
+            "Dark",
+            "Normal",
+            "Bright"
+          ]
+        },
+        {
+          "id": "previous",
+          "label": "Previous condition",
+          "type": "string",
+          "enum": [
+            "Dark",
+            "Normal",
+            "Bright"
+          ]
+        },
+        {
+          "id": "captured-at",
+          "label": "Frame received time",
+          "type": "number"
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 80
+        }
+      ],
+      "occurrenceKey": "occurrence-id"
+    },
+    {
+      "id": "readings",
+      "name": "Camera readings",
+      "description": "Current measured brightness and movement values, usable in comparisons.",
+      "payload": [
+        {
+          "id": "motion",
+          "label": "Movement active",
+          "type": "boolean"
+        },
+        {
+          "id": "motion-percent",
+          "label": "Changed pixels (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness (%)",
+          "type": "number",
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": "captured-at",
+          "label": "Frame received time",
+          "type": "number"
+        },
+        {
+          "id": "condition",
+          "label": "Lighting condition",
+          "type": "string",
+          "enum": [
+            "Dark",
+            "Normal",
+            "Bright",
+            "Measuring"
+          ]
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "status",
+      "label": "Capture status",
+      "type": "string",
+      "icon": "videocam",
+      "source": {
+        "kind": "state",
+        "key": "status"
+      }
+    },
+    {
+      "id": "motion",
+      "label": "Movement active",
+      "type": "boolean",
+      "icon": "motion-sensor-active",
+      "source": {
+        "kind": "state",
+        "key": "motion"
+      }
+    },
+    {
+      "id": "motion-percent",
+      "label": "Changed pixels (%)",
+      "type": "number",
+      "icon": "motion-sensor-active",
+      "source": {
+        "kind": "state",
+        "key": "motion-percent"
+      }
+    },
+    {
+      "id": "brightness",
+      "label": "Relative brightness (%)",
+      "type": "number",
+      "icon": "light-mode",
+      "source": {
+        "kind": "state",
+        "key": "brightness"
+      }
+    },
+    {
+      "id": "condition",
+      "label": "Lighting condition",
+      "type": "string",
+      "icon": "light-mode",
+      "source": {
+        "kind": "state",
+        "key": "condition"
+      }
+    },
+    {
+      "id": "captured-at",
+      "label": "Last frame reception",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "captured-at"
+      }
+    },
+    {
+      "id": "width",
+      "label": "Preview width",
+      "type": "number",
+      "icon": "videocam",
+      "source": {
+        "kind": "state",
+        "key": "width"
+      }
+    },
+    {
+      "id": "height",
+      "label": "Preview height",
+      "type": "number",
+      "icon": "videocam",
+      "source": {
+        "kind": "state",
+        "key": "height"
+      }
+    },
+    {
+      "id": "device-list",
+      "label": "Available Windows cameras",
+      "type": "string",
+      "icon": "videocam",
+      "source": {
+        "kind": "state",
+        "key": "device-list"
+      }
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "camera-monitor",
+      "name": "Camera monitor",
+      "directory": "cards/camera-monitor",
+      "entry": "card.html",
+      "preview": true,
+      "assets": [
+        "card.html",
+        "card.css",
+        "motif.svg"
+      ],
+      "slots": [
+        {
+          "id": "status",
+          "field": "status"
+        },
+        {
+          "id": "motion",
+          "field": "motion"
+        },
+        {
+          "id": "changed",
+          "field": "motion-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "brightness",
+          "field": "brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "lighting",
+          "field": "condition"
+        },
+        {
+          "id": "time",
+          "field": "captured-at",
+          "format": "time"
+        }
+      ]
+    }
+  ]
+}

@@ -446,6 +446,7 @@ export class TaskEngine {
     // must leave the currently running server state unchanged.
     await this.state.update(state => { state.paused = paused; });
     this.gate.setPaused(paused);
+    if (paused) await this.registry?.suspendPreviews?.();
     await this.activity.add(paused ? 'Server functions paused' : 'Server functions resumed');
   }
   async tick(date = new Date()) {

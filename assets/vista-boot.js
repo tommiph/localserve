@@ -8,8 +8,8 @@
     && Object.fromEntries && Array.prototype.at && Element.prototype.replaceChildren
     && window.fetch && window.Promise;
   var scripts = modern
-    ? ['../card-renderer.js?v=8', '../vista-renderer.js?v=2', '../vista-viewer.js']
-    : ['../assets/vista-legacy.js?v=24'];
+    ? ['../card-renderer.js?v=9', '../vista-renderer.js?v=2', '../vista-viewer.js']
+    : ['../assets/vista-legacy.js?v=25'];
   if (!modern) document.write('<link rel="stylesheet" href="../assets/vista-legacy.css?v=6">');
   for (var i = 0; i < scripts.length; i += 1) {
     document.write('<script src="' + scripts[i] + '" defer><\/script>');

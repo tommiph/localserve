@@ -11,6 +11,8 @@ const clock = value => typeof value === 'string' && /^\d{1,5}:\d{2}:\d{2}$/.test
 const configured = values => localHost(values?.host) && [8001, 8002].includes(values?.port)
   && [0.5, 1, 5].includes(values?.['poll-minutes'] ?? 1)
   && typeof values?.['remote-name'] === 'string' && values['remote-name'].trim().length > 0
+  && Number.isFinite(values?.['command-interval-ms'] ?? 100)
+  && (values?.['command-interval-ms'] ?? 100) >= 0 && (values?.['command-interval-ms'] ?? 100) <= 5000
   && (values.fingerprint === '' || validPin(values.fingerprint));
 export function infoReading(info) {
   return { 'connection-status': 'Reachable', 'tv-name': text(info.name), model: text(info.modelName || info.model),
@@ -53,8 +55,17 @@ export function safeUrl(value) {
   if (!url || !['http:', 'https:'].includes(url.protocol) || url.username || url.password || value.length > 2048) throw new Error('Enter an HTTP or HTTPS URL without credentials.');
   return url.href;
 }
-export function createSamsungAdapter({ vault = createVault(), credentialReady = helperReady, http = createHttpClient(), remote = connectRemote, youtube = createYouTubeControl(), wakeImpl = wake, now = Date.now } = {}) {
-  let settings, auth;
+export function createSamsungAdapter({ vault = createVault(), credentialReady = helperReady, http = createHttpClient(), remote = connectRemote, youtube = createYouTubeControl(), wakeImpl = wake, now = Date.now, commandClock = () => performance.now() } = {}) {
+  let settings, auth, lastCommandAt = null;
+  const paceCommand = async (context, signal) => {
+    const interval = settings['command-interval-ms'] ?? 100;
+    const remaining = lastCommandAt === null ? 0 : Math.max(0, interval - (commandClock() - lastCommandAt));
+    // Keep the host pause/DND/cancellation gate even when extra spacing is off.
+    // This clock is monotonic and local to the current configured runtime.
+    await context.wait(Math.max(10, remaining) / 1000);
+    signal.throwIfAborted();
+    lastCommandAt = commandClock();
+  };
   const readAuth = async values => {
     if (values.token) return { host: values.host, port: values.port, token: values.token };
     return vault.load();
@@ -65,9 +76,10 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
     },
     async start(values) {
       settings = structuredClone(values);
+      lastCommandAt = null;
       try { auth = await readAuth(values); } catch { auth = null; }
     },
-    async stop() { settings = null; auth = null; },
+    async stop() { settings = null; auth = null; lastCommandAt = null; },
     async execute(actionId, parameters, context) {
       context.signal.throwIfAborted();
       const signal = AbortSignal.any([context.signal, AbortSignal.timeout(20000)]);
@@ -139,7 +151,7 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
           return { completed: true, partial: failed.length > 0 };
         }
         if (['volume', 'mute', 'play-media', 'play', 'pause', 'stop'].includes(actionId)) {
-          await context.wait(0.01);
+          await paceCommand(context, signal);
           signal.throwIfAborted();
           if (actionId === 'volume') {
             if (!Number.isInteger(parameters.value) || parameters.value < 0 || parameters.value > 100) throw new Error('Volume must be 0–100.');
@@ -156,7 +168,7 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
             signal.throwIfAborted(); await http.soap(settings.host, 'Play', '<Speed>1</Speed>', 'AVTransport', signal);
           } else await http.soap(settings.host, { play: 'Play', pause: 'Pause', stop: 'Stop' }[actionId], actionId === 'play' ? '<Speed>1</Speed>' : '', 'AVTransport', signal);
         } else if (actionId === 'wake') {
-          await context.wait(0.01); signal.throwIfAborted();
+          await paceCommand(context, signal); signal.throwIfAborted();
           await wakeImpl(settings.mac, signal);
         }
         else {
@@ -177,7 +189,7 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
             }
             // A connection may finish after the user pauses server functions.
             // Gate each effect, including both text/media protocol stages.
-            await context.wait(0.01); signal.throwIfAborted();
+            await paceCommand(context, signal); signal.throwIfAborted();
             if (actionId === 'send-text') {
               remotePhase = 'sending';
               await connection.send({ method: 'ms.channel.emit', params: { event: 'custom.remote.textReceived', to: 'broadcast' } });

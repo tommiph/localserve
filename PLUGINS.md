@@ -20,6 +20,7 @@ All start disabled with fresh defaults. No live settings or saved Cards are incl
 | [Simulator](plugins/simulator/README.md) | Local actions, values, and events | Signal lab |
 | [TRÅDFRI](plugins/tradfri/README.md) | Legacy IKEA gateway lights, groups and lighting controls | Nordic |
 | [Weather](plugins/weather/README.md) | Current weather from wttr.in | Atmosphere |
+| [Webcam](plugins/webcam/README.md) | Local Windows webcam preview, movement detection and relative lighting measurements | Camera monitor |
 | [Webpage](plugins/webpage/README.md) | Embedded webpages, parsed text and page change events | Ordinary Cards |
 | [YouTube](plugins/youtube/README.md) | Public channel uploads and new-video events | Studio |
 

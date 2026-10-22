@@ -261,7 +261,7 @@ test('new Cards hydrate real declared scalar/table slots and retain frames on di
       createElement:tag=>new FakeElement(tag)};
     frame.onload();
     assert.equal(frame.contentDocument.head.children.length,1);
-    assert.equal(frame.contentDocument.head.firstChild.href,'/assets/vista-legacy-ready.css?v=19');
+    assert.equal(frame.contentDocument.head.firstChild.href,'/assets/vista-legacy-ready.css?v=20');
     assert.equal(frame.contentDocument.documentElement.getAttribute('data-legacy-template'),entries[i].card.templateId);
     assert.ok(tables[0].textContent.includes('<b>literal</b>'),entries[i].pluginId+' should hydrate its declared text cells');
     if(entries[i].data.readyMade.template.slots.some(slot=>slot.type==='number')) {

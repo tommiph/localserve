@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="stylesheet" href="card.css">
+  </head>
+  <body>
+    <!-- The viewer host hydrates this inert design; no camera code runs here. -->
+    <main data-ready-made>
+      <header>
+        <img class="motif" src="motif.svg" alt="">
+        <div>
+          <h1 data-card-text="source-name">Webcam</h1>
+          <p data-card-text="source-status">Unavailable</p>
+        </div>
+        <span class="stamp" data-card-text="time">No data</span>
+      </header>
+      <section class="picture">
+        <div class="no-frame">No live frame</div>
+        <img data-card-preview alt="Live webcam" style="visibility:hidden">
+        <span class="capture" data-card-text="status">Unavailable</span>
+      </section>
+      <footer>
+        <div>
+          <span>Movement</span>
+          <strong data-card-text="motion">No data</strong>
+          <small><span data-card-text="changed">—</span>% changed</small>
+        </div>
+        <div>
+          <span>Brightness</span>
+          <strong><span data-card-text="brightness">—</span>%</strong>
+        </div>
+        <div>
+          <span>Lighting</span>
+          <strong data-card-text="lighting">No data</strong>
+          <small>Relative image level</small>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

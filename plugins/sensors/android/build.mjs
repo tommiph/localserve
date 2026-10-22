@@ -118,6 +118,7 @@ await run(path.join(jdk,'bin/javac.exe'),['-encoding','UTF-8','--release','8','-
 const addressCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes'),androidJar].join(path.delimiter),'local.localserve.sensors.ServerAddressTest']);
 const regionCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes')].join(path.delimiter),'local.localserve.sensors.RegionRulesTest']);
 const dependencyCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes'),androidJar,...libraries].join(path.delimiter),'local.localserve.sensors.DependenciesTest']);
+const homeCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes')].join(path.delimiter),'local.localserve.sensors.HomePolicyTest']);
 const diagnostics=await run(java,['-cp',path.join(sdk,'lib/d8.jar'),'com.android.tools.r8.D8','--min-api','26','--lib',androidJar,'--output',path.join(build,'dex'),...await files(path.join(build,'classes'),'.class'),...libraries]);
 await fs.writeFile(path.join(build,'dex-diagnostics.txt'),diagnostics);
 if(/was not found|Missing class/i.test(diagnostics))throw new Error('DEX reports a missing runtime class; inspect the build diagnostics.');
@@ -136,7 +137,7 @@ const bytes=await fs.readFile(signed);
 // Publish only the complete verified APK; an in-progress build stays private.
 await fs.rename(signed,apk);
 const report={file:'plugins/sensors/android/dist/localserve-sensors.apk',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),
-  minSdk:26,targetSdk:35,version:'1.2.0',vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
+  minSdk:26,targetSdk:35,version:(await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8')).match(/android:versionName="([^"]+)"/)[1],vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),homeCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
 await fs.writeFile(path.join(output,'verification.json'),JSON.stringify(report,null,2)+'\n');
 await fs.writeFile(path.join(output,'localserve-sensors.apk.sha256'),report.sha256+'  localserve-sensors.apk\n');
 console.log(JSON.stringify(report,null,2));

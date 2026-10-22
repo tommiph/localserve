@@ -140,6 +140,90 @@
       "from": "1.2.0",
       "version": "1.3.0",
       "summary": "Add a separate native Localserve Go app with a neon cockpit, library browsing, favorites and reviewed package management."
+    },
+    {
+      "date": "2026-10-21T13:03:19.121Z",
+      "component": "server",
+      "from": "0.9.0",
+      "version": "0.10.0",
+      "summary": "Add a Favorites phone remote and scoped manual Task shortcuts"
+    },
+    {
+      "date": "2026-10-21T13:03:19.224Z",
+      "component": "sensors",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Unify the Android remote and optional phone reporting in one app"
+    },
+    {
+      "date": "2026-10-21T13:45:37.714Z",
+      "component": "server",
+      "from": "0.10.0",
+      "version": "0.10.1",
+      "summary": "Align phone spacing and keep navigation clear of scrolling content"
+    },
+    {
+      "date": "2026-10-21T13:45:37.818Z",
+      "component": "sensors",
+      "from": "1.3.0",
+      "version": "1.3.1",
+      "summary": "Polish Android toolbar spacing and system bar insets"
+    },
+    {
+      "date": "2026-10-21T16:52:16.768Z",
+      "component": "server",
+      "from": "0.10.1",
+      "version": "0.10.2",
+      "summary": "Release remote controls promptly after command completion"
+    },
+    {
+      "date": "2026-10-21T16:52:16.870Z",
+      "component": "samsung-tv",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Add configurable remote command spacing in milliseconds"
+    },
+    {
+      "date": "2026-10-21T17:24:34.085Z",
+      "component": "server",
+      "from": "0.10.2",
+      "version": "0.11.0",
+      "summary": "Phone Home supports live ready-made information Card favorites from enabled plugin sources."
+    },
+    {
+      "date": "2026-10-21T17:24:34.194Z",
+      "component": "sensors",
+      "from": "1.3.1",
+      "version": "1.4.0",
+      "summary": "Android Home supports read-only installed Card frames and scoped Card data routes."
+    },
+    {
+      "date": "2026-10-22T08:41:36.244Z",
+      "component": "webcam",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Add Windows webcam capture, movement and lighting Events, and Camera monitor Card"
+    },
+    {
+      "date": "2026-10-22T08:41:36.342Z",
+      "component": "server",
+      "from": "0.11.0",
+      "version": "0.12.0",
+      "summary": "Support bounded live JPEG previews in ready-made Cards and Tizen viewers"
+    },
+    {
+      "date": "2026-10-22T09:21:59.736Z",
+      "component": "server",
+      "from": "0.12.0",
+      "version": "0.12.1",
+      "summary": "Keep decoded webcam frames visible during JPEG refresh and collection fades"
+    },
+    {
+      "date": "2026-10-22T09:28:32.362Z",
+      "component": "server",
+      "from": "0.12.1",
+      "version": "0.12.2",
+      "summary": "Detect decoded webcam images from the host without sandboxed load callbacks"
     }
   ]
 }

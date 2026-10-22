@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#141a1d" />
+    <title>Localserve · Home</title>
+    <link rel="icon" href="assets/controls/app-icon.svg" />
+    <link rel="stylesheet" href="assets/material-symbols/material-symbols.css" />
+    <link rel="stylesheet" href="phone-home.css" />
+    <script src="assets/card-preview.js?v=3" defer></script>
+    <script src="card-renderer.js" defer></script>
+    <script src="phone-home.js" defer></script>
+  </head>
+  <body>
+    <div class="home-shell">
+      <header class="home-header">
+        <div class="brand">
+          <img src="assets/logo-dark.svg" alt="" /><span id="server-name">Localserve</span>
+        </div>
+        <span id="connection" class="connection" role="status">Connecting</span>
+      </header>
+      <main id="content" tabindex="-1">
+        <div class="page-title">
+          <div>
+            <p class="eyebrow">YOUR SPACE</p>
+            <h1>Home</h1>
+          </div>
+        </div>
+        <p class="empty">Connecting to your server…</p>
+      </main>
+      <nav class="bottom-nav" aria-label="Phone navigation">
+        <button data-nav="home" aria-current="page">
+          <i class="material-symbol ms-home" aria-hidden="true"></i>Home
+        </button>
+        <button data-nav="remotes">
+          <i class="material-symbol ms-gamepad" aria-hidden="true"></i>Remotes
+        </button>
+        <button data-nav="tasks"><i class="material-symbol ms-play" aria-hidden="true"></i>Tasks</button>
+        <button data-nav="cards"><i class="material-symbol ms-dashboard" aria-hidden="true"></i>Cards</button>
+      </nav>
+    </div>
+    <dialog id="sheet" aria-labelledby="sheet-title"><div id="sheet-content"></div></dialog>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+    <noscript>Enable JavaScript to use Localserve Home.</noscript>
+  </body>
+</html>

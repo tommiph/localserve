@@ -20,9 +20,10 @@ import { GamesStore,requireMazeDisplay } from './server/games.mjs';
 import { SensorIngress } from './server/sensor-ingress.mjs';
 import {phoneDisplay} from './server/phone-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
+import {PhoneHome} from './server/phone-home.mjs';
 import { readCardAsset } from './server/card-templates.mjs';
 import { attachTrayControl } from './server/tray-control.mjs';
-import { validateListen, requestOrigin, isPrivateIPv4 } from './server/network.mjs';
+import { validateListen, requestOrigin, isPrivateIPv4, listenBrowserHttp } from './server/network.mjs';
 import { TvNotices } from './server/tv-notices.mjs';
 import { defaultDoNotDisturb, validateDoNotDisturb, doNotDisturbStatus } from './server/do-not-disturb.mjs';
 import {localDisplayPath, requireLocalDisplay} from './server/local-pages.mjs';
@@ -159,6 +160,7 @@ export async function createLocalserve(root, options = {}) {
     const controls = await new ControlsStore(root, registry, config, activity).load();
     registry.controls = controls;
     engine.vistas = vistas;
+    const phoneHome=await new PhoneHome(root,tasks,engine,controls,config,state,registry).load();
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
     let administratorWrites=0,demoInstalling=false,demoOperation=null;
     const apkLibrary = await new ApkLibrary(root, registry).load();
@@ -188,7 +190,7 @@ export async function createLocalserve(root, options = {}) {
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: {...config.snapshot(),version:serverVersion}, demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { config: {...config.snapshot(),version:serverVersion}, phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -212,6 +214,16 @@ export async function createLocalserve(root, options = {}) {
         // Tokens/capabilities still guard writes; this is not account authentication.
         const browserOrigin = requestOrigin(request, server.address().port);
         const url = new URL(request.url, browserOrigin);
+        const previewFrame = /^\/api\/plugin-preview\/([a-z][a-z0-9-]{0,63})\/frame\.jpg$/.exec(url.pathname);
+        if (previewFrame) {
+          if (!['GET','HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
+          if (url.search && !/^\?v=\d{1,16}$/.test(url.search)) throw new HttpError(400, 'Invalid frame request.');
+          const jpeg = await registry.previewFrame(previewFrame[1]);
+          response.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': jpeg.length,
+            'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' });
+          return response.end(request.method === 'HEAD' ? undefined : jpeg);
+        }
+
         if(url.pathname==='/api/vr-client/enroll'){
           if(request.method!=='POST'||url.search)throw new HttpError(405,'Use the Localserve Go connection screen.');
           const values=await readBody(request);
@@ -247,6 +259,25 @@ export async function createLocalserve(root, options = {}) {
           return json(response,200,await sensorIngress.receive(request));
         }
         if (request.method === 'GET' && url.pathname === '/api/control-view') return json(response, 200, controls.index());
+        if(url.pathname==='/api/phone-home'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the Home page.');
+          return json(response,200,phoneHome.viewer());
+        }
+        const phoneCard=/^\/api\/phone-home\/cards\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})$/.exec(url.pathname);
+        if(phoneCard){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use a current Home Card.');
+          return json(response,200,phoneHome.card(...phoneCard.slice(1)));
+        }
+        const phoneRun=/^\/api\/phone-home\/(run|receipts\/([a-f0-9-]{36}))$/.exec(url.pathname);
+        if(phoneRun){
+          if(url.search)throw new HttpError(400,'Unexpected parameters.');
+          const capability=request.headers['x-localserve-home-token'];
+          if(phoneRun[2]&&request.method==='GET')return json(response,200,phoneHome.status(phoneRun[2],capability));
+          if(phoneRun[1]!=='run'||request.method!=='POST'||request.headers.origin!==browserOrigin)throw new HttpError(403,'Use this Home page’s server address.');
+          const values=await readBody(request);
+          if(closing)throw new HttpError(503,'Server is stopping.');
+          return json(response,202,await phoneHome.run(values,capability));
+        }
         const controlView = /^\/api\/control-view\/([a-z0-9-]+)\/([a-z0-9-]+)(?:\/(run|cancel|scene))?$/.exec(url.pathname);
         if (controlView) {
           const [, pluginId, slug, operation] = controlView;
@@ -302,6 +333,8 @@ export async function createLocalserve(root, options = {}) {
             response.once('close',cancelled);
             try{return json(response,200,await games.openOnTv(values.revision,controller.signal));}
             finally{response.removeListener('close',cancelled);}
+          } else if (url.pathname === '/api/phone-home/settings') {
+            await phoneHome.save(values);
           } else if (url.pathname === '/api/universe') {
             await universe.save(values);
           } else if (url.pathname === '/api/config') {
@@ -428,7 +461,7 @@ export async function createLocalserve(root, options = {}) {
           return response.end(request.method === 'HEAD' ? undefined : asset.content);
         }
         const controlManifest = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)\/app\.webmanifest$/.exec(url.pathname);
-        if (url.pathname === '/downloads/localserve-sensors.apk') {
+        if (['/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
           if (!['GET','HEAD'].includes(request.method) || url.search) throw new HttpError(405,'Use the Android download link.');
           if (registry.get('sensors').plugin.runtime?.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors app unavailable.');
           const realRoot=await fs.realpath(root);
@@ -441,7 +474,7 @@ export async function createLocalserve(root, options = {}) {
           catch {throw new HttpError(404,'Sensors app unavailable. Build the Android APK first.');}
           if (!realPlugin.startsWith(realRoot+path.sep) || !realDist.startsWith(realPlugin+path.sep) || !apk.startsWith(realDist+path.sep)
             || !stat.isFile() || stat.size>16*1024*1024) throw new HttpError(404,'Sensors app unavailable.');
-          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':stat.size,'Content-Disposition':'attachment; filename="localserve-sensors.apk"'});
+          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':stat.size,'Content-Disposition':'attachment; filename="localserve.apk"'});
           return response.end(request.method==='HEAD'?undefined:await fs.readFile(apk));
         }
         if (controlManifest) {
@@ -459,13 +492,14 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = url.pathname === '/vr-library' ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = url.pathname === '/home' ? 'phone-home.html' : url.pathname === '/vr-library' ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
+        for(const name of ['phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('vr-library-ui.js');
         webFiles.add('phone-information.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
@@ -478,6 +512,10 @@ export async function createLocalserve(root, options = {}) {
         if (!realFile.startsWith(realRoot + path.sep)) throw new HttpError(404, 'File not found.');
         if(builderPlugin&&!realFile.startsWith((await fs.realpath(path.join(root,'plugins',builderPlugin.folder)))+path.sep))throw new HttpError(404,'Task builder unavailable.');
         let content = await fs.readFile(realFile);
+        if(relative==='phone-home.html'){
+          response.setHeader('Referrer-Policy','no-referrer');
+          response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
+        }
         if(relative==='maze.html'){
           games.viewer();
           response.setHeader('Referrer-Policy','no-referrer');
@@ -535,7 +573,7 @@ export async function createLocalserve(root, options = {}) {
     // LAN mode binds one explicit private interface plus localhost; there is
     // no wildcard/public-interface listener. Both share the same guarded handler.
     const browserHost = isPrivateIPv4(listen.host) ? '127.0.0.1' : listen.host;
-    await new Promise((resolve, reject) => { server.once('error', reject); server.listen(listen.port, browserHost, resolve); });
+    await listenBrowserHttp(server,listen.port,browserHost);
     if (isPrivateIPv4(listen.host)) {
       lanServer = http.createServer(server.listeners('request')[0]);
       await new Promise((resolve, reject) => { lanServer.once('error', reject); lanServer.listen(server.address().port, listen.host, resolve); });
@@ -557,7 +595,7 @@ export async function createLocalserve(root, options = {}) {
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, apkLibrary, snapshot, cleanupActivity,
+    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, phoneHome, apkLibrary, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
@@ -566,6 +604,7 @@ export async function createLocalserve(root, options = {}) {
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
+          await phoneHome.close();
           await apkLibrary.close();
           registry.beginClose();
           await sensorIngress.queue;

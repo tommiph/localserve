@@ -83,6 +83,10 @@ export function validateDeclaration(value) {
     if (typeof entry !== 'string' || !/^[a-zA-Z0-9_/-]+\.mjs$/.test(entry)
       || entry.startsWith('/') || entry.split('/').includes('..') || !entry.startsWith('server/')) throw new Error('Runtime entry must be a relative .mjs file inside server/.');
     runtime = { entry };
+    if (value.runtime.preview !== undefined) {
+      if (value.runtime.preview !== 'jpeg-v1') throw new Error('Unknown preview protocol.');
+      runtime.preview = 'jpeg-v1';
+    }
     if (value.runtime.ingest !== undefined) {
       if (value.id !== 'sensors' || value.runtime.ingest !== 'sensors-v1') throw new Error('Unknown native report protocol.');
       runtime.ingest = 'sensors-v1';
@@ -474,7 +478,42 @@ export class PluginRegistry {
   }
 
   cancelOperations(record) {
+    record.previewGeneration = (record.previewGeneration || 0) + 1;
+    record.previewPending = null;
     for (const controller of record.operations) controller.abort(new Error('Plugin disabled, reconfigured, removed, or stopped'));
+  }
+
+  async suspendPreviews() {
+    await Promise.allSettled([...this.records.values()].filter(record => record.plugin.runtime?.preview === 'jpeg-v1')
+      .map(record => { record.previewPending = null; record.previewGeneration = (record.previewGeneration || 0) + 1;
+        return record.runtime?.request('suspend-preview', {}, {}, 1500); }));
+  }
+
+  async previewFrame(id) {
+    const record = this.get(id);
+    if (record.plugin.runtime?.preview !== 'jpeg-v1') throw new HttpError(404, 'Preview unavailable.');
+    this.assertReady(record);
+    if (this.engine?.gate.paused || this.closing) throw new HttpError(503, 'Preview paused.');
+    // Concurrent viewers share one bounded RAM-only IPC read; reads never start capture.
+    if (record.previewPending) return record.previewPending;
+    const revision = record.config.snapshot().revision, runtime = record.runtime, generation = record.previewGeneration || 0;
+    const pending = (async () => {
+      const frame = await runtime.request('preview', {}, {}, 2000);
+      this.assertReady(record);
+      if (this.engine?.gate.paused || runtime !== record.runtime || revision !== record.config.snapshot().revision
+          || generation !== (record.previewGeneration || 0))
+        throw new HttpError(503, 'Preview changed.');
+      if (!frame || !Number.isFinite(frame.at) || Date.now() - frame.at > 2500 || frame.at > Date.now() + 1000
+          || typeof frame.jpeg !== 'string' || frame.jpeg.length > 700000 || !/^[A-Za-z0-9+/]*={0,2}$/.test(frame.jpeg))
+        throw new HttpError(503, 'No current camera frame.');
+      const jpeg = Buffer.from(frame.jpeg, 'base64');
+      if (jpeg.length < 4 || jpeg.length > 512 * 1024 || jpeg[0] !== 255 || jpeg[1] !== 216
+          || jpeg.at(-2) !== 255 || jpeg.at(-1) !== 217) throw new HttpError(503, 'Invalid camera frame.');
+      return jpeg;
+    })();
+    record.previewPending = pending;
+    try { return await pending; }
+    finally { if (record.previewPending === pending) record.previewPending = null; }
   }
 
   get(id) {
@@ -783,7 +822,8 @@ export class PluginRegistry {
           ? sourceConfig.settings.pages.filter(page => page.enabled) : [];
         const webpageTvLaunch = enabledPages.length ? {used: false, revision: sourceConfig.revision,
           pageId: validated['page-id'] || (enabledPages.length === 1 ? enabledPages[0].id : '')} : null;
-        const requestContext = {...context, signal: controller.signal, webpageTvLaunch, actionId};
+        const requestContext = {...context, signal: controller.signal, webpageTvLaunch, actionId,
+          ...(record.plugin.runtime.preview ? {previewGeneration: record.previewGeneration || 0} : {})};
         try {
           const result = await record.runtime.request('execute', { actionId, parameters: validated, noticeUrl }, requestContext, 0);
           if (pollAction && pollGeneration === record.pollGeneration) record.pollObservation = {
@@ -836,6 +876,8 @@ export class PluginRegistry {
     if (context.sensorIngress && this.engine.gate.paused) throw new HttpError(409,'Server is paused; send a fresh sensor report after resuming.');
     if (!context.sensorIngress) await this.engine.gate.wait(context.signal);
     this.assertReady(record);
+    if (context.previewGeneration !== undefined && context.previewGeneration !== (record.previewGeneration || 0))
+      throw new HttpError(409, 'Capture session changed.');
     if (operation === 'wait' || operation === 'open-webpage-on-tv') {
       this.assertTvQuietHours(record.plugin.id, context.actionId, context);
     }
