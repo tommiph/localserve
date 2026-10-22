@@ -1,0 +1,304 @@
+/* The Vista host must assign a definite width/height (and zero min-width/
+   min-height on grid/flex slots). Only the information body scrolls.
+   Designer preview dimensions belong to wrappers, never to this renderer. */
+.display-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  container-type: inline-size;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+.display-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-shrink: 0;
+}
+.display-card-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.display-card-heading h3 {
+  margin: 0;
+  font-size: calc(16px * var(--font-scale));
+  overflow-wrap: anywhere;
+}
+.display-card-heading i { color: var(--accent); }
+.display-card-status {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: calc(10px * var(--font-scale));
+  flex-shrink: 0;
+}
+.display-card-fields {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  align-content: start;
+  gap: 18px;
+}
+.display-card-grid .display-card-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.display-card-webpage .display-card-fields { display: flex; overflow: hidden; gap: 0; }
+.display-card-webpage-frame { width: 100%; height: 100%; min-width: 0; min-height: 0; flex: 1; border: 0; background: white; }
+.display-card-readymade .display-card-fields { display: flex; overflow: hidden; padding: 0; gap: 0; }
+.display-card-ready-frame { width: 100%; height: 100%; min-width: 0; min-height: 0; flex: 1; border: 0; }
+.display-card-readymade { border-radius: 20px; overflow: hidden; padding: 0; }
+.display-card-crop .display-card-webpage-frame { pointer-events: none; }
+/* clip prevents wheel, keyboard, and programmatic scrolling, not just bars. */
+.display-card-crop .display-card-fields { overflow: clip; }
+.display-card-field { min-width: 0; }
+.display-card-label {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  color: var(--muted);
+  font-size: calc(11px * var(--font-scale));
+  margin-bottom: 7px;
+  overflow-wrap: anywhere;
+}
+.display-card-value {
+  font-size: calc(20px * var(--font-scale));
+  line-height: 1.4;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.display-card-value-text {
+  white-space: pre-line;
+}
+.display-card-value a {
+  color: var(--accent);
+}
+.display-card-highlight .display-card-field:first-child .display-card-value:not(.display-card-empty) {
+  font-size: calc(34px * var(--font-scale));
+  color: var(--accent);
+}
+.display-card-empty {
+  color: var(--muted);
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 400;
+}
+.display-card-unit {
+  margin-left: 5px;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+}
+.display-card-source {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  margin-top: 22px;
+  color: var(--muted);
+  font-size: calc(11px * var(--font-scale));
+  flex-shrink: 0;
+}
+.display-card-field-log { grid-column: 1 / -1; }
+.display-card-attribution {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: calc(10px * var(--font-scale));
+  line-height: 1.4;
+}
+.display-card-attribution a { color: inherit; }
+.display-card-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-weight: 400;
+  font-size: calc(12px * var(--font-scale));
+}
+.display-card-log li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.display-card-log li:last-child { border: 0; }
+.display-card-log time {
+  color: var(--muted);
+  font-size: calc(10px * var(--font-scale));
+}
+/* Bounded native tables display declared plugin rows and columns. Fixed
+   tracks keep long values inside the assigned card instead of widening it. */
+.display-card-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: calc(var(--list-font-size, 14px) * var(--font-scale));
+  line-height: 1.4;
+}
+.display-card-table th, .display-card-table td {
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.display-card-table th { color: var(--muted); font-weight: 600; }
+.display-card-table .display-card-date-cell { text-align: right; }
+.display-card-table th:first-child, .display-card-table td:first-child { padding-left: 0; }
+.display-card-table th:last-child, .display-card-table td:last-child { padding-right: 0; }
+.display-card-cell { white-space: pre-line; }
+.display-card-table-nowrap .display-card-cell, .display-card-table-nowrap th {
+  white-space: nowrap;
+  overflow: clip;
+}
+/* Auto table layout measures date text. The 1% preference shrinks that column
+   to its unwrapped content minimum, including padding, rather than fixing a
+   percentage of the card. Text cells fill the space left by those dates. */
+.display-card-table-fit-dates { table-layout: auto; }
+.display-card-table-fit-dates .display-card-date-cell { width: 1%; white-space: nowrap; }
+.display-card-table-fit-dates .display-card-date-cell .display-card-cell { white-space: nowrap; }
+/* Keep long titles out of intrinsic track sizing so they still wrap/clip inside
+   the assigned cell instead of widening the table. The resolved cell fills it. */
+.display-card-table-fit-dates td:not(.display-card-date-cell) .display-card-cell {
+  max-width: 0;
+  min-width: 100%;
+}
+.card-list-columns { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 20px; }
+.card-list-columns label { display: flex; align-items: center; gap: 7px; min-height:32px; }
+#card-list-controls .card-options-row { grid-template-columns: minmax(0, 1fr); }
+.card-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 20px;
+}
+.card-gallery-item { width: min(100%, 460px); }
+.card-gallery-item.card-preview-small { width: min(100%, 320px); }
+.card-gallery-item.card-preview-large { width: min(100%, 680px); }
+.card-gallery-frame { height: 300px; }
+.card-gallery-item:has(.display-card-readymade) .card-gallery-frame { height: 420px; }
+/* Gallery sizes never constrain the modal's Live preview pane. */
+#card-preview {
+  width: 100%;
+  height: 340px;
+}
+.card-gallery-controls {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 2px;
+}
+.card-manager-help { color: var(--muted); margin: 0; }
+.card-editor {
+  width: min(1180px, calc(100vw - 48px));
+  max-width: none;
+}
+.card-design-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(300px, 1.35fr);
+  gap: 28px;
+  align-items: start;
+}
+.card-design-properties { min-width: 0; }
+.card-options-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 4px 0 22px;
+}
+.card-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.card-option label {
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 550;
+}
+.card-design-preview {
+  position: sticky;
+  top: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--canvas);
+  min-width: 0;
+}
+.card-preview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.card-preview-heading h3 {
+  margin: 0;
+  font-size: calc(13px * var(--font-scale));
+}
+.card-preview-heading > span {
+  color: var(--muted);
+  font-size: calc(10px * var(--font-scale));
+}
+.card-information-picker {
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+}
+.card-fields-editor {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.card-field-editor {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-muted);
+  margin-bottom: 16px;
+}
+.card-field-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.card-field-toolbar strong {
+  display: flex;
+  gap: 8px;
+  font-size: calc(12px * var(--font-scale));
+}
+@media (max-width: 850px) {
+  .card-design-grid { grid-template-columns: minmax(0, 1fr); }
+  .card-design-preview { position: static; order: -1; }
+}
+@media (max-width: 540px) {
+  .card-editor { width: calc(100vw - 20px); }
+  .card-design-preview { padding: 12px; }
+  .display-card { padding: 16px; }
+}
+/* A narrow Vista column needs a single field column even on a wide screen. */
+@container (max-width: 360px) {
+  .display-card-grid .display-card-fields { grid-template-columns: minmax(0, 1fr); }
+}
+

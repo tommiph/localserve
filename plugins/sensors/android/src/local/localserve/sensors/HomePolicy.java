@@ -9,7 +9,7 @@ import java.util.Set;
  * arbitrary page, file access or external navigation belongs in this surface. */
 public final class HomePolicy {
     private static final Set<String> FILES = new HashSet<>(Arrays.asList(
-        "/phone-home.js", "/phone-home.css", "/card-renderer.js", "/styles.css", "/browser-compat.js",
+        "/phone-home.js", "/phone-home.css", "/card-renderer.js", "/assets/card-preview.js", "/styles.css", "/browser-compat.js",
         "/controls-renderer.js", "/lighting-controls.js", "/television-controls.js", "/controls-viewer.js", "/control-app.js",
         "/assets/logo.svg", "/assets/logo-dark.svg", "/assets/material-symbols/material-symbols.css",
         "/assets/material-symbols/material-symbols-outlined.ttf", "/assets/controls/app-icon.svg",
@@ -26,6 +26,8 @@ public final class HomePolicy {
             if (page) return uri.getQuery() == null;
             if (navigation) return false;
             if (FILES.contains(path)) return uri.getQuery() == null || uri.getQuery().matches("v=[0-9]+");
+            if (path.matches("/api/plugin-preview/[a-z][a-z0-9-]{0,63}/frame\\.jpg"))
+                return uri.getQuery() == null || uri.getQuery().matches("v=[0-9]{1,20}");
             if (uri.getQuery() != null) return false;
             return path.equals("/api/phone-home") || path.equals("/api/phone-home/run")
                 || path.matches("/api/phone-home/cards/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}")

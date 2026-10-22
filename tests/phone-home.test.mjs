@@ -136,6 +136,19 @@ test('remote summaries retain reported zero/off and never infer device state fro
   assert.equal(remoteSummary({ page: { items: [{ remoteRole: 'power', hasReading: false }] } }), null);
 });
 
+test('optional shortcut labels preserve Task identity and full names for run review', async t => {
+  const f=await fixture(t),task=await f.add('Full original Task name');
+  const original=JSON.stringify(f.app.tasks.snapshot());
+  const result=await f.post('/api/phone-home/settings',{revision:f.app.phoneHome.admin().revision,tasks:[{taskId:task.id,icon:'play',enabled:true,label:'Short name'}]});
+  assert.equal(result.status,200);
+  const entry=f.viewer().tasks[0];
+  assert.equal(entry.id,task.id);assert.equal(entry.name,'Short name');assert.equal(entry.taskName,task.name);
+  assert.equal(JSON.stringify(f.app.tasks.snapshot()),original);
+  assert.equal(f.app.state.snapshot().runs.length,0);
+  const bad=await f.post('/api/phone-home/settings',{revision:f.app.phoneHome.admin().revision,tasks:[{taskId:task.id,icon:'play',enabled:true,label:'x'.repeat(41)}]});
+  assert.equal(bad.status,400);
+});
+
 test('Home defaults to no published Tasks and exposes no administrator state or values', async (t) => {
   const f = await fixture(t);
   await f.add('Private Task');

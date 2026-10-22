@@ -87,6 +87,10 @@ export function validateDeclaration(value) {
       if (value.runtime.preview !== 'jpeg-v1') throw new Error('Unknown preview protocol.');
       runtime.preview = 'jpeg-v1';
     }
+    if (value.runtime.inspection !== undefined) {
+      if(value.runtime.inspection !== 'camera-list-v1' || !settings.some(field=>field.id==='device-index' && field.type==='number'))throw new Error('Camera inspection requires the camera-list-v1 contract and device-index setting.');
+      runtime.inspection='camera-list-v1';
+    }
     if (value.runtime.ingest !== undefined) {
       if (value.id !== 'sensors' || value.runtime.ingest !== 'sensors-v1') throw new Error('Unknown native report protocol.');
       runtime.ingest = 'sensors-v1';
@@ -719,6 +723,34 @@ export class PluginRegistry {
     if (this.closing || !record.config.snapshot().enabled || !record.configured || record.health !== 'ready') throw new HttpError(409, 'Plugin is unavailable. Check Enabled, configuration, and runtime status.');
   }
 
+  inspectCamera(id, revision, signal) {
+    const record=this.get(id);
+    const check=()=>{
+      signal.throwIfAborted();
+      if(this.closing || !record.runtime || !['idle','ready'].includes(record.health))throw new HttpError(409,'Plugin setup reader is unavailable.');
+      if(record.plugin.runtime?.inspection!=='camera-list-v1')throw new HttpError(404,'Camera inspection unavailable.');
+      if(!Number.isSafeInteger(revision) || record.config.snapshot().revision!==revision)throw new HttpError(409,'Plugin settings changed. Refresh before listing cameras.');
+    };
+    check();
+    if(record.inspectionPending)throw new HttpError(409,'A camera list is already in progress.');
+    const controller=new AbortController(), abort=()=>controller.abort(signal.reason);
+    signal.addEventListener('abort',abort,{once:true});
+    record.inspectionPending=true;record.pending++;record.operations.add(controller);
+    const operation=record.actionQueue.then(async()=>{
+      controller.signal.throwIfAborted();check();
+      // Setup reads share cancellation/serialization, but receive no start call,
+      // settings mutation, Event emitter, logging or state-write context.
+      const result=await record.runtime.request('inspect',{operation:'cameras'},{signal:controller.signal,readOnlyInspection:true},5000);
+      controller.signal.throwIfAborted();check();
+      const devices=result?.devices;
+      if(!Array.isArray(devices) || devices.length>32 || new Set(devices.map(item=>item?.index)).size!==devices.length
+        || devices.some(item=>!item || !Number.isInteger(item.index) || item.index<0 || item.index>31 || typeof item.name!=='string' || !item.name.trim() || item.name.length>128))throw new HttpError(502,'Camera list was invalid.');
+      return {revision,devices:devices.map(({index,name})=>({index,name}))};
+    });
+    record.actionQueue=operation.catch(()=>{});
+    return operation.finally(()=>{record.inspectionPending=false;record.pending--;record.operations.delete(controller);signal.removeEventListener('abort',abort);});
+  }
+
   ingestSensors(packet, receivedAt, signal, revision) {
     const record=this.get('sensors');this.assertReady(record);
     if (record.plugin.runtime.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors receiver unavailable.');
@@ -871,6 +903,7 @@ export class PluginRegistry {
   }
 
   async hostCall(record, operation, values, context) {
+    if(context.readOnlyInspection)throw new Error('Setup inspection cannot use plugin host services.');
     context.signal?.throwIfAborted();
     this.assertReady(record);
     if (context.sensorIngress && this.engine.gate.paused) throw new HttpError(409,'Server is paused; send a fresh sensor report after resuming.');

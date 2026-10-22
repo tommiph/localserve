@@ -1,0 +1,252 @@
+/* Localserve design tokens. Both themes share geometry and component behavior. */
+:root {
+  color-scheme: light;
+  --canvas: #f5f6f8;
+  --surface: #ffffff;
+  --sidebar: #fafbfc;
+  --surface-muted: #f6f8fa;
+  --surface-hover: #f0f3f5;
+  --text: #20272e;
+  --muted: #68727d;
+  --faint: #89929c;
+  --border: #e3e7eb;
+  --accent: #087969;
+  --accent-soft: #e5f3ee;
+  --accent-ink: #075e50;
+  --warning: #9a620a;
+  --warning-soft: #fff4dd;
+  --danger: #b74040;
+  --danger-soft: #faeded;
+  --info: #5276a5;
+  --shadow: 0 18px 60px #17283226;
+  --sidebar-width: 232px;
+  --font-scale: 1;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --canvas: #15191d;
+  --surface: #1d2228;
+  --sidebar: #191e23;
+  --surface-muted: #232930;
+  --surface-hover: #293139;
+  --text: #e7ebef;
+  --muted: #a0aab5;
+  --faint: #85919d;
+  --border: #303840;
+  --accent: #66c9ad;
+  --accent-soft: #213a34;
+  --accent-ink: #8cdec6;
+  --warning: #efbd68;
+  --warning-soft: #3a3021;
+  --danger: #ef9999;
+  --danger-soft: #40292c;
+  --info: #98b9e4;
+  --shadow: 0 18px 60px #0008;
+}
+
+/* Base typography and keyboard affordances. */
+#connection-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Simulator output is a log; the editors describe actions without executing them. */
+.simulator-log {
+  margin-top: 22px;
+}
+.simulation-run {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+}
+.simulation-run h3 {
+  margin: 0 0 12px;
+  font-size: calc(14px * var(--font-scale));
+}
+.simulation-run time {
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 400;
+  margin-left: 12px;
+}
+.simulation-run ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.simulation-run li {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 12px;
+  padding: 5px 0;
+  overflow-wrap: anywhere;
+}
+.log-level {
+  font-size: calc(11px * var(--font-scale));
+  font-weight: 700;
+  color: var(--muted);
+}
+.log-level.matched, .log-level.would { color: var(--accent); }
+.log-level.warning, .log-level.skipped { color: var(--warning); }
+.simulation-step {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 14px;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.simulation-step label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.simulation-step input, .simulation-step select { width: 100%; }
+.step-actions { align-self: end; display: flex; gap: 5px; }
+.weekday-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0 0 18px;
+}
+/* Give the group title room at the border and separate its decorative glyph. */
+.weekday-fields legend { padding: 0 6px; margin-bottom: 8px; }
+.weekday-fields legend i { margin-right: 7px; }
+.weekday-fields label { display: flex; gap: 5px; align-items: center; min-height:32px; }
+
+.time-combobox { position: relative; }
+.field .time-combobox input[data-time-input] { padding-right: 40px; }
+.time-menu-button {
+  position: absolute; right: 1px; top: 1px; bottom: 1px;
+  width: 36px; border: 0; background: transparent; color: var(--muted);
+}
+.time-options {
+  position: fixed; inset: auto; margin: 0; padding: 4px;
+  overflow-y: auto; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface); color: var(--text); box-shadow: var(--shadow);
+}
+.time-options button {
+  display: block; width: 100%; padding: 8px 10px; border: 0; border-radius: 3px;
+  background: transparent; color: var(--text); text-align: left; font: inherit;
+  font-size: calc(12px * var(--font-scale));
+}
+.time-options button:hover, .time-options button.active { background: var(--accent-soft); }
+.time-options button[aria-selected="true"] { color: var(--accent-ink); font-weight: 600; }
+
+/* Readable live server clock without returning appearance controls to the header. */
+.server-clock {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-size: calc(14px * var(--font-scale));
+  line-height: 1.5;
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+button i, a i {
+  pointer-events: none;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+h1 {
+  font-size: calc(28px * var(--font-scale));
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -.7px;
+}
+
+h2 {
+  font-size: calc(15px * var(--font-scale));
+  font-weight: 650;
+}
+
+h3 {
+  font-size: calc(14px * var(--font-scale));
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: calc(12px * var(--font-scale));
+}
+
+.mono {
+  font-family: Consolas, "Courier New", monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  left: 16px;
+  top: -60px;
+  background: var(--surface);
+  padding: 12px;
+  border: 1px solid var(--accent);
+}
+
+.skip-link:focus {
+  top: 12px;
+}
+
+[hidden] {
+  display: none !important;
+}
+

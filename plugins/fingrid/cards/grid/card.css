@@ -41,3 +41,9 @@ h1 { font-size:29px; font-weight:550; letter-spacing:-.04em; }
 :root[data-connected="false"] * { animation-play-state:paused !important; }
 @media(prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; } }
 
+
+/* Compact regions keep numeric instruments on separate rows. */
+@media (max-width:540px) {
+  .instruments,.metrics,.values { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 0; }
+  .instrument { min-width:0; }
+}

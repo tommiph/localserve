@@ -139,3 +139,19 @@
   .lighting-dialog-header h2 { font-size: calc(16px * var(--font-scale)); }
   .lighting-dialog-body { padding: 22px; }
 }
+
+/* Keep source state visible without a tall decorative header on phones. */
+@media(max-width:600px) {
+  .lighting-viewer { padding:12px 14px; }
+  .lighting-viewer .controls-viewer-header { margin-bottom:12px; }
+  .lighting-hero { min-height:104px; padding:16px 18px; gap:12px; }
+  .lighting-hero h2 { font-size:calc(21px * var(--font-scale)); margin-bottom:8px; }
+  .lighting-eyebrow { margin-bottom:6px; }
+  .lighting-hero-art { flex-basis:54px; width:54px; height:70px; }
+  .lighting-hero-art > i { font-size:34px; }
+  .lighting-reception { margin-top:6px; }
+  .lighting-toolbar { margin:12px 0 16px; }
+  .lighting-list-heading { margin-bottom:12px; }
+  .lighting-search { margin-bottom:14px; }
+  .lighting-card { padding:16px; }
+}

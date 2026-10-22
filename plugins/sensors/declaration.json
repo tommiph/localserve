@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "sensors",
   "name": "Sensors",
-  "version": "1.4.0",
+  "version": "1.4.3",
   "description": "Selected sensor and phone reports from trusted Android devices on the local network",
   "icon": "sensors",
   "defaultCardLayout": "table",

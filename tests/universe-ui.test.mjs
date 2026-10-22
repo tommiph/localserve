@@ -15,7 +15,7 @@ test('Universe library uses existing ready-made Cards, escapes labels and keeps 
   const context = { state,document:{addEventListener:(name,fn)=>{handlers[name]=fn;}},
     dialog:{open:true,querySelector:selector=>nodes[selector] || null},structuredClone,
     escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),icon:()=>'',pageHeading:()=>'' };
-  const ui=vm.runInNewContext(await fs.readFile(new URL('../web/universe-ui.js',import.meta.url),'utf8')+'\nUniverseUI;',context);
+  const ui=vm.runInNewContext(await fs.readFile(new URL('../web/admin-ux.js',import.meta.url),'utf8')+'\n'+await fs.readFile(new URL('../web/universe-ui.js',import.meta.url),'utf8')+'\nUniverseUI;',context);
   ui.draft=structuredClone(universeDefaults);
   assert.equal(ui.library().length,2);ui.refresh();
   const overview=ui.render();

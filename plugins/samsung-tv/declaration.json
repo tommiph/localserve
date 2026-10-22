@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -20,7 +20,8 @@
       "type": "string",
       "default": "",
       "maxLength": 15,
-      "help": "This TV’s private IPv4 address. No network discovery or fallback target."
+      "help": "This TV’s private IPv4 address. No network discovery or fallback target.",
+      "section": "Connection"
     },
     {
       "id": "port",
@@ -34,7 +35,9 @@
       "enumLabels": [
         "8002 · TLS",
         "8001 · plain local WebSocket"
-      ]
+      ],
+      "section": "Connection",
+      "advanced": true
     },
     {
       "id": "fingerprint",
@@ -42,7 +45,9 @@
       "type": "string",
       "default": "",
       "maxLength": 95,
-      "help": "Port 8002 remote actions verify this exact self-signed certificate before sending the token. Changing it never happens automatically."
+      "help": "Port 8002 remote actions verify this exact self-signed certificate before sending the token. Changing it never happens automatically.",
+      "section": "Connection",
+      "advanced": true
     },
     {
       "id": "remote-name",
@@ -50,7 +55,9 @@
       "type": "string",
       "default": "Living room remote",
       "maxLength": 100,
-      "help": "Name presented to the TV by this Localserve installation."
+      "help": "Name presented to the TV by this Localserve installation.",
+      "section": "Connection",
+      "advanced": true
     },
     {
       "id": "command-interval-ms",
@@ -59,7 +66,8 @@
       "default": 100,
       "min": 0,
       "max": 5000,
-      "help": "Minimum spacing between remote commands, in milliseconds. Use 0 for no extra spacing. Connection and delivery time still apply. Applies to remote pages and Task actions; status reads are unaffected."
+      "help": "Minimum spacing between remote commands, in milliseconds. Use 0 for no extra spacing. Connection and delivery time still apply. Applies to remote pages and Task actions; status reads are unaffected.",
+      "section": "Remote"
     },
     {
       "id": "token",
@@ -68,7 +76,9 @@
       "format": "secret",
       "default": "",
       "maxLength": 512,
-      "help": "Optional replacement: an already authorized TV token. After a successful remote read/action, clear this setting; the Windows-protected copy remains. Nonempty settings are private plaintext. Status polls do not pair."
+      "help": "Optional replacement: an already authorized TV token. After a successful remote read/action, clear this setting; the Windows-protected copy remains. Nonempty settings are private plaintext. Status polls do not pair.",
+      "section": "Connection",
+      "advanced": true
     },
     {
       "id": "mac",
@@ -76,7 +86,9 @@
       "type": "string",
       "default": "",
       "maxLength": 17,
-      "help": "Used only by the explicit Wake TV action. A wake packet does not confirm power-on."
+      "help": "Used only by the explicit Wake TV action. A wake packet does not confirm power-on.",
+      "section": "Power",
+      "advanced": true
     },
     {
       "id": "poll-minutes",
@@ -94,14 +106,16 @@
         "30 seconds",
         "1 minute",
         "5 minutes"
-      ]
+      ],
+      "section": "Readings"
     },
     {
       "id": "youtube-playback",
       "label": "YouTube playback",
       "type": "boolean",
       "default": false,
-      "help": "Allows Play YouTube video to read this TV’s private screen ID and send it to YouTube for a temporary playback session. No Google account or API key is used. Off by default."
+      "help": "Allows Play YouTube video to read this TV’s private screen ID and send it to YouTube for a temporary playback session. No Google account or API key is used. Off by default.",
+      "section": "YouTube"
     },
     {
       "id": "youtube-port",
@@ -110,7 +124,9 @@
       "default": 8080,
       "min": 1,
       "max": 65535,
-      "help": "Explicit port on this same TV for /ws/app/YouTube. No discovery, fallback port or automatic retry."
+      "help": "Explicit port on this same TV for /ws/app/YouTube. No discovery, fallback port or automatic retry.",
+      "section": "YouTube",
+      "advanced": true
     }
   ],
   "cardFields": [
@@ -779,14 +795,18 @@
           "enum": [
             "DEEP_LINK",
             "NATIVE_LAUNCH"
-          ]
+          ],
+          "section": "Playback",
+          "advanced": true
         },
         {
           "id": "arguments",
           "label": "App arguments",
           "type": "string",
           "default": "",
-          "maxLength": 2048
+          "maxLength": 2048,
+          "section": "Playback",
+          "advanced": true
         }
       ],
       "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
@@ -812,7 +832,9 @@
           "required": true,
           "maxLength": 128,
           "default": "111299001912",
-          "pattern": "^[\\w.-]{1,128}$"
+          "pattern": "^[\\w.-]{1,128}$",
+          "section": "Playback",
+          "advanced": true
         }
       ]
     },

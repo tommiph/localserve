@@ -1,0 +1,297 @@
+/* Reusable panels, buttons, status indicators, and editable row actions. */
+.page-heading {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 25px;
+}
+
+.page-heading p {
+  color: var(--muted);
+  font-size: calc(13px * var(--font-scale));
+  margin-top: 6px;
+}
+
+.plugin-readiness {
+  margin-top: 10px;
+}
+
+.plugin-version {
+  color: var(--muted);
+  font-size: calc(13px * var(--font-scale));
+  font-weight: 500;
+  white-space: nowrap;
+  margin-left: 6px;
+}
+
+.plugin-log {
+  margin-top: 24px;
+}
+
+.heading-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.button {
+  min-height: 36px;
+  padding: 8px 13px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.button:hover {
+  background: var(--surface-hover);
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+:root[data-theme="dark"] .button.primary {
+  color: #102c23;
+}
+
+.button.primary:hover {
+  filter: brightness(.94);
+}
+
+.button.danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--surface);
+}
+
+.button.ghost {
+  background: transparent;
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  border-radius: 5px;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+}
+
+.icon-button:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.icon-button.delete:hover {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+/* Separate the display selection from the Vista list with the standard panel gap. */
+.vista-display-panel { margin-bottom: 20px; }
+
+.panel-header {
+  min-height: 60px;
+  padding: 17px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.panel-count {
+  font-size: calc(11px * var(--font-scale));
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0 6px;
+}
+
+.panel-body {
+  padding: 19px 20px;
+}
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 4px 0;
+  background: none;
+  color: var(--accent);
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 550;
+}
+
+.text-button:hover {
+  text-decoration: underline;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--faint);
+}
+
+.status-dot.running {
+  background: var(--accent);
+}
+
+.status-dot.waiting {
+  background: var(--warning);
+}
+
+.status-dot.paused {
+  background: var(--faint);
+}
+
+.status-dot.info {
+  background: var(--info);
+}
+
+.status-pill {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: calc(11px * var(--font-scale));
+  white-space: nowrap;
+}
+
+.status-pill.running {
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+}
+
+.status-pill.waiting {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+
+.status-pill.info {
+  color: var(--info);
+}
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 20px;
+  width: 34px;
+  padding: 3px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--faint);
+  flex-shrink: 0;
+}
+
+.switch::after {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px #0002;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--accent);
+}
+
+.switch[aria-checked="true"]::after {
+  margin-left: auto;
+}
+
+/* Native checkbox-backed switches retain form/keyboard semantics and checked
+   state while sharing the established on/off appearance of button switches. */
+.plugin-checkbox-field input.plugin-setting-toggle {
+  appearance: none;
+  width: 34px;
+  height: 20px;
+  min-height: 0;
+  padding: 3px;
+  border: 0;
+  cursor: pointer;
+  background: var(--faint);
+  flex: 0 0 34px;
+}
+.plugin-checkbox-field input.plugin-setting-toggle:checked { background: var(--accent); }
+.plugin-setting-toggle:checked::after { margin-left: auto; }
+.plugin-checkbox-field:has(.plugin-setting-toggle) { flex-wrap: wrap; }
+.plugin-checkbox-field:has(.plugin-setting-toggle) .field-help { flex-basis: 100%; }
+
+.service-enabled {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  font-size: calc(12px * var(--font-scale));
+}
+
+.server-timezone-select {
+  width: min(360px, 100%);
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1px;
+}
+
+.row-actions .switch {
+  margin-left: 10px;
+}
+
+.row-actions .switch::after {
+  pointer-events: none;
+}
+
+.pill-note {
+  color: var(--muted);
+  font-size: calc(11px * var(--font-scale));
+}
+

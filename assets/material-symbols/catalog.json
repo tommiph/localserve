@@ -3031,6 +3031,11 @@
     "name": "chevron_backward",
     "codepoint": "f46b"
   },
+  "chevron-down": {
+    "name": "expand_more",
+    "codepoint": "e5cf",
+    "aliasOf": "expand-more"
+  },
   "chevron-forward": {
     "name": "chevron_forward",
     "codepoint": "f46a"
@@ -3046,6 +3051,11 @@
   "chevron-right": {
     "name": "chevron_right",
     "codepoint": "e5cc"
+  },
+  "chevron-up": {
+    "name": "expand_less",
+    "codepoint": "e5ce",
+    "aliasOf": "expand-less"
   },
   "child-care": {
     "name": "child_care",

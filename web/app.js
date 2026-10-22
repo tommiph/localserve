@@ -9,10 +9,21 @@ let confirmationReturnFocus = null;
 let state, config, actionCatalog;
 let currentView = location.pathname === '/vr-library' ? 'vr-library' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
 let returnFocus = null, toastTimer, preferencesPending = 0, settingsQueue = Promise.resolve();
+let pluginSearch = '';
 const fontTimers = new Map();
 let csrfToken = '';
 let serverClockReference = null, serverClockConnected = false;
 const saveFeedback = {pending: 0, error: ''};
+
+// Required inputs inside collapsed metadata must be visible before the browser
+// focuses an invalid field. Opening help/metadata never changes the draft.
+document.addEventListener('invalid', event => {
+  let section = event.target.parentElement;
+  while (section && section !== dialog) {
+    if (section.tagName === 'DETAILS') section.open = true;
+    section = section.parentElement;
+  }
+}, true);
 
 async function request(endpoint, values) {
   const response = await fetch(endpoint, values === undefined ? {} : {
@@ -28,6 +39,7 @@ function hydrate(data) {
   // while their queued saves are pending instead of replacing them on each poll.
   const previousTimeFormat = config?.timeFormat;
   state = data; config = data.config;
+  AdminUX.observeServerVersion(config.version);
   document.querySelectorAll('#server-version, [data-server-version]').forEach(node => AdminDOM.text(node,'v'+config.version));
   if (previousTimeFormat && previousTimeFormat !== config.timeFormat) {
     TimeUI.refreshFormat();
@@ -97,6 +109,7 @@ function renderSaveFeedback() {
     AdminDOM.text(node,pending ? 'Saving…' : saveFeedback.error || 'All changes saved');
     node.dataset.tone = !pending && saveFeedback.error ? 'error' : 'saved';
   });
+  document.querySelectorAll('[data-action="reload-administrator"]').forEach(node=>{node.disabled=Boolean(pending);});
 }
 
 // Serialize preference writes so dragging a slider cannot race a theme change.
@@ -178,10 +191,11 @@ function serviceEvidence(service) {
 
 function renderNavigation() {
   document.querySelector('[data-view="vr-library"]').hidden = !state.services.some(service => service.id === 'oculus-go' && service.actions.some(action => action.id === 'library-install'));
-  AdminDOM.update(document.querySelector('#plugin-navigation'),state.services.map(service => {
+  const plugins = state.services.filter(service => `${service.name} ${service.id}`.toLowerCase().includes(pluginSearch.toLowerCase().trim()));
+  AdminDOM.update(document.querySelector('#plugin-navigation'),plugins.map(service => {
     const status = serviceStatus(service);
     return `<button class="nav-item ${currentView === service.id ? 'selected' : ''}" data-view="${escapeHtml(service.id)}" aria-label="${escapeHtml(service.name)}">${icon(service.icon)}<span>${escapeHtml(service.name)}</span><span class="status-dot ${status.className}"></span></button>`;
-  }).join(''));
+  }).join('') || '<p class="navigation-empty">No matching plugins</p>');
   document.querySelectorAll('.nav-item[data-view]').forEach(button => {
     const selected = button.dataset.view === currentView; button.classList.toggle('selected', selected);
     if (selected) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
@@ -201,10 +215,10 @@ function activityPanel(entries = state.activity, full = false, scope = 'global')
 function servicesPanel() {
   const services = state.services.filter(service => `${service.name} ${service.description}`.toLowerCase().includes(serviceSearch.toLowerCase()));
   return `<section class="panel" aria-label="Services"><div class="panel-header"><h2>Services <span class="panel-count">${state.services.length}</span></h2><label class="service-search">${icon('magnifying-glass')}<input id="service-search" type="search" aria-label="Search services" placeholder="Search services" value="${escapeHtml(serviceSearch)}"></label></div>
-    <div class="table-scroll"><table class="service-table"><thead><tr><th>Service</th><th>Status</th><th>Polling</th><th>Read activity</th><th>Enabled</th></tr></thead><tbody>${services.map(service => {
+    <div class="table-scroll"><table class="service-table responsive-services"><thead><tr><th>Service</th><th>Status</th><th>Polling</th><th>Read activity</th><th>Enabled</th><th class="service-mobile-read">Details</th></tr></thead><tbody>${services.map(service => {
       const status = serviceStatus(service);
-      return `<tr data-live-key="service:${escapeHtml(service.id)}"><td><div class="service-identity"><span class="service-icon">${icon(service.icon)}</span><button class="service-link" data-view="${escapeHtml(service.id)}">${escapeHtml(service.name)}</button></div></td><td>${statusPill(status.label,status.className)}</td><td>${service.pollSeconds ? `Every ${formatDuration(service.pollSeconds)}` : '—'}</td><td>${serviceEvidence(service)}</td><td><div class="service-enabled"><span>${service.enabled ? 'Enabled':'Disabled'}</span><button class="switch" role="switch" aria-checked="${service.enabled}" data-action="toggle-service" data-id="${escapeHtml(service.id)}" aria-label="${escapeHtml(service.name)} enabled"></button></div></td></tr>`;
-    }).join('') || '<tr><td colspan="5"><div class="empty-state">No plugins available.</div></td></tr>'}</tbody></table></div></section>`;
+      return `<tr data-live-key="service:${escapeHtml(service.id)}"><td class="service-name-cell"><div class="service-identity"><span class="service-icon">${icon(service.icon)}</span><button class="service-link" data-view="${escapeHtml(service.id)}">${escapeHtml(service.name)}</button></div></td><td class="service-status-cell">${statusPill(status.label,status.className)}</td><td class="service-desktop-read">${service.pollSeconds ? `Every ${formatDuration(service.pollSeconds)}` : '—'}</td><td class="service-desktop-read">${serviceEvidence(service)}</td><td class="service-toggle-cell"><div class="service-enabled"><button class="switch" role="switch" aria-checked="${service.enabled}" data-action="toggle-service" data-id="${escapeHtml(service.id)}" aria-label="${escapeHtml(service.name)} enabled"></button></div></td><td class="service-mobile-read"><details data-live-key="service-details:${escapeHtml(service.id)}"><summary>Details</summary><p>${service.pollSeconds ? `Polling every ${formatDuration(service.pollSeconds)}` : 'No automatic polling'}</p>${serviceEvidence(service)}</details></td></tr>`;
+    }).join('') || '<tr><td colspan="6"><div class="empty-state">No matching services.</div></td></tr>'}</tbody></table></div></section>`;
 }
 
 function renderOverview() {
@@ -212,7 +226,8 @@ function renderOverview() {
   const polling = state.paused ? [] : configured.filter(service => service.pollSeconds > 0);
   const pollsPerHour = polling.reduce((sum, service) => sum + 3600 / service.pollSeconds * (service.pollTargets ?? 1), 0);
   const warnings = state.server.discoveryErrors.length + state.services.filter(service => ['error', 'restart-required'].includes(service.health) || service.enabled && (!service.configurationReady || service.pollObservation?.status === 'failed')).length;
-  renderWorkspace(pageHeading('Overview','Server status and services',`<button class="button" data-action="refresh">${icon('rotate')}Refresh</button>`) + `
+  const failedRuns = RunUI.recentFailures();
+  renderWorkspace(pageHeading('Overview','Server status and services',`${failedRuns ? `<button class="button task-failure-shortcut" data-action="overview-failed-runs">${icon('triangle-exclamation')}${failedRuns} failed run${failedRuns === 1 ? '' : 's'} · Last 24 hours</button>` : ''}<button class="button" data-action="setup-guide">${icon('route')}Setup guide</button><button class="button" data-action="refresh">${icon('rotate')}Refresh</button>`) + `
     ${state.demo && typeof DemoUI !== 'undefined' ? DemoUI.render() : ''}
     <section class="server-strip ${state.paused ? 'paused':''}" aria-label="Server controls"><div class="strip-identity"><span class="strip-icon">${icon(state.paused ? 'pause':'server')}</span><div><div class="strip-title">Server ${state.paused ? 'paused':'running'} ${statusPill(state.paused ? 'Paused':'Operational',state.paused ? 'waiting':'running')}</div><p class="strip-description">${state.server.runningTasks} active Tasks · ${configured.length} ready services</p></div></div><div class="server-toggle"><div class="server-toggle-text">Enabled</div><button class="switch" role="switch" aria-checked="${!state.paused}" data-action="toggle-server" aria-label="Server functions enabled"></button></div></section>
     <div class="metrics-grid">${metric('Active services',state.paused ? 0:configured.length,`/ ${state.services.length}`,'Configured and enabled','layer-group')}${metric('Polling rate',Number(pollsPerHour.toFixed(2)),'/ hour',polling.length ? 'Configured automatic rate' : 'No active polling services','arrows-rotate')}${metric('Server uptime',formatDuration(state.server.uptimeSeconds),'','','clock')}${metric('Needs attention',warnings,'',warnings ? 'Review configuration and Activity':'No service warnings','triangle-exclamation')}</div>
@@ -229,24 +244,35 @@ function runsPanel() {
     const control = run.status === 'running'
       ? `<button class="button" data-action="cancel-run" data-id="${escapeHtml(run.id)}">Cancel run</button>`
       : `<button class="button" data-action="task-rerun" data-id="${escapeHtml(run.id)}" data-revision="${task?.revision || 0}" aria-label="Rerun ${escapeHtml(run.name)}" title="${escapeHtml(unavailable || 'Review the current Task and this run’s saved Event values before rerunning.')}" ${unavailable ? 'disabled' : ''}>${icon('arrow-rotate-left')}Rerun</button>`;
-    return `<article class="run-card" data-live-key="run:${escapeHtml(run.id)}"><div class="settings-item"><div class="settings-text"><h3>${escapeHtml(run.name)}</h3><p>${escapeHtml(run.reason)} · ${escapeHtml(formatServerTimestamp(run.startedAt))} · ${RunUI.elapsed(run.startedAt, run.finishedAt)}${run.status === 'running' ? ` · Step ${run.step}` : ''}</p>${RunUI.outcome(run)}</div>${statusPill(state.paused && run.status === 'running' ? 'Paused' : run.status, run.status === 'failed' ? 'waiting' : run.status === 'running' ? 'running' : 'paused')}<button class="button" data-action="runs-details" data-id="${escapeHtml(run.id)}" aria-expanded="${RunUI.opened.has(run.id)}" aria-controls="run-details-${escapeHtml(run.id)}">Details</button>${control}</div>${RunUI.details(run)}</article>`;
+    return `<article class="run-card" data-live-key="run:${escapeHtml(run.id)}"><div class="settings-item"><div class="settings-text"><h3>${escapeHtml(run.name)}</h3><p>${escapeHtml(RunUI.triggerText(run))} · ${escapeHtml(formatServerTimestamp(run.startedAt))} · ${RunUI.elapsed(run.startedAt, run.finishedAt)}${run.status === 'running' ? ` · Step ${run.step}` : ''}</p>${RunUI.outcome(run)}</div>${statusPill(state.paused && run.status === 'running' ? 'Paused' : run.status, run.status === 'failed' ? 'waiting' : run.status === 'running' ? 'running' : 'paused')}<button class="button" data-action="runs-details" data-id="${escapeHtml(run.id)}" aria-expanded="${RunUI.opened.has(run.id)}" aria-controls="run-details-${escapeHtml(run.id)}">Details</button>${control}</div>${RunUI.details(run)}</article>`;
   });
   return `<section class="panel plugin-log"><div class="panel-header"><h2>Task runs</h2><span>${filtered.length} retained</span></div>${RunUI.controls()}${rows.join('') || '<div class="empty-state">No runs match these filters.</div>'}${filtered.length > RunUI.limit ? '<div class="panel-body"><button class="button" data-action="runs-more">Show more runs</button></div>' : ''}</section>`;
 }
 
 function renderSettings() {
-  renderWorkspace(pageHeading('Settings','Server configuration') + '<p class="save-guidance">Switches and sliders save automatically. Other settings use Edit and Save changes. <span data-save-status aria-live="polite"></span></p>' + `<section class="panel"><div class="panel-header"><h2>Server settings</h2></div>
-    <div class="settings-item">${icon('server')}<div class="settings-text"><h3>Server name</h3><p>${escapeHtml(config.name)}</p></div><button class="button" data-action="edit-name">${icon('pen')}Edit</button></div>
-    <div class="settings-item">${icon('location-dot')}<div class="settings-text"><h3>Server location</h3><p>${config.location ? `${config.location.latitude}, ${config.location.longitude}` : 'Not configured'}</p></div><button class="button" data-action="edit-location" aria-label="Edit server location">${icon('pen')}Edit</button></div>
-    <div class="settings-item">${icon('moon')}<div class="settings-text"><h3 id="do-not-disturb-label">Do not disturb · Enable now</h3><p>${state.doNotDisturb?.active ? 'Active' : 'Inactive'}${state.doNotDisturb?.scheduled ? ' · Weekly schedule' : ''}${state.doNotDisturb?.manual ? ' · Enabled manually' : ''}. Skips automatic TV actions. Manual controls and Run / Rerun remain available.</p></div><button id="do-not-disturb" class="switch" type="button" role="switch" aria-labelledby="do-not-disturb-label" aria-checked="${config.doNotDisturb.enabled}" data-action="toggle-do-not-disturb"></button></div>
-    <div class="settings-item">${icon('calendar')}<div class="settings-text"><h3>Do not disturb schedule</h3><p>${doNotDisturbScheduleSummary()}</p></div><button class="button" data-action="edit-do-not-disturb" aria-label="Edit Do not disturb schedule">${icon('pen')}Edit</button></div>
-    <div class="settings-item">${icon('clock')}<div class="settings-text"><h3>Activity log retention</h3><p>${config.activityRetentionDays} days · Server and all plugins</p></div><button class="button" data-action="edit-log-retention" aria-label="Edit Activity log retention">${icon('pen')}Edit</button></div>
-    <div class="settings-item">${icon('clock')}<div class="settings-text"><h3 id="time-format-label">Use 24-hour format</h3></div><button id="time-format" class="switch" type="button" role="switch" aria-labelledby="time-format-label" aria-checked="${config.timeFormat === '24'}" data-action="toggle-time-format"></button></div>
-    <div class="settings-item">${icon('circle-half-stroke')}<div class="settings-text"><h3>Appearance</h3></div><button class="button" data-action="theme">${icon('circle-half-stroke')}Switch theme</button></div>
-    ${fontSizeSetting('Administrator font size', 'font-scale', config.fontScale, 'Administrator interface')}
-    ${fontSizeSetting('Vista font size', 'vista-font-scale', config.vistaFontScale, 'All Vista views and Card previews')}
-    <div class="settings-item">${icon('network-wired')}<div class="settings-text"><h3>Server address</h3><p>${escapeHtml(state.server.address)}</p></div><button class="button" data-action="edit-server-options">${icon('pen')}Edit</button></div>
-    <div class="settings-item">${icon('list-check')}<div class="settings-text"><h3>Concurrent Task limit</h3><p>${config.maxConcurrentRuns}</p></div><button class="button" data-action="edit-server-options">${icon('pen')}Edit</button></div></section>`);
+  renderWorkspace(pageHeading('Settings','Server configuration') + '<p class="save-guidance">Switches and sliders save automatically. Other settings use Edit and Save changes. <span data-save-status aria-live="polite"></span></p>' + `<div class="settings-groups">
+    <section class="panel settings-group" aria-label="General"><div class="panel-header"><h2>General</h2></div>
+      <div class="settings-item">${icon('server')}<div class="settings-text"><h3>Server name</h3><p>${escapeHtml(config.name)}</p></div><button class="button" data-action="edit-name" aria-label="Edit server name">${icon('pen')}Edit</button></div>
+      <div class="settings-item">${icon('location-dot')}<div class="settings-text"><h3>Server location</h3><p>${config.location ? `${config.location.latitude}, ${config.location.longitude}` : 'Not configured'}</p></div><button class="button" data-action="edit-location" aria-label="Edit server location">${icon('pen')}Edit</button></div>
+      <div class="settings-item">${icon('clock')}<div class="settings-text"><h3 id="time-format-label">Use 24-hour format</h3></div><button id="time-format" class="switch" type="button" role="switch" aria-labelledby="time-format-label" aria-checked="${config.timeFormat === '24'}" data-action="toggle-time-format"></button></div>
+    </section>
+    <section class="panel settings-group" aria-label="Appearance"><div class="panel-header"><h2>Appearance</h2></div>
+      <div class="settings-item">${icon('circle-half-stroke')}<div class="settings-text"><h3>Theme</h3><p>${config.theme === 'dark' ? 'Dark' : 'Light'}</p></div><button class="button" data-action="theme">${icon('circle-half-stroke')}Switch to ${config.theme === 'dark' ? 'light' : 'dark'}</button></div>
+      ${fontSizeSetting('Administrator font size', 'font-scale', config.fontScale, 'Administrator interface')}
+      ${fontSizeSetting('Vista font size', 'vista-font-scale', config.vistaFontScale, 'All Vista views and Card previews')}
+    </section>
+    <section class="panel settings-group" aria-label="Automation"><div class="panel-header"><h2>Automation</h2></div>
+      <div class="settings-item">${icon('moon')}<div class="settings-text"><h3 id="do-not-disturb-label">Do not disturb · Enable now</h3><p>${state.doNotDisturb?.active ? 'Active' : 'Inactive'}${state.doNotDisturb?.scheduled ? ' · Weekly schedule' : ''}${state.doNotDisturb?.manual ? ' · Enabled manually' : ''}. Skips automatic TV actions. Manual controls and Run / Rerun remain available.</p></div><button id="do-not-disturb" class="switch" type="button" role="switch" aria-labelledby="do-not-disturb-label" aria-checked="${config.doNotDisturb.enabled}" data-action="toggle-do-not-disturb"></button></div>
+      <div class="settings-item">${icon('calendar')}<div class="settings-text"><h3>Do not disturb schedule</h3><p>${doNotDisturbScheduleSummary()}</p></div><button class="button" data-action="edit-do-not-disturb" aria-label="Edit Do not disturb schedule">${icon('pen')}Edit</button></div>
+      <div class="settings-item">${icon('list-check')}<div class="settings-text"><h3>Concurrent Task limit</h3><p>${config.maxConcurrentRuns}</p></div><button class="button" data-action="edit-server-options" aria-label="Edit server options">${icon('pen')}Edit</button></div>
+    </section>
+    <section class="panel settings-group" aria-label="History"><div class="panel-header"><h2>History</h2></div>
+      <div class="settings-item">${icon('clock')}<div class="settings-text"><h3>Activity log retention</h3><p>${config.activityRetentionDays} days · Server and all plugins</p></div><button class="button" data-action="edit-log-retention" aria-label="Edit Activity log retention">${icon('pen')}Edit</button></div>
+    </section>
+    <section class="panel settings-group" aria-label="Network"><div class="panel-header"><h2>Network</h2></div>
+      <div class="settings-item">${icon('network-wired')}<div class="settings-text"><h3>Server address</h3><p>${escapeHtml(state.server.address)}</p></div><button class="button" data-action="edit-server-options" aria-label="Edit server options">${icon('pen')}Edit</button></div>
+    </section>
+  ${AdminUX.versions(state)}</div>`);
 }
 
 function fontSizeSetting(label, id, value, description) {
@@ -335,12 +361,27 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
+    if(action.startsWith('setup-'))return SetupUI.handle(action,id);
+    if (action === 'overview-failed-runs') {
+      RunUI.task = ''; RunUI.status = 'failed'; RunUI.period = 'day'; RunUI.limit = 20;
+      currentView = 'tasks'; setNavigationOpen(false); renderView();
+      workspace.querySelector('.plugin-log')?.scrollIntoView({block:'start'}); return;
+    }
     if(action==='phone-home-edit')return PhoneHomeUI.edit();
+    if(action==='phone-home-copy-address')return await PhoneHomeUI.copyAddress();
     if(action==='demo-install'||action==='demo-run'){
       if(!state.demo||typeof DemoUI==='undefined')throw new Error('Demo setup is unavailable. Refresh the administrator.');
       return await DemoUI.handle(action);
     }
     if(action==='plugin-task-builder')return await PluginUI.openTaskBuilder(state.services.find(service=>service.id===currentView),control.dataset.intent);
+    if(action==='task-recipe')return await PluginUI.openTaskBuilder(state.services.find(service=>service.id===id && service.enabled && service.taskBuilder));
+    if(action==='task-view-runs') {
+      if(!state.tasks.some(task=>task.id===id))return;
+      RunUI.task=id; RunUI.status=''; RunUI.period=''; RunUI.limit=20;
+      currentView='tasks'; renderView();
+      workspace.querySelector('#runs-task')?.focus({preventScroll:true});
+      workspace.querySelector('#runs-task')?.scrollIntoView({block:'center'}); return;
+    }
     if (action === 'navigation-toggle' || action === 'navigation-close') {
       setNavigationOpen(action === 'navigation-toggle' && document.body.dataset.navigationOpen !== 'true'); return;
     }
@@ -365,6 +406,10 @@ document.addEventListener('click', async event=>{
     }
     if (action==='cancel-run') await mutate(`api/runs/${id}/cancel`,{});
     if (action==='edit-name') openNameEditor();
+    if (action==='reload-administrator') {
+      if(saveFeedback.pending||preferencesPending||fontTimers.size||dialog.open){notify('Wait for changes to finish saving before reloading.');return;}
+      location.reload();return;
+    }
     if (action==='edit-location') openLocationEditor();
     if (action==='edit-log-retention') openLogRetentionEditor();
     if (action==='edit-do-not-disturb') openDoNotDisturbEditor();
@@ -429,6 +474,8 @@ document.addEventListener('submit',async event=>{
 });
 
 document.addEventListener('input',event=>{
+  if (event.target.matches('[data-event-search]')) { TaskUI.searchEvents(event.target); return; }
+  if (event.target.id === 'plugin-search') { pluginSearch = event.target.value; renderNavigation(); return; }
   if (event.target.name === 'startName') {
     // Only direct name edits opt out of automatic naming, not type changes.
     event.target.closest('.task-block').querySelector('[name="ruleNameEdited"]').value = 'true';
@@ -465,6 +512,11 @@ document.addEventListener('input',event=>{
     AdminDOM.update(document.querySelector('.service-table tbody'),holder.querySelector('tbody').innerHTML);
   }
 });
+
+document.addEventListener('invalid', event => {
+  const fields=event.target.closest('#editor-form .task-block-fields');
+  if(fields)fields.hidden=false;
+}, true);
 
 document.addEventListener('change',event=>{
   if (event.target.matches('[data-event-value-picker]')) TaskUI.insertEventValue(event.target);
@@ -605,14 +657,7 @@ function statusPill(label, className = 'running') {
 
 
 function itemActions(item, kind = 'task') {
-  const name = escapeHtml(item.name);
-  return `<div class="row-actions">
-    <button class="icon-button" data-action="edit-${kind}" data-id="${escapeHtml(item.id)}" title="Edit ${name}" aria-label="Edit ${name}">${icon('pen')}</button>
-    <button class="icon-button" data-action="copy-${kind}" data-id="${escapeHtml(item.id)}" title="Copy ${name}" aria-label="Copy ${name}">${icon('copy')}</button>
-    <button class="icon-button delete" data-action="delete-${kind}" data-id="${escapeHtml(item.id)}" title="Delete ${name}" aria-label="Delete ${name}">${icon('trash-can')}</button>
-    <button class="switch" role="switch" aria-checked="${item.enabled}" data-action="toggle-${kind}" data-id="${escapeHtml(item.id)}"
-      title="${item.enabled ? 'Enabled' : 'Disabled'} · ${name}" aria-label="${name} enabled"></button>
-  </div>`;
+  return AdminUX.definitionActions(item,{edit:`edit-${kind}`,copy:`copy-${kind}`,delete:`delete-${kind}`,toggle:`toggle-${kind}`});
 }
 
 
@@ -677,7 +722,7 @@ for (const type of ['input', 'change', 'click']) document.addEventListener(type,
 
 
 function serializeForm(form) {
-  if(form.id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked})));
+  if(form.id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked,label:row.querySelector('[name="label"]').value.trim()})));
   // Optional builders keep one canonical draft across their changing pages.
   // Navigation/search are presentation; only meaningful choices affect discard.
   if(form.id==='recipe-builder-form'&&form.querySelector('[data-task-builder-draft]'))return form.querySelector('[data-task-builder-draft]').value;

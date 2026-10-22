@@ -18,6 +18,40 @@ the menu. The menu scrolls independently while its server status stays visible.
 Disabled plugins waiting for configuration do not count as Overview warnings;
 runtime errors and enabled services needing attention still do.
 
+Overview's failed-run shortcut opens retained failures from the last 24 hours.
+Task history offers a Period filter and contains up to 200 recent runs. Activity
+search covers its recent window: up to 2000 server entries or 500 plugin entries.
+Pause display freezes at most 500 entries while logging continues; older logs
+within the retention period remain on disk.
+
+Each Task shows its latest retained run result and start time. **View runs**
+opens history filtered to that Task and clears other history filters; it does
+not run the Task. No retained runs means none remain in this recent history,
+not that the Task has never run. Completed describes execution, not confirmed
+device state.
+
+In the Task editor, search Events by phone, sensor or Event name. The selector
+groups results by plugin and retains the chosen Event while you search. Separate
+enabled rules are joined by OR: any one can start the Task. A reading comparison
+runs when it becomes true; a nonmatching reading rearms it. Occurrence Events
+can run for each distinct matching occurrence instead.
+
+To change a step's action, choose **Replace**, then select its replacement from
+the action library. The highlighted step keeps its place and enabled state; its
+parameters are replaced with the new action's defaults. **Cancel replacement**
+leaves the step unchanged. Binding labels in summaries are for reading; edit the
+original `{{event.field-id}}` tokens in the parameter fields.
+
+New Event runs retain source/Event names as they were at admission. Older runs
+without these names say so; changing a Task or plugin does not rewrite history.
+
+Administration links appear before the plugin catalogue. Use Find a plugin to
+filter that catalogue without changing plugin enablement. Settings groups General,
+Appearance, Automation, History and Network; its theme row names the current
+theme. On phones, Services has expandable Details and Controls uses stacked rows.
+Task activation help and Vista URL/spacing remain available in disclosures so the
+working editor is visible sooner. Invalid fields reveal their containing section.
+
 Settings controls your server name, theme, separate administrator/Vista font
 sizes, time format, server location, LAN address, Activity retention and Do not
 disturb. Schedules use the server PC's system timezone. Activity retention applies
@@ -39,7 +73,8 @@ automatically. Edit the Task in its normal editor and explore its Card/Vista
 through the plugin and Vistas pages. The demo shortcut only runs its original
 definition; after editing, review and run it in Tasks.
 
-For guided setup, open Recipes and enable it. Its Create page offers a cloud of
+For guided setup, choose **Set up Recipes** in Tasks and enable the optional
+Recipes plugin. Tasks then offers **Build a task** directly. Its wizard offers a cloud of
 ideas. Choose one, personalize it, then choose when it should happen. Tap either
 part of the finished sentence to change it. Create task saves it turned off;
 enable it in Tasks when ready. More options and the detailed editor are available
@@ -238,3 +273,45 @@ successful test; protected credentials remain available on this Windows account.
 Enable Oculus Go and its APK library, select your own APK folder, then open SERVER → VR library. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
 
 For the native VR interface, download the generic Go app from VR library and install it with your authorized headset tools. It appears as **# Localserve #**. Select Connect headset in the administrator, then enter the LAN address and one-use code in the app's Settings. Browse Library, filter Installed or Updates, search, favorite titles and play locally installed apps. Codes expire after five minutes. See [Localserve Go](plugins/oculus-go/android/README.md) for controls, compatibility and build instructions. Existing Home VR clients can also connect with their matching token; see [Oculus Go](plugins/oculus-go/README.md).
+
+## Phone connection and detailed settings
+
+Phone home shows the actual bound LAN address, separate Remotes and Card/favorites
+sections, and published Tasks. Copy its address to a phone on the same LAN.
+You can also scan its locally generated QR code to open Home. The code contains
+only the bound LAN address; scanning does not install an APK or enable Sensors.
+
+Settings → Versions and updates distinguishes the running server, the server
+version when this administrator page connected, the verified Android download
+build and the bundled TV launcher source. Installed phone/TV versions are
+separate. The phone app reports its installed APK version in Connection; the
+server cannot confirm the installed TV launcher version. Reload administrator
+updates this browser page only. Finish or dismiss an active notice or game before
+closing and reopening Vista on the TV to load new viewer scripts.
+If LAN is not enabled, Settings → Network is the next step; localhost cannot
+connect another device. Favorites belong to each browser and server origin.
+
+Plugin settings can group common fields and hide detailed tuning in Advanced
+sections. Actions use the same declaration-owned grouping. Webcam reading
+interval uses seconds in the interface, while stored plugin units remain stable.
+Connection check results belong to this browser session and settings revision.
+
+The Android app Connection dialog shows the installed APK version; Home preferences
+show the server version. Use Home to reload the interface after an update. A
+server update does not update the APK or an already-open TV document. Close and
+reopen the TV display to load updated viewer scripts; no automatic interruption
+of a notice, game or active display occurs.
+
+## Setup guide and display fit
+
+Overview → Setup guide offers Connect a device, Create a display and Use my phone.
+It reports current configuration/enablement and opens the ordinary editors;
+choosing a path never enables a plugin, tests a device or creates saved content.
+
+Webcam → List cameras works before enablement. Choose an explicit name/index and
+save the selection before starting capture. The scan does not open a camera.
+
+Vista Preview warns when a visible ready-made Card needs scrolling at that size.
+Collections can show different Cards later. Use a larger region or fewer details
+for a TV, and check its actual fallback layout; the browser warning is not a
+size guarantee. Layout map selection and these fit hints are not saved settings.

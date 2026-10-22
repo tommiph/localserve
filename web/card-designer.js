@@ -4,6 +4,14 @@
 const CardDesigner = {
   pending: false,
 
+  dependencySummary(pluginId, cardId) {
+    const uses = reference => reference.pluginId === pluginId && reference.cardId === cardId;
+    const contains = node => (node.cards || []).some(uses) || (node.children || []).some(contains);
+    const vistas = (state.vistas || []).filter(vista => contains(vista.layout));
+    const universe = state.universe?.cards?.some(uses);
+    return `<h3>Used by</h3>${vistas.length || universe ? `<ul>${vistas.map(vista => `<li>${escapeHtml(vista.name)} <button type="button" class="text-button" data-action="edit-vista" data-id="${escapeHtml(vista.id)}">Open Vista editor</button></li>`).join('')}${universe ? '<li>Universe <button type="button" class="text-button" data-action="universe-edit">Open Universe editor</button></li>' : ''}</ul><p>These selections will keep a missing Card reference until you edit them. No layout or Task is deleted.</p>` : '<p>No saved Vista or Universe references found.</p>'}<p class="field-help">Phone favorites are stored separately on each phone and cannot be listed here. A favorite for this Card will become unavailable.</p>`;
+  },
+
   formats(type) {
     return {
       string: [['auto', 'Automatic'], ['text', 'Text'], ['link', 'Link']],
@@ -28,7 +36,7 @@ const CardDesigner = {
     const unavailable = service.cardsError || !service.config;
     return `<section class="panel"><div class="panel-header"><h2>Cards <span class="panel-count">${cards.length}</span></h2><div class="heading-actions card-creation-actions">${service.cardTemplates?.length ? `<button type="button" class="button" data-action="card-ready-add" ${unavailable ? 'disabled' : ''}>${icon('wand-magic-sparkles')}Add ready-made card</button>` : ''}<button type="button" class="button primary" data-action="card-add" ${unavailable ? 'disabled' : ''}>${icon('plus')}Add card</button></div></div>
       ${unavailable ? `<div class="form-error" role="alert">${escapeHtml(service.cardsError || 'Plugin data is unavailable.')}</div>` : cards.length ? '<div class="panel-body"><p class="card-manager-help">Design cards for Vistas.</p></div>' : '<div class="empty-state">No cards yet. Add a card and choose the information it displays.</div>'}</section>
-      <div class="card-gallery">${cards.map(card => `<section class="card-gallery-item card-preview-${card.size}" data-live-key="card:${escapeHtml(card.id)}"><div class="card-gallery-frame">${this.renderCard(card, service)}</div><div class="card-gallery-controls">${statusPill(card.enabled ? 'Enabled' : 'Disabled', card.enabled ? 'running' : 'paused')}${itemActions(card, 'card')}</div></section>`).join('')}</div>`;
+      <div class="card-gallery">${cards.map(card => `<section class="card-gallery-item card-preview-${card.size}" data-live-key="card:${escapeHtml(card.id)}"><div class="card-gallery-frame">${this.renderCard(card, service)}</div><div class="card-gallery-controls">${itemActions(card, 'card')}</div></section>`).join('')}</div>`;
   },
 
   hydrateGallery(service) {
@@ -319,7 +327,7 @@ const CardDesigner = {
       try { await mutate(`api/plugins/${service.id}/cards/${id}/enabled`, { enabled: !card.enabled, revision: card.revision }); }
       finally { if (control.isConnected) control.disabled = false; }
     } else if (action === 'delete-card') {
-      showDialog(`${dialogHeader('Delete card')}<div class="dialog-body"><p>Delete ${escapeHtml(card.name)}? Its saved layout and information fields will be removed.</p></div><div class="dialog-footer"><button type="button" class="button" data-action="close-dialog">Cancel</button><button type="button" class="button danger" data-action="card-confirm-delete">Delete</button></div>`, { kind: 'card-delete', pluginId: service.id, id, revision: card.revision });
+      showDialog(`${dialogHeader('Delete card')}<div class="dialog-body"><p>Delete ${escapeHtml(card.name)}? Its saved layout and information fields will be removed.</p>${this.dependencySummary(service.id,id)}</div><div class="dialog-footer"><button type="button" class="button" data-action="close-dialog">Cancel</button><button type="button" class="button danger" data-action="card-confirm-delete">Delete</button></div>`, { kind: 'card-delete', pluginId: service.id, id, revision: card.revision });
     } else if (action === 'card-confirm-delete') {
       const context = { ...dialogContext };
       await mutate(`api/plugins/${context.pluginId}/cards/${context.id}/delete`, { revision: context.revision });

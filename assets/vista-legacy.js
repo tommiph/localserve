@@ -88,6 +88,7 @@
   function formatted(value, type, field) {
     if (value === null || value === undefined) return 'No data';
     if (type === 'boolean') return value ? 'Yes' : 'No';
+    if (type === 'number' && field && field.format === 'duration') return readyCell(field,value).value;
     if (type === 'timestamp') {
       var date = new Date(value);
       if (isNaN(date.getTime())) return 'No data';
@@ -151,6 +152,12 @@
           available: true, deadline: raw };
       }
       return { value: column.format === 'time' ? clockTime(raw) : tableTime(raw), available: true };
+    }
+    if (column.type === 'number' && column.format === 'duration') {
+      if (!isFinite(raw) || raw < 0) return {value:'No data',available:false};
+      var seconds=Math.floor(raw),minutes=Math.floor(seconds/60),hours=Math.floor(minutes/60);
+      var pad=function(value){return value<10?'0'+value:String(value);};
+      return {value:hours?hours+':'+pad(minutes%60)+':'+pad(seconds%60):minutes+':'+pad(seconds%60),available:true};
     }
     if (column.type === 'number') return { value: readyNumber(raw, 1), available: true };
     if (column.type === 'boolean') return { value: raw ? 'Yes' : 'No', available: true };
@@ -415,11 +422,12 @@
         var doc = frame.contentDocument;
         if (!doc || !doc.querySelector('[data-ready-made]')) return;
         if (window.LocalserveCardPreview) window.LocalserveCardPreview.attach(frame, template.previewUrl,
-          connected && source.enabled !== false && entry.data.status === 'Ready');
+          connected && source.enabled !== false && entry.data.status === 'Ready',
+          !connected ? 'Disconnected' : source.enabled === false ? 'Data source disabled' : entry.data.status);
         if (frame._legacyStyledDocument !== doc) {
           var link = doc.createElement('link');
           link.rel = 'stylesheet';
-          link.href = '/assets/vista-legacy-ready.css?v=20';
+          link.href = '/assets/vista-legacy-ready.css?v=21';
           link.onload = function () {
             applyVistaFontSize(doc);
             if (frame._legacyOnReady) {
@@ -498,6 +506,10 @@
             ? !connected ? 'Disconnected · retained reading' : source.enabled === false ? 'Data source disabled' : entry.data.status :
               slots[id] ? slots[id].value : 'No data';
           value = value || 'No data';
+          if (nodes[i].getAttribute('data-card-source-state') != null) {
+            var hostStatus = !connected ? 'Disconnected · retained reading' : source.enabled === false ? 'Data source disabled' : entry.data.status;
+            if (hostStatus !== 'Ready') value = hostStatus || 'Unavailable';
+          }
           if (nodes[i].textContent !== value) nodes[i].textContent = value;
           nodes[i].setAttribute('data-available', String(id === 'source-name' || id === 'source-status' || Boolean(slots[id] && slots[id].available)));
           if (slots[id] && slots[id].deadline) nodes[i].setAttribute('data-countdown-at', String(slots[id].deadline));

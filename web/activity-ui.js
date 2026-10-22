@@ -8,6 +8,10 @@ const ActivityUI = {
     return this.contexts.get(scope);
   },
 
+  countText(filtered, source, paused, limit) {
+    return `${filtered} of ${source} recent entries shown · ${paused ? 'Display paused; server logging continues · Snapshot limited to 500 entries' : 'Live display · Recent view limited to ' + limit + ' entries'} · Search covers shown entries only; older retained logs remain on disk`;
+  },
+
   type(entry) { return entry.eventId ? 'event' : entry.taskId ? 'task' : entry.pluginId ? 'plugin' : 'server'; },
 
   filtered(entries, settings) {
@@ -45,7 +49,7 @@ const ActivityUI = {
     const tasks = new Map(source.filter(entry => entry.taskId).map(entry => [entry.taskId, state.tasks.find(task => task.id === entry.taskId)?.name || 'Deleted Task']));
     const select = (key, label, options) => `<label>${label}<select data-activity-filter="${key}"><option value="">${{plugin: 'All plugins', task: 'All Tasks', level: 'All severities', type: 'All types'}[key]}</option>${options.map(([id, name]) => `<option value="${escapeHtml(id)}" ${settings[key] === id ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>`;
     return `<section class="panel activity-inspector" data-activity-scope="${escapeHtml(scope)}"><div class="panel-header"><h2>Activity log</h2><button class="button" type="button" data-action="activity-pause" aria-pressed="${settings.paused}">${icon(settings.paused ? 'play' : 'pause')}${settings.paused ? 'Resume display' : 'Pause display'}</button></div>
-      <div class="inspection-filters"><label class="inspection-search">Search<input type="search" data-activity-filter="search" value="${escapeHtml(settings.search)}" placeholder="Search messages or sources"></label>${scope === 'global' ? select('plugin', 'Plugin', state.services.map(plugin => [plugin.id, plugin.name])) : ''}${select('task', 'Task', [...tasks])}${select('level', 'Severity', [['info', 'Info'], ['success', 'Success'], ['warning', 'Warning'], ['error', 'Error']])}${select('type', 'Type', [['event', 'Event'], ['task', 'Task'], ['plugin', 'Plugin'], ['server', 'Server']])}<label class="check-field"><input type="checkbox" data-activity-filter="group" ${settings.group ? 'checked' : ''}>Group repeated entries</label><button type="button" class="text-button" data-action="activity-reset">Reset filters</button></div><p class="inspection-count">${filtered.length} of ${source.length} retained entries · ${settings.paused ? 'Display paused; server logging continues' : 'Live display'} · Filters do not delete records</p><div data-activity-results>${this.rows(filtered, settings)}</div></section>`;
+      <div class="inspection-filters"><label class="inspection-search">Search<input type="search" data-activity-filter="search" value="${escapeHtml(settings.search)}" placeholder="Search messages or sources"></label>${scope === 'global' ? select('plugin', 'Plugin', state.services.map(plugin => [plugin.id, plugin.name])) : ''}${select('task', 'Task', [...tasks])}${select('level', 'Severity', [['info', 'Info'], ['success', 'Success'], ['warning', 'Warning'], ['error', 'Error']])}${select('type', 'Type', [['event', 'Event'], ['task', 'Task'], ['plugin', 'Plugin'], ['server', 'Server']])}<label class="check-field"><input type="checkbox" data-activity-filter="group" ${settings.group ? 'checked' : ''}>Group repeated entries</label><button type="button" class="text-button" data-action="activity-reset">Reset filters</button></div><p class="inspection-count">${this.countText(filtered.length, source.length, settings.paused, scope === 'global' ? 2000 : 500)}</p><div data-activity-results>${this.rows(filtered, settings)}</div></section>`;
   },
 
   rows(entries, settings) {
@@ -66,7 +70,7 @@ document.addEventListener('input', event => {
   // Update rows only, preserving the search caret and current scroll position.
   const source = settings.paused ? settings.held : ActivityUI.source(scope), filtered = ActivityUI.filtered(source, settings);
   AdminDOM.update(panel.querySelector('[data-activity-results]'),ActivityUI.rows(filtered, settings));
-  panel.querySelector('.inspection-count').textContent = `${filtered.length} of ${source.length} retained entries · ${settings.paused ? 'Display paused; server logging continues' : 'Live display'} · Filters do not delete records`;
+  panel.querySelector('.inspection-count').textContent = `${ActivityUI.countText(filtered.length, source.length, settings.paused, scope === 'global' ? 2000 : 500)}`;
 });
 
 document.addEventListener('change', event => {

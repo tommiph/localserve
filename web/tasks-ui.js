@@ -5,6 +5,7 @@ const TaskUI = {
   ruleTypes: { schedule: 'Schedule', timer: 'Timer', interval: 'Interval', sunrise: 'Sunrise', sunset: 'Sunset', event: 'Event' },
   librarySearch: '',
   libraryCategory: 'all',
+  replaceStepId: null,
 
   categoryFor(type) {
     return 'server';
@@ -19,19 +20,27 @@ const TaskUI = {
     // Disabled/unready plugin actions remain visible but unavailable for insertion.
     return `<aside class="action-library" aria-label="Action library"><h3>Action library</h3><label class="library-search">${icon('magnifying-glass')}<input id="action-search" type="search" aria-label="Search actions" placeholder="Search actions"></label>
       <label class="library-filter">Plugin<select id="action-plugin-filter"><option value="all">All plugins and Server</option><option value="server">Server</option>${state.services.map(plugin => `<option value="${escapeHtml(plugin.id)}">${escapeHtml(plugin.name)}</option>`).join('')}</select></label>
-      <label class="library-insertion">Add as<select id="insert-after"><option value="end">Last step</option><option value="first">First step</option></select></label>
+      <div id="task-library-mode">${this.libraryMode()}</div><label class="library-insertion">Add as<select id="insert-after"><option value="end">Last step</option><option value="first">First step</option></select></label>
       <div id="library-actions">${this.libraryRows()}</div></aside>`;
   },
 
   libraryRows() {
     const actions = actionCatalog.filter(action => (this.libraryCategory === 'all' || action.category === this.libraryCategory) && `${action.pluginName || 'Server'} ${action.name} ${action.description}`.toLowerCase().includes(this.librarySearch.toLowerCase()));
-    return actions.length ? actions.map(action => `<div class="library-choice"><button class="library-action" type="button" data-action="task-library-add" data-id="${escapeHtml(action.id)}" aria-label="Add ${escapeHtml(action.name)}" ${action.available === false ? 'disabled' : ''}><span class="task-block-icon ${escapeHtml(action.category)}">${icon(action.icon || this.glyphFor(action.type))}</span><span><strong>${escapeHtml(action.name)}</strong><span class="library-owner">${escapeHtml(action.pluginName || 'Server')}</span><small>${escapeHtml(action.description)}</small></span>${icon('plus')}</button>${action.available === false ? `<p class="library-unavailable">${escapeHtml(action.unavailableReason || 'Configure and enable the owning plugin to use this action.')}</p>` : ''}</div>`).join('') : '<div class="empty-state">No actions match this search and plugin filter.</div>';
+    return actions.length ? actions.map(action => `<div class="library-choice"><button class="library-action" type="button" data-action="task-library-add" data-id="${escapeHtml(action.id)}" aria-label="${this.replaceStepId ? 'Replace selected step with' : 'Add'} ${escapeHtml(action.name)}" ${action.available === false ? 'disabled' : ''}><span class="task-block-icon ${escapeHtml(action.category)}">${icon(action.icon || this.glyphFor(action.type))}</span><span><strong>${escapeHtml(action.name)}</strong><span class="library-owner">${escapeHtml(action.pluginName || 'Server')}</span><small>${escapeHtml(action.description)}</small></span>${icon(this.replaceStepId ? 'swap-horiz' : 'plus')}</button>${action.available === false ? `<p class="library-unavailable">${escapeHtml(action.unavailableReason || 'Configure and enable the owning plugin to use this action.')}</p>` : ''}</div>`).join('') : '<div class="empty-state">No actions match this search and plugin filter.</div>';
+  },
+
+  libraryMode() {
+    return this.replaceStepId ? '<p class="aside-note">Choose an action to replace the highlighted step and its parameters.</p><button class="button" type="button" data-action="task-replace-cancel">Cancel replacement</button>' : '';
   },
 
   refreshLibrary() {
     dialog.querySelector('#library-actions').innerHTML = this.libraryRows();
     const select = dialog.querySelector('#action-plugin-filter');
     if (select) select.value = this.libraryCategory;
+    const mode = dialog.querySelector('#task-library-mode');
+    if (mode) mode.innerHTML = this.libraryMode();
+    const insertion = dialog.querySelector('.library-insertion');
+    if (insertion) insertion.hidden = Boolean(this.replaceStepId);
     dialog.querySelectorAll('[data-action="task-library-filter"]').forEach(button => button.setAttribute('aria-pressed', button.dataset.id === this.libraryCategory));
   },
 
@@ -53,8 +62,17 @@ const TaskUI = {
   },
 
   renderTasks() {
-    return pageHeading('Tasks', 'Server tasks and their running order', `<button class="button primary" data-action="task-add">${icon('plus')}Add task</button>`) +
+    return pageHeading('Tasks', 'Server tasks and their running order', `${this.recipeEntry()}<button class="button primary" data-action="task-add">${icon('plus')}Add task</button>`) +
       `<section class="panel"><div class="panel-header"><h2>Tasks <span class="panel-count">${state.tasks.length}</span></h2><label class="service-search">${icon('magnifying-glass')}<input id="task-search" type="search" aria-label="Search tasks" placeholder="Search tasks" value="${escapeHtml(this.search)}"></label></div><div id="task-rows">${this.rows()}</div></section>` + this.activeNotice();
+  },
+
+  recipeEntry() {
+    // Optional builders remain opt-in; navigation never enables a plugin.
+    const builder = state.services.find(service => service.taskBuilder);
+    if (!builder) return '';
+    return builder.enabled
+      ? `<button class="button" data-action="task-recipe" data-id="${escapeHtml(builder.id)}">${icon('auto-awesome')}Build a task</button>`
+      : `<button class="button" data-view="${escapeHtml(builder.id)}">${icon('auto-awesome')}Set up Recipes</button>`;
   },
 
   activeNotice() {
@@ -64,10 +82,19 @@ const TaskUI = {
     return `<section class="panel plugin-log"><div class="panel-header"><h2>${icon('bell')}Active TV notice</h2><button class="button" type="button" data-action="task-dismiss-notice" data-revision="${notice.revision}" ${notice.dismissing ? 'disabled' : ''}>${notice.dismissing ? 'Dismissing…' : 'Dismiss notice'}</button></div><div class="panel-body"><p>${elapsed} · ${notice.autoClose ? 'Automatic close enabled' : 'Stays open until dismissed'}</p><p class="field-help">Dismissal stops the chime and closes the notice when its page reconnects. The TV’s Back button also dismisses it.</p></div></section>`;
   },
 
+  runSummary(task) {
+    // Inspect retained receipts by stable Task identity, without sorting state.
+    const run = (state.runs || []).filter(item => item.taskId === task.id && Number.isFinite(item.startedAt))
+      .reduce((latest, item) => !latest || item.startedAt > latest.startedAt ? item : latest, null);
+    if (!run) return '<p>No retained runs</p>';
+    const labels = {running:'Running', completed:'Completed', failed:'Failed', cancelled:'Cancelled', interrupted:'Interrupted'};
+    return `<p class="task-last-run">Last run: ${escapeHtml(labels[run.status] || 'Result unavailable')} · ${escapeHtml(formatServerTimestamp(run.startedAt))} <button type="button" class="text-button" data-action="task-view-runs" data-id="${escapeHtml(task.id)}" aria-label="View runs for ${escapeHtml(task.name)}">View runs</button></p>`;
+  },
+
   rows() {
     const tasks = state.tasks.filter(task => `${task.name} ${this.taskSummary(task)}`.toLowerCase().includes(this.search.toLowerCase()));
     if (!tasks.length) return '<div class="empty-state">No tasks found.</div>';
-    return tasks.map(task => `<div class="settings-item task-row" data-live-key="task:${escapeHtml(task.id)}"><span class="service-icon">${icon('list-check')}</span><div class="settings-text"><h3>${escapeHtml(task.name)}</h3><p>${escapeHtml(this.taskSummary(task))}</p></div>${statusPill(task.enabled ? 'Enabled' : 'Disabled', task.enabled ? 'running' : 'paused')}<button class="icon-button" data-action="task-run" data-id="${escapeHtml(task.id)}" title="Run ${escapeHtml(task.name)}" aria-label="Run ${escapeHtml(task.name)}" ${!task.enabled || state.paused ? 'disabled' : ''}>${icon('play')}</button>${itemActions(task, 'task')}</div>`).join('');
+    return tasks.map(task => `<div class="settings-item task-row" data-live-key="task:${escapeHtml(task.id)}"><span class="service-icon">${icon('list-check')}</span><div class="settings-text"><h3>${escapeHtml(task.name)}</h3><p>${escapeHtml(this.taskSummary(task))}</p>${this.runSummary(task)}</div><button class="button" data-action="task-run" data-id="${escapeHtml(task.id)}" title="Run ${escapeHtml(task.name)}" aria-label="Run ${escapeHtml(task.name)}" ${!task.enabled || state.paused ? 'disabled' : ''}>${icon('play')}Run</button>${itemActions(task, 'task')}</div>`).join('');
   },
 
   weekdayFields(item) {
@@ -93,9 +120,32 @@ const TaskUI = {
       // Every solar rule uses the same server setting; no per-rule overrides.
       return `<p class="field-help">${config.location ? `Server location: ${config.location.latitude}, ${config.location.longitude}` : 'Set Server location in Settings to run this rule.'}</p>` + this.weekdayFields(rule);
     }
-    const events = (state.taskEvents || []).map(event => ({ id: event.id, name: `${event.pluginName} · ${event.name}` }));
-    return this.field('Plugin event', 'tower-broadcast', `<select name="eventId" required ${events.length ? '' : 'disabled'}><option value="">${events.length ? 'Select event' : 'No plugin events available'}</option>${this.options(events, rule.eventId)}</select>`) +
+    return this.field('Find an Event', 'magnifying-glass', '<input type="search" data-event-search placeholder="Search phone, sensor or Event name">')
+      + this.field('Plugin event', 'tower-broadcast', `<select name="eventId" required>${this.eventOptions(rule.eventId)}</select>`, 'Events are grouped by plugin. Searching keeps the current selection until you choose another.') +
       `<div data-event-condition>${this.eventConditionFields(rule)}</div>`;
+  },
+
+  eventOptions(selected, search = '') {
+    const all = state.taskEvents || [], query = search.trim().toLocaleLowerCase();
+    const matches = all.filter(event => `${event.pluginName} ${event.name} ${event.id}`.toLocaleLowerCase().includes(query));
+    const groups = new Map();
+    for (const event of matches) {
+      const group = event.pluginName || event.pluginId;
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group).push({id:event.id, name:event.name + (event.available === false ? ' · Unavailable' : '')});
+    }
+    const chosen = all.find(event => event.id === selected);
+    const retained = selected && !matches.some(event => event.id === selected)
+      ? `<optgroup label="Current selection">${this.options([{id:selected, name:chosen ? `${chosen.pluginName} · ${chosen.name}` : 'Unavailable Event'}], selected)}</optgroup>` : '';
+    return `<option value="">${!all.length ? 'No plugin events available' : !matches.length ? 'No matching Events' : 'Select Event'}</option>`
+      + retained + [...groups].map(([group, events]) => `<optgroup label="${escapeHtml(group)}">${this.options(events, selected)}</optgroup>`).join('');
+  },
+
+  searchEvents(input) {
+    const select = input.closest('.task-block').querySelector('[name="eventId"]');
+    const selected = select.value;
+    select.innerHTML = this.eventOptions(selected, input.value);
+    select.value = selected;
   },
 
   conditionOperators(type) {
@@ -203,7 +253,7 @@ const TaskUI = {
   },
 
   parameterFields(step, action) {
-    return action.parameters.map(field => {
+    return PluginUI.groupFields(action.parameters,field => {
       const selected = step.parameters?.[field.id];
       if (action.controlScene && selected && field.enum && !field.enum.includes(selected)) {
         field = {...field, enum: [...field.enum, selected], enumLabels: [...field.enumLabels, 'Unavailable lighting scene']};
@@ -215,7 +265,7 @@ const TaskUI = {
       }
       if (field.type !== 'string' || field.enum || field.format === 'secret') return input;
       return `${input}<label class="event-value-picker">${escapeHtml(field.label)} event value<select data-event-value-picker data-parameter="${field.id}">${this.eventValueOptions()}</select></label><div class="event-binding-hints" data-binding-parameter="${field.id}">${this.bindingHints(step.parameters?.[field.id])}</div>`;
-    }).join('');
+    },step.id || action.id);
   },
 
   eventValueHelp() {
@@ -245,7 +295,7 @@ const TaskUI = {
     return `<article class="task-block task-${group}" data-group="${group}" data-block-type="${escapeHtml(selectedType)}">
       <input type="hidden" name="blockId" value="${escapeHtml(item.id || crypto.randomUUID())}"><input type="hidden" name="blockEnabled" value="${item.enabled !== false}">
       ${group === 'start' ? `<input type="hidden" name="ruleNameEdited" value="${nameEdited}">` : ''}
-      <div class="task-block-header"><span class="task-block-icon ${this.categoryFor(item.type)}">${icon(actionCatalog.find(action => action.id === item.capabilityId)?.icon || this.glyphFor(item.type))}</span><span class="step-number"></span><select name="blockType" data-task-type aria-label="${group === 'start' ? 'Rule' : 'Step'} type">${Object.entries(types).map(([type, label]) => `<option value="${escapeHtml(type)}" ${selectedType === type ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}</select>
+      ${group === 'start' ? '<span class="task-rule-or">OR</span>' : ''}<div class="task-block-header"><span class="task-block-icon ${this.categoryFor(item.type)}">${icon(actionCatalog.find(action => action.id === item.capabilityId)?.icon || this.glyphFor(item.type))}</span><span class="step-number"></span>${group === 'start' ? `<select name="blockType" data-task-type aria-label="Rule type">${Object.entries(types).map(([type, label]) => `<option value="${escapeHtml(type)}" ${selectedType === type ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}</select>` : `<input type="hidden" name="blockType" value="${escapeHtml(selectedType)}"><strong class="task-step-title">${escapeHtml(types[selectedType] || 'Unavailable action')}</strong><button class="text-button" type="button" data-action="task-replace">Replace</button>`}
         <div class="row-actions">${group === 'step' ? `<button class="icon-button" type="button" data-action="task-block-up" aria-label="Move step up">${icon('arrow-up')}</button><button class="icon-button" type="button" data-action="task-block-down" aria-label="Move step down">${icon('arrow-down')}</button>` : ''}
           <button class="icon-button" type="button" data-action="task-block-edit" aria-label="Edit ${group}">${icon('pen')}</button><button class="icon-button" type="button" data-action="task-block-copy" aria-label="Copy ${group}">${icon('copy')}</button><button class="icon-button delete" type="button" data-action="task-block-delete" aria-label="Delete ${group}">${icon('trash-can')}</button><button class="switch" type="button" role="switch" aria-checked="${item.enabled !== false}" data-action="task-block-toggle" aria-label="${group === 'start' ? 'Rule' : 'Step'} enabled"></button>
         </div></div><button class="task-block-summary" type="button" data-action="task-block-edit" title="Edit parameters"></button><div class="task-block-fields" ${open ? '' : 'hidden'}>${fields}</div>
@@ -258,16 +308,18 @@ const TaskUI = {
     const existing = state.tasks.find(task => task.id === id);
     const task = existing || draft || { name: '', enabled: false, starts: [], steps: [] };
     this.editorStarts = task.starts;
+    this.replaceStepId = null;
     this.librarySearch = ''; this.libraryCategory = 'all';
     showDialog(`<form id="editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} task` : 'Add task')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>
       <div class="field-row">${this.field('Task name', 'tag', `<input name="name" required maxlength="48" value="${escapeHtml(copy ? task.name + ' copy' : task.name)}">`)}<label class="check-field task-enabled"><input name="enabled" type="checkbox" ${task.enabled && !copy ? 'checked' : ''}>Task enabled</label></div>
-      <p class="activation-help">Task enabled permits runs. Enabled rules start it automatically; enabled steps run in order. Manual Run can use a Task whose automatic rules are disabled.</p><div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p>Any enabled rule can start this enabled Task. With no enabled rules, only manual Run is available.</p></div></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
+      <details class="editor-help"><summary>How Task activation works</summary><p>Task enabled permits runs. Any enabled rule can start it automatically; enabled steps run in order. With no enabled rules, use manual Run.</p></details><div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p>Any enabled rule can start this Task.</p></div></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
       <section class="task-editor-section"><div class="task-section-heading"><div><h3>Run these steps in order</h3><p>Choose actions from the library. Tap a block’s parameters to edit them.</p></div></div><div id="task-steps">${task.steps.map(step => this.card(copy ? { ...step, id: crypto.randomUUID() } : step, 'step')).join('')}</div><button class="button add-action-button" type="button" data-action="task-focus-library">${icon('plus')}Add action</button></section></div>${this.renderLibrary()}</div>
       ${copy ? '<p class="aside-note">The copied task starts disabled.</p>' : ''}</div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create task')}</form>`, { kind: 'task', id, copy, revision: existing?.revision });
     this.numberCards();
   },
 
   numberCards() {
+    if (this.replaceStepId && ![...dialog.querySelectorAll('.task-step')].some(card => this.readCard(card).id === this.replaceStepId)) this.clearReplacement();
     this.refreshEventPickers();
     for (const group of ['start', 'step']) {
       dialog.querySelectorAll(`.task-${group}`).forEach((card, index) => {
@@ -296,23 +348,26 @@ const TaskUI = {
 
   updateSummary(card) {
     const item = this.readCard(card);
-    let detail = item.type === 'log' ? item.message || 'Set message' : '';
+    let detail = item.type === 'log' ? this.bindingLabel(item.message || 'Set message') : '';
     if (item.type === 'schedule') detail = `${TimeUI.format(item.time)} · ${item.days.map(day => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]).join(', ')}`;
     if (item.type === 'timer') detail = `After ${item.seconds} seconds`;
     if (item.type === 'interval') detail = `Every ${item.seconds} seconds`;
     if (item.type === 'sunrise' || item.type === 'sunset') detail = config.location ? `Server location: ${config.location.latitude}, ${config.location.longitude}` : 'Server location required';
-    if (item.type === 'event') detail = (state.taskEvents || []).find(event => event.id === item.eventId)?.name || 'Select plugin event';
+    if (item.type === 'event') {
+      const event = (state.taskEvents || []).find(event => event.id === item.eventId);
+      detail = event ? `When ${event.pluginName} · ${event.name}` : 'Select plugin event';
+    }
     if (item.type === 'event' && item.condition) {
       const field = state.taskEvents.find(event => event.id === item.eventId)?.payload?.find(field => field.id === item.condition.field);
       const comparison = this.conditionOperators(field?.type)[item.condition.operator] || item.condition.operator;
       const event = state.taskEvents.find(event => event.id === item.eventId);
-      detail += ` · ${field?.label || item.condition.field} ${comparison.toLowerCase()} ${typeof item.condition.value === 'boolean' ? item.condition.value ? 'Yes' : 'No' : item.condition.value} · ${event?.occurrenceKey ? 'Each matching occurrence' : 'Becomes true'}`;
+      detail += ` · ${field?.label || item.condition.field} ${comparison.toLowerCase()} ${typeof item.condition.value === 'boolean' ? item.condition.value ? 'Yes' : 'No' : item.condition.value} · ${event?.occurrenceKey ? 'Each matching occurrence' : 'Once when true; nonmatching reading rearms'}`;
     }
     if (item.type === 'delay') detail = `${item.seconds} second${item.seconds === 1 ? '' : 's'}`;
     if (item.type === 'show-vista') detail = `Show Vista · ${state.vistas?.find(vista => vista.id === item.vistaId)?.name || 'Unavailable Vista'}`;
     if (item.type === 'plugin') {
       const action = actionCatalog.find(action => action.id === item.capabilityId);
-      detail = `${action?.name || 'Unavailable action'} · ${Object.values(item.parameters).join(' · ')}`;
+      detail = `${action?.name || 'Unavailable action'}${this.parameterSummary(item, action)}`;
       if (action?.controlScene) {
         const field = action.parameters.find(field => field.id === 'scene-id');
         const index = field.enum.indexOf(item.parameters['scene-id']);
@@ -325,6 +380,34 @@ const TaskUI = {
     }
     card.querySelector('.task-block-summary').textContent = `${item.enabled ? 'Enabled' : 'Disabled'} · ${item.name ? item.name + ' · ' : ''}${detail}`;
     this.refreshBindingHints(card);
+  },
+
+  parameterSummary(step, action) {
+    // Summaries expose declared public values and labels, never secret fields.
+    return (action?.parameters || []).filter(field => field.format !== 'secret' && ['string','number','boolean'].includes(field.type)
+      && step.parameters?.[field.id] !== undefined).map(field => {
+      let value = step.parameters[field.id];
+      const index = field.enum?.indexOf(value) ?? -1;
+      if (index >= 0) value = field.enumLabels?.[index] ?? value;
+      if (typeof value === 'boolean') value = value ? 'Yes' : 'No';
+      if (typeof value === 'string') value = this.bindingLabel(value);
+      return ` · ${field.label || field.id}: ${String(value).slice(0,120)}`;
+    }).join('');
+  },
+
+  bindingLabel(value) {
+    const sources = this.draftRules().filter(rule => rule.type === 'event')
+      .map(rule => (state.taskEvents || []).find(event => event.id === rule.eventId));
+    return value.replace(/\{\{event\.([a-zA-Z0-9_-]+)\}\}/g, (token, key) => {
+      const field = sources.flatMap(source => source?.payload || []).find(field => field.id === key && field.format !== 'secret');
+      return field ? `[${field.label || field.id}]` : token;
+    });
+  },
+
+  clearReplacement() {
+    this.replaceStepId = null;
+    dialog.querySelectorAll('.task-replacing').forEach(card => card.classList.remove('task-replacing'));
+    this.refreshLibrary();
   },
 
   readCard(card) {
@@ -423,7 +506,7 @@ const TaskUI = {
     const replacement = this.card(next, card.dataset.group, true);
     card.outerHTML = replacement;
     this.numberCards();
-    container.children[position].querySelector('[data-task-type]').focus();
+    container.children[position].querySelector('[data-task-type], [data-action="task-replace"]').focus();
   },
 
   eventRuns(task) {
@@ -548,6 +631,14 @@ const TaskUI = {
       return;
     }
     if (action === 'task-add') return this.openEditor();
+    if (action === 'task-replace-cancel') { this.clearReplacement(); dialog.querySelector('#action-search').focus(); return; }
+    if (action === 'task-replace') {
+      const card = control.closest('.task-step');
+      this.clearReplacement(); this.replaceStepId = this.readCard(card).id;
+      card.classList.add('task-replacing'); this.librarySearch=''; this.libraryCategory='all';
+      dialog.querySelector('#action-search').value=''; this.refreshLibrary();
+      dialog.querySelector('#action-search').focus(); return;
+    }
     if (action === 'edit-task' || action === 'copy-task') return this.openEditor(id, action === 'copy-task');
     if (action === 'task-focus-library') { dialog.querySelector('#action-search').focus(); return; }
     if (action === 'task-library-filter') { this.libraryCategory = id; this.refreshLibrary(); return; }
@@ -555,9 +646,18 @@ const TaskUI = {
       dialog.querySelector('#task-starts').insertAdjacentHTML('beforeend', this.card({ type: 'schedule', enabled: true }, 'start', true));
     } else if (action === 'task-library-add') {
       const action = actionCatalog.find(item => item.id === id);
+      if (!action || action.available === false) return showFormError('This action is unavailable. Check its plugin settings.');
       const step = { ...action.defaults, type: action.type, enabled: true, id: crypto.randomUUID() };
       if (action.type === 'plugin') Object.assign(step, { capabilityId: action.id, parameters: { ...action.defaults } });
       const steps = dialog.querySelector('#task-steps');
+      if (this.replaceStepId) {
+        const previous = [...steps.children].find(card => this.readCard(card).id === this.replaceStepId);
+        if (!previous) { this.clearReplacement(); return showFormError('The selected step is no longer available. Choose another step.'); }
+        const old = this.readCard(previous); step.id=old.id; step.enabled=old.enabled;
+        const position = [...steps.children].indexOf(previous);
+        previous.outerHTML=this.card(step,'step',true); this.clearReplacement(); this.numberCards();
+        steps.children[position].querySelector('.task-block-fields input, .task-block-fields select, textarea, [data-action="task-replace"]')?.focus(); return;
+      }
       const insertion = dialog.querySelector('#insert-after').value;
       const previous = [...steps.children].find(card => this.readCard(card).id === insertion);
       if (insertion === 'first') steps.insertAdjacentHTML('afterbegin', this.card(step, 'step', true));

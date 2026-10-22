@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "playstation",
   "name": "PlayStation",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "PSN presence, active game, playtime and trophies",
   "icon": "gamepad",
   "runtime": {

@@ -85,8 +85,9 @@ function validateTableField(field, fields) {
       || typeof column.label !== 'string' || !column.label.trim() || column.label.length > 64
       || !['string', 'number', 'boolean', 'timestamp'].includes(column.type)) throw new Error('Invalid table column.');
     seen.add(column.id);
-    if (column.format !== undefined && (column.type !== 'timestamp' || !['time', 'minutes-until'].includes(column.format))) {
-      throw new Error('Only timestamp table columns support time or minutes-until formatting.');
+    if (column.format !== undefined && !(column.type === 'timestamp' && ['time', 'minutes-until'].includes(column.format)
+      || column.type === 'number' && column.format === 'duration')) {
+      throw new Error('Table formats must match timestamp or numeric duration columns.');
     }
     if (column.position !== undefined && column.position !== 'last') throw new Error('Invalid table column position.');
     return { id: column.id, label: column.label.trim(), type: column.type,

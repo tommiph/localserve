@@ -92,6 +92,15 @@ and disposal. Fixed world links share saved Cards/journey/revision checks.
 
 ## Native builds
 
+For an isolated administrator preview and the responsive interaction checklist,
+see [UI testing](UI-UX-TESTING.md). The preview uses synthetic adapters and fresh
+disposable content rather than the configured installation.
+
+Shared stylesheet sources are under web/styles in explicit cascade order.
+Run runtime/node.exe tools/styles/build.mjs after editing, then use --check.
+Commit the matching generated styles.css. The browser still loads a single file;
+literal legacy TV styles and plugin-owned Card styles remain separate.
+
 tray/build.ps1 uses Windows .NET Framework and local icons. Native plugin folders
 retain their C# source/build scripts. Review scripts before running them.
 

@@ -56,3 +56,7 @@ Status updated and Headset changed expose declared diagnostic fields to Tasks. O
 ## Localserve headset app
 
 The separate native Localserve Go app is listed as **# Localserve #**. VR library offers its generic APK download and a one-use five-minute connection code. The app provides collection browsing, favorites, launch, reviewed installation, confirmed uninstall and package activity in a stationary neon VR cockpit. See [headset app instructions](android/README.md). No launcher or toolbar modification is performed.
+
+The ready-made design uses two gauge columns in regions up to 540 pixels wide.
+Use Vista Preview to check its complete content at the intended size; smaller
+heights may still require scrolling.

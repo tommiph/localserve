@@ -9,6 +9,10 @@ export default {
   async start(value) { settings=value;retryAt=0; },
   stop:suspend, suspend,
   preview() { return capture?.preview() || null; },
+  async inspect(operation, {signal}) {
+    if(operation!=='cameras')throw Error('Unknown camera setup read.');
+    const devices=await listCameras(signal);signal.throwIfAborted();return {devices};
+  },
   async execute(id, parameters, context) {
     context.signal.throwIfAborted();
     if(id==='list-cameras') {
