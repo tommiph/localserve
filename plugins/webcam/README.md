@@ -27,6 +27,11 @@ are 640 × 360, 5 capture frames/second and JPEG quality 70. Capture supports
 1–10 frames/second and up to 1280 × 720; the Card requests up to five images per
 second, so higher capture rates primarily improve detection sampling.
 
+The picture badge says Live only after the viewer decodes an available frame.
+Disabled, disconnected, hidden and failed previews have explicit labels instead.
+The timestamp and measurements are labelled Last reading; they can remain visible
+after capture stops and must not be interpreted as a new observation.
+
 The viewer uses refreshed same-origin JPEG images rather than WebRTC or a new
 video codec. It includes an ES5 path for older Tizen browsers. Images fill the
 Card's available picture area without cropping. The normal Vista URL and TV
@@ -113,3 +118,17 @@ new viewer scripts. Server restarts and Card data refreshes do not reload an
 already-open page. Live JPEG refresh keeps a decoded front image visible while
 the next image loads in a second buffer, so collection fades remain independent
 of the camera's image updates.
+
+Settings group Camera, Preview, Readings, Movement and Lighting. Advanced
+sections hold detailed tuning. Reading interval is entered in seconds (3–6);
+the stored `poll-minutes` setting and polling contract remain in minutes.
+Live Card previews in the Android app require version 1.4.1 or newer.
+
+## Select a camera before capture
+
+List cameras is a read-only Settings operation and works while the plugin is
+disabled or not fully configured. It uses a supervised setup hook, opens no
+stream and saves no readings. Choose a returned name/index, then use Use selected
+camera to save it explicitly. Enable the plugin when ready. Names are a scan
+receipt, not a permanent device identity; list again after USB devices change.
+Changing the camera while enabled restarts capture through normal configuration.

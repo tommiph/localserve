@@ -29,3 +29,5 @@ Localserve-authored code is licensed under the MIT License in LICENSE. Bundled u
 - parse5 8.0.1 (MIT): plugins/webpage/vendor/parse5/LICENSE.
 
 Provider licenses remain in declarations, plugin guides and packaged attribution files. MPL-licensed ICAL.js includes readable upstream source under plugins/calendar/vendor/ical.js/lib/. Android runtime client libraries and their license metadata are under plugins/sensors/android/vendor/; see vendor/lock.json, vendor/README.md and vendor/licenses/. Build SDK/JDK tools must be prepared separately. No provider credentials or remote artwork are supplied.
+
+Phone Home handoff QR encoding: Project Nayuki QR Code generator (MIT), bundled under assets/qrcode/ with license, source URL and SHA-256 provenance.

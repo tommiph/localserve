@@ -9,8 +9,9 @@ Edge, Chrome or Firefox browser is recommended for administration.
 
 The core application needs no npm installation, global Node, Codex account,
 Tizen SDK or internet download. Optional data-provider plugins need internet
-access; device plugins need their configured local device. This is a development
-build, not a signed Windows installer or a guarantee of device compatibility.
+access; device plugins need their configured local device. Setup and portable
+packages are unsigned previews. Source downloads include the same server code;
+no package guarantees compatibility with every device.
 
 ## First start
 
@@ -123,19 +124,25 @@ appears within the remote only when the browser offers an install prompt.
 
 The current server uses HTTP. Chrome's standard standalone PWA installation
 requires trusted HTTPS; a LAN address does not satisfy that requirement. Your
-browser may add only a shortcut opening a browser tab. The remotes do not include
-an Android wrapper APK or TLS bypass. The separate Sensors APK is described below.
+browser may add only a shortcut opening a browser tab. For a native launcher,
+install the unified Localserve Android APK described below. Its Home screen
+provides remotes, information Card favorites and published manual Tasks, with
+optional Sensors reporting. No TLS bypass is provided.
 The server must remain running/reachable; remotes
 do not cache capabilities, queue commands or work offline. Physical Android
 installation behavior depends on your Android/browser version.
 
-## Android Sensors
+## Localserve Android app
 
-Configure LAN access first, enable Sensors, then open `/sensors` at your server's
-LAN address on Android. Download and install the APK using Android's own
-installation prompt. Enter that server address in the app, select the sensors
-you need and tap Start. Devices register without pairing credentials. Grant
-only the optional Android access required by the sources you select.
+Configure LAN access first, then open `/sensors` at your server's LAN address
+on Android. Download and install the APK using Android's own installation prompt.
+In Connection, enter that server address. Home works with enabled remotes, Card
+favorites and explicitly published manual Tasks; the Sensors plugin need not be
+enabled to use these controls. See [Phone Home](PHONE-HOME.md).
+
+For optional native reporting, enable the Sensors plugin, open Sensors in the
+app, select the sources you need and tap Start. Devices register without pairing
+credentials. Grant only the Android access required by the sources you select.
 
 Streaming is started explicitly and has a visible foreground notification.
 Stop from the app or notification. It does not start at boot or buffer readings

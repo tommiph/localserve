@@ -60,6 +60,7 @@ const aliases = {
   // Saved remote mappings use these names; rejecting their icons quarantines
   // the whole Controls store during startup, even though its actions are valid.
   'arrow-up':'arrow-upward', 'arrow-down':'arrow-downward',
+  'chevron-up':'expand-less', 'chevron-down':'expand-more',
   'arrow-rotate-left':'undo', bars:'menu', xmark:'close', 'volume-high':'volume-up', 'volume-low':'volume-down', 'volume-xmark':'volume-off',
   plus:'add', minus:'remove', 'circle-info':'info', play:'play-arrow', 'temperature-half':'device-thermostat',
   'table-cells-large':'dashboard', 'table-cells':'grid-view', meteor:'rocket-launch', 'clock-rotate-left':'history',

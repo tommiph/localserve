@@ -59,6 +59,7 @@ async function fixture(t){
  await fs.writeFile(path.join(folder,'server/index.mjs'),`let live=false;export default {
  validateConfiguration(){return true},async start(){live=true},async stop(){live=false},async suspend(){live=false},
  async preview(){return live?{at:Date.now(),jpeg:'/9j/2Q=='}:null},
+ async inspect(operation){if(operation!=='cameras'||live)throw Error('Setup read must not start capture');return {devices:[{index:0,name:'Synthetic camera'},{index:1,name:'Second camera'}],discard:'not public'}},
  async execute(id,p,c){if(id==='refresh')live=true;await c.saveState({brightness:0,motion:false,condition:'Dark','captured-at':Date.now(),status:'Live'});return {ok:true}}
  };`);
  const app=await createLocalserve(root,{automatic:false});
@@ -67,6 +68,35 @@ async function fixture(t){
  const enable=async(value)=>{const service=app.registry.services()[0];return call('/api/plugins/webcam/config',{revision:service.config.revision,enabled:value});};
  return {app,call,enable};
 }
+
+test('camera setup enumeration works while disabled/unconfigured and never writes or starts capture',async t=>{
+ const f=await fixture(t),record=f.app.registry.get('webcam');record.configured=false;
+ const config=record.config.snapshot(),state=record.state.snapshot();
+ const unauthorized=await fetch(f.app.origin+'/api/plugins/webcam/inspect',{method:'POST',headers:{'Content-Type':'application/json',Origin:f.app.origin},body:JSON.stringify({revision:config.revision})});
+ assert.equal(unauthorized.status,403);
+ assert.equal((await f.call('/api/plugins/webcam/inspect',{revision:config.revision-1})).status,409);
+ const response=await f.call('/api/plugins/webcam/inspect',{revision:config.revision});
+ assert.equal(response.status,200);
+ assert.deepEqual(await response.json(),{revision:config.revision,devices:[{index:0,name:'Synthetic camera'},{index:1,name:'Second camera'}]});
+ assert.deepEqual(record.config.snapshot(),config);assert.deepEqual(record.state.snapshot(),state);
+ assert.equal(record.config.snapshot().enabled,false);assert.equal(record.configured,false);
+ assert.equal(f.app.state.snapshot().runs.length,0);
+ assert.equal((await f.call('/api/plugin-preview/webcam/frame.jpg')).status,409);
+ assert.throws(()=>validateDeclaration({...declaration,runtime:{...declaration.runtime,inspection:'anything'}}),/inspection/);
+});
+
+test('setup reads are serialized, cancelled and reject stale or malformed results',async t=>{
+ const f=await fixture(t),record=f.app.registry.get('webcam'),original=record.runtime.request.bind(record.runtime),revision=record.config.snapshot().revision;
+ let release,entered;const started=new Promise(resolve=>entered=resolve);
+ record.runtime.request=(operation,...args)=>operation==='inspect'?new Promise(resolve=>{release=resolve;entered();}):original(operation,...args);
+ const controller=new AbortController(),pending=f.app.registry.inspectCamera('webcam',revision,controller.signal).catch(error=>error);
+ await started;
+ assert.throws(()=>f.app.registry.inspectCamera('webcam',revision,new AbortController().signal),/already in progress/);
+ controller.abort(Error('Inspection cancelled'));release({devices:[]});assert.match((await pending).message,/cancelled/);
+ assert.equal(record.pending,0);assert.equal(record.inspectionPending,false);
+ record.runtime.request=(operation,...args)=>operation==='inspect'?Promise.resolve({devices:[{index:0,name:'One'},{index:0,name:'Duplicate'}]}):original(operation,...args);
+ await assert.rejects(f.app.registry.inspectCamera('webcam',revision,new AbortController().signal),/invalid/);
+});
 test('frame endpoint is disabled by default, scoped, paused, suspended and cleared on disable',async t=>{
  const f=await fixture(t);assert.equal(f.app.registry.services()[0].enabled,false);
  assert.equal((await f.call('/api/plugin-preview/webcam/frame.jpg')).status,409);
@@ -144,11 +174,12 @@ function previewFixture(code) {
   cloneNode(){return picture();},removeAttribute(name){if(name==='src'){delete this._src;this.complete=false;this.naturalWidth=0;}},
   get nextSibling(){return parent.children[parent.children.indexOf(this)+1]||null;}};}
  const image=picture();parent.children.push(image);
- const doc={querySelector:()=>image},frame={contentDocument:doc,getClientRects:()=>[1],style:{opacity:'0.5'}};
+ const label={textContent:''};
+ const doc={querySelector:()=>image,querySelectorAll:()=>[label]},frame={contentDocument:doc,getClientRects:()=>[1],style:{opacity:'0.5'}};
  const document={hidden:false,documentElement:{contains:()=>attached}};
  const context={window:{},document,setTimeout:(callback,ms)=>{const id=++timerId;timers.set(id,{callback,ms});return id;},clearTimeout:id=>timers.delete(id)};
  vm.runInNewContext(code,context);
- return {preview:context.window.LocalserveCardPreview,image,parent,doc,frame,document,timers,
+ return {preview:context.window.LocalserveCardPreview,image,parent,doc,frame,document,timers,label,
   ready(image){image.complete=true;image.naturalWidth=640;this.run(40);},detach(){attached=false;},run(ms){const item=[...timers].find(([,t])=>t.ms===ms);assert.ok(item,'Expected timer '+ms);timers.delete(item[0]);item[1].callback();}};
 }
 test('ES5 preview buffers decoded frames during fades without child image event handlers',async()=>{
@@ -156,8 +187,10 @@ test('ES5 preview buffers decoded frames during fades without child image event 
  const f=previewFixture(code),url='/api/plugin-preview/webcam/frame.jpg';
  f.preview.attach(f.frame,'https://external.invalid/image',true);assert.equal(f.image.src,undefined);
  f.preview.attach(f.frame,url,true);assert.equal(f.parent.children.length,2);
+ assert.equal(f.label.textContent,'Waiting for frame');
  assert.match(f.image.src,/^\/api\/plugin-preview\/webcam\/frame\.jpg\?v=\d+$/);
  f.ready(f.image);const first=f.image.src;assert.equal(f.image.style.visibility,'visible');
+ assert.equal(f.label.textContent,'Live');
  f.run(200);const back=f.parent.children[1];assert.ok(back.src);assert.equal(back.style.visibility,'hidden');
  assert.equal(f.image.src,first,'Displayed JPEG must not be overwritten by a pending request');assert.equal(f.image.style.visibility,'visible');
  const state=f.frame._preview;f.preview.attach(f.frame,url,true);assert.equal(f.frame._preview,state,'Poll hydration retains buffers');
@@ -172,12 +205,14 @@ test('preview clears failed, hidden and retired buffers and resumes without leak
  f.preview.attach(f.frame,url,true);f.ready(f.image);f.run(200);
  const back=f.parent.children[1],late=[...f.timers.values()].find(t=>t.ms===40).callback;f.run(2500);
  assert.ok(f.parent.children.every(image=>image.style.visibility==='hidden'&&image.src===undefined));
+ assert.equal(f.label.textContent,'No live frame');
  late();assert.ok(f.parent.children.every(image=>image.style.visibility==='hidden'));
  f.run(1000);f.ready(f.image);f.run(200);late();
  assert.equal(back.style.visibility,'hidden','An old load callback cannot publish a reused buffer');
  f.ready(back);f.document.hidden=true;f.run(200);
  assert.equal(f.image.src,undefined);f.document.hidden=false;f.run(500);f.ready(f.image);
- f.preview.attach(f.frame,url,false);assert.equal(f.parent.children.length,1);assert.equal(f.image.src,undefined);
+ f.preview.attach(f.frame,url,false,'Disabled');assert.equal(f.parent.children.length,1);assert.equal(f.image.src,undefined);
+ assert.equal(f.label.textContent,'Disabled');
  f.preview.attach(f.frame,url,true);assert.ok(f.image.src);f.ready(f.image);f.detach();f.run(200);
  assert.equal(f.timers.size,0);assert.equal(f.image.onload,null);assert.equal(f.parent.children.length,1);
 });

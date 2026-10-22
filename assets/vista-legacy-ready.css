@@ -1531,3 +1531,11 @@ html[data-legacy-template="camera-monitor"] .picture { background: #05090d; bord
 html[data-legacy-template="camera-monitor"] strong { color: #e6f6f6; }
 html[data-theme="light"][data-legacy-template="camera-monitor"] main { background: -webkit-linear-gradient(145deg, #e2f1f3, #f4f8fa); background: linear-gradient(145deg, #e2f1f3, #f4f8fa); }
 html[data-theme="light"][data-legacy-template="camera-monitor"] strong { color: #173440; }
+
+/* Compact gauge regions retain literal dimensions and wrap without Grid. */
+@media (max-width:540px) {
+html[data-legacy-template] .instruments, html[data-legacy-template] .metrics, html[data-legacy-template] .values { -webkit-flex-wrap:wrap; flex-wrap:wrap; }
+html[data-legacy-template] .instrument { width:50%; min-width:0; margin-right:0; margin-bottom:14px; }
+html[data-legacy-template] .dial { width:96px; height:96px; margin-left:auto; margin-right:auto; }
+html[data-legacy-template] .metric { width:48%; min-width:0; margin-bottom:10px; }
+}

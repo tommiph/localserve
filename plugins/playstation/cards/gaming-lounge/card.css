@@ -119,3 +119,9 @@ td[data-countdown-at] { white-space: nowrap; color: var(--accent); }
   .trophy svg { width:18px; }
   .trophy strong { font-size:calc(17px * var(--font-scale)); }
 }
+
+/* Compact regions keep numeric instruments on separate rows. */
+@media (max-width:540px) {
+  .instruments,.metrics,.values { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 0; }
+  .instrument { min-width:0; }
+}

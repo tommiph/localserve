@@ -3,6 +3,10 @@
 Open `/home` on your Localserve server for a personal phone remote. Home uses
 its own dark appearance and text scale, independent of administrator settings.
 The server must remain running and reachable on your trusted LAN.
+In **Administration → Phone home**, scan the handoff QR code or copy the bound
+LAN address. The code is generated on this PC and opens Home only; it does not
+install an app or enable reporting. If no LAN address is bound, configure
+**Settings → Network** first. Scanning does not change firewall rules.
 The header and bottom navigation stay visible while the workspace scrolls.
 Phone and Android toolbar gutters follow the same width limits; system bars
 and display cutouts are inset once by the native app.
@@ -51,6 +55,10 @@ In **Administration → Phone home → Edit**, select the Tasks to publish, choo
 their glyphs and enable their shortcuts. Publishing does not enable or change
 the original Task. Unpublish a Task to remove its shortcut, or disable the
 shortcut while retaining its selection. Up to 32 Tasks may be published.
+
+An optional **Short label** gives the phone tile a compact name of up to 40
+characters. Leave it blank to use the Task name. The run confirmation still
+shows the original Task name; the Task definition is unchanged.
 
 Tap a Task, review its name, then choose **Run Task**. It starts the current
 Task from the beginning. The server's normal pause, concurrency, availability

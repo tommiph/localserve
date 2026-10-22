@@ -1,0 +1,205 @@
+/* Searchable libraries and visible Event bindings keep actual saved tokens intact. */
+.library-filter {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  margin:12px 0;
+  font-size:calc(12px * var(--font-scale));
+  color:var(--muted)
+}
+
+.library-filter select {
+  min-height:40px;
+  width:100%;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface);
+  color:var(--text);
+  font:inherit
+}
+
+/* One closed-control style for every administrator dropdown, including Event
+   value insertion. Width/flex placement remains owned by each form layout. */
+.app-shell select, #editor-dialog select, .controls-viewer select {
+  min-height:40px;
+  padding:8px 10px;
+  border:1px solid var(--border);
+  border-radius:6px;
+  background:var(--surface);
+  color:var(--text);
+  font-family:inherit;
+  font-size:calc(13px * var(--font-scale));
+  line-height:1.4;
+  max-width:100%
+}
+
+.app-shell select:focus, #editor-dialog select:focus, .controls-viewer select:focus {
+  border-color:var(--accent)
+}
+
+.glyph-search-help {
+  grid-column:1 / -1;
+  font-size:calc(12px * var(--font-scale));
+  color:var(--muted);
+  padding:8px
+}
+
+/* The schema reference contains metadata only and shares editor theme tokens. */
+.variable-help p { margin:0 0 12px; line-height:1.6; color:var(--muted); }
+.variable-help summary { color:var(--accent); cursor:pointer; }
+.variable-help details[open] summary { margin-bottom:12px; }
+.variable-group { margin:18px 0; }
+.variable-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr)); }
+.variable-entry { min-width:0; padding:20px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); }
+.variable-entry > div:first-child { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; }
+.variable-kind,.variable-context { color:var(--muted); font-size:calc(12px * var(--font-scale)); }
+.variable-entry p { margin:10px 0; line-height:1.6; overflow-wrap:anywhere; }
+.variable-token { display:flex; align-items:center; gap:12px; margin:12px 0; }
+.variable-token code { flex:1; min-width:0; overflow-wrap:anywhere; color:var(--accent-ink); }
+.variable-entry summary { cursor:pointer; color:var(--accent); }
+.variable-entry pre { padding:12px; background:var(--surface-muted); overflow:auto; font-size:calc(12px * var(--font-scale)); }
+.variable-copy-buffer { position:fixed; left:-10000px; top:0; }
+
+.library-owner {
+  display:block;
+  color:var(--accent);
+  font-size:calc(11px * var(--font-scale));
+  margin:4px 0
+}
+
+.library-choice {
+  margin-bottom:8px
+}
+
+.library-choice .library-action {
+  margin-bottom:0
+}
+
+.library-unavailable {
+  font-size:calc(11px * var(--font-scale));
+  color:var(--warning);
+  padding:6px 10px;
+  line-height:1.5
+}
+
+.library-action .library-unavailable {
+  padding:4px 0
+}
+
+.library-destination {
+  font-size:calc(12px * var(--font-scale));
+  padding:10px;
+  background:var(--accent-soft);
+  color:var(--accent-ink);
+  border-radius:6px;
+  overflow-wrap:anywhere
+}
+
+.event-binding-hints {
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:8px 0 16px
+}
+
+.binding-chip {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:5px 10px;
+  color:var(--accent);
+  font-size:calc(12px * var(--font-scale));
+  background:var(--accent-soft)
+}
+
+.binding-chip.missing {
+  color:var(--danger);
+  background:var(--danger-soft)
+}
+
+.binding-warning {
+  color:var(--warning);
+  font-size:calc(12px * var(--font-scale));
+  flex-basis:100%
+}
+
+.captured-event-preview {
+  padding:16px;
+  background:var(--surface-muted);
+  border-radius:8px
+}
+
+.selected-display-marker {
+  font-size:calc(11px * var(--font-scale));
+  color:var(--accent);
+  background:var(--accent-soft);
+  padding:7px 10px;
+  border-radius:6px
+}
+
+/* Preview selection is administrator-only and never changes public layout CSS. */
+.vista-preview-option {
+  margin:14px 0;
+  display:flex;
+  align-items:center;
+  gap:9px;
+  font-size:calc(12px * var(--font-scale));
+  color:var(--muted)
+}
+
+.vista-editing-panels.with-preview {
+  display:grid;
+  grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr);
+  gap:22px;
+  align-items:start
+}
+
+.vista-editor.wide-preview {
+  width:min(1640px,calc(100vw - 48px))
+}
+
+.with-preview #vista-preview-panel {
+  position:sticky;
+  top:0
+}
+
+.vista-selected-node {
+  border-color:var(--accent)
+}
+
+#vista-preview .vista-preview-selected {
+  outline:2px solid var(--accent);
+  outline-offset:-3px
+}
+
+#vista-preview .vista-preview-selected::after {
+  pointer-events:none
+}
+
+.activity-glyph.error {
+  color:var(--danger);
+  background:var(--danger-soft)
+}
+
+.mobile-navigation-toggle,.mobile-navigation-close,.navigation-scrim {
+  display:none
+}
+
+@media(max-width:1200px) {
+  .vista-editing-panels.with-preview {
+    grid-template-columns:1fr
+  }
+
+  .with-preview #vista-preview-panel {
+    position:static
+  }
+
+  .with-preview .vista-admin-preview {
+    height:360px
+  }
+
+}
+

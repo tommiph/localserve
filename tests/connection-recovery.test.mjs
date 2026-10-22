@@ -122,7 +122,7 @@ test('connection UI keeps results scoped to settings revision and posts only the
     document:{addEventListener(){},getElementById(){return null;}},mutate:async(url,body)=>{requests++;assert.equal(url,'api/plugins/samsung-tv/actions/test-connection');assert.equal(body.revision,3);assert.deepEqual(Object.keys(body.parameters),[]);await new Promise(r=>resolve=r);return {result:{message:'Verified'}};}};
   vm.createContext(scope);vm.runInContext(await fs.readFile(new URL('../web/plugin-ui.js',import.meta.url),'utf8')+'\nglobalThis.ui=PluginUI;',scope);
   const ui=scope.ui;ui.render=()=>renders++;
-  assert.match(ui.connectionPanel(service),/not been tested/);
+  assert.match(ui.connectionPanel(service),/Not checked in this browser session/);
   const control={dataset:{revision:'3',capability:'test-connection'}};
   const operation=ui.testConnection(service,control);await ui.testConnection(service,control);assert.equal(requests,1);
   resolve();await operation;assert.match(ui.connectionPanel(service),/Verified/);assert.equal(ui.pending,false);assert.equal(renders,2);

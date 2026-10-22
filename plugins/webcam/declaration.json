@@ -3,12 +3,13 @@
   "apiVersion": 1,
   "id": "webcam",
   "name": "Webcam",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "videocam",
   "description": "Local Windows webcam preview, movement detection and relative lighting measurements",
   "runtime": {
     "entry": "server/index.mjs",
-    "preview": "jpeg-v1"
+    "preview": "jpeg-v1",
+    "inspection": "camera-list-v1"
   },
   "polling": {
     "actionId": "refresh",
@@ -22,7 +23,9 @@
       "min": 0,
       "max": 31,
       "default": 0,
-      "help": "First camera is 0. Use List cameras in Settings to read names and indices. Indices may change after USB devices are added or removed."
+      "help": "First camera is 0. Use List cameras in Settings to read names and indices. Indices may change after USB devices are added or removed.",
+      "section": "Camera",
+      "advanced": true
     },
     {
       "id": "width",
@@ -30,7 +33,9 @@
       "type": "number",
       "min": 160,
       "max": 1280,
-      "default": 640
+      "default": 640,
+      "section": "Preview",
+      "advanced": true
     },
     {
       "id": "height",
@@ -38,7 +43,9 @@
       "type": "number",
       "min": 120,
       "max": 720,
-      "default": 360
+      "default": 360,
+      "section": "Preview",
+      "advanced": true
     },
     {
       "id": "fps",
@@ -46,7 +53,8 @@
       "type": "number",
       "min": 1,
       "max": 10,
-      "default": 5
+      "default": 5,
+      "section": "Preview"
     },
     {
       "id": "quality",
@@ -54,16 +62,20 @@
       "type": "number",
       "min": 20,
       "max": 90,
-      "default": 70
+      "default": 70,
+      "section": "Preview",
+      "advanced": true
     },
     {
       "id": "poll-minutes",
-      "label": "Reading interval (minutes)",
+      "label": "Reading interval (seconds)",
       "type": "number",
       "min": 0.05,
       "max": 0.1,
       "default": 0.05,
-      "help": "Readings and Tasks refresh approximately every 3–6 seconds; the video preview updates separately."
+      "help": "Readings and Tasks refresh approximately every 3–6 seconds; the video preview updates separately.",
+      "section": "Readings",
+      "displayScale": 60
     },
     {
       "id": "motion-threshold",
@@ -71,7 +83,8 @@
       "type": "number",
       "min": 0.5,
       "max": 80,
-      "default": 4
+      "default": 4,
+      "section": "Movement"
     },
     {
       "id": "pixel-threshold",
@@ -79,7 +92,9 @@
       "type": "number",
       "min": 5,
       "max": 100,
-      "default": 20
+      "default": 20,
+      "section": "Movement",
+      "advanced": true
     },
     {
       "id": "motion-confirm-frames",
@@ -87,7 +102,9 @@
       "type": "number",
       "min": 1,
       "max": 10,
-      "default": 2
+      "default": 2,
+      "section": "Movement",
+      "advanced": true
     },
     {
       "id": "motion-hold-seconds",
@@ -95,13 +112,17 @@
       "type": "number",
       "min": 1,
       "max": 60,
-      "default": 4
+      "default": 4,
+      "section": "Movement",
+      "advanced": true
     },
     {
       "id": "compensate-lighting",
       "label": "Reduce movement from uniform brightness changes",
       "type": "boolean",
-      "default": true
+      "default": true,
+      "section": "Movement",
+      "advanced": true
     },
     {
       "id": "dark-threshold",
@@ -109,7 +130,8 @@
       "type": "number",
       "min": 0,
       "max": 95,
-      "default": 20
+      "default": 20,
+      "section": "Lighting"
     },
     {
       "id": "bright-threshold",
@@ -117,7 +139,8 @@
       "type": "number",
       "min": 5,
       "max": 100,
-      "default": 75
+      "default": 75,
+      "section": "Lighting"
     },
     {
       "id": "light-hysteresis",
@@ -125,7 +148,9 @@
       "type": "number",
       "min": 0,
       "max": 15,
-      "default": 3
+      "default": 3,
+      "section": "Lighting",
+      "advanced": true
     },
     {
       "id": "light-confirm-frames",
@@ -133,7 +158,9 @@
       "type": "number",
       "min": 1,
       "max": 10,
-      "default": 3
+      "default": 3,
+      "section": "Lighting",
+      "advanced": true
     }
   ],
   "settingsGuide": {
@@ -143,7 +170,7 @@
         "title": "Camera and privacy",
         "steps": [
           "Connect a Windows-compatible USB or built-in camera. Allow desktop apps to use the camera in Windows privacy settings.",
-          "Choose the camera index and enable Webcam. Capture starts on its next refresh; the camera activity light may illuminate. Use List cameras in Settings to read their names and indices.",
+          "Use List cameras in Settings while the plugin is disabled, select the intended camera and choose Use selected camera. Enable Webcam when ready; capture starts on its next refresh.",
           "Disable the plugin or pause Localserve to stop capture. No audio, recordings, snapshots or image history are stored."
         ]
       },

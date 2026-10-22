@@ -4,6 +4,7 @@
 const VistaUI = {
   draft: null,
   preview: null,
+  fitFrame: null,
   pending: false,
   tab: 'layout',
   splitPreview: false,
@@ -18,6 +19,12 @@ const VistaUI = {
 
   newNode(type) {
     const node = { id: crypto.randomUUID(), type, name: { row: 'Row', column: 'Column', card: 'Card', collection: 'Card collection' }[type], enabled: true, width: '1fr', height: '1fr' };
+    const names = new Set();
+    const visit = item => {if (!item) return; names.add(item.name); (item.children || []).forEach(visit);};
+    visit(this.draft?.layout);
+    const base = node.name; let number = 1;
+    while (names.has(`${base} ${number}`)) number++;
+    node.name = `${base} ${number}`;
     if (['row', 'column'].includes(type)) node.children = [];
     else {
       // Collections begin empty. Cards are explicitly chosen from the library,
@@ -31,14 +38,24 @@ const VistaUI = {
   library() {
     return state.services.flatMap(service => service.cards.map(card => ({ pluginId: service.id, cardId: card.id,
       name: card.name, pluginName: service.name, enabled: card.enabled, pluginEnabled: service.enabled, configured: service.configurationReady,
+      unavailable: AdminUX.cardAvailability(service, card),
       icon: card.icon === 'inherit' ? service.icon : card.icon === 'none' ? 'id-card' : card.icon,
       label: `${service.name} · ${card.name}${card.enabled ? '' : ' (disabled)'}` })));
   },
 
-  targets(node = this.draft.layout, path = '') {
-    const label = path ? `${path} / ${node.name}` : node.name;
+  targets(node = this.draft.layout, path = '', position = '1') {
+    const label = path ? `${path} / ${position} ${node.name}` : `${position} ${node.name}`;
     const current = ['row', 'column', 'collection'].includes(node.type) ? [{ id: node.id, name: `${label} (${node.type === 'collection' ? 'Collection' : node.type === 'row' ? 'Row' : 'Column'})` }] : [];
-    return current.concat((node.children || []).flatMap(child => this.targets(child, label)));
+    return current.concat((node.children || []).flatMap((child,index) => this.targets(child, label, `${position}.${index+1}`)));
+  },
+
+  nodePath(id, node = this.draft.layout, position = '1') {
+    if (node.id === id) return position;
+    return (node.children || []).map((child,index) => this.nodePath(id,child,`${position}.${index+1}`)).find(Boolean) || '';
+  },
+
+  layoutMap(node = this.draft.layout, position = '1') {
+    return `<div class="vista-map-node vista-map-${node.type}" data-live-key="map:${escapeHtml(node.id)}"><button type="button" data-action="vista-map-select" data-id="${escapeHtml(node.id)}" aria-pressed="${this.selectedNodeId===node.id}" title="${escapeHtml(node.width+' × '+node.height)}">${escapeHtml(position+' '+node.name)}${node.enabled ? '' : ' · Disabled'}</button>${node.children?.length ? `<div class="vista-map-children">${node.children.map((child,index)=>this.layoutMap(child,`${position}.${index+1}`)).join('')}</div>` : ''}</div>`;
   },
 
   target() {
@@ -69,7 +86,7 @@ const VistaUI = {
     const cardRows = this.library().filter(card => (this.libraryCategory === 'all' || this.libraryCategory === `plugin:${card.pluginId}`)
       && `${card.name} ${card.pluginName}`.toLowerCase().includes(search)).map(card => {
       const alreadyAdded = target.type === 'collection' && target.cards.some(member => member.pluginId === card.pluginId && member.cardId === card.cardId);
-      const reason = alreadyAdded ? 'Already added to this collection' : !card.enabled ? 'Card disabled; enable it in Card designer to display it.' : !card.configured ? 'Plugin needs configuration.' : !card.pluginEnabled ? 'Plugin disabled.' : '';
+      const reason = alreadyAdded ? 'Already added to this collection' : card.unavailable;
       return `<button class="library-action" type="button" data-action="vista-library-card" data-plugin="${escapeHtml(card.pluginId)}" data-id="${escapeHtml(card.cardId)}" aria-label="Add ${escapeHtml(card.name)}" ${alreadyAdded ? 'disabled' : ''}><span class="task-block-icon server">${icon(card.icon)}</span><span><strong>${escapeHtml(card.name)}</strong><span class="library-owner">${escapeHtml(card.pluginName)}</span>${reason ? `<small class="library-unavailable">${escapeHtml(reason)}</small>` : ''}</span>${icon('plus')}</button>`;
     });
     return layoutRows.concat(cardRows).join('') || '<div class="empty-state">No cards found.</div>';
@@ -112,7 +129,7 @@ const VistaUI = {
     const selected = state.vistas?.find(vista => vista.id === state.vistaDisplay?.vistaId);
     return pageHeading('Vistas', 'Layouts for end-user displays', `<button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
       `<section class="panel vista-display-panel"><div class="panel-header"><h2>${icon('display')}End-user display</h2><a class="button" href="display" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open shared /display</a></div><div class="panel-body"><p>${selected?.enabled ? escapeHtml(selected.name) : 'No enabled Vista selected'} · /display</p><p class="field-help">Use on shared display changes /display for everyone. Open this Vista only opens its own URL. Tasks → Server → Show Vista can change it using Timer, Interval, Schedule or Event rules. All open display pages follow the same selection.</p></div></section>` +
-      `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${statusPill(vista.enabled ? 'Enabled' : 'Disabled', vista.enabled ? 'running' : 'paused')}${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
+      `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
   },
 
   find(id, node = this.draft?.layout, parent = null) {
@@ -162,17 +179,17 @@ const VistaUI = {
   nodeSummary(node, root = false) {
     const sizes = root ? '' : `${node.width} × ${node.height} · `;
     if (node.children) return `${sizes}${node.type === 'row' ? 'Horizontal' : 'Vertical'} · ${node.children.length} item${node.children.length === 1 ? '' : 's'}`;
-    if (node.type === 'collection') return `${sizes}${node.cards.length} card${node.cards.length === 1 ? '' : 's'} · ${node.rotation === 'update' ? 'On card update' : `Every ${node.intervalSeconds}s${node.rotation === 'both' ? ' or on update' : ''}`}`;
+    if (node.type === 'collection') return `${sizes}${node.cards.length} card${node.cards.length === 1 ? '' : 's'} · ${node.rotation === 'update' ? 'On card update' : `Every ${node.intervalSeconds}s${node.rotation === 'both' ? ' or on update' : ''}`} · ${this.animations[node.animation] || node.animation}`;
     const reference = node.cards[0];
     const card = reference && this.library().find(card => card.pluginId === reference.pluginId && card.cardId === reference.cardId);
-    return `${sizes}${card?.label || (reference ? 'Unavailable card' : 'No card selected')}`;
+    return `${sizes}${card?.label || (reference ? 'Unavailable card' : 'No card selected')}${card?.unavailable ? ' · '+card.unavailable : ''}`;
   },
 
   memberRows(node) {
     return node.cards.map((reference, index) => {
       const card = this.library().find(card => card.pluginId === reference.pluginId && card.cardId === reference.cardId);
-      return `<div class="vista-member-block"><span class="task-block-icon server">${icon(card?.icon || 'id-card')}</span><span class="vista-member-title"><strong>${escapeHtml(card?.name || 'Unavailable card')}</strong><small>${escapeHtml(card?.pluginName || reference.pluginId)}${card && !card.enabled ? ' · Disabled' : ''}</small></span><div class="row-actions"><button class="icon-button" type="button" data-action="vista-member-up" data-index="${index}" aria-label="Move card ${index + 1} up" ${index === 0 ? 'disabled' : ''}>${icon('arrow-up')}</button><button class="icon-button" type="button" data-action="vista-member-down" data-index="${index}" aria-label="Move card ${index + 1} down" ${index === node.cards.length - 1 ? 'disabled' : ''}>${icon('arrow-down')}</button><button class="icon-button delete" type="button" data-action="vista-member-delete" data-index="${index}" aria-label="Remove card ${index + 1}">${icon('trash-can')}</button></div></div>`;
-    }).join('') || '<p class="vista-empty-members">No cards.</p>';
+      return `<div class="vista-member-block"><span class="task-block-icon server">${icon(card?.icon || 'id-card')}</span><span class="vista-member-title"><strong>${escapeHtml(card?.name || 'Unavailable card')}</strong><small>${escapeHtml(card?.pluginName || reference.pluginId)}${card?.unavailable ? ' · '+escapeHtml(card.unavailable) : ''}</small></span><div class="row-actions"><button class="icon-button" type="button" data-action="vista-member-up" data-index="${index}" aria-label="Move card ${index + 1} up" ${index === 0 ? 'disabled' : ''}>${icon('arrow-up')}</button><button class="icon-button" type="button" data-action="vista-member-down" data-index="${index}" aria-label="Move card ${index + 1} down" ${index === node.cards.length - 1 ? 'disabled' : ''}>${icon('arrow-down')}</button><button class="icon-button delete" type="button" data-action="vista-member-delete" data-index="${index}" aria-label="Remove card ${index + 1}">${icon('trash-can')}</button></div></div>`;
+    }).join('') || '<p class="vista-empty-members">No cards. Unavailable members keep their place and show their status.</p>';
   },
 
   nodeEditor(node, root = false) {
@@ -180,7 +197,7 @@ const VistaUI = {
     const glyph = container ? (node.type === 'row' ? 'grip-lines' : 'grip-lines-vertical') : node.type === 'collection' ? 'layer-group' : 'id-card';
     const selected = this.targetId === node.id;
     return `<section class="vista-node-editor ${selected ? 'vista-add-target' : ''} ${this.selectedNodeId === node.id ? 'vista-selected-node' : ''}" data-vista-node="${node.id}">
-      <div class="vista-node-heading task-block-header"><span class="task-block-icon server">${icon(glyph)}</span><strong>${escapeHtml(node.name)}</strong><div class="row-actions">${this.nodeControls(node, root)}</div></div>
+      <div class="vista-node-heading task-block-header"><span class="task-block-icon server">${icon(glyph)}</span><strong><small class="vista-node-position">${escapeHtml(this.nodePath(node.id))}</small> ${escapeHtml(node.name)}</strong><div class="row-actions">${this.nodeControls(node, root)}</div></div>
       <div class="vista-block-description"><button class="task-block-summary" type="button" data-action="vista-node-edit" aria-expanded="${this.expanded.has(node.id)}">${escapeHtml(this.nodeSummary(node, root))}</button>${container || node.type === 'collection' ? `<button class="text-button vista-add-here" type="button" data-action="vista-library-target" aria-pressed="${selected}" aria-label="Add to ${escapeHtml(node.name)}">${icon('plus')}Add here</button>` : ''}</div>
       <div class="vista-node-properties task-block-fields" ${this.expanded.has(node.id) ? '' : 'hidden'}>
         <div class="field-row">${this.input('Item name', 'name', node.name)}${container ? `<label class="field"><span class="field-label">${icon('grip-lines')}Direction</span><select data-vista-property="type"><option value="row" ${node.type === 'row' ? 'selected' : ''}>Row</option><option value="column" ${node.type === 'column' ? 'selected' : ''}>Column</option></select></label>` : ''}</div>
@@ -207,10 +224,10 @@ const VistaUI = {
     this.selectedNodeId = this.targetId;
     this.expanded = new Set(); this.libraryMarkup = {};
     showDialog(`<form id="vista-editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} Vista` : 'Add Vista')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>
-      <div class="field-row">${formField('Vista name', 'tag', `<input name="vistaName" required maxlength="64" value="${escapeHtml(this.draft.name)}">`)}${formField('URL name', 'link', `<input name="vistaSlug" required maxlength="64" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${escapeHtml(this.draft.slug)}">`, '/vistas/ followed by this name.')}</div>
-      <div class="vista-settings-row"><label class="check-field"><span>Vista enabled</span><button type="button" class="switch" role="switch" aria-label="Vista enabled" aria-checked="${this.draft.enabled}" data-action="vista-enabled"></button></label>${this.input('Gap (px)', 'gap', this.draft.gap, 'number', 'min="0" max="80"')}${this.input('Padding (px)', 'padding', this.draft.padding, 'number', 'min="0" max="80"')}</div>
+      <div class="field-row vista-identity">${formField('Vista name', 'tag', `<input name="vistaName" required maxlength="64" value="${escapeHtml(this.draft.name)}">`)}<label class="check-field"><span>Vista enabled</span><button type="button" class="switch" role="switch" aria-label="Vista enabled" aria-checked="${this.draft.enabled}" data-action="vista-enabled"></button></label></div>
+      <details class="editor-help"><summary>URL and spacing</summary><div class="field-row">${formField('URL name', 'link', `<input name="vistaSlug" required maxlength="64" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${escapeHtml(this.draft.slug)}">`, '/vistas/ followed by this name.')}${this.input('Gap (px)', 'gap', this.draft.gap, 'number', 'min="0" max="80"')}${this.input('Padding (px)', 'padding', this.draft.padding, 'number', 'min="0" max="80"')}</div></details>
       <div class="tabs" role="tablist" aria-label="Vista editor"><button id="vista-layout-tab" class="tab" type="button" role="tab" aria-controls="vista-layout-panel" aria-selected="true" tabindex="0" data-action="vista-tab" data-tab="layout">${icon('table-cells')}Layout</button><button id="vista-preview-tab" class="tab" type="button" role="tab" aria-controls="vista-preview-panel" aria-selected="false" tabindex="-1" data-action="vista-tab" data-tab="preview">${icon('eye')}Preview</button></div><label class="check-field vista-preview-option"><input id="vista-split-preview" type="checkbox">Show preview alongside layout</label>
-      <div class="vista-editing-panels"><section id="vista-layout-panel" role="tabpanel" aria-label="Layout"><div class="task-designer vista-designer"><div class="task-canvas"><h3 class="vista-layout-title">Layout editor</h3><p class="field-help vista-layout-instructions">Start by adding cards or layout blocks from the library. <strong>Add here</strong> selects their destination. <strong>Edit</strong> changes sizes and settings; <strong>Preview</strong> shows the result.</p><div id="vista-layout-tree">${this.nodeEditor(this.draft.layout, true)}</div></div>${this.renderLibrary()}</div></section><section id="vista-preview-panel" role="tabpanel" aria-label="Preview" hidden><div id="vista-preview" class="vista-stage vista-admin-preview"></div></section></div></div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create Vista')}</form>`, { kind: 'vista', id: existing?.id, copy, revision: existing?.revision });
+      <p id="vista-fit-warning" class="field-help evidence-error" role="status" hidden></p><div class="vista-editing-panels"><section id="vista-layout-panel" role="tabpanel" aria-label="Layout"><div class="task-designer vista-designer"><div class="task-canvas"><h3 class="vista-layout-title">Layout editor</h3><p class="field-help vista-layout-instructions">Start by adding cards or layout blocks from the library. <strong>Add here</strong> selects their destination. <strong>Edit</strong> changes sizes and settings; <strong>Preview</strong> shows the result.</p><details class="editor-help"><summary>Layout map</summary><p class="field-help">Select a region to edit it. Containers also become the insertion destination. This is a schematic; use Preview for exact sizes.</p><div id="vista-layout-map" class="vista-layout-map"></div></details><div id="vista-layout-tree">${this.nodeEditor(this.draft.layout, true)}</div></div>${this.renderLibrary()}</div></section><section id="vista-preview-panel" role="tabpanel" aria-label="Preview" hidden><div id="vista-preview" class="vista-stage vista-admin-preview"></div></section></div></div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create Vista')}</form>`, { kind: 'vista', id: existing?.id, copy, revision: existing?.revision });
     this.preview = VistaRenderer.create(dialog.querySelector('#vista-preview'));
     this.updatePreview();
   },
@@ -220,6 +237,8 @@ const VistaUI = {
   updatePreview() {
     if (!dialog.open || dialogContext?.kind !== 'vista' || !this.preview) return;
     this.refreshLibrary();
+    const map = dialog.querySelector('#vista-layout-map'), mapMarkup=this.layoutMap();
+    if (map && this.libraryMarkup.map !== mapMarkup) {map.innerHTML=mapMarkup; this.libraryMarkup.map=mapMarkup;}
     const cards = state.services.flatMap(service => service.cards.filter(card => card.enabled).map(card => ({ pluginId: service.id, cardId: card.id, card, catalog: service.cardCatalog, data: service.cardData })));
     // Invalid intermediate sizing should not inject CSS or destroy a working
     // preview. Server validation remains authoritative on Save.
@@ -232,6 +251,25 @@ const VistaUI = {
     this.preview.update({ vista: draft, cards, options: { theme: config.theme, fontScale: config.vistaFontScale, timeZone: state.server.timeZone, timeFormat: config.timeFormat, now: state.server.now, connected: serverClockConnected } });
     dialog.querySelectorAll('#vista-preview [data-node-id]').forEach(element => element.classList.toggle('vista-preview-selected', element.dataset.nodeId === this.selectedNodeId));
     dialog.querySelectorAll('[data-vista-node]').forEach(element => element.classList.toggle('vista-selected-node', element.dataset.vistaNode === this.selectedNodeId));
+    cancelAnimationFrame(this.fitFrame);
+    this.fitFrame=requestAnimationFrame(()=>{
+      this.fitFrame=null;
+      if(dialog.open && dialogContext?.kind==='vista')this.reportFit();
+    });
+  },
+
+  reportFit() {
+    const warnings=[];
+    for(const frame of dialog.querySelectorAll('#vista-preview iframe[data-ready-card]')) {
+      if(!frame.clientWidth || !frame.clientHeight)continue;
+      try {
+        const document=frame.contentDocument, region=document?.querySelector('.content');
+        if(region && (region.scrollHeight>region.clientHeight+2 || region.scrollWidth>region.clientWidth+2))warnings.push(frame.title);
+      } catch { /* An unloaded frame has no measurable layout yet. */ }
+    }
+    const notice=dialog.querySelector('#vista-fit-warning');if(!notice)return;
+    AdminDOM.text(notice,warnings.length?`Visible Cards need scrolling at this preview size: ${warnings.join(', ')}. Use a larger region or fewer details for a TV. This browser preview does not qualify the TV fallback layout.`:'');
+    notice.hidden=!warnings.length;
   },
 
   refreshTree(focusId, focus = true) {
@@ -296,7 +334,7 @@ const VistaUI = {
     }
     if (control.dataset.vistaProperty === 'name') {
       const heading = control.closest('.vista-node-editor').querySelector('.vista-node-heading');
-      heading.querySelector('strong').textContent = node.name;
+      heading.querySelector('strong').innerHTML = `<small class="vista-node-position">${escapeHtml(this.nodePath(node.id))}</small> ${escapeHtml(node.name)}`;
       heading.querySelector('.row-actions').innerHTML = this.nodeControls(node, !this.find(node.id).parent);
     }
     if (nodeId) {
@@ -329,6 +367,15 @@ const VistaUI = {
 
   async handleAction(action, id, control) {
     if (action === 'vista-add') return this.openEditor();
+    if (action === 'vista-map-select') {
+      const found=this.find(id); if(!found)return;
+      this.selectedNodeId=id;
+      this.targetId=['row','column','collection'].includes(found.node.type)?id:found.parent?.id || this.draft.layout.id;
+      this.expanded.add(id); this.refreshTree(id,false);
+      const block=dialog.querySelector(`[data-vista-node="${id}"]`);
+      block?.querySelector('[data-action="vista-node-edit"]')?.focus({preventScroll:true});
+      block?.scrollIntoView({block:'center'}); return;
+    }
     if (action === 'edit-vista' || action === 'copy-vista') return this.openEditor(id, action === 'copy-vista');
     if (action === 'vista-library-filter') {
       this.libraryCategory = id; this.refreshLibrary(); return;

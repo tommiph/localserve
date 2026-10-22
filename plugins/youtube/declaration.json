@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "youtube",
   "name": "YouTube",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "Public channel uploads and new-video events",
   "icon": "play",
   "runtime": {
@@ -186,8 +186,9 @@
         },
         {
           "id": "duration",
-          "label": "Duration (seconds)",
-          "type": "number"
+          "label": "Duration",
+          "type": "number",
+          "format": "duration"
         },
         {
           "id": "url",

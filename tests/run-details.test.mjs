@@ -32,6 +32,19 @@ async function fixture(t) {
 }
 const command = (id, enabled = true) => ({id, type: 'plugin', enabled, capabilityId: 'plugin:fixture:record', parameters: {message: 'PRIVATE_ARGUMENT'}});
 
+test('Event labels belong to admission receipts and survive later declaration edits', async t => {
+  const f=await fixture(t);
+  const declaration={id:'fixture:changed',pluginId:'fixture',pluginName:'Test source',eventId:'changed',name:'Original signal',payload:[]};
+  f.app.registry.events=()=>[declaration];
+  const task=await f.save([{id:'log',type:'log',enabled:true,message:'Receipt recorded'}]);
+  const run=await f.app.engine.start(task.id,'Event: Event',{pluginId:'fixture',eventId:'changed',payload:{}},{automatic:true});
+  declaration.name='Edited signal'; declaration.pluginName='Renamed source';
+  await f.settle();
+  const saved=f.app.state.snapshot().runs.find(item=>item.id===run.id);
+  assert.deepEqual(saved.eventLabel,{pluginName:'Test source',name:'Original signal'});
+  assert.equal(saved.event.eventLabel,undefined,'Labels never become replay payload fields.');
+});
+
 test('receipt intent commits before effects; successful/disabled steps keep timing without copying arguments', async t => {
   const f = await fixture(t), effects = [];
   f.app.registry.execute = async () => {

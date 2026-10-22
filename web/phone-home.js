@@ -378,7 +378,7 @@
   function preferences() {
     openSheet(
       'Make it yours',
-      `<p class="subtle">Favorites are saved on this phone for this server.</p><label class="sound-control"><span>Interface sounds<small class="subtle"> · quiet feedback on touch</small></span><input type="checkbox" id="sounds" ${sound ? 'checked' : ''}></label><button class="secondary" data-action="edit">Choose favorites</button>`,
+      `<p class="subtle">Favorites are saved on this phone for this server address. A different address or port uses separate choices.</p><p class="subtle">Server ${esc(model?.version ? 'v'+model.version : 'version unavailable')}. Reload Home after an interface update; APK and server updates are separate.</p><label class="sound-control"><span>Interface sounds<small class="subtle"> · quiet feedback on touch</small></span><input type="checkbox" id="sounds" ${sound ? 'checked' : ''}></label><button class="secondary" data-action="edit">Choose favorites</button>`,
       'preferences',
     );
   }
@@ -548,7 +548,7 @@
   }
   function openTask(task) {
     openSheet(
-      task.name,
+      task.taskName || task.name,
       `<p class="subtle">Start this Task from the beginning? Its configured actions may control your devices.</p><div class="sheet-actions"><button class="primary" data-action="task-run">${icon('play')}Run Task</button><button class="secondary" data-action="close">Cancel</button></div><p id="task-status" class="live-status" role="status"></p>`,
       'task',
     );

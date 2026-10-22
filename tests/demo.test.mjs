@@ -171,7 +171,7 @@ test('Overview remains usable without the optional demo script or backend capabi
   const source=await fs.readFile(new URL('../web/app.js',import.meta.url),'utf8');
   const overview=source.slice(source.indexOf('function renderOverview()'),source.indexOf('function runsPanel()'));
   let rendered='';
-  const context={state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
+  const context={RunUI:{recentFailures:()=>0},state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
     renderWorkspace:value=>{rendered=value;},pageHeading:()=>'<h1>Overview</h1>',statusPill:()=>'',metric:()=>'',servicesPanel:()=>'',activityPanel:()=>'',icon:()=>'',formatDuration:()=>'',escapeHtml:String};
   vm.createContext(context);vm.runInContext(overview,context);
   context.renderOverview();assert.match(rendered,/<h1>Overview<\/h1>/);assert.match(rendered,/Server controls/);
@@ -183,7 +183,7 @@ test('Overview remains usable without the optional demo script or backend capabi
 test('Overview attention excludes disabled configuration but retains runtime and enabled-service failures',async()=>{
   const source=await fs.readFile(new URL('../web/app.js',import.meta.url),'utf8');
   const overview=source.slice(source.indexOf('function renderOverview()'),source.indexOf('function runsPanel()'));
-  const metrics=new Map(),context={state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
+  const metrics=new Map(),context={RunUI:{recentFailures:()=>0},state:{services:[],tasks:[],server:{discoveryErrors:[],memoryBytes:0}},config:{name:'Localserve',version:'1.0.0'},
     renderWorkspace:()=>{},pageHeading:()=>'',statusPill:()=>'',metric:(label,value)=>{metrics.set(label,value);return '';},servicesPanel:()=>'',activityPanel:()=>'',icon:()=>'',formatDuration:()=>'',escapeHtml:String};
   vm.createContext(context);vm.runInContext(overview,context);
   const disabled={enabled:false,configurationReady:false,health:'idle',pollObservation:{status:'failed'}};

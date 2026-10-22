@@ -7,7 +7,7 @@ const UniverseUI = {
   worlds: [['space','Space'],['ocean','Ocean depths'],['mountains','Alpine mountains'],['forest','Calm forest'],['dunes','Sunset dunes']],
   library() {
     return state.services.flatMap(service => service.cards.filter(card => card.layout === 'readymade')
-      .map(card => ({ pluginId: service.id, cardId: card.id, name: card.name, plugin: service.name, enabled: card.enabled })));
+      .map(card => ({ pluginId: service.id, cardId: card.id, name: card.name, plugin: service.name, enabled: card.enabled, unavailable:AdminUX.cardAvailability(service,card) })));
   },
   render() {
     const value = state.universe;
@@ -27,7 +27,7 @@ const UniverseUI = {
       <div class="field-row">${this.number('Stop at each Card (seconds)', 'holdSeconds', 0, 3600, '0 keeps the flight moving without stopping at Cards.')}${this.select('Card order', 'order', [['sequential','Selected order'],['shuffle','Shuffle']])}</div>
       <div class="field-row">${this.number('Minimum flight (seconds)', 'flightMinSeconds', 2, 300)}${this.number('Maximum flight (seconds)', 'flightMaxSeconds', 2, 300)}</div>
       <h3>Selected Cards</h3>
-      <p class="field-help">Add Cards from the library. Use the arrows to set their order. Disabled or missing Cards are skipped.</p><div id="universe-selected"></div>
+      <p class="field-help">Add Cards from the library. Use the arrows to set their order. Disabled or missing Cards are skipped. Selected Cards with an unavailable source show their status.</p><div id="universe-selected"></div>
       <h3>World</h3>
       ${this.select('Default world', 'world', this.worlds)}
       <div class="field-row">${this.number('Population density (%)', 'density', 0, 100)}${this.number('Flight motion (%)', 'motion', 0, 100, '0 keeps a straight flight path.')}</div><details><summary>Space objects</summary><p class="field-help">These switches apply to the Space world.</p><div class="universe-categories">${[['stars','Stars'],['nebulae','Nebulae'],['planets','Planets'],['asteroids','Asteroids']].map(([id,label]) => `<label class="check-field"><input type="checkbox" name="${id}" ${this.draft[id] ? 'checked' : ''}>${label}</label>`).join('')}</div></details>
@@ -51,12 +51,12 @@ const UniverseUI = {
     const library = this.library();
     dialog.querySelector('#universe-selected').innerHTML = this.draft.cards.map((reference, index) => {
       const card = library.find(card => card.pluginId === reference.pluginId && card.cardId === reference.cardId);
-      return `<div class="universe-card-row"><div><strong>${escapeHtml(card?.name || 'Card unavailable')}</strong><small>${escapeHtml(card ? `${card.plugin}${card.enabled ? '' : ' · Disabled'}` : reference.pluginId)}</small></div><div class="row-actions">${[['up','arrow-up','Move up',index === 0],['down','arrow-down','Move down',index === this.draft.cards.length - 1],['remove','xmark','Remove',false]].map(([action,glyph,label,disabled]) => `<button type="button" class="icon-button" data-action="universe-${action}" data-index="${index}" aria-label="${label} ${escapeHtml(card?.name || 'Card')}" ${disabled ? 'disabled' : ''}>${icon(glyph)}</button>`).join('')}</div></div>`;
+      return `<div class="universe-card-row"><div><strong>${escapeHtml(card?.name || 'Card unavailable')}</strong><small>${escapeHtml(card ? `${card.plugin}${card.unavailable ? ' · '+escapeHtml(card.unavailable) : ''}` : reference.pluginId)}</small></div><div class="row-actions">${[['up','arrow-up','Move up',index === 0],['down','arrow-down','Move down',index === this.draft.cards.length - 1],['remove','xmark','Remove',false]].map(([action,glyph,label,disabled]) => `<button type="button" class="icon-button" data-action="universe-${action}" data-index="${index}" aria-label="${label} ${escapeHtml(card?.name || 'Card')}" ${disabled ? 'disabled' : ''}>${icon(glyph)}</button>`).join('')}</div></div>`;
     }).join('') || '<p class="field-help">No Cards selected. The display shows the world until you add Cards.</p>';
     const plugins = [...new Map(library.map(card => [card.pluginId, card.plugin])).entries()];
     dialog.querySelector('#universe-library').innerHTML = `<div class="library-categories">${[['all','All'], ...plugins.map(([id, label]) => ['plugin:' + id, label])].map(([id,label]) => `<button type="button" class="category-chip" data-action="universe-category" data-category="${id}" aria-pressed="${this.category === id}">${escapeHtml(label)}</button>`).join('')}</div><div class="library-actions">${library.filter(card => (this.category === 'all' || 'plugin:' + card.pluginId === this.category) && `${card.name} ${card.plugin}`.toLowerCase().includes(this.search.toLowerCase())).map(card => {
       const selected = this.draft.cards.some(item => item.pluginId === card.pluginId && item.cardId === card.cardId);
-      return `<button type="button" class="library-action" data-action="universe-add" data-plugin="${card.pluginId}" data-card="${card.cardId}" ${selected || this.draft.cards.length >= 40 ? 'disabled' : ''}>${icon('layer-group')}<span><strong>${escapeHtml(card.name)}</strong><small>${escapeHtml(card.plugin)}${card.enabled ? '' : ' · Disabled'}${selected ? ' · Added' : ''}</small></span>${icon('plus')}</button>`;
+      return `<button type="button" class="library-action" data-action="universe-add" data-plugin="${card.pluginId}" data-card="${card.cardId}" ${selected || this.draft.cards.length >= 40 ? 'disabled' : ''}>${icon('layer-group')}<span><strong>${escapeHtml(card.name)}</strong><small>${escapeHtml(card.plugin)}${card.unavailable ? ' · '+escapeHtml(card.unavailable) : ''}${selected ? ' · Added' : ''}</small></span>${icon('plus')}</button>`;
     }).join('') || '<p class="field-help">No matching ready-made Cards.</p>'}</div>`;
   },
   async handleAction(action, control) {

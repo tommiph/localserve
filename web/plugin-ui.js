@@ -10,6 +10,7 @@ const PluginUI = {
   // Test receipts belong to the current Settings revision, not telemetry or
   // durable device state. Polling cannot turn a past test into current proof.
   connectionResults: new Map(),
+  cameraLists: new Map(),
   builders: new Map(),
 
   taskBuilderCatalog(){
@@ -95,6 +96,11 @@ const PluginUI = {
   },
 
   field(field, value, prefix) {
+    if (field.displayScale) {
+      const scale=field.displayScale;
+      field={...field,min:field.min===undefined?undefined:field.min*scale,max:field.max===undefined?undefined:field.max*scale};
+      if(typeof value==='number')value=Number((value*scale).toPrecision(12));
+    }
     const id = `${prefix}-${field.id}`;
     const common = `id="${escapeHtml(id)}" name="${escapeHtml(field.id)}" ${field.help ? `aria-describedby="${escapeHtml(id)}-help"` : ''} ${field.required ? 'required' : ''}`;
     let input;
@@ -129,7 +135,7 @@ const PluginUI = {
       const control = form.elements?.namedItem(field.id) || form.querySelector(`[name="${field.id}"]`);
       return [field.id, field.type === 'list' ? JSON.parse(control.value) : field.type === 'boolean'
         ? control.type === 'hidden' ? control.value === 'true' : control.checked
-        : field.type === 'number' ? Number(control.value) : control.value];
+        : field.type === 'number' ? Number(control.value)/(field.displayScale || 1) : control.value];
     }));
   },
 
@@ -183,7 +189,7 @@ const PluginUI = {
       <p class="field-help">${escapeHtml(setup.help)}</p>
       <div class="connection-actions">${actions.map(action => `<button type="button" id="connection-${escapeHtml(action.id)}" class="button" data-action="plugin-connection" data-capability="${escapeHtml(action.id)}" data-revision="${service.config.revision}" ${this.pending || reason || action.available === false ? 'disabled' : ''}>${icon(action.id === setup.repairAction ? 'arrows-rotate' : 'link')}${escapeHtml(action.name)}</button>`).join('')}</div>
       ${reason ? `<p class="field-help">${escapeHtml(reason)}</p>` : ''}
-      <div class="connection-result ${current?.error ? 'evidence-error' : ''}" role="status" aria-live="polite">${current ? `${escapeHtml(current.message)}${current.at ? ` · ${escapeHtml(formatServerTimestamp(current.at))}` : ''}` : 'Connection has not been tested for these settings.'}</div>
+      <div class="connection-result ${current?.error ? 'evidence-error' : ''}" role="status" aria-live="polite">${current ? `${current.scope ? escapeHtml(current.scope)+': ' : ''}${escapeHtml(current.message)}${current.at ? ` · ${escapeHtml(formatServerTimestamp(current.at))}` : ''}` : 'Not checked in this browser session for the current settings.'}</div>
     </div></section>`;
   },
 
@@ -192,13 +198,14 @@ const PluginUI = {
     const revision = Number(control.dataset.revision), actionId = control.dataset.capability;
     if (![service.connectionSetup?.testAction, service.connectionSetup?.repairAction].includes(actionId)) return;
     this.pending = true;
-    this.connectionResults.set(service.id, {revision, message: 'Checking connection…'});
+    const scope=service.actions.find(action=>action.id===actionId)?.name || 'Connection check';
+    this.connectionResults.set(service.id, {revision, scope, message: 'Checking connection…'});
     this.render(service);
     try {
       const reply = await mutate(`api/plugins/${service.id}/actions/${actionId}`, {revision, parameters: {}});
-      this.connectionResults.set(service.id, {revision, message: reply.result?.message || 'Connection verified.', at: state.server?.now ?? Date.now()});
+      this.connectionResults.set(service.id, {revision, scope, message: reply.result?.message || 'Check completed.', at: state.server?.now ?? Date.now()});
     } catch (error) {
-      this.connectionResults.set(service.id, {revision, error: true, message: error.message, at: state.server?.now ?? Date.now()});
+      this.connectionResults.set(service.id, {revision, scope, error: true, message: error.message, at: state.server?.now ?? Date.now()});
     } finally {
       this.pending = false;
       if (currentView === service.id) {
@@ -213,22 +220,39 @@ const PluginUI = {
   },
 
   webcamSettings(service) {
-    if (service.id !== 'webcam') return '';
-    const devices = Array.isArray(service.pluginState?.devices) ? service.pluginState.devices : [];
-    return '<section class="panel"><div class="panel-header"><h2>' + icon('videocam') + 'Camera</h2></div><div class="panel-body">'
-      + '<form data-plugin-id="webcam" data-plugin-action="list-cameras"><button class="button" type="submit" ' + (!service.enabled || service.health !== 'ready' ? 'disabled' : '') + '>List cameras</button></form>'
-      + '<p class="field-help">' + (devices.length ? devices.map(row => escapeHtml(String(row.index) + ': ' + row.name)).join('<br>') : 'Enable Webcam, then list the connected cameras. The first camera uses index 0.') + '</p></div></section>';
+    if (service.runtime?.inspection !== 'camera-list-v1') return '';
+    const saved=this.cameraLists.get(service.id), result=saved?.revision===service.config.revision?saved:null;
+    return `<section class="panel"><div class="panel-header"><h2>${icon('videocam')}Camera</h2></div><div class="panel-body"><button class="button" type="button" data-action="plugin-camera-list" ${this.pending || !['idle','ready'].includes(service.health)?'disabled':''}>List cameras</button><p class="field-help">Listing names does not enable the plugin or start capture. Select a camera before enabling; changing an enabled plugin's camera restarts its capture. List again after USB devices change.</p><p>Configured index: ${escapeHtml(service.config.settings['device-index'])}</p>${result?.error?`<p class="evidence-error">${escapeHtml(result.error)}</p>`:result?.devices?.length?`<label class="field"><span class="field-label">Camera</span><select id="camera-choice"><option value="">Choose a camera</option>${result.devices.map(item=>`<option value="${item.index}">${escapeHtml(item.name)} · ${item.index}</option>`).join('')}</select></label><button class="button" type="button" data-action="plugin-camera-use" disabled>Use selected camera</button>`:result?'<p>No cameras found.</p>':'<p class="field-help">No camera list in this browser session for the current settings.</p>'}</div></section>`;
+  },
+
+  async listCameras(service) {
+    if(this.pending)return; this.pending=true;this.render(service);
+    const revision=service.config.revision;
+    try {const result=await request(`api/plugins/${service.id}/inspect`,{revision});this.cameraLists.set(service.id,result);}
+    catch(error){this.cameraLists.set(service.id,{revision,error:error.message});}
+    finally {this.pending=false;if(currentView===service.id)this.render(state.services.find(item=>item.id===service.id));}
   },
 
   settingsBody(service) {
     if (!service.config) return '<section class="panel"><div class="empty-state">Plugin data could not be loaded.</div></section>';
     return `${service.taskBuilder?`<section class="panel plugin-task-builder"><div class="panel-body"><h2>I want… when…</h2><p>Choose an action and when it should happen, then review your Task before saving.</p><button class="button primary" data-action="plugin-task-builder" ${service.enabled?'':'disabled'}>Build a task</button>${!service.enabled?'<p class="field-help">Enable this plugin below to begin.</p>':''}</div></section>`:''}<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
       ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Android app</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
-      <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${service.settings.map(field => this.field(field, service.config.settings[field.id] ?? field.default, 'plugin-setting')).join('')}</fieldset></form>
+      <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${this.groupFields(service.settings,field=>this.field(field,service.config.settings[field.id] ?? field.default,'plugin-setting'),service.id)}</fieldset></form>
       <div class="plugin-setting-row"><span>${icon('toggle-on')}Enabled</span><button type="button" class="switch" role="switch" aria-checked="${service.enabled}" aria-label="${escapeHtml(service.name)} enabled" data-action="toggle-service" data-id="${escapeHtml(service.id)}"></button></div>
       ${service.attribution ? `<p class="field-help"><a href="${escapeHtml(service.attribution.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.label)}</a> · <a href="${escapeHtml(service.attribution.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.licenseLabel)}</a> · ${escapeHtml(service.attribution.notice)}</p>` : ''}
     </div></section>${service.settings.filter(field => field.type === 'list').map(field => this.list(service, field)).join('')}
     <section class="panel plugin-appearance"><div class="panel-body"><details><summary>${icon('palette')} Plugin appearance</summary><div class="plugin-setting-row"><span>Glyph</span><details id="glyph-picker"><summary>${icon(service.icon)}<span>${escapeHtml(service.icon)}</span>${icon('chevron-down')}</summary><div class="glyph-picker-body"><label class="field-label" for="glyph-search">Search glyphs</label><input id="glyph-search" type="search" placeholder="Search glyphs" value="${escapeHtml(this.glyphSearch)}"><div id="glyph-choices" class="glyph-grid">${this.glyphChoices(service)}</div></div></details><button class="button" type="button" data-action="plugin-glyph-default" data-id="${escapeHtml(service.id)}">Reset glyph</button></div></details></div></section>`;
+  },
+
+  groupFields(fields, render, owner = 'fields') {
+    const groups=new Map();
+    for(const field of fields) {
+      const name=field.section || 'General';
+      if(!groups.has(name))groups.set(name,[]);
+      groups.get(name).push(field);
+    }
+    if(!fields.some(field=>field.section || field.advanced))return fields.map(render).join('');
+    return [...groups].map(([name,items])=>`<section class="plugin-field-group"><h3>${escapeHtml(name)}</h3>${items.filter(field=>!field.advanced).map(render).join('')}${items.some(field=>field.advanced)?`<details class="editor-help" data-live-key="advanced:${escapeHtml(owner+':'+name)}"><summary>Advanced · ${escapeHtml(name)}</summary>${items.filter(field=>field.advanced).map(render).join('')}</details>`:''}</section>`).join('');
   },
 
   list(service, field) {
@@ -236,9 +260,7 @@ const PluginUI = {
     const lookup = service.settingsLookup?.setting === field.id;
     return `<section class="panel plugin-list"><div class="panel-header"><h2>${escapeHtml(field.label)} <span class="panel-count">${items.length}</span></h2><div class="heading-actions">${lookup ? `<button type="button" class="button" data-action="plugin-find-source" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('magnifying-glass')}Find ${escapeHtml(field.itemLabel)}</button>` : ''}<button type="button" class="button primary" data-action="plugin-list-add" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('plus')}Add ${escapeHtml(field.itemLabel)}</button></div></div>
       ${field.help ? `<div class="panel-body"><p class="field-help">${escapeHtml(field.help)}</p></div>` : ''}
-      ${items.length ? items.map(item => `<div class="settings-item" data-live-key="source:${escapeHtml(field.id)}:${escapeHtml(item.id)}"><div class="settings-text"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(this.itemSummary(field, item))}</p></div>${statusPill(item.enabled ? 'Enabled' : 'Disabled', item.enabled ? 'running' : 'paused')}<div class="row-actions">
-      ${this.listActionButtons(service, field, item)}${['edit', 'copy', 'delete'].map(action => `<button type="button" class="icon-button ${action === 'delete' ? 'delete' : ''}" data-action="plugin-list-${action}" data-setting="${field.id}" data-id="${item.id}" aria-label="${action[0].toUpperCase() + action.slice(1)} ${escapeHtml(item.name)}">${icon(action === 'edit' ? 'pen' : action === 'copy' ? 'copy' : 'trash-can')}</button>`).join('')}
-      <button type="button" class="switch" role="switch" aria-checked="${item.enabled}" data-action="plugin-list-toggle" data-setting="${field.id}" data-id="${item.id}" aria-label="${escapeHtml(item.name)} enabled"></button></div></div>`).join('') : `<div class="empty-state">No ${escapeHtml(field.label.toLowerCase())} yet.</div>`}</section>`;
+      ${items.length ? items.map(item => `<div class="settings-item" data-live-key="source:${escapeHtml(field.id)}:${escapeHtml(item.id)}"><div class="settings-text"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(this.itemSummary(field, item))}</p></div>${AdminUX.definitionActions(item,{edit:"plugin-list-edit",copy:"plugin-list-copy",delete:"plugin-list-delete",toggle:"plugin-list-toggle"},{attributes:{setting:field.id},before:this.listActionButtons(service,field,item)})}</div>`).join('') : `<div class="empty-state">No ${escapeHtml(field.label.toLowerCase())} yet.</div>`}</section>`;
   },
 
   listActionButtons(service, field, item) {
@@ -469,6 +491,12 @@ const PluginUI = {
 
   async handleAction(action, id, control) {
     const service = state.services.find(service => service.id === currentView);
+    if(action==='plugin-camera-list')return this.listCameras(service);
+    if(action==='plugin-camera-use') {
+      const result=this.cameraLists.get(service.id), selected=document.getElementById('camera-choice')?.value;
+      if(!result || result.revision!==service.config.revision || !result.devices?.some(item=>String(item.index)===selected))return this.showError('List and choose the camera again for the current settings.');
+      return this.save(service.id,{settings:{...service.config.settings,'device-index':Number(selected)}},result.revision);
+    }
     if (action === 'plugin-connection') {
       await this.testConnection(service, control);
     } else if (action === 'plugin-source-action') {
@@ -541,6 +569,9 @@ document.addEventListener('input', event => {
 });
 
 document.addEventListener('change', event => {
+  if(event.target.id==='camera-choice') {
+    const button=document.querySelector('[data-action="plugin-camera-use"]');if(button)button.disabled=event.target.value==='';return;
+  }
   if (event.target.id === 'current-value-instance') {
     PluginUI.valueInstances.set(currentView, event.target.value);
     PluginUI.render(state.services.find(service => service.id === currentView));

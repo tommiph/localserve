@@ -163,9 +163,13 @@ public final class HomeActivity extends Activity {
         generation++;if(web != null){web.stopLoading();web.destroy();web = null;}frame.removeAllViews();connect();
     }
     private void connection() {
+        String version="Unknown";
+        try {version=getPackageManager().getPackageInfo(getPackageName(),0).versionName;} catch(Exception ignored) {}
+        String guidance=SensorService.running?"Stop reporting in Sensors before changing its server address.":"Enter the private LAN address shown by Localserve. Sensor reporting uses this same address.";
+        guidance+="\n\nApp version "+version+". Home reloads the server interface. Updating the server does not install an APK update.";
         EditText address = new EditText(this);address.setSingleLine(true);address.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
         address.setText(preferences.getString("server",""));address.setHint("http://LAN-IP:port");address.setPadding(dp(24),dp(14),dp(24),dp(14));
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Localserve server").setMessage(SensorService.running?"Stop reporting in Sensors before changing its server address.":"Enter the private LAN address shown by Localserve. Sensor reporting uses this same address.")
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Localserve server").setMessage(guidance)
             .setView(address).setNegativeButton("Cancel",null).setPositiveButton("Connect",null).create();
         dialog.setOnShowListener(ignored -> {
             address.setEnabled(!SensorService.running);dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(!SensorService.running);

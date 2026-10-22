@@ -1,0 +1,2 @@
+# Preserve bundled dependency bytes and generated stylesheet output on checkout.
+* -text

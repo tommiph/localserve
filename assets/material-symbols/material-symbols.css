@@ -774,10 +774,12 @@
 .ms-chess-queen::before { content: "\f25c"; }
 .ms-chess-rook::before { content: "\f25b"; }
 .ms-chevron-backward::before { content: "\f46b"; }
+.ms-chevron-down::before { content: "\e5cf"; }
 .ms-chevron-forward::before { content: "\f46a"; }
 .ms-chevron-left::before { content: "\e5cb"; }
 .ms-chevron-line-up::before { content: "\eec3"; }
 .ms-chevron-right::before { content: "\e5cc"; }
+.ms-chevron-up::before { content: "\e5ce"; }
 .ms-child-care::before { content: "\eb41"; }
 .ms-child-friendly::before { content: "\ef80"; }
 .ms-child-hat::before { content: "\ef30"; }

@@ -28,6 +28,8 @@ and Controls use the same validated catalogue. Decorative icons remain hidden
 from screen readers; text and accessible names describe each control.
 
 Compatibility aliases include every previous public glyph ID, including
-`arrow-up` and `arrow-down` in saved TV mappings. Removing an old alias can
+`arrow-up` and `arrow-down` in saved TV mappings, and the `chevron-up` /
+`chevron-down` interface aliases for directional pads and picker indicators.
+Removing an old alias can
 prevent a saved Controls page from passing startup validation. The asset and
 Controls restart tests guard these names without rewriting saved definitions.

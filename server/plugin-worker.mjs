@@ -53,6 +53,9 @@ async function handleRequest(message) {
       result = await adapter.stop();
     } else if (message.operation === 'preview') {
       result = typeof adapter.preview === 'function' ? await adapter.preview() : null;
+    } else if (message.operation === 'inspect') {
+      if(typeof adapter.inspect!=='function')throw new Error('Plugin has no setup reader.');
+      result=await adapter.inspect(message.values.operation,{signal:controller.signal});
     } else if (message.operation === 'suspend-preview') {
       result = typeof adapter.suspend === 'function' ? await adapter.suspend() : null;
     } else if (message.operation === 'execute') {

@@ -50,10 +50,12 @@ or provider accounts are needed. Existing content is never replaced.
 
 To start from scratch instead:
 
-1. Open **Simulator**, leave **Configuration complete** on, and enable the plugin.
-2. Open **Tasks**, create a Task and name it **First Task**.
-3. Add **Log activity**, enter a short message, enable the Task and save it.
+1. Open **Tasks**, create a Task and name it **First Task**.
+2. Add the Server action **Log activity** and enter a short message.
+3. Enable the Task and save it, leaving automatic rules empty.
 4. Run it manually. Check its completed run and find your message in **Activity**.
+
+Server actions work without enabling Simulator or another plugin.
 
 This uses no device or provider account. Add rules and real plugin actions when
 you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.

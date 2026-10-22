@@ -322,6 +322,13 @@ export class TaskEngine {
     this.assertStart(task, eventContext, revision);
     // Reserve admission before the first await. Other start requests must count
     // runs whose history write is pending as well as runs already executing.
+    // Display labels are captured at admission, independent of later schema or
+    // Task edits. They are receipt metadata, never template or replay inputs.
+    const eventDeclaration = eventContext && this.registry.events().find(item => item.pluginId === eventContext.pluginId && item.eventId === eventContext.eventId
+      && (!item.instanceId || eventContext.payload?.[item.instanceKey] === item.instanceId)
+      && (!item.sensorId || eventContext.payload?.['sensor-id'] === item.sensorId));
+    const eventLabel = eventDeclaration ? {pluginName:String(eventDeclaration.pluginName || eventDeclaration.pluginId).slice(0,160),
+      name:String(eventDeclaration.name || eventDeclaration.eventId).slice(0,160)} : null;
     this.pending.add(id);
     const run = { id: randomUUID(), taskId: id, name: task.name, reason, status: 'running', startedAt: Date.now(), step: 0,
       stepCount: task.steps.length,
@@ -332,6 +339,7 @@ export class TaskEngine {
           : builtInActions.find(action => action.type === step.type)?.name || step.type,
       })),
       taskRevision: task.revision, automatic, ...(rerunOf ? {rerunOf} : {}), ...(eventRunId ? {eventRunId} : {}),
+      ...(eventLabel ? {eventLabel} : {}),
       ...(eventContext ? { event: eventContext } : {}) };
     const controller = new AbortController();
     try {

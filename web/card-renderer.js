@@ -75,6 +75,8 @@ const CardRenderer = (() => {
     if (datum.type === 'timestamp') {
       value = field.format === 'relative' ? relative(value, options.now ?? Date.now())
         : timestamp(value, options, field.format === 'time');
+    } else if (datum.type === 'number' && field.format === 'duration') {
+      value = duration(value);
     } else if (datum.type === 'number' && field.format !== 'text') {
       const decimals = field.format === 'number'
         ? Math.max(0, Math.min(4, Math.trunc(Number(field.decimals) || 0)))
@@ -84,6 +86,13 @@ const CardRenderer = (() => {
       value = field.format === 'text' ? String(value) : value ? 'Yes' : 'No';
     }
     return `${escape(value)}${field.unit ? ` <span class="display-card-unit">${escape(field.unit)}</span>` : ''}`;
+  }
+
+  function duration(value) {
+    if (!Number.isFinite(value) || value < 0) return 'No data';
+    const seconds=Math.floor(value), minutes=Math.floor(seconds/60), hours=Math.floor(minutes/60);
+    return hours ? `${hours}:${String(minutes%60).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`
+      : `${minutes}:${String(seconds%60).padStart(2,'0')}`;
   }
 
   function renderTable(field, datum, source, listOptions, options) {
@@ -240,7 +249,7 @@ const CardRenderer = (() => {
           const raw = row[column.id], known = raw !== null && raw !== undefined;
           const value = !known ? 'No data' : column.type === 'timestamp'
             ? column.format === 'minutes-until' ? minutesUntil(raw, options.now ?? Date.now(), options.locale) : timestamp(raw, options, column.format === 'time')
-            : column.type === 'number' ? new Intl.NumberFormat(options.locale, { maximumFractionDigits: 1 }).format(raw)
+            : column.type === 'number' ? column.format === 'duration' ? duration(raw) : new Intl.NumberFormat(options.locale, { maximumFractionDigits: 1 }).format(raw)
             : column.type === 'boolean' ? raw ? 'Yes' : 'No' : String(raw);
           return [column.id, { value, available: known, ...(known && column.format === 'minutes-until' ? { deadline: raw } : {}) }];
         }))) : [];
@@ -272,7 +281,7 @@ const CardRenderer = (() => {
       // The child has no scripts or administrator data. Only declaration-owned
       // text slots and bounded scene tokens are filled; provider HTML stays text.
       if (!document?.querySelector('[data-ready-made]')) return;
-      globalThis.LocalserveCardPreview?.attach(frame, payload.previewUrl, payload.previewActive);
+      globalThis.LocalserveCardPreview?.attach(frame, payload.previewUrl, payload.previewActive, payload.status);
       const root = document.documentElement;
       root.dataset.variant = payload.variant;
       root.dataset.theme = payload.theme;
@@ -280,7 +289,9 @@ const CardRenderer = (() => {
       root.style.setProperty('--font-scale', Math.max(.8, Math.min(1.3, payload.fontScale / 100)));
       for (const element of document.querySelectorAll('[data-card-text]')) {
         const id = element.dataset.cardText;
-        const text = id === 'source-name' ? payload.name : id === 'source-status' ? payload.status : payload.slots[id]?.value || 'No data';
+        // Source-owned reception labels never hide a disabled/disconnected host.
+        const text = id === 'source-name' ? payload.name : id === 'source-status' || element.hasAttribute('data-card-source-state') && payload.status !== 'Ready'
+          ? payload.status : payload.slots[id]?.value || 'No data';
         if (element.textContent !== text) element.textContent = text;
         element.dataset.available = String(payload.slots[id]?.available ?? true);
         if (Number.isFinite(payload.slots[id]?.deadline)) element.dataset.countdownAt = String(payload.slots[id].deadline);

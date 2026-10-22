@@ -21,6 +21,7 @@ import { SensorIngress } from './server/sensor-ingress.mjs';
 import {phoneDisplay} from './server/phone-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
+import {readClientPackages} from './server/client-packages.mjs';
 import { readCardAsset } from './server/card-templates.mjs';
 import { attachTrayControl } from './server/tray-control.mjs';
 import { validateListen, requestOrigin, isPrivateIPv4, listenBrowserHttp } from './server/network.mjs';
@@ -82,6 +83,7 @@ export async function createLocalserve(root, options = {}) {
   const dataDirectory = path.join(root, 'data');
   await fs.mkdir(dataDirectory, { recursive: true });
   const realRoot = await fs.realpath(root), realData = await fs.realpath(dataDirectory);
+  const clientPackages=await readClientPackages(root);
   if (!realData.startsWith(realRoot + path.sep)) throw new Error('data/ must remain inside Localserve.');
   const lockFile = path.join(dataDirectory, 'server.lock');
   let lock;
@@ -196,6 +198,7 @@ export async function createLocalserve(root, options = {}) {
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
         runs: state.snapshot().runs.map(run => ({ ...run, step: engine.active.get(run.id)?.step || run.step })),
         server: { startedAt, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), address: browserAddress,
+          lanAddress: registry.localDisplayOrigin(), clientPackages,
           now: Date.now(),
           // A derived clock detail lets the browser display server time even if
           // its own system timezone differs. This is not an editable preference.
@@ -261,7 +264,7 @@ export async function createLocalserve(root, options = {}) {
         if (request.method === 'GET' && url.pathname === '/api/control-view') return json(response, 200, controls.index());
         if(url.pathname==='/api/phone-home'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the Home page.');
-          return json(response,200,phoneHome.viewer());
+          return json(response,200,{...phoneHome.viewer(),version:serverVersion});
         }
         const phoneCard=/^\/api\/phone-home\/cards\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})$/.exec(url.pathname);
         if(phoneCard){
@@ -370,6 +373,13 @@ export async function createLocalserve(root, options = {}) {
           else if (/^\/api\/plugins\/[^/]+\/config$/.test(url.pathname)) {
             const id = url.pathname.split('/')[3];
             await registry.saveConfiguration(id, values);
+          } else if (/^\/api\/plugins\/[^/]+\/inspect$/.test(url.pathname)) {
+            if(Object.keys(values).some(key=>key!=='revision'))throw new HttpError(400,'Use the current settings revision.');
+            const controller=new AbortController(), cancelled=()=>{if(!response.writableEnded)controller.abort(new Error('Client disconnected.'));};
+            response.once('close',cancelled);
+            try{return json(response,200,await registry.inspectCamera(url.pathname.split('/')[3],values.revision,controller.signal));}
+            catch(error){if(!error.status)error.status=409;throw error;}
+            finally{response.removeListener('close',cancelled);}
           } else if (/^\/api\/plugins\/[^/]+\/actions\/[^/]+$/.test(url.pathname)) {
             const [, , , id, , actionId] = url.pathname.split('/');
             if (Object.keys(values).some(key => !['parameters', 'revision'].includes(key))) throw new HttpError(400, 'Unknown action field.');

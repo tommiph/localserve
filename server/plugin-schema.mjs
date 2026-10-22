@@ -22,6 +22,18 @@ export function validateFields(fields = [], nested = false) {
     seen.add(field.id);
     const result = { id: field.id, type: field.type, label: String(field.label || field.id).slice(0, 100), required: field.required === true };
     if (field.help !== undefined) result.help = String(field.help).slice(0, 400);
+    if (field.section !== undefined) {
+      if (typeof field.section !== 'string' || !field.section.trim() || field.section.length > 40) throw new Error('Field sections need a label of 1–40 characters.');
+      result.section=field.section.trim();
+    }
+    if (field.advanced !== undefined) {
+      if (typeof field.advanced !== 'boolean') throw new Error('Advanced field metadata must be boolean.');
+      result.advanced=field.advanced;
+    }
+    if (field.displayScale !== undefined) {
+      if (field.type !== 'number' || field.enum || !Number.isFinite(field.displayScale) || field.displayScale < 0.001 || field.displayScale > 3600000) throw new Error('Display scale requires a bounded numeric field without choices.');
+      result.displayScale=field.displayScale;
+    }
     if (field.defaultFrom !== undefined) {
       if (field.type !== 'string' || field.defaultFrom !== 'server-location') throw new Error('Unknown plugin field default source.');
       result.defaultFrom = field.defaultFrom;

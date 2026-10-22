@@ -176,7 +176,7 @@ try {
   for(const file of ['localserve.iss','build.mjs','verify.mjs','uninstall-path.mjs','README.md','compiler-lock.json','prepare-compiler.ps1','LICENSE.InnoSetup.txt'])await copyFile('tools/installer/'+file);
   // Only public isolated tests are copied; never traverse tests/.tmp.
   for (const file of publicTests.filter(file=>file!=='tests/source.test.mjs')) await copyFile(file);
-  for (const file of ['tools/testing/public-tests.mjs','tools/testing/run.mjs','.github/workflows/windows.yml']) await copyFile(file);
+  for (const file of ['tools/testing/public-tests.mjs','tools/testing/run.mjs','tools/testing/ui-preview.mjs','tools/testing/form-controls.mjs','UI-UX-TESTING.md','.github/workflows/windows.yml']) await copyFile(file);
   await write('tests/source.test.mjs',await fs.readFile(path.join(tooling,'templates/source.test.mjs')));
   await write('tools/initialize-settings.mjs',await fs.readFile(path.join(tooling,'templates/initialize-settings.mjs')));
   await write('tools/install-control-examples.mjs',await fs.readFile(path.join(tooling,'templates/install-control-examples.mjs')));
@@ -192,7 +192,7 @@ try {
   // recursively copy assets/, which can contain private user-authored pages.
   for (const file of ['favicon.svg','logo.svg','logo-dark.svg','vista-boot.js','card-preview.js',
     'vista-legacy-ready.css','vista-legacy.css','vista-legacy.js']) await copyFile('assets/'+file);
-    for (const directory of ['controls','material-symbols','notices','timezones','universe','sensors']) await copyTree('assets/'+directory);
+    for (const directory of ['controls','material-symbols','qrcode','notices','timezones','universe','sensors']) await copyTree('assets/'+directory);
   // Music belongs to the installation. Ship game code and instructions only.
   for(const file of ['maze-core.js','maze.js','maze.css','music.js','music/README.md']) await copyFile('assets/games/'+file);
   await copyFile('GAMES.md');
@@ -202,6 +202,7 @@ try {
   await copyTree('assets/pages/vendor/three-r97');
   await copyFile('tools/build-control-app-icons.ps1');
   await copyTree('tools/icons');
+  await copyTree('tools/styles');
   for (const file of ['LocalserveTray.cs','build.ps1','enable-lan.ps1','server-host.mjs']) await copyFile('tray/'+file);
   let trayBinary='tray/LocalserveTray.exe';
   try{
@@ -282,6 +283,7 @@ try {
   await write('package.json',JSON.stringify({name:'localserve',version,license:'MIT',private:true,type:'module',scripts:{start:'.\\runtime\\node.exe server.mjs',test:'.\\runtime\\node.exe tools/testing/run.mjs','version:check':'.\\runtime\\node.exe tools/version.mjs --check'},engines:{node:'>=24'}},null,2)+'\n');
 
   await write('.gitignore',await fs.readFile(path.join(tooling,'gitignore.txt')));
+  await copyFile('.gitattributes');
   const notices = ['# Third-party notices','', 'Localserve-authored code is licensed under the MIT License in LICENSE. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.','', '- Node.js and bundled components: runtime/LICENSE.txt.', '- Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.', '- SunCalc: vendor/suncalc/LICENSE.', '- Three.js r97 (MIT): assets/universe/vendor/three-r97/LICENSE.txt.', '- Timezone catalogue: assets/timezones/LICENSE.txt.', '- Public station catalogue and provider attribution: plugins/hsl-trains/LICENSE.txt.',''];
   async function packages(directory) {
     for (const entry of await fs.readdir(directory,{withFileTypes:true})) {
@@ -298,6 +300,7 @@ try {
   }
   for (const d of declarations) if (copied.has(`plugins/${d.id}/vendor/packages.json`) || await fs.stat(path.join(stage,'plugins',d.id,'vendor')).then(s=>s.isDirectory(),()=>false)) await packages(path.join(stage,'plugins',d.id,'vendor'));
   notices.push('', 'Provider licenses remain in declarations, plugin guides and packaged attribution files. MPL-licensed ICAL.js includes readable upstream source under plugins/calendar/vendor/ical.js/lib/. Android runtime client libraries and their license metadata are under plugins/sensors/android/vendor/; see vendor/lock.json, vendor/README.md and vendor/licenses/. Build SDK/JDK tools must be prepared separately. No provider credentials or remote artwork are supplied.','');
+  notices.push('Phone Home handoff QR encoding: Project Nayuki QR Code generator (MIT), bundled under assets/qrcode/ with license, source URL and SHA-256 provenance.');
   await write('THIRD-PARTY-NOTICES.md',notices.join('\n'));
   await audit();
   const files = [];

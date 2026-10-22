@@ -1,0 +1,613 @@
+/* Plugin tabs and system configuration reuse the same panel and list language. */
+.tabs {
+  display: flex;
+  gap: 23px;
+  border-bottom: 1px solid var(--border);
+  margin: -3px 0 24px;
+  overflow-x: auto;
+}
+
+.tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 12px 0;
+  color: var(--muted);
+  font-size: calc(13px * var(--font-scale));
+  white-space: nowrap;
+}
+
+.tab[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tab i {
+  margin-right: 6px;
+  font-size: calc(12px * var(--font-scale));
+}
+
+.plugin-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.plugin-summary .service-icon {
+  height: 48px;
+  width: 48px;
+  font-size: calc(20px * var(--font-scale));
+}
+
+.two-column {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 23px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-item:last-child {
+  border-bottom: 0;
+}
+
+.settings-item > i {
+  color: var(--muted);
+  font-size: calc(18px * var(--font-scale));
+  width: 25px;
+  text-align: center;
+}
+
+.settings-text {
+  flex: 1;
+}
+
+.settings-text p {
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+  margin-top: 4px;
+}
+
+.settings-text h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rule-list .settings-item {
+  padding: 20px;
+}
+
+.rule-list .settings-item > i {
+  color: var(--accent);
+}
+
+.info-banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  border-radius: 6px;
+  padding: 13px 16px;
+  margin-bottom: 22px;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+}
+
+.info-banner i {
+  margin-top: 3px;
+  color: var(--info);
+}
+
+/* Shared relative font scale. The slider updates the text token immediately;
+   the connected administrator persists the preference in config.json. */
+.font-scale-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 275px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.font-scale-control input {
+  width: 165px;
+  min-width: 0;
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.font-scale-control output {
+  min-width: 43px;
+  flex-shrink: 0;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  font-size: calc(12px * var(--font-scale));
+}
+
+/* Modal editing keeps the underlying list and its position intact. */
+dialog.task-editor {
+  width: min(1120px, calc(100vw - 32px));
+}
+.task-designer { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; align-items: start; }
+.task-canvas { min-width: 0; }
+.action-library { position: sticky; top: 0; padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-muted); }
+.action-library h3 { margin: 0 0 12px; }
+.library-search { display: flex; align-items: center; gap: 8px; min-height:40px; border: 1px solid var(--border); background: var(--surface); padding: 8px 10px; border-radius: 6px; }
+.library-search input { width: 100%; min-width: 0; min-height:20px; padding:0; background: transparent; border: 0; border-radius:0; color: var(--text); font: inherit; font-size:calc(13px * var(--font-scale)); }
+.library-search:focus-within { outline:3px solid var(--accent); outline-offset:3px; }
+.library-search input:focus-visible { outline:none; }
+.library-categories { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.category-chip { border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; background: var(--surface); color: var(--muted); font-size: calc(12px * var(--font-scale)); }
+.category-chip[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent-soft); border-color: var(--accent); }
+.library-insertion { display: grid; gap: 6px; font-size: calc(12px * var(--font-scale)); margin: 15px 0; }
+.library-insertion select { width: 100%; border: 1px solid var(--border); padding: 8px; background: var(--surface); color: var(--text); border-radius: 5px; font: inherit; }
+.library-action { width: 100%; display: flex; align-items: center; gap: 10px; padding: 12px 9px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px; text-align: left; margin-bottom: 8px; }
+.library-action:hover { border-color: var(--accent); background: var(--surface-hover); }
+.library-action > span:nth-child(2) { flex: 1; min-width: 0; }
+.library-action strong { display: block; font-size: calc(13px * var(--font-scale)); font-weight: 600; }
+.library-action small { display: block; font-size: calc(11px * var(--font-scale)); color: var(--muted); line-height: 1.4; margin-top: 3px; }
+.library-action > i { font-size: calc(11px * var(--font-scale)); color: var(--muted); }
+.task-block-icon { display: inline-flex; justify-content: center; align-items: center; border-radius: 8px; width: 30px; height: 30px; flex-shrink: 0; }
+.task-block-icon.simulator { background: var(--accent-soft); color: var(--accent-ink); }
+.task-block-icon.conditions { background: var(--surface-hover); color: var(--info); }
+.task-block-icon.timing { background: var(--warning-soft); color: var(--warning); }
+.add-action-button { width: 100%; justify-content: center; border-style: dashed; }
+.task-editor-section {
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  margin-top: 22px;
+}
+.task-section-heading h3 { margin: 0; }
+.task-section-heading p {
+  color: var(--muted);
+  margin: 6px 0 16px;
+}
+.task-block {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  background: var(--surface-muted);
+}
+.task-block-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 12px;
+}
+.step-number {
+  min-width: 46px;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+}
+.task-block-header > select {
+  width: auto;
+  flex: 1;
+  min-width: 145px;
+}
+.task-block-header > select, .add-step-type select, .task-input input, .task-input select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+.task-block-summary {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0 12px 12px;
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  font-size: calc(12px * var(--font-scale));
+}
+.task-block-summary:hover { color: var(--accent); }
+.task-step-title { flex:1; min-width:0; overflow-wrap:anywhere; font-size:calc(13px * var(--font-scale)); }
+.task-replacing { outline:2px solid var(--accent); outline-offset:2px; }
+.task-rule-or { display:block; padding:8px 12px; color:var(--accent); font-size:calc(11px * var(--font-scale)); font-weight:700; }
+.task-start:first-child .task-rule-or { display:none; }
+.vista-node-position { color:var(--accent); font-size:calc(11px * var(--font-scale)); }
+.vista-layout-map { max-height:240px; overflow:auto; padding:6px; }
+.vista-map-node { flex:1; min-width:74px; border:1px solid var(--border); padding:5px; border-radius:6px; background:var(--surface-muted); }
+.vista-map-node > button { display:block; width:100%; min-height:44px; border:1px solid transparent; border-radius:4px; background:var(--surface); color:var(--text); font:inherit; font-size:calc(11px * var(--font-scale)); overflow-wrap:anywhere; }
+.vista-map-node > button[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+.vista-map-children { display:flex; flex-direction:column; gap:5px; margin-top:5px; }
+.vista-map-row > .vista-map-children { flex-direction:row; }
+.plugin-field-group { margin:20px 0; }
+.plugin-field-group > h3 { margin-bottom:14px; font-size:calc(14px * var(--font-scale)); }
+.plugin-field-group > .editor-help { margin-top:12px; }
+.plugin-field-group > .editor-help > summary { margin-bottom:12px; }
+.phone-home-sources { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:20px; }
+.phone-home-sources .panel { margin-top:0; }
+.setup-choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr)); gap:14px; margin:18px 0; }
+.setup-choice { display:flex; flex-direction:column; gap:12px; align-items:flex-start; min-height:136px; padding:20px; border:1px solid var(--border); border-radius:12px; color:var(--text); background:var(--surface-muted); text-align:left; font:inherit; }
+.setup-choice:hover { border-color:var(--accent); }
+.setup-choice > i { color:var(--accent); font-size:calc(30px * var(--font-scale)); }
+.setup-choice > span { color:var(--muted); font-size:calc(12px * var(--font-scale)); }
+.setup-checklist { padding-left:24px; line-height:1.7; }
+.task-step + .task-step { position: relative; }
+.task-step + .task-step::before { content: ""; position: absolute; top: -15px; left: 28px; height: 14px; width: 2px; background: var(--border); }
+@media (max-width: 850px) {
+  .task-designer { grid-template-columns: minmax(0, 1fr); }
+  .action-library { position: static; }
+  #library-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+@media (max-width: 540px) { #library-actions { grid-template-columns: minmax(0, 1fr); } }
+.task-block-header .row-actions { margin-left: auto; }
+.task-block-fields { border-top: 1px solid var(--border); padding: 16px; }
+.task-block-fields .field:last-child { margin-bottom: 0; }
+.task-add-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.add-step-type { display: grid; gap: 6px; flex: 1; min-width: 170px; }
+.task-enabled { align-self: center; }
+.task-input { display: flex; gap: 10px; align-items: end; margin-bottom: 12px; }
+.task-input label { display: grid; gap: 6px; flex: 1; min-width: 0; }
+.task-input input, .task-input select { width: 100%; }
+.task-input > button { margin-bottom: 4px; }
+.task-row { flex-wrap: wrap; }
+.task-row .settings-text { min-width: 190px; }
+@media (max-width: 540px) {
+  .task-input { flex-wrap: wrap; }
+  .task-input label { min-width: 100px; }
+}
+
+dialog {
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  padding: 0;
+  width: min(540px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+dialog::backdrop {
+  background: #12202c70;
+  backdrop-filter: blur(2px);
+}
+
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 21px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dialog-header h2 {
+  font-size: calc(18px * var(--font-scale));
+  letter-spacing: -.3px;
+}
+
+.dialog-header p {
+  color: var(--muted);
+  margin-top: 5px;
+  font-size: calc(12px * var(--font-scale));
+}
+
+.dialog-body {
+  padding: 23px 24px;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 16px 24px;
+  background: var(--surface-muted);
+  border-top: 1px solid var(--border);
+}
+
+/* Unsaved-change confirmation is independent of the underlying editor layout. */
+dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
+.confirmation-dialog .dialog-body p { margin: 0; color: var(--muted); }
+
+.field {
+  display: block;
+  margin-bottom: 19px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field-label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 7px;
+  font-size: calc(12px * var(--font-scale));
+  font-weight: 600;
+}
+
+.field-label i {
+  color: var(--muted);
+  width: 14px;
+  text-align: center;
+}
+
+.field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]), .field select, .field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  background: var(--surface);
+  min-height: 40px;
+  font-size: calc(13px * var(--font-scale));
+  line-height: 1.4;
+}
+
+.field input:focus, .field textarea:focus, .field select:focus {
+  border-color: var(--accent);
+}
+
+.field textarea {
+  min-height: 85px;
+  resize: vertical;
+}
+
+.field-help {
+  display: block;
+  color: var(--muted);
+  font-size: calc(11px * var(--font-scale));
+  margin-top: 6px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.check-field {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: calc(12px * var(--font-scale));
+}
+
+.check-field input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+.form-error {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-radius: 5px;
+  padding: 10px 12px;
+  font-size: calc(12px * var(--font-scale));
+  margin-bottom: 16px;
+}
+
+.discard-prompt {
+  background: var(--warning-soft);
+  padding: 13px 16px;
+  font-size: calc(12px * var(--font-scale));
+  margin: 0 24px 18px;
+  border-radius: 5px;
+  color: var(--warning);
+}
+
+.discard-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.delete-notice {
+  font-size: calc(13px * var(--font-scale));
+  line-height: 1.8;
+}
+
+.delete-notice strong {
+  font-weight: 600;
+}
+
+.delete-notice p + p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: calc(12px * var(--font-scale));
+}
+
+.toast {
+  position: fixed;
+  bottom: 22px;
+  right: 25px;
+  z-index: 20;
+  background: var(--text);
+  color: var(--surface);
+  padding: 12px 17px;
+  box-shadow: var(--shadow);
+  border-radius: 7px;
+  font-size: calc(12px * var(--font-scale));
+  max-width: min(420px, calc(100vw - 40px));
+}
+
+.noscript {
+  padding: 20px;
+  color: var(--danger);
+}
+
+/* Plugin forms share shell spacing. Glyph choices use buttons with names and a
+   selected state so customization is usable without relying on the picture. */
+.plugin-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.plugin-setting-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+.plugin-setting-row > span {
+  min-width: 110px;
+}
+.plugin-setting-row > span > i {
+  margin-right: 8px;
+}
+.plugin-setting-row:has(#glyph-picker) {
+  align-items: flex-start;
+}
+.plugin-setting-row:has(#glyph-picker) > span {
+  padding-top: 10px;
+}
+.plugin-checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 16px 0;
+}
+.plugin-checkbox-field .field-label {
+  margin: 0;
+}
+.plugin-checkbox-field input {
+  width: 20px;
+  height: 20px;
+}
+#glyph-picker {
+  flex: 1;
+  min-width: 200px;
+}
+#glyph-picker summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.glyph-picker-body {
+  padding-top: 14px;
+}
+.glyph-picker-body input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text);
+  font: inherit;
+}
+.glyph-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 3px;
+}
+.glyph-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+.glyph-choice i {
+  font-size: calc(22px * var(--font-scale));
+}
+.glyph-choice span {
+  font-size: calc(11px * var(--font-scale));
+}
+.glyph-choice[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+/* Package-authored setup instructions stay in the shared Settings workspace. */
+.plugin-setup-guide {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.plugin-setup-guide summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.plugin-setup-guide h3 {
+  margin: 18px 0 8px;
+  font-size: 1em;
+}
+.plugin-setup-guide ol {
+  margin: 0;
+  padding-inline-start: 24px;
+}
+.plugin-setup-guide li + li {
+  margin-top: 8px;
+}
+/* Separate inline configuration lists from the preceding Settings panel. */
+#plugin-panel[aria-labelledby="plugin-tab-settings"] > .panel + .plugin-list {
+  margin-top: 20px;
+}
+.plugin-list .settings-text {
+  min-width: 0;
+}
+.plugin-list .settings-text p {
+  overflow-wrap: anywhere;
+}
+.plugin-event-description {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+/* Keep event and current-value panels separated within the Events workspace. */
+#plugin-panel[aria-labelledby="plugin-tab-events"] > .panel {
+  margin-bottom: 20px;
+}
+.plugin-event-form {
+  max-width: 620px;
+}
+.plugin-value-selector {
+  margin-bottom: 19px;
+}
+/* A table is a Card host, not a scalar value in the right-hand facts column.
+   Give its renderer a definite viewport so rows scroll inside the Card while
+   its credit stays visible, without letting container sizing collapse width. */
+.facts > .plugin-table-fact {
+  display: block;
+  min-width: 0;
+}
+.plugin-table-fact dt {
+  margin-bottom: 12px;
+}
+.plugin-table-fact dd {
+  width: 100%;
+  min-width: 0;
+  height: clamp(300px, 55vh, 440px);
+  text-align: left;
+}
+

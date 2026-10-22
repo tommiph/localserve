@@ -2,7 +2,15 @@
  * the existing Task handlers and server admission checks. Never build an Event
  * from these displayed fields or from the current Task definition. */
 const RunUI = {
-  task: '', status: '', limit: 20, opened: new Set(),
+  task: '', status: '', period: '', limit: 20, opened: new Set(),
+
+  triggerText(run) {
+    const label = run.eventLabel;
+    if (run.event && typeof label?.name === 'string' && typeof label.pluginName === 'string') {
+      return `${run.rerunOf ? 'Manual rerun' : run.automatic ? 'Event' : 'Manual with Event values'}: ${label.pluginName} · ${label.name}`;
+    }
+    return run.event && /^Event:\s*Event$/i.test(run.reason || '') ? 'Event · Source name not recorded' : run.reason || 'Not recorded';
+  },
 
   eventSource(event) {
     return event && (state.taskEvents || []).find(source => source.pluginId === event.pluginId && source.eventId === event.eventId
@@ -51,13 +59,21 @@ const RunUI = {
 
   controls() {
     const tasks = new Map(state.runs.map(run => [run.taskId, state.tasks.find(task => task.id === run.taskId)?.name || run.name]));
-    return `<div class="inspection-filters"><label>Task<select id="runs-task"><option value="">All Tasks</option>${[...tasks].map(([id, name]) => `<option value="${escapeHtml(id)}" ${this.task === id ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label><label>Result<select id="runs-status"><option value="">All results</option>${['running', 'completed', 'failed', 'cancelled', 'interrupted'].map(status => `<option ${status === this.status ? 'selected' : ''}>${status}</option>`).join('')}</select></label><p>Completed means the step returned; reported device state remains separate.</p></div>`;
+    return `<div class="inspection-filters"><label>Task<select id="runs-task"><option value="">All Tasks</option>${[...tasks].map(([id, name]) => `<option value="${escapeHtml(id)}" ${this.task === id ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label><label>Result<select id="runs-status"><option value="">All results</option>${['running', 'completed', 'failed', 'cancelled', 'interrupted'].map(status => `<option ${status === this.status ? 'selected' : ''}>${status}</option>`).join('')}</select></label><label>Period<select id="runs-period">${[['','All retained runs'],['day','Last 24 hours'],['week','Last 7 days']].map(([id,label])=>`<option value="${id}" ${this.period === id ? 'selected' : ''}>${label}</option>`).join('')}</select></label><p>History contains up to 200 recent runs. Completed means the step returned; reported device state remains separate.</p></div>`;
+  },
+
+  recentFailures() {
+    const cutoff = (state.server?.now ?? Date.now()) - 86400000;
+    return state.runs.filter(run => run.status === 'failed' && run.startedAt >= cutoff).length;
   },
 
   filtered() {
     const retained = new Set(state.runs.map(run => run.id));
     for (const id of this.opened) if (!retained.has(id)) this.opened.delete(id);
-    return state.runs.filter(run => (!this.task || run.taskId === this.task) && (!this.status || run.status === this.status));
+    const duration = this.period === 'day' ? 86400000 : this.period === 'week' ? 7 * 86400000 : null;
+    const cutoff = duration === null ? null : (state.server?.now ?? Date.now()) - duration;
+    return state.runs.filter(run => (!this.task || run.taskId === this.task) && (!this.status || run.status === this.status)
+      && (cutoff === null || run.startedAt >= cutoff));
   },
 
   details(run) {
@@ -66,7 +82,8 @@ const RunUI = {
     const values = (declaration?.payload || []).filter(field => field.format !== 'secret' && ['string','number','boolean'].includes(field.type)
       && typeof event?.payload?.[field.id] === field.type).map(field => [field.id, event.payload[field.id]]);
     const origin = run.rerunOf ? 'Manual rerun' : run.automatic === true ? 'Automatic' : run.automatic === false ? 'Manual' : 'Not recorded';
-    const trigger = !run.reason || origin === run.reason ? origin : `${origin} · ${run.reason}`;
+    const reason = this.triggerText(run);
+    const trigger = origin === reason ? origin : `${origin} · ${reason}`;
     const time = value => Number.isFinite(value) ? escapeHtml(formatServerTimestamp(value)) : 'Not recorded';
     return `<div class="run-details" id="run-details-${escapeHtml(run.id)}" ${this.opened.has(run.id) ? '' : 'hidden'}><dl class="run-facts"><div><dt>Started by</dt><dd>${escapeHtml(trigger)}</dd></div><div><dt>Task revision</dt><dd>${escapeHtml(run.taskRevision ?? 'Not recorded')}</dd></div><div><dt>Started</dt><dd>${time(run.startedAt)}</dd></div><div><dt>Finished</dt><dd>${time(run.finishedAt)}</dd></div><div><dt>Duration</dt><dd>${this.elapsed(run.startedAt, run.finishedAt)}</dd></div>${run.rerunOf ? `<div><dt>Rerun of</dt><dd>${escapeHtml(run.rerunOf)}</dd></div>` : ''}</dl>
       <h4>Captured Event values</h4>${event ? `<p>${escapeHtml(declaration ? `${declaration.pluginName} · ${declaration.name}` : `${event.pluginId} · ${event.eventId}`)} · Observed ${time(event.occurredAt)}</p><dl class="event-values">${values.map(([key, value]) => `<div><dt>${escapeHtml(declaration?.payload?.find(field => field.id === key)?.label || key)}</dt><dd>${escapeHtml(typeof value === 'boolean' ? value ? 'Yes' : 'No' : value)}</dd></div>`).join('')}</dl>` : '<p>No Event payload was captured for this run.</p>'}
@@ -75,8 +92,8 @@ const RunUI = {
 };
 
 document.addEventListener('change', event => {
-  if (!['runs-task', 'runs-status'].includes(event.target.id)) return;
-  RunUI[event.target.id === 'runs-task' ? 'task' : 'status'] = event.target.value;
+  if (!['runs-task', 'runs-status', 'runs-period'].includes(event.target.id)) return;
+  RunUI[{'runs-task':'task','runs-status':'status','runs-period':'period'}[event.target.id]] = event.target.value;
   RunUI.limit = 20; renderView(); document.getElementById(event.target.id)?.focus();
 });
 

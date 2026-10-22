@@ -55,7 +55,8 @@ export class PhoneHome {
     for (const item of value.tasks) {
       if (
         !item ||
-        Object.keys(item).some((key) => !['taskId', 'icon', 'enabled'].includes(key)) ||
+        Object.keys(item).some((key) => !['taskId', 'icon', 'enabled', 'label'].includes(key)) ||
+        item.label !== undefined && (typeof item.label !== 'string' || item.label.length > 40 || item.label.trim() !== item.label) ||
         typeof item.taskId !== 'string' ||
         item.taskId.length > 80 ||
         ids.has(item.taskId) ||
@@ -173,7 +174,8 @@ export class PhoneHome {
           return [
             {
               id: task.id,
-              name: task.name,
+              name: item.label || task.name,
+              taskName: task.name,
               icon: item.icon,
               revision: task.revision,
               available: !this.closing && this.available(task),
