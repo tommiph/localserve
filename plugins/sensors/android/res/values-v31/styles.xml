@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="LocalserveLaunch" parent="android:style/Theme.Material.NoActionBar">
+    <item name="android:windowBackground">#141a1d</item>
+    <item name="android:colorAccent">#a8e2c5</item>
+    <item name="android:windowSplashScreenBackground">#141a1d</item>
+    <item name="android:windowSplashScreenAnimatedIcon">@drawable/app_icon</item>
+    <item name="android:windowSplashScreenAnimationDuration">300</item>
+    <item name="android:windowLightStatusBar">false</item>
+  </style>
+</resources>

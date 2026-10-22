@@ -414,10 +414,12 @@
       try {
         var doc = frame.contentDocument;
         if (!doc || !doc.querySelector('[data-ready-made]')) return;
+        if (window.LocalserveCardPreview) window.LocalserveCardPreview.attach(frame, template.previewUrl,
+          connected && source.enabled !== false && entry.data.status === 'Ready');
         if (frame._legacyStyledDocument !== doc) {
           var link = doc.createElement('link');
           link.rel = 'stylesheet';
-          link.href = '/assets/vista-legacy-ready.css?v=19';
+          link.href = '/assets/vista-legacy-ready.css?v=20';
           link.onload = function () {
             applyVistaFontSize(doc);
             if (frame._legacyOnReady) {

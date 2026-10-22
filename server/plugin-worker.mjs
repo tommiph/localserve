@@ -51,6 +51,10 @@ async function handleRequest(message) {
       result = await adapter.start(message.values.settings);
     } else if (message.operation === 'stop') {
       result = await adapter.stop();
+    } else if (message.operation === 'preview') {
+      result = typeof adapter.preview === 'function' ? await adapter.preview() : null;
+    } else if (message.operation === 'suspend-preview') {
+      result = typeof adapter.suspend === 'function' ? await adapter.suspend() : null;
     } else if (message.operation === 'execute') {
       result = await adapter.execute(message.values.actionId, message.values.parameters, context(message.id, controller.signal, message.values.noticeUrl));
     } else if (message.operation === 'ingest') {

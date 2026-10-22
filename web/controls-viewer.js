@@ -2,11 +2,26 @@
  * tokens and never accepts arbitrary action names/arguments from this browser.
  */
 'use strict';
-const board = document.querySelector('#controls-board'), feedback = document.querySelector('#controls-feedback');
-const status = document.querySelector('#controls-status'), cancel = document.querySelector('#controls-cancel');
-const parts = location.pathname.split('/').filter(Boolean), isIndex = parts.length === 1;
-const endpoint = isIndex ? '/api/control-view' : `/api/control-view/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`;
-let snapshot, refreshing = false, sending = false, observedRun = null;
+const board = document.querySelector('#controls-board'),
+  feedback = document.querySelector('#controls-feedback');
+const status = document.querySelector('#controls-status'),
+  cancel = document.querySelector('#controls-cancel');
+const parts = location.pathname.split('/').filter(Boolean),
+  isIndex = parts.length === 1;
+const endpoint = isIndex
+  ? '/api/control-view'
+  : `/api/control-view/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`;
+let snapshot,
+  refreshing = false,
+  sending = false,
+  observedRun = null;
+let receiptTimer = null,
+  receiptDeadline = 0;
+function pendingReceipt() {
+  if (!observedRun || Date.now() >= receiptDeadline) return false;
+  const run = snapshot?.runs?.find((run) => run.id === observedRun);
+  return !run || ['queued', 'running'].includes(run.status) || snapshot.busy;
+}
 function appearance(options) {
   document.documentElement.dataset.theme = options.theme;
   document.documentElement.style.setProperty('--font-scale', options.fontScale / 100);
@@ -17,33 +32,56 @@ function appearance(options) {
   document.querySelector('#controls-server-name').textContent = options.name;
 }
 async function refresh() {
-  if (refreshing) return; refreshing = true;
+  if (refreshing) return;
+  refreshing = true;
   try {
     const response = await fetch(endpoint, { signal: AbortSignal.timeout(5000) });
     if (!response.ok) throw new Error('Controls unavailable');
-    snapshot = await response.json(); appearance(snapshot.options);
+    snapshot = await response.json();
+    appearance(snapshot.options);
     if (isIndex) {
       document.title = `Controls · ${snapshot.options.name}`;
-      board.innerHTML = snapshot.pages.length ? `<div class="controls-grid">${snapshot.pages.map(page => `<a class="control-directory-entry" href="${ControlsRenderer.escape(page.url)}">${ControlsRenderer.icon(page.icon)}<strong>${ControlsRenderer.escape(page.name)}</strong><span>${ControlsRenderer.escape(page.pluginName)} · ${page.available ? 'Ready' : 'Unavailable'}</span></a>`).join('')}</div>` : '<p class="empty-state">No enabled Control pages.</p>';
-      status.textContent = 'Choose a Control page'; return;
+      board.innerHTML = snapshot.pages.length
+        ? `<div class="controls-grid">${snapshot.pages.map((page) => `<a class="control-directory-entry" href="${ControlsRenderer.escape(page.url)}">${ControlsRenderer.icon(page.icon)}<strong>${ControlsRenderer.escape(page.name)}</strong><span>${ControlsRenderer.escape(page.pluginName)} · ${page.available ? 'Ready' : 'Unavailable'}</span></a>`).join('')}</div>`
+        : '<p class="empty-state">No enabled Control pages.</p>';
+      status.textContent = 'Choose a Control page';
+      return;
     }
     document.title = `${snapshot.page.name} · ${snapshot.options.name}`;
     document.querySelector('#controls-title').textContent = snapshot.page.name;
     board.setAttribute('aria-label', snapshot.page.name);
-    status.textContent = snapshot.available ? snapshot.busy ? 'Running' : snapshot.page.pluginName : 'Controls unavailable or server paused';
+    status.textContent = snapshot.available
+      ? snapshot.busy
+        ? 'Running'
+        : snapshot.page.pluginName
+      : 'Controls unavailable or server paused';
     renderControls();
-    const active = snapshot.runs.find(run => run.id === snapshot.activeRunId);
-    cancel.hidden = !active; cancel.dataset.runId = active?.id || '';
-    const run = snapshot.runs.find(run => run.id === observedRun) || active;
-    if (run) feedback.textContent = ['queued', 'running'].includes(run.status) ? `Running · Step ${run.step} of ${run.totalSteps}` : run.message;
+    const active = snapshot.runs.find((run) => run.id === snapshot.activeRunId);
+    cancel.hidden = !active;
+    cancel.dataset.runId = active?.id || '';
+    const run = snapshot.runs.find((run) => run.id === observedRun) || active;
+    if (run)
+      feedback.textContent = ['queued', 'running'].includes(run.status)
+        ? `Running · Step ${run.step} of ${run.totalSteps}`
+        : run.message;
   } catch {
     status.textContent = 'Disconnected · commands unavailable';
-    if (snapshot?.page) { snapshot.available = false; renderControls(); }
+    if (snapshot?.page) {
+      snapshot.available = false;
+      renderControls();
+    }
     cancel.hidden = true;
-  } finally { refreshing = false; }
+  } finally {
+    refreshing = false;
+    clearTimeout(receiptTimer);
+    // Follow only this recent submission until its claim finishes. Ordinary
+    // telemetry stays on its normal cadence; no command is ever resubmitted.
+    if (pendingReceipt() && !sending && snapshot?.available && !document.hidden)
+      receiptTimer = setTimeout(refresh, 75);
+  }
 }
 function renderControls() {
-  const current = { ...snapshot, busy: snapshot.busy || sending };
+  const current = { ...snapshot, busy: snapshot.busy || sending || pendingReceipt() };
   document.body.classList.toggle('lighting-viewer', Boolean(snapshot.lighting));
   document.body.classList.toggle('television-viewer', snapshot.page.presentation === 'television');
   if (snapshot.lighting) LightingControls.mount(board, current, { invoke, post, refresh });
@@ -51,39 +89,76 @@ function renderControls() {
   else ControlsRenderer.mount(board, current);
 }
 async function post(operation, body, token = snapshot.token) {
-  const response = await fetch(endpoint + '/' + operation, { method: 'POST', headers: {
-    'Content-Type': 'application/json', 'X-Localserve-Control-Token': token }, body: JSON.stringify(body), signal: AbortSignal.timeout(10000) });
-  const value = await response.json(); if (!response.ok) throw new Error(value.error || 'Control unavailable'); return value;
+  const response = await fetch(endpoint + '/' + operation, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Localserve-Control-Token': token,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(10000),
+  });
+  const value = await response.json();
+  if (!response.ok) {
+    const error = new Error(value.error || 'Control unavailable');
+    error.status = response.status;
+    throw error;
+  }
+  return value;
 }
 async function invoke(itemId, input) {
-  if (!snapshot?.available || snapshot.busy || sending) return;
-  sending = true; renderControls();
-  const requestId = crypto.randomUUID(); observedRun = requestId;
+  if (!snapshot?.available || snapshot.busy || sending || pendingReceipt()) return;
+  sending = true;
+  renderControls();
+  const requestId = crypto.randomUUID();
+  observedRun = requestId;
+  receiptDeadline = Date.now() + 35000;
   try {
     const body = { itemId, requestId, revision: snapshot.page.revision };
     if (input) {
-      const item = snapshot.page.items.find(item => item.id === itemId);
-      body.value = item.kind === 'toggle' ? input.checked : item.input.type === 'number' ? Number(input.value) : input.value;
+      const item = snapshot.page.items.find((item) => item.id === itemId);
+      body.value =
+        item.kind === 'toggle'
+          ? input.checked
+          : item.input.type === 'number'
+            ? Number(input.value)
+            : input.value;
     }
-    feedback.textContent = 'Sending'; await post('run', body);
-  } catch (error) { feedback.textContent = error.message + ' · no command was retried.'; }
-  finally { sending = false; void refresh(); }
+    feedback.textContent = 'Sending';
+    await post('run', body);
+  } catch (error) {
+    if (error.status >= 400 && error.status < 500) receiptDeadline = 0;
+    feedback.textContent = error.message + ' · no command was retried.';
+  } finally {
+    sending = false;
+    void refresh();
+  }
 }
-board.addEventListener('click', event => {
-  const button = event.target.closest('[data-control-item]'); if (button && !button.disabled) void invoke(button.dataset.controlItem);
+board.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-control-item]');
+  if (button && !button.disabled) void invoke(button.dataset.controlItem);
 });
-board.addEventListener('input', event => {
+board.addEventListener('input', (event) => {
   if (!event.target.matches('[data-control-input]')) return;
-  event.target.dataset.changed = 'true'; ControlsRenderer.updateInput(event.target);
+  event.target.dataset.changed = 'true';
+  ControlsRenderer.updateInput(event.target);
 });
-board.addEventListener('change', event => {
-  const input = event.target; if (input.matches('[data-control-input]') && !input.disabled) void invoke(input.dataset.controlInput, input);
+board.addEventListener('change', (event) => {
+  const input = event.target;
+  if (input.matches('[data-control-input]') && !input.disabled)
+    void invoke(input.dataset.controlInput, input);
 });
 cancel.addEventListener('click', async () => {
   cancel.disabled = true;
-  try { await post('cancel', { runId: cancel.dataset.runId }); feedback.textContent = 'Cancellation requested'; }
-  catch (error) { feedback.textContent = error.message; }
-  finally { cancel.disabled = false; void refresh(); }
+  try {
+    await post('cancel', { runId: cancel.dataset.runId });
+    feedback.textContent = 'Cancellation requested';
+  } catch (error) {
+    feedback.textContent = error.message;
+  } finally {
+    cancel.disabled = false;
+    void refresh();
+  }
 });
 let polling = null;
 function startPolling() {
@@ -93,11 +168,13 @@ function startPolling() {
 startPolling();
 window.addEventListener('pagehide', () => {
   clearInterval(polling);
+  clearTimeout(receiptTimer);
   polling = null;
 });
 // Android may restore this document from the back/forward cache. Reconnect
 // exactly one read loop; never replay a command when returning to the app.
 window.addEventListener('pageshow', startPolling);
 document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearTimeout(receiptTimer);
   if (document.visibilityState === 'visible') void refresh();
 });

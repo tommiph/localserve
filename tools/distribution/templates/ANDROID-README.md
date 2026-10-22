@@ -1,10 +1,29 @@
-# Localserve Sensors for Android
+# Localserve for Android
 
-Requires Android 8.0/API 26 or later. The included sideload APK is version 1.2.0
+Requires Android 8.0/API 26 or later. The included sideload APK is version 1.4.0
 (package local.localserve.sensors). Install from your server's `/sensors` page or
 plugins/sensors/android/dist/localserve-sensors.apk using Android's own prompts.
 A Google account is not required. Only optional activity recognition needs
 installed Google Play services.
+
+## Phone Home
+
+The app launches as **Localserve** with a native logo splash screen. Enter your
+server's numeric private LAN HTTP address in **Connection**. Home is served by
+that server and needs Wi-Fi plus an up-to-date Android System WebView. Enabled
+Controls pages appear under Remotes. Ready-made designs from enabled plugins
+and sources appear under **Cards** and can be added to Home as live information
+favorites. Card views are read-only and do not send device commands.
+Publish manual Tasks in **Administration →
+Phone home**. Choose and arrange Favorites with **Home → Edit**. Optional quiet
+interface sounds are in phone preferences. Motion follows reduced-motion settings.
+
+Install over Localserve Sensors to retain its device identity and preferences;
+the package and signing identity are unchanged. **Sensors** opens the native
+reporting screen. Remote use does not request sensor permissions or start
+reporting. Stop reporting before changing the shared server address. The WebView
+accepts only fixed Home/remote routes and script-free installed Card frames on that origin, with no native bridge or
+administrator access. See [Phone Home](../../../PHONE-HOME.md).
 
 ## Connect and select sources
 

@@ -1524,3 +1524,10 @@ html[data-legacy-template="sensorium"] .dial > div { font-size:19px; }
 html[data-legacy-template="sensorium"] .instruments { margin:10px 0; }
 html[data-legacy-template="sensorium"] .metric { padding:8px; }
 }
+
+/* Camera monitor uses literal colors and Flexbox in its own stylesheet. */
+html[data-legacy-template="camera-monitor"] main { background: -webkit-linear-gradient(145deg, #142e38, #0b151d 70%); background: linear-gradient(145deg, #142e38, #0b151d 70%); }
+html[data-legacy-template="camera-monitor"] .picture { background: #05090d; border-color: #33525c; }
+html[data-legacy-template="camera-monitor"] strong { color: #e6f6f6; }
+html[data-theme="light"][data-legacy-template="camera-monitor"] main { background: -webkit-linear-gradient(145deg, #e2f1f3, #f4f8fa); background: linear-gradient(145deg, #e2f1f3, #f4f8fa); }
+html[data-theme="light"][data-legacy-template="camera-monitor"] strong { color: #173440; }

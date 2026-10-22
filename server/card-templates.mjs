@@ -20,6 +20,7 @@ export function validateCardTemplates(values = [], fields = []) {
       || !Array.isArray(value.assets) || !value.assets.includes(value.entry) || value.assets.length > 32 || new Set(value.assets).size !== value.assets.length
       || value.assets.some(asset => !assetPath.test(asset)) || !Array.isArray(value.slots) || !value.slots.length || value.slots.length > 16) throw new Error('Invalid ready-made Card design or asset allowlist.');
     ids.add(value.id);
+    if (value.preview !== undefined && value.preview !== true) throw new Error('Card preview must explicitly opt in.');
     const slots = new Set();
     if (value.sourceLabel !== undefined && (typeof value.sourceLabel !== 'string' || !value.sourceLabel.trim() || value.sourceLabel.length > 32)) throw new Error('Invalid ready-made data source label.');
     const result = { id: value.id, name: value.name.trim(), sourceLabel: value.sourceLabel || 'Data source', directory: value.directory, entry: value.entry, assets: [...value.assets],
@@ -63,6 +64,7 @@ export function validateCardTemplates(values = [], fields = []) {
           || !Array.isArray(choices) || choices.length > 64 || choices.some(choice => typeof choice !== 'string' || choice.length > 32))) throw new Error('Invalid declared Card graphic variants.');
       result.variant = { slot: variant.slot, fallback: variant.fallback, choices: structuredClone(variant.choices) };
     }
+    if (value.preview) result.preview = true;
     return result;
   });
 }
@@ -70,7 +72,8 @@ export function validateCardTemplates(values = [], fields = []) {
 export function readyMadeCatalog(plugin, settings = {}) {
   const sources = plugin.instances ? pluginInstances(plugin, settings) : [{ id: 'plugin', name: plugin.name, enabled: true }];
   return { templates: (plugin.cardTemplates || []).map(({ directory, assets, entry, ...template }) => ({ ...template,
-    url: `/plugin-card-assets/${plugin.id}/${template.id}/${entry}` })),
+    url: `/plugin-card-assets/${plugin.id}/${template.id}/${entry}`,
+    ...(template.preview && plugin.runtime?.preview === 'jpeg-v1' ? { previewUrl: `/api/plugin-preview/${plugin.id}/frame.jpg` } : {}) })),
   sources: sources.map(source => ({ id: source.id, name: source.name, enabled: source.enabled,
     bindings: Object.fromEntries(plugin.cardFields.map(field => [field.id, plugin.instances ? instanceBinding(plugin, source, field) : field.id])) })) };
 }

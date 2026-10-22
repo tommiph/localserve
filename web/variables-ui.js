@@ -57,6 +57,12 @@ const VariablesUI = {
           'Package field ID. Named sources can prefix this ID; use the Card binding entries above for configured source IDs.',
           `${folder}/declaration.json → cardFields[]`, {id:field.id,type:field.type});
       }
+      for (const template of (service.cardTemplates || []).filter(template => template.preview)) {
+        add(service.id,service.name,'slot',template.name,'Live preview image','data-card-preview','image',
+          'Fixed package image element. The host reads this plugin’s bounded current JPEG; no URL or Task substitution is accepted.',
+          `${folder}/declaration.json → runtime.preview; ${folder}/${template.directory}/${template.entry}`,
+          {runtime:{preview:'jpeg-v1'},cardTemplates:[{id:template.id,preview:true}]});
+      }
       for (const template of service.cardTemplates || []) for (const slot of template.slots || []) {
         add(service.id,service.name,'slot',template.name,slot.id,slot.id,slot.format || 'text',
           `Ready-made design slot bound to package field ${slot.field}. Fixed package layout, not free-text substitution.`,

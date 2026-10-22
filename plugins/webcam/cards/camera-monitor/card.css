@@ -1,0 +1,34 @@
+/* Literal palettes, bounded picture area and Flexbox support older TV browsers. */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{font-family:Arial,sans-serif;color:#e6f6f6;background:#0b151d}
+main{height:100%;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;padding:18px;background:linear-gradient(145deg,#142e38,#0b151d 70%)}
+header{display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;min-height:54px;margin-bottom:12px}
+h1{font-size:24px;line-height:1.15;margin:0}
+p{font-size:12px;color:#90aeb8;margin:5px 0 0}
+.motif{width:42px;height:42px;margin-right:12px}
+.stamp{margin-left:auto;font-size:12px;color:#90aeb8;white-space:nowrap;padding-left:10px}
+.picture{-webkit-flex:1;flex:1;min-height:30px;position:relative;background:#05090d;border:1px solid #33525c;border-radius:10px;overflow:hidden;text-align:center}
+.picture>img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
+.no-frame{position:absolute;top:45%;left:0;width:100%;color:#78939d;font-size:18px}
+.capture{position:absolute;bottom:8px;right:8px;background:#0a1827;color:#80efd3;border:1px solid #33525c;padding:5px 9px;border-radius:5px;font-size:11px}
+footer{display:-webkit-flex;display:flex;min-height:85px;padding-top:14px}
+footer>div{-webkit-flex:1;flex:1;min-width:0;padding:0 12px;border-left:1px solid #33525c}
+footer>div:first-child{padding-left:0;border:0}
+footer>div:last-child{padding-right:0}
+footer span,small{font-size:11px;color:#90aeb8}
+strong{display:block;font-size:22px;margin:4px 0;color:#e6f6f6}
+strong span{font-size:22px;color:inherit}
+html[data-theme=light] body{background:#eff6f8;color:#173440}
+html[data-theme=light] main{background:linear-gradient(145deg,#e2f1f3,#f4f8fa)}
+html[data-theme=light] strong{color:#173440}
+html[data-connected=false] .picture>img{visibility:hidden!important}
+@media(max-height:230px){main{padding:10px}
+header{min-height:32px;margin-bottom:6px}
+h1{font-size:17px}
+.motif{width:28px;height:28px}
+footer{min-height:58px;padding-top:7px}
+strong,strong span{font-size:16px}
+small{display:none}
+}
+

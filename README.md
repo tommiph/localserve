@@ -67,6 +67,8 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   Events; ordered actions, delays, Event-value substitutions and manual Rerun.
 - **Vistas:** browser displays built from nested rows, columns, Cards and rotating
   Card collections. Ready-made designs are available in the Card editor.
+- **Webcam:** a local Windows camera Card with movement and relative brightness
+  Events for Tasks. Capture is opt-in; no audio or recordings are stored.
 - **Universe:** 3D Card journeys through Space, Ocean depths, Alpine mountains,
   Calm forest and Sunset dunes, with configurable travel, population and detail.
 - **Games:** Neon Labyrinth, an endless first-person maze game with TV remote
@@ -75,6 +77,9 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   transitions. Remote web app installation depends on browser/HTTPS support.
 - **Android Sensors:** included sideload APK sends selected raw sensors and
   optional phone, location, region and activity events over your trusted LAN.
+- **Phone Home:** personal Favorites, quick lighting/TV controls and explicitly
+  published manual Task shortcuts. The included Android app combines the remote
+  with optional native Sensors reporting. See [Phone Home](PHONE-HOME.md).
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
 - **Oculus Go:** manual APK library and a separate **# Localserve #** VR client

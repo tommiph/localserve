@@ -15,8 +15,8 @@ import android.widget.*;
 import java.net.URI;
 import java.util.*;
 
-/** A small native setup screen: server, sampling, selected sensors, Start/Stop.
- * User settings remain local; no WebView, account or automatic start is used. */
+/** Native reporting setup: server, sampling, selected sensors, Start/Stop.
+ * User settings remain local and reporting starts only through explicit input. */
 public final class MainActivity extends Activity {
     private final Handler ui = new Handler();
     private final Map<String, CheckBox> choices = new LinkedHashMap<>();

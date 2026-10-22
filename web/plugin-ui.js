@@ -209,7 +209,15 @@ const PluginUI = {
   },
 
   settings(service) {
-    return this.connectionPanel(service) + (service.id === "oculus-go" && service.actions.some(action => action.id === "library-install") ? '<section class="panel"><div class="panel-body"><h2>Applications</h2><p>Browse your APK library, read installed apps and manage applications on the configured headset.</p><button class="button" data-view="vr-library">Open VR library</button></div></section>' : "") + this.settingsBody(service);
+    return this.webcamSettings(service) + this.connectionPanel(service) + (service.id === "oculus-go" && service.actions.some(action => action.id === "library-install") ? '<section class="panel"><div class="panel-body"><h2>Applications</h2><p>Browse your APK library, read installed apps and manage applications on the configured headset.</p><button class="button" data-view="vr-library">Open VR library</button></div></section>' : "") + this.settingsBody(service);
+  },
+
+  webcamSettings(service) {
+    if (service.id !== 'webcam') return '';
+    const devices = Array.isArray(service.pluginState?.devices) ? service.pluginState.devices : [];
+    return '<section class="panel"><div class="panel-header"><h2>' + icon('videocam') + 'Camera</h2></div><div class="panel-body">'
+      + '<form data-plugin-id="webcam" data-plugin-action="list-cameras"><button class="button" type="submit" ' + (!service.enabled || service.health !== 'ready' ? 'disabled' : '') + '>List cameras</button></form>'
+      + '<p class="field-help">' + (devices.length ? devices.map(row => escapeHtml(String(row.index) + ': ' + row.name)).join('<br>') : 'Enable Webcam, then list the connected cameras. The first camera uses index 0.') + '</p></div></section>';
   },
 
   settingsBody(service) {
