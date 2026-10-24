@@ -1,0 +1,18 @@
+{
+  "file": "apps/scenes/dist/scenes.apk",
+  "package": "local.localserve.scenes",
+  "name": "Scenes",
+  "version": "1.0.2",
+  "versionCode": 3,
+  "minSdk": 26,
+  "targetSdk": 35,
+  "bytes": 33487,
+  "sha256": "8c3a0045d8a6f2e82d38fa7ef4cffe4ff6810d8b62b61da872f4a5e6add01953",
+  "sourceReceipt": {
+    "algorithm": "sha256",
+    "files": 11,
+    "digest": "d3771b5e2ebe76a18973821428d7abb30c67000b6f48fbac3292ae8516c71bb2"
+  },
+  "checks": "Scenes LAN address, navigation, resource and connection policy checks passed.",
+  "verification": "Verifies\r\nVerified using v1 scheme (JAR signing): false\r\nVerified using v2 scheme (APK Signature Scheme v2): true\r\nVerified using v3 scheme (APK Signature Scheme v3): true\r\nVerified using v3.1 scheme (APK Signature Scheme v3.1): false\r\nVerified using v4 scheme (APK Signature Scheme v4): false\r\nVerified for SourceStamp: false\r\nNumber of signers: 1\r\nSigner #1 certificate DN: CN=Localserve Scenes\r\nSigner #1 certificate SHA-256 digest: ea496240a3d27f4f80573679e32f41ada54389f8de622e659c23e3fab00924e7\r\nSigner #1 certificate SHA-1 digest: cd0aed88a94bfca9330ebe62fd6ad2f2ac3b0356\r\nSigner #1 certificate MD5 digest: 0ea39ee776c988f4ff5ed279d9e36d96\r\nSigner #1 key algorithm: RSA\r\nSigner #1 key size (bits): 3072\r\nSigner #1 public key SHA-256 digest: 99c6aeee21131e5ffa20db36f145fe82fb424f20a47d3a81eed4f5a574f93107\r\nSigner #1 public key SHA-1 digest: 00de9286a7b31c502b440fc680324b36428d1d40\r\nSigner #1 public key MD5 digest: 8922301ad3336f8bb41aaf90ffefa289"
+}

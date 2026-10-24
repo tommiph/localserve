@@ -15,7 +15,7 @@ const VistaRenderer = (() => {
 
   // Timing is kept independently of DOM refreshes and server polling. A new
   // layout resets it; ordinary data refreshes retain the selected card/deadline.
-  function choose(node, entries, previous, now) {
+  function choose(node, entries, previous, now, paused = false) {
     const available = node.cards.map(reference => entries.get(key(reference))).filter(entry => entry?.card);
     const fingerprints = Object.fromEntries(available.map(entry => {
       const values = Object.fromEntries(entry.card.fields.filter(field => field.enabled).map(field => {
@@ -42,7 +42,7 @@ const VistaRenderer = (() => {
     }));
     let selected = available.find(entry => key(entry) === previous?.selected) || available[0];
     let changed = false;
-    if (selected && previous && node.type === 'collection') {
+    if (!paused && selected && previous && node.type === 'collection') {
       if (['update', 'both'].includes(node.rotation)) {
         // First snapshot seeds fingerprints without producing an update. If
         // several members change in one poll, the last changed member wins.
@@ -64,7 +64,7 @@ const VistaRenderer = (() => {
       return clockReference ? clockReference.at
         + (clockReference.connected ? performance.now() - clockReference.receivedAt : 0) : Date.now();
     }
-    let layoutSignature = '', slots = new Map(), payload, stopped = false;
+    let layoutSignature = '', slots = new Map(), payload, stopped = false, rotationPaused = false;
     const selections = new Map();
 
     function build(node, gap) {
@@ -117,7 +117,7 @@ const VistaRenderer = (() => {
       if (!payload || stopped) return;
       const entries = new Map(payload.cards.map(entry => [key(entry), entry]));
       for (const [id, slot] of slots) {
-        const choice = choose(slot.node, entries, selections.get(id), performance.now());
+        const choice = choose(slot.node, entries, selections.get(id), performance.now(),rotationPaused);
         selections.set(id, choice);
         display(slot, entries.get(choice.selected), { ...payload.options, now: displayNow() }, choice.selected);
       }
@@ -145,8 +145,31 @@ const VistaRenderer = (() => {
       }
       tick();
     }
+    function step(direction) {
+      if (stopped || !payload || payload.options.connected === false || ![-1, 1].includes(direction)) return false;
+      const entries = new Map(payload.cards.map(entry => [key(entry), entry]));
+      let changed = false;
+      for (const [id, slot] of slots) {
+        if (slot.node.type !== 'collection' || slot.node.enabled === false) continue;
+        const available = slot.node.cards.map(reference => entries.get(key(reference))).filter(entry => entry?.card);
+        if (available.length < 2) continue;
+        const choice = choose(slot.node, entries, selections.get(id), performance.now(),true);
+        const index = Math.max(0, available.findIndex(entry => key(entry) === slot.selected));
+        choice.selected = key(available[(index + direction + available.length) % available.length]);
+        choice.nextAt = performance.now() + (slot.node.intervalSeconds || 10) * 1000;
+        selections.set(id, choice);
+        display(slot, entries.get(choice.selected), {...payload.options, now:displayNow()}, choice.selected);
+        changed = true;
+      }
+      return changed;
+    }
     const timer = setInterval(tick, 250);
-    return { update, destroy() { stopped = true; clearInterval(timer); slots.clear(); selections.clear(); } };
+    function pause(value) {
+      rotationPaused = value === true;
+      if (!rotationPaused) for (const [id, choice] of selections) choice.nextAt = performance.now() + (slots.get(id)?.node.intervalSeconds || 10) * 1000;
+      return rotationPaused;
+    }
+    return { update, step, pause, destroy() { stopped = true; clearInterval(timer); slots.clear(); selections.clear(); } };
   }
   return { create, choose, resolveTransition };
 })();

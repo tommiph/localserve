@@ -15,6 +15,7 @@
   var clockReceivedAt = 0;
   var busy = false;
   var connected = false;
+  var rotationPaused = false;
   var api = followsDisplay ? '/api/display' : '/api/vistas/' + encodeURIComponent(slug);
   document.body.className += ' legacy-vista';
 
@@ -242,7 +243,7 @@
       'departure-lounge': '#8c5822', orbital: '#79619e',
       platform: '#136784', observatory: '#167d70', grid: '#167d70', sensorium: '#7460b8',
       'home-cinema': '#895878', 'signal-lab': '#277b5e' };
-    var template = doc.documentElement.getAttribute('data-legacy-template');
+    var template = (doc.documentElement.getAttribute('data-legacy-template') || '').replace(/-fullscreen$/, '');
     var accent = (theme === 'light' ? lightAccents : accents)[template] ||
       (theme === 'light' ? '#136784' : '#91d5ed');
     var svg = node._legacyMeterRing;
@@ -565,7 +566,7 @@
       selections[node.id] = { index: 0, count: options.length, nextAt: now + (node.intervalSeconds || 10) * 1000 };
       return true;
     }
-    if (options.length > 1 && (node.rotation === 'interval' || node.rotation === 'both') && now >= previous.nextAt) {
+    if (!rotationPaused && options.length > 1 && (node.rotation === 'interval' || node.rotation === 'both') && now >= previous.nextAt) {
       previous.index = (previous.index + 1) % options.length;
       previous.nextAt = now + (node.intervalSeconds || 10) * 1000;
       return true;
@@ -751,6 +752,7 @@
   }
 
   function setConnected(next) {
+    if (window.LocalserveTvViewer) window.LocalserveTvViewer.state(next);
     if (connected === next) return;
     connected = next;
     // Only our mounted same-origin ready-made frames receive this signal.
@@ -778,6 +780,7 @@
     busy = true;
     var request = new XMLHttpRequest();
     request.open('GET', api, true);
+    request.timeout = 6000;
     request.onreadystatechange = function () {
       if (request.readyState !== 4) return;
       busy = false;
@@ -787,7 +790,8 @@
           clockReceivedAt = Date.now();
           setConnected(true);
           draw();
-          status.style.display = 'none';
+          status.style.display = rotationPaused ? 'block' : 'none';
+          if (rotationPaused) status.textContent = 'Collection rotation paused · Play/Pause to resume';
           tickCountdowns();
           return;
         } catch (ignore) {}
@@ -803,6 +807,7 @@
       status.style.display = 'block';
       setConnected(false);
     };
+    request.ontimeout = request.onerror;
     request.send(null);
   }
 
@@ -826,6 +831,30 @@
     };
     return;
   }
+  function stepCollections(direction) {
+    if (!connected || document.hidden || !payload || direction !== -1 && direction !== 1) return false;
+    var entries = {}, changed = false;
+    for (var i = 0; i < payload.cards.length; i += 1) entries[payload.cards[i].pluginId + '/' + payload.cards[i].card.id] = payload.cards[i];
+    for (var id in views) {
+      if (!Object.prototype.hasOwnProperty.call(views, id)) continue;
+      var view = views[id];
+      if (view.node.type !== 'collection' || view.node.enabled === false) continue;
+      var options = availableEntries(view.node, entries);
+      if (options.length < 2) continue;
+      var previous = selections[id] || {index:0, count:options.length};
+      previous.index = ((previous.index || 0) + direction + options.length) % options.length;
+      previous.nextAt = Date.now() + (view.node.intervalSeconds || 10) * 1000;
+      selections[id] = previous;
+      updateView(view, entries); changed = true;
+    }
+    return changed;
+  }
+  if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(stepCollections,{pause:function (mode) {
+    rotationPaused = mode === 'play' ? false : mode === 'pause' ? true : !rotationPaused;
+    if (!rotationPaused) for (var id in views) if (selections[id]) selections[id].nextAt = Date.now() + (views[id].node.intervalSeconds || 10) * 1000;
+    status.style.display = rotationPaused ? 'block' : 'none';
+    if (rotationPaused) status.textContent = 'Collection rotation paused · Play/Pause to resume';
+  }});
   refresh();
   setInterval(refresh, 2000);
   setInterval(function () { if (connected) { draw(); tickCountdowns(); } }, 1000);

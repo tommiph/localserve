@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "hsl-trains",
   "name": "HSL Trains",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Finnish passenger train station boards · Source: Fintraffic / Digitraffic, CC BY 4.0",
   "icon": "train",
   "runtime": {
@@ -3513,6 +3513,98 @@
           "id": "received",
           "field": "updated-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "platform-fullscreen",
+      "name": "Platform · Fullscreen",
+      "sourceLabel": "Location",
+      "directory": "cards/platform",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "station",
+          "field": "station-name",
+          "format": "text"
+        },
+        {
+          "id": "next-train",
+          "field": "train-1-train",
+          "format": "text"
+        },
+        {
+          "id": "next-route",
+          "field": "train-1-route",
+          "format": "text"
+        },
+        {
+          "id": "next-track",
+          "field": "train-1-track",
+          "format": "text"
+        },
+        {
+          "id": "next-status",
+          "field": "train-1-status",
+          "format": "text"
+        },
+        {
+          "id": "next-time",
+          "field": "train-1-time",
+          "format": "time"
+        },
+        {
+          "id": "next-in",
+          "field": "train-1-due-at",
+          "format": "minutes-until"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "train-count",
+          "field": "train-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "route-station",
+          "field": "route-station",
+          "format": "text"
+        },
+        {
+          "id": "line-filter",
+          "field": "line-filter",
+          "format": "text"
+        },
+        {
+          "id": "attribution",
+          "field": "attribution",
+          "format": "text"
+        },
+        {
+          "id": "trains",
+          "field": "trains",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "train",
+            "route",
+            "track",
+            "status",
+            "time",
+            "arrives",
+            "in-minutes"
+          ]
         }
       ]
     }

@@ -35,7 +35,8 @@ const PhoneHomeUI = {
   },
   render() {
     const home = state.phoneHome;
-    if (!home) return pageHeading('Phone home', 'Refresh the administrator to load phone access.');
+    const back = `<button class="button" data-view="controls">${icon('arrow-left')}Controls</button>`;
+    if (!home) return pageHeading('Phone home', 'Refresh the administrator to load phone access.', back);
     const published = home.tasks.map((item) => ({
       item,
       task: state.tasks.find((task) => task.id === item.taskId),
@@ -44,7 +45,7 @@ const PhoneHomeUI = {
       pageHeading(
         'Phone home',
         'Favorites, remotes and manual Task shortcuts',
-        `<a class="button" href="sensors" target="_blank" rel="noopener">${icon('download')}Android app</a><a class="button primary" href="home" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open Home</a>`,
+        `${back}<a class="button" href="sensors" target="_blank" rel="noopener">${icon('download')}Android app</a><a class="button" href="scenes" target="_blank" rel="noopener">${icon('lightbulb')}Scenes & Tasks</a><a class="button primary" href="home" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open Home</a>`,
       ) + this.connection() + `<div class="phone-home-sources"><section class="panel"><div class="panel-header"><h2>${icon('settings-remote')}Remotes</h2></div><div class="panel-body"><p>Enabled Controls pages appear automatically. Configure the owning plugin and enable its page to make a remote available.</p><a class="button" href="controls" target="_blank" rel="noopener">Open Remotes</a></div></section><section class="panel"><div class="panel-header"><h2>${icon('favorite')}Cards and favorites</h2></div><div class="panel-body"><p>Choose Cards and arrange favorites in Home on each phone. These choices are personal to that browser and server address.</p><p class="field-help">Changing the server address or port uses a different favorites store; it does not migrate your previous choices.</p><a class="button" href="home" target="_blank" rel="noopener">Open Home</a></div></section></div>` +
       `<section class="panel"><div class="panel-header"><h2>${icon('play')}Published Tasks</h2><button class="button" data-action="phone-home-edit">${icon('pen')}Edit</button></div><div class="panel-body"><p>Choose which Tasks people can run from Home. Favorites and their order are personal to each phone. Enabled Controls pages appear automatically in Remotes.</p><p class="field-help">Publishing allows manual device actions on your trusted LAN. Event-dependent Tasks need captured values and remain unavailable here. Disabling a shortcut does not cancel a run already accepted.</p></div>${published.length ? `<div class="table-scroll"><table class="service-table"><thead><tr><th>Task</th><th>Phone shortcut</th><th>Task status</th></tr></thead><tbody>${published.map(({ item, task }) => `<tr data-live-key="phone-task-${escapeHtml(item.taskId)}"><td>${icon(item.icon)} ${escapeHtml(task?.name || 'Deleted Task')}</td><td>${item.label ? escapeHtml(item.label)+' · ' : ''}${item.enabled ? 'Enabled' : 'Disabled'}</td><td>${task ? (task.enabled ? 'Enabled' : 'Disabled') : 'Unavailable'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">No Tasks published. Your existing Tasks stay private to administration until selected here.</div>'}</section>`
     );

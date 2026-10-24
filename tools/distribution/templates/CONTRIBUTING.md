@@ -45,7 +45,7 @@ Keep the metadata, public version entry and updated guide in the same commit.
 | `server/plugins.mjs`, `plugin-schema.mjs` | Discovery, declarations, schemas and plugin lifecycle |
 | `server/plugin-runtime.mjs`, `plugin-worker.mjs` | Supervised trusted adapter execution and context |
 | `server/storage.mjs` | Atomic JSON persistence and Activity |
-| `server/tasks.mjs`, `rules.mjs` | Task validation, execution, scheduling and Event conditions |
+| `server/tasks.mjs`, `rules.mjs`, `task-rule-groups.mjs` | Task validation, execution, scheduling, AND/OR grouping and Event comparisons |
 | `server/controls.mjs` | Controls/scenes, capability/revision checks and command admission |
 | `server/cards.mjs`, `card-templates.mjs` | Public fields and sandboxed design assets |
 | `server/vistas.mjs`, `universe.mjs` | Revisioned displays and scoped public data |
@@ -124,3 +124,7 @@ force-added files. Exclude all private data/config/log/backup/signing/tool-cache
 directories and personal display pages. Never archive a configured folder.
 Retain dependency licenses/provenance, update user guides/comments and report
 only checks actually run. Provider/device tests are separate explicit actions.
+
+## Client and regression verification
+
+The shared tools/testing/public-tests.mjs catalogue includes all isolated test files and runs serially in local, clean-source and hosted checks. Git is required for the temporary-repository release tests. Never copy installed settings into fixtures. Android build receipts bind prebuilt APK bytes to their first-party inputs; rebuild affected clients before release preparation. These checks do not require a physical phone, headset or TV and do not prove physical-device compatibility.

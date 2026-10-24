@@ -97,7 +97,7 @@ export function eventConditionMatches(condition, payload) {
 
 export function reconcileEventConditions(tasks, previous = {}) {
   const conditions = {};
-  for (const task of tasks.filter(task => task.enabled)) {
+  for (const task of tasks.filter(task => task.enabled && task.ruleMode!=='and')) {
     for (const rule of task.starts.filter(rule => rule.enabled && rule.type === 'event' && rule.condition)) {
       const key = `${task.id}/${rule.id}`;
       const signature = eventConditionSignature(rule);

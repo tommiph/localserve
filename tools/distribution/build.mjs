@@ -15,6 +15,7 @@ import {validateControlPage} from '../../server/controls.mjs';
 import {assertPublicPath} from './boundary.mjs';
 import {renderDemoReadme} from './readme.mjs';
 import {publicTests} from '../testing/public-tests.mjs';
+import {androidPackages,verifyAndroidPackage} from '../android-build/source-receipt.mjs';
 import {sanitizeOculusReadings,initializeSourceLauncher} from './sanitize-source.mjs';
 
 const run = promisify(execFile);
@@ -169,13 +170,15 @@ for (const entry of await fs.readdir(path.join(root, 'plugins'), { withFileTypes
 declarations.sort((a,b) => a.id.localeCompare(b.id));
 const before = await definitions();
 try {
+  for(const entry of androidPackages)await verifyAndroidPackage(root,entry);
   for (const file of ['LICENSE','server.mjs','styles.css','project-info.json','VERSIONING.md','VERSION-HISTORY.json','tools/version.mjs','Start Localserve.cmd','Start Localserve Tray.cmd','runtime/node.exe','runtime/LICENSE.txt']) await copyFile(file);
   for (const directory of ['server','web','vendor']) await copyTree(directory);
-  for(const file of ['build.mjs','verify.mjs','smoke.mjs','archive.ps1','boundary.mjs','readme.mjs','gitignore.txt','release.mjs','prepare-source.mjs','verify-source.mjs','sanitize-source.mjs'])await copyFile('tools/distribution/'+file);
+  for(const file of ['build.mjs','verify.mjs','smoke.mjs','archive.ps1','boundary.mjs','readme.mjs','gitignore.txt','release.mjs','prepare-source.mjs','verify-source.mjs','sanitize-source.mjs','source-commit.mjs'])await copyFile('tools/distribution/'+file);
   for(const directory of ['templates','licenses'])await copyTree('tools/distribution/'+directory);
   for(const file of ['localserve.iss','build.mjs','verify.mjs','uninstall-path.mjs','README.md','compiler-lock.json','prepare-compiler.ps1','LICENSE.InnoSetup.txt'])await copyFile('tools/installer/'+file);
   // Only public isolated tests are copied; never traverse tests/.tmp.
   for (const file of publicTests.filter(file=>file!=='tests/source.test.mjs')) await copyFile(file);
+  await copyFile('tests/fixtures/scene-selector.mjs');
   for (const file of ['tools/testing/public-tests.mjs','tools/testing/run.mjs','tools/testing/ui-preview.mjs','tools/testing/form-controls.mjs','UI-UX-TESTING.md','.github/workflows/windows.yml']) await copyFile(file);
   await write('tests/source.test.mjs',await fs.readFile(path.join(tooling,'templates/source.test.mjs')));
   await write('tools/initialize-settings.mjs',await fs.readFile(path.join(tooling,'templates/initialize-settings.mjs')));
@@ -190,19 +193,30 @@ try {
   }
   // User-added display HTML is content, not an application dependency. Never
   // recursively copy assets/, which can contain private user-authored pages.
-  for (const file of ['favicon.svg','logo.svg','logo-dark.svg','vista-boot.js','card-preview.js',
+  for (const file of ['favicon.svg','logo.svg','logo-dark.svg','vista-boot.js','card-preview.js','card-fullscreen.css','tv-viewer.js','lighting-ui.js',
     'vista-legacy-ready.css','vista-legacy.css','vista-legacy.js']) await copyFile('assets/'+file);
-    for (const directory of ['controls','material-symbols','qrcode','notices','timezones','universe','sensors']) await copyTree('assets/'+directory);
+    for (const directory of ['controls','material-symbols','qrcode','notices','timezones','universe','sensors','playstation-mode','scenes']) await copyTree('assets/'+directory);
+  for (const directory of ['src','res','test']) await copyTree('apps/scenes/'+directory);
+  for (const file of ['AndroidManifest.xml','build.mjs','README.md','dist/scenes.apk','dist/scenes.apk.sha256','dist/verification.json']) await copyFile('apps/scenes/'+file);
+  await copyFile('tools/build-scenes-icons.ps1');
+  await copyFile('tools/android-build/source-receipt.mjs');
+  await copyFile('SCENE-SELECTOR.md');
   // Music belongs to the installation. Ship game code and instructions only.
   for(const file of ['maze-core.js','maze.js','maze.css','music.js','music/README.md']) await copyFile('assets/games/'+file);
   await copyFile('GAMES.md');
+  await copyFile('LIGHTING-ANIMATIONS.md');
+  await copyFile('DEVICES.md');
   await copyFile('PHONE-HOME.md');
+  await copyFile('FULLSCREEN-CARDS.md');
+  await copyFile('PLAYSTATION-MODE.md');
+  await copyFile('tools/build-playstation-icons.ps1');
   await write('assets/pages/README.md',await fs.readFile(path.join(tooling,'templates','PAGES-README.md')));
   for(const file of ['scifi.html','scifi-display.js','scifi-tv.css','scifi.utilities.css','solar-system.html','solar-system.js'])await copyFile('assets/pages/'+file);
   await copyTree('assets/pages/vendor/three-r97');
   await copyFile('tools/build-control-app-icons.ps1');
   await copyTree('tools/icons');
   await copyTree('tools/styles');
+  await copyTree('tools/cards');
   for (const file of ['LocalserveTray.cs','build.ps1','enable-lan.ps1','server-host.mjs']) await copyFile('tray/'+file);
   let trayBinary='tray/LocalserveTray.exe';
   try{
@@ -252,6 +266,8 @@ try {
     if (declaration.id === 'samsung-tv') declaration.settings.find(field => field.id === 'remote-name').help = 'Name presented to the TV by this Localserve installation.';
     await write(folder+'/declaration.json',JSON.stringify(declaration,null,2)+'\n');
     await pluginGuide(declaration);
+    if(declaration.id==='playstation')await fs.appendFile(path.join(stage,folder,'README.md'),
+      '\n## PlayStation mode\n\nThe optional /playstation-mode screen and separate Tizen app combine HDMI 1 with current-game readings, trophy collections and observed session Activity. See [setup and controls](../../PLAYSTATION-MODE.md). Observation times reflect polling; the global Activity retention setting applies. No exact physical console state is inferred.\n');
   }
   // Both configured source and an already clean checkout produce this same
   // generic public reading; an unknown field contract must stop packaging.
@@ -264,12 +280,16 @@ try {
   }
   await write('plugins/tradfri/vendor/node_modules/mdns-server/LICENSE-NOTICE.md', '# Upstream license notice\n\nmdns-server 1.0.11 declares MIT in package.json and README.md, both retained.\nAuthor: Bryan Nielsen (@bnielsen1965). Based on multicast-dns by Mathias Buus.\nUpstream source: https://github.com/bnielsen1965/mdns-server/tree/36fa17973899e898c832e87c55aa18e79fddc4e8\nThe published package does not supply a separate full license file.\n');
 
-  const tvFiles = ['config.xml','icon-tv.png','launch-icon.png','index.html','launch.css','launch.js','url-target.js'];
+  const tvFiles = ['config.xml','icon-tv.png','launch-icon.png','index.html','launch.css','launch.js','url-target.js','pip.js'];
   for (const file of tvFiles) await copyFile('tv-tizen/app/'+file);
   const tvScript = 'tv-tizen/app/launch.js';
   await write(tvScript,(await fs.readFile(path.join(stage,tvScript),'utf8')).replace(/var defaultUrl = '[^']+';/,"var defaultUrl = 'http://192.0.2.1:7041/display';"));
   const tvConfig = 'tv-tizen/app/config.xml';
   await write(tvConfig,(await fs.readFile(path.join(stage,tvConfig),'utf8')).replace('http://hareware.local/homeglance','https://localserve.example/vista').replace(/<tizen:allow-navigation>[^<]+<\/tizen:allow-navigation>/,'<tizen:allow-navigation>http://*:* https://*:*</tizen:allow-navigation>'));
+  for(const file of ['config.xml','icon.png','wordmark.png','index.html','launch.css','launch.js','url-target.js','hdmi.js','fonts/Rajdhani-Medium.ttf','fonts/Rajdhani-SemiBold.ttf','fonts/OFL.txt'])await copyFile('tv-tizen/playstation/app/'+file);
+  const psScript='tv-tizen/playstation/app/launch.js';
+  await write(psScript,(await fs.readFile(path.join(stage,psScript),'utf8')).replace(/var defaultUrl = '[^']+';/,"var defaultUrl = 'http://192.0.2.1:7041/playstation-mode';"));
+  await copyFile('tv-tizen/playstation/README.md');
   for (const [target, source] of [['README.md','README.md'],['INSTALL.md','INSTALL.md'],['tv-tizen/README.md','TV-README.md']]) await write(target,await fs.readFile(path.join(tooling,'templates',source)));
   await write('README.md',renderDemoReadme(await fs.readFile(path.join(tooling,'templates/README.md'),'utf8'),JSON.parse(await fs.readFile(path.join(root,'project-info.json'),'utf8'))));
   for (const file of ['USER-GUIDE.md','CONTRIBUTING.md','AGENTS.md','SECURITY.md']) await write(file,await fs.readFile(path.join(tooling,'templates',file)));

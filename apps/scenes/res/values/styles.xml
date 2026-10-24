@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="launcher_background">#ffffff</color>
+  <style name="ScenesTheme" parent="android:style/Theme.Material.NoActionBar">
+    <item name="android:windowBackground">#000000</item>
+    <item name="android:colorAccent">#a8e2c5</item>
+    <item name="android:statusBarColor">#000000</item>
+    <item name="android:navigationBarColor">#000000</item>
+    <item name="android:windowLightStatusBar">false</item>
+    <item name="android:windowLightNavigationBar">false</item>
+    <item name="android:windowActionModeOverlay">true</item>
+  </style>
+</resources>

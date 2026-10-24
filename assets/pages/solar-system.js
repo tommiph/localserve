@@ -8,6 +8,7 @@ if (!window.THREE) { document.getElementById('display-error').hidden = false; re
 var scene, camera, renderer;
 var animationFrame = 0;
 var displayFailed = false;
+var displayPaused = false;
 var celestialBodies = [];
 var starField;
 var sunMesh, sunCoronaMesh;
@@ -217,7 +218,7 @@ function onWindowResize() {
 
 // Main Animation & Automated Cinematic Loop
 function animate() {
-    if (document.hidden || !renderer) { animationFrame = 0; return; }
+    if (displayPaused || document.hidden || !renderer) { animationFrame = 0; return; }
     animationFrame = requestAnimationFrame(animate);
 
     var delta = clock.getDelta();
@@ -300,7 +301,7 @@ function showDisplayError() {
     document.getElementById('display-error').hidden = false;
 }
 function resumeAnimation() {
-    if (displayFailed || document.hidden || !renderer || animationFrame) return;
+    if (displayPaused || displayFailed || document.hidden || !renderer || animationFrame) return;
     // Discard hidden time so returning to the page does not jump camera targets.
     clock.getDelta();
     animate();
@@ -310,6 +311,11 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', stopAnimation);
 window.addEventListener('pageshow', resumeAnimation);
+if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(null,{pause:function (mode) {
+    displayPaused = mode === 'play' ? false : mode === 'pause' ? true : !displayPaused;
+    document.getElementById('solar-pause').hidden = !displayPaused;
+    if (displayPaused) stopAnimation();else resumeAnimation();
+}});
 window.addEventListener('load', function () {
     try {
         init();

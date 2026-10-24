@@ -10,6 +10,7 @@ import { validateRule, reconcileRuleClocks, solarOccurrence, ruleTypes,
   eventConditionSignature, eventConditionMatches, reconcileEventConditions } from './rules.mjs';
 import { validateValues } from './plugin-schema.mjs';
 import { validateTaskParameters, resolveTaskParameters } from './task-event-values.mjs';
+import {AndRuleGroups, isAndTask, groupSignature, reconcileRuleGroups} from './task-rule-groups.mjs';
 
 const activityAction = {
   id: 'log', type: 'log', category: 'server', name: 'Log activity',
@@ -31,6 +32,8 @@ export function validateTask(value, existing = null, actions = [], events = [], 
   // Disabled blocks still need valid fields so enabling them later is safe.
   if (!value || typeof value.name !== 'string' || !value.name.trim() || value.name.length > 64) throw new HttpError(400, 'Enter a Task name between 1 and 64 characters.');
   if (typeof value.enabled !== 'boolean' || !Array.isArray(value.starts) || !Array.isArray(value.steps) || !value.steps.length) throw new HttpError(400, 'A Task needs an Enabled state and at least one step.');
+  const ruleMode=value.ruleMode===undefined ? existing?.ruleMode ?? 'or' : value.ruleMode;
+  if(!['and','or'].includes(ruleMode))throw new HttpError(400,'Choose AND or OR for the Task rules.');
   const ids = new Set();
   // Starts and steps share one identifier space within their parent Task.
   const checkId = item => {
@@ -55,6 +58,7 @@ export function validateTask(value, existing = null, actions = [], events = [], 
     }
     return validateRule(start, events);
   });
+  if(ruleMode==='and' && starts.some(rule=>rule.enabled && rule.type==='event' && !rule.condition))throw new HttpError(400,'AND requires a comparison on every enabled Event rule.');
   const steps = value.steps.map(step => {
     checkId(step);
     const common = { id: step.id, type: step.type, enabled: step.enabled };
@@ -94,7 +98,7 @@ export function validateTask(value, existing = null, actions = [], events = [], 
     throw new HttpError(400, 'Choose a server action or a declared plugin action.');
   });
   return { id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
-    name: value.name.trim(), enabled: value.enabled, starts, steps };
+    name: value.name.trim(), enabled: value.enabled, ...((value.ruleMode!==undefined || existing?.ruleMode!==undefined)?{ruleMode}:{}), starts, steps };
 }
 
 /** Shared pause gate. Each run retains its own cancellation signal.
@@ -174,6 +178,7 @@ export class TaskEngine {
     this.active = new Map();
     this.pending = new Set();
     this.scheduling = false;
+    this.andRules = new AndRuleGroups(this);
   }
   async recover() {
     // Persisted records are history, not a restart queue. Replaying a partially
@@ -193,16 +198,21 @@ export class TaskEngine {
     await this.syncRuleClocks();
   }
   async syncRuleClocks(date = new Date()) {
+    this.andRules.sync();
     const previous = this.state.snapshot().ruleClocks || {};
     const next = reconcileRuleClocks(this.tasks.snapshot(), previous, date.getTime());
     const previousConditions = this.state.snapshot().eventConditions || {};
     const nextConditions = reconcileEventConditions(this.tasks.snapshot(), previousConditions);
+    const previousGroups=this.state.snapshot().ruleGroups || {};
+    const nextGroups=reconcileRuleGroups(this.tasks.snapshot(),previousGroups);
     // Normal scheduler ticks do not rewrite unchanged clocks every half second.
     if (JSON.stringify(previous) === JSON.stringify(next)
-      && JSON.stringify(previousConditions) === JSON.stringify(nextConditions)) return;
+      && JSON.stringify(previousConditions) === JSON.stringify(nextConditions)
+      && JSON.stringify(previousGroups) === JSON.stringify(nextGroups)) return;
     await this.state.update(state => {
       state.ruleClocks = reconcileRuleClocks(this.tasks.snapshot(), state.ruleClocks, date.getTime());
       state.eventConditions = reconcileEventConditions(this.tasks.snapshot(), state.eventConditions);
+      if(Object.keys(nextGroups).length || state.ruleGroups)state.ruleGroups=reconcileRuleGroups(this.tasks.snapshot(),state.ruleGroups);
     });
   }
   capturedEvent(run, task) {
@@ -454,6 +464,7 @@ export class TaskEngine {
     // must leave the currently running server state unchanged.
     await this.state.update(state => { state.paused = paused; });
     this.gate.setPaused(paused);
+    if(paused)this.andRules.reset();
     if (paused) await this.registry?.suspendPreviews?.();
     await this.activity.add(paused ? 'Server functions paused' : 'Server functions resumed');
   }
@@ -467,6 +478,7 @@ export class TaskEngine {
       const timezone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
       const minute = scheduleMinute(date);
       for (const task of this.tasks.snapshot().filter(task => task.enabled)) {
+        if(isAndTask(task)){await this.andRules.tick(task,date);continue;}
         for (const start of task.starts.filter(start => start.enabled)) {
           if (start.type === 'event') continue;
           if (['timer', 'interval'].includes(start.type)) {
@@ -506,8 +518,10 @@ export class TaskEngine {
     // A rule may have been removed or changed while its claim was being saved.
     const current = this.tasks.snapshot().find(item => item.id === task.id);
     const activeRule = current?.starts.find(item => item.id === rule.id && item.enabled);
-    if (!current?.enabled || JSON.stringify(activeRule) !== JSON.stringify(rule)) return;
-    try { await this.start(task.id, `${ruleTypes[rule.type]}: ${rule.name}`, eventContext, {automatic: true}); }
+    if (!current?.enabled || JSON.stringify(activeRule) !== JSON.stringify(rule)
+      || (current.ruleMode ?? 'or') !== (task.ruleMode ?? 'or')
+      || isAndTask(task) && groupSignature(current)!==groupSignature(task)) return;
+    try { await this.start(task.id, `${isAndTask(task)?'AND · ':''}${ruleTypes[rule.type]}: ${rule.name}`, eventContext, {automatic: true,...(isAndTask(task)?{revision:task.revision}:{})}); }
     catch (error) {
       await this.activity.add(`Rule Task skipped: ${task.name}: ${error.message}`, { level: 'warning', taskId: task.id });
     }
@@ -553,7 +567,13 @@ export class TaskEngine {
       return { delivered: false, reason: 'chain-limit' };
     }
     const event = { pluginId, eventId, payload: validated, occurredAt: Date.now(), trace: [...trace, `${pluginId}:${eventId}`] };
-    for (const task of this.tasks.snapshot().filter(task => task.enabled)) {
+    const enabledTasks=this.tasks.snapshot().filter(task=>task.enabled);
+    const acceptedSource=enabledTasks.some(isAndTask)?this.andRules.source({eventId:capability.id}):null;
+    for (const task of enabledTasks) {
+      if(isAndTask(task)) {
+        if(task.starts.some(rule=>rule.enabled && rule.type==='event' && rule.eventId===capability.id))await this.andRules.event(task,capability,event,acceptedSource);
+        continue;
+      }
       for (const rule of task.starts.filter(rule => rule.enabled && rule.type === 'event' && rule.eventId === capability.id)) {
         if (rule.condition && !(await this.claimEventCondition(task, rule, validated, capability.occurrenceKey))) continue;
         await this.dispatchRule(task, rule, event);
@@ -590,6 +610,7 @@ export class TaskEngine {
   }
   async close() {
     this.closing = true;
+    await this.andRules.queue;
     // Pending admissions may become active during shutdown. Keep cancelling
     // until they and the scheduler have drained their history/log writes.
     while (this.active.size || this.pending.size || this.scheduling) {

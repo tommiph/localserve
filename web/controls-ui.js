@@ -3,6 +3,7 @@
  */
 const ControlsUI = {
   pending: false,
+  ownsView(view) { return ['controls', 'lighting', 'vr-library', 'phone-home'].includes(view); },
   service(id) {
     const current = state.services.find(service => service.id === id);
     // Field schemas belong to the captured draft. Declaration polling must not
@@ -18,10 +19,18 @@ const ControlsUI = {
   render(service = null) {
     const owners = service ? [this.owner(service.id)] : state.controls || [];
     const rows = owners.flatMap(owner => owner.pages.map(page => ({ page, service: this.service(owner.pluginId) }))).filter(entry => entry.service);
-    const body = `<section class="panel"><div class="panel-header"><h2>Control pages <span class="panel-count">${rows.length}</span></h2><button type="button" class="button primary" data-action="control-add" ${service ? `data-plugin-id="${escapeHtml(service.id)}"` : ''} ${owners.length ? '' : 'disabled'}>${icon('plus')}Add Controls</button></div>
+    // Built-in tools belong to the global list, not a plugin's saved pages.
+    const tools = service ? [] : [
+      { id: 'lighting', name: 'Lighting animations', icon: 'lightbulb', plugin: 'TRÅDFRI', url: '/lighting-animations', link: 'Open animations' },
+      ...(state.services.some(owner => owner.id === 'oculus-go' && owner.actions.some(action => action.id === 'library-install'))
+        ? [{ id: 'vr-library', name: 'VR library', icon: 'vr-cardboard', plugin: 'Oculus Go', url: '/vr-library', link: 'Open library' }] : []),
+      { id: 'phone-home', name: 'Phone home', icon: 'smartphone', plugin: 'Server', url: '/home', link: 'Open Home' },
+    ];
+    const toolRows = tools.map(tool => `<tr data-live-key="control:tool:${tool.id}"><td>${icon(tool.icon)} ${tool.name}</td><td data-label="Plugin">${tool.plugin}</td><td data-label="URL"><a class="control-open-link" href="${tool.url}" target="_blank" rel="noopener">${tool.link}</a></td><td class="control-row-actions"><button type="button" class="button" data-view="${tool.id}" aria-label="Open ${tool.name}">${icon('arrow-right')}Open</button></td></tr>`).join('');
+    const body = `<section class="panel"><div class="panel-header"><h2>Control pages <span class="panel-count">${rows.length + tools.length}</span></h2><button type="button" class="button primary" data-action="control-add" ${service ? `data-plugin-id="${escapeHtml(service.id)}"` : ''} ${owners.length ? '' : 'disabled'}>${icon('plus')}Add Controls</button></div>
       ${owners.some(owner => owner.error) ? `<p class="form-error">${escapeHtml(owners.find(owner => owner.error).error)}</p>` : ''}
-      ${rows.length ? `<div class="table-scroll"><table class="service-table responsive-controls"><thead><tr><th>Name</th><th>Plugin</th><th>URL</th><th>Actions</th></tr></thead><tbody>${rows.map(({ page, service }) => `<tr data-live-key="control:${escapeHtml(service.id)}:${escapeHtml(page.id)}"><td>${icon(page.icon)} ${escapeHtml(page.name)}</td><td data-label="Plugin">${escapeHtml(service.name)}</td><td data-label="URL">${page.enabled ? `<a class="control-open-link" href="/controls/${service.id}/${page.slug}" target="_blank" rel="noopener">Open ${escapeHtml(page.slug)}</a>` : escapeHtml(page.slug)}</td><td class="control-row-actions"><div data-control-owner="${service.id}">${itemActions(page, 'control')}</div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">No Control pages yet. Map buttons or create scenes from this plugin’s exposed actions.</div>'}</section>`;
-    return service ? body : pageHeading('Controls', 'Plugin Control pages', '<a class="button" href="/controls" target="_blank" rel="noopener">Open Controls</a>') + body;
+      ${rows.length || tools.length ? `<div class="table-scroll"><table class="service-table responsive-controls"><thead><tr><th>Name</th><th>Plugin</th><th>URL</th><th>Actions</th></tr></thead><tbody>${toolRows}${rows.map(({ page, service }) => `<tr data-live-key="control:${escapeHtml(service.id)}:${escapeHtml(page.id)}"><td>${icon(page.icon)} ${escapeHtml(page.name)}</td><td data-label="Plugin">${escapeHtml(service.name)}</td><td data-label="URL">${page.enabled ? `<a class="control-open-link" href="/controls/${service.id}/${page.slug}" target="_blank" rel="noopener">Open ${escapeHtml(page.slug)}</a>` : escapeHtml(page.slug)}</td><td class="control-row-actions"><div data-control-owner="${service.id}">${itemActions(page, 'control')}</div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">No Control pages yet. Map buttons or create scenes from this plugin’s exposed actions.</div>'}</section>`;
+    return service ? body : pageHeading('Controls', 'Control pages and tools', '<a class="button" href="/controls" target="_blank" rel="noopener">Open Controls</a>') + body;
   },
   blankItem(service, kind = 'button') {
     const compatible = field => kind === 'toggle' ? field.type === 'boolean' : kind === 'range' ? field.type === 'number' && !field.enum && Number.isFinite(field.min) && Number.isFinite(field.max) : kind === 'select' ? ['string','number'].includes(field.type) && field.enum?.length : false;

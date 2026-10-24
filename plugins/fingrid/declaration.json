@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "fingrid",
   "name": "Fingrid",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Finland electricity system datasets and latest readings",
   "icon": "bolt",
   "runtime": {
@@ -1005,6 +1005,171 @@
           "id": "received",
           "field": "grid-received-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "grid-fullscreen",
+      "name": "Grid · Fullscreen",
+      "sourceLabel": "Dataset",
+      "directory": "cards/grid",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "production",
+          "field": "grid-production",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "production-unit",
+          "field": "grid-production-unit",
+          "format": "text"
+        },
+        {
+          "id": "consumption",
+          "field": "grid-consumption",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "consumption-unit",
+          "field": "grid-consumption-unit",
+          "format": "text"
+        },
+        {
+          "id": "wind",
+          "field": "grid-wind",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "wind-unit",
+          "field": "grid-wind-unit",
+          "format": "text"
+        },
+        {
+          "id": "frequency",
+          "field": "grid-frequency",
+          "format": "text"
+        },
+        {
+          "id": "frequency-unit",
+          "field": "grid-frequency-unit",
+          "format": "text"
+        },
+        {
+          "id": "nuclear",
+          "field": "grid-nuclear",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "nuclear-unit",
+          "field": "grid-nuclear-unit",
+          "format": "text"
+        },
+        {
+          "id": "hydro",
+          "field": "grid-hydro",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "hydro-unit",
+          "field": "grid-hydro-unit",
+          "format": "text"
+        },
+        {
+          "id": "carbon",
+          "field": "grid-carbon",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "carbon-unit",
+          "field": "grid-carbon-unit",
+          "format": "text"
+        },
+        {
+          "id": "period",
+          "field": "grid-period-end",
+          "format": "time"
+        },
+        {
+          "id": "received",
+          "field": "grid-received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "dataset-title",
+          "field": "dataset-title",
+          "format": "text"
+        },
+        {
+          "id": "organization",
+          "field": "organization",
+          "format": "text"
+        },
+        {
+          "id": "description",
+          "field": "description",
+          "format": "text"
+        },
+        {
+          "id": "value",
+          "field": "value",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "unit",
+          "field": "unit",
+          "format": "text"
+        },
+        {
+          "id": "period-start",
+          "field": "period-start",
+          "format": "datetime"
+        },
+        {
+          "id": "period-end",
+          "field": "period-end",
+          "format": "datetime"
+        },
+        {
+          "id": "sample-count",
+          "field": "sample-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "dataset-status",
+          "field": "dataset-status",
+          "format": "text"
+        },
+        {
+          "id": "api-state",
+          "field": "api-state",
+          "format": "text"
+        },
+        {
+          "id": "readings",
+          "field": "readings",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "start",
+            "end",
+            "value"
+          ]
         }
       ]
     }

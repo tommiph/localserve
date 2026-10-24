@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { randomBytes, createHash } from 'node:crypto';
+import {androidSourceReceipt} from '../../../tools/android-build/source-receipt.mjs';
 
 const app=fileURLToPath(new URL('./',import.meta.url));
 const root=fileURLToPath(new URL('../../../',import.meta.url));
@@ -137,7 +138,7 @@ const bytes=await fs.readFile(signed);
 // Publish only the complete verified APK; an in-progress build stays private.
 await fs.rename(signed,apk);
 const report={file:'plugins/sensors/android/dist/localserve-sensors.apk',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),
-  minSdk:26,targetSdk:35,version:(await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8')).match(/android:versionName="([^"]+)"/)[1],vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),homeCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
+  minSdk:26,targetSdk:35,version:(await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8')).match(/android:versionName="([^"]+)"/)[1],sourceReceipt:await androidSourceReceipt(root,'plugins/sensors/android'),vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),homeCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
 await fs.writeFile(path.join(output,'verification.json'),JSON.stringify(report,null,2)+'\n');
 await fs.writeFile(path.join(output,'localserve-sensors.apk.sha256'),report.sha256+'  localserve-sensors.apk\n');
 console.log(JSON.stringify(report,null,2));

@@ -132,3 +132,9 @@ stream and saves no readings. Choose a returned name/index, then use Use selecte
 camera to save it explicitly. Enable the plugin when ready. Names are a scan
 receipt, not a permanent device identity; list again after USB devices change.
 Changing the camera while enabled restarts capture through normal configuration.
+
+## Fullscreen design
+
+The separate **· Fullscreen** ready-made Card uses a 1920×1080 layout with
+additional declared readings and bounded detail lists. Choose it in Add ready-made
+card; existing Cards keep their design. See [fullscreen setup](../../FULLSCREEN-CARDS.md).

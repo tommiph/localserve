@@ -36,3 +36,6 @@ main > div > .grid > button { width: 48%; margin: 8px 2% 0 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+html[data-tv-paused="true"] *,html[data-tv-paused="true"] *:before,html[data-tv-paused="true"] *:after{animation-play-state:paused!important}
+

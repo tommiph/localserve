@@ -39,7 +39,7 @@
     if (document.hidden) return;
     updateClock();
     clockTimer = setInterval(updateClock, 1000);
-    animationTimer = setInterval(animateDisplay, 3000);
+    if (!displayPaused) animationTimer = setInterval(animateDisplay, 3000);
   }
   document.addEventListener('click', function (event) {
     var button = event.target;
@@ -52,6 +52,13 @@
   window.addEventListener('pagehide', function () {
     clearInterval(clockTimer); clearInterval(animationTimer);
   });
+  var displayPaused = false;
+  if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(null,{pause:function (mode) {
+    displayPaused = mode === 'play' ? false : mode === 'pause' ? true : !displayPaused;
+    document.documentElement.setAttribute('data-tv-paused',String(displayPaused));
+    document.getElementById('status-ticker').textContent = displayPaused ? 'DISPLAY PAUSED · PLAY/PAUSE TO RESUME' : 'DISPLAY RUNNING';
+    synchronizeTimers();
+  }});
   switchView('canvas');
   synchronizeTimers();
 }());

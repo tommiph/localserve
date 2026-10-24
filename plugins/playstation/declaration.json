@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "playstation",
   "name": "PlayStation",
-  "version": "1.0.2",
+  "version": "1.4.0",
   "description": "PSN presence, active game, playtime and trophies",
   "icon": "gamepad",
   "runtime": {
@@ -162,6 +162,107 @@
       "source": {
         "kind": "state",
         "key": "active-trophies"
+      }
+    },
+    {
+      "id": "active-play-count",
+      "label": "Current game play count",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-play-count"
+      }
+    },
+    {
+      "id": "active-first-played",
+      "label": "Current game first played",
+      "type": "timestamp",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-first-played"
+      }
+    },
+    {
+      "id": "active-last-played",
+      "label": "Current game last played",
+      "type": "timestamp",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-last-played"
+      }
+    },
+    {
+      "id": "active-trophies-available",
+      "label": "Current game available trophies",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-trophies-available"
+      }
+    },
+    {
+      "id": "active-trophy-progress",
+      "label": "Current game trophy progress",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-trophy-progress"
+      },
+      "unit": "%"
+    },
+    {
+      "id": "active-trophies-received-at",
+      "label": "Current game trophies received",
+      "type": "timestamp",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-trophies-received-at"
+      }
+    },
+    {
+      "id": "active-platinum",
+      "label": "Current game platinum trophies",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-platinum"
+      }
+    },
+    {
+      "id": "active-gold",
+      "label": "Current game gold trophies",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-gold"
+      }
+    },
+    {
+      "id": "active-silver",
+      "label": "Current game silver trophies",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-silver"
+      }
+    },
+    {
+      "id": "active-bronze",
+      "label": "Current game bronze trophies",
+      "type": "number",
+      "icon": "trophy",
+      "source": {
+        "kind": "state",
+        "key": "active-bronze"
       }
     },
     {
@@ -1351,6 +1452,36 @@
           }
         ]
       }
+    },
+    {
+      "id": "session-started-at",
+      "label": "Online session start observed",
+      "type": "timestamp",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "session-started-at"
+      }
+    },
+    {
+      "id": "session-observed-at",
+      "label": "Current online session first observed",
+      "type": "timestamp",
+      "icon": "gamepad",
+      "source": {
+        "kind": "state",
+        "key": "session-observed-at"
+      }
+    },
+    {
+      "id": "game-session-started-at",
+      "label": "Current game first observed",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "game-session-started-at"
+      }
     }
   ],
   "actions": [
@@ -1457,6 +1588,84 @@
           "maxLength": 100
         }
       ]
+    },
+    {
+      "id": "session-activity",
+      "name": "Play session activity",
+      "description": "Committed PSN presence/game observations. Times reflect polling, not exact console activity.",
+      "occurrenceKey": "change-id",
+      "payload": [
+        {
+          "id": "change-id",
+          "label": "Change ID",
+          "type": "string",
+          "maxLength": 100,
+          "required": true
+        },
+        {
+          "id": "kind",
+          "label": "Activity",
+          "type": "string",
+          "enum": [
+            "online",
+            "offline",
+            "game",
+            "presence"
+          ],
+          "enumLabels": [
+            "Online session started",
+            "Online session ended",
+            "Game changed",
+            "Presence changed"
+          ]
+        },
+        {
+          "id": "status",
+          "label": "PSN presence",
+          "type": "string",
+          "enum": [
+            "online",
+            "offline",
+            "away",
+            "unknown"
+          ]
+        },
+        {
+          "id": "previous-status",
+          "label": "Previous presence",
+          "type": "string",
+          "enum": [
+            "online",
+            "offline",
+            "away",
+            "unknown"
+          ]
+        },
+        {
+          "id": "game",
+          "label": "Current game",
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "id": "previous-game",
+          "label": "Previous game",
+          "type": "string",
+          "maxLength": 200
+        },
+        {
+          "id": "observed-at",
+          "label": "Observation time (Unix milliseconds)",
+          "type": "number",
+          "min": 0
+        },
+        {
+          "id": "session-seconds",
+          "label": "Observed session duration (seconds)",
+          "type": "number",
+          "min": 0
+        }
+      ]
     }
   ],
   "cardTemplates": [
@@ -1559,6 +1768,164 @@
           "id": "received",
           "field": "received-at",
           "format": "datetime"
+        }
+      ],
+      "variant": {
+        "slot": "online",
+        "fallback": "unknown",
+        "choices": {
+          "online": [
+            "true"
+          ],
+          "offline": [
+            "false"
+          ]
+        }
+      }
+    },
+    {
+      "id": "gaming-lounge-fullscreen",
+      "name": "Gaming lounge · Fullscreen",
+      "sourceLabel": "Data source",
+      "directory": "cards/gaming-lounge",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "game",
+          "field": "active-game-display",
+          "format": "text"
+        },
+        {
+          "id": "account",
+          "field": "online-id",
+          "format": "text"
+        },
+        {
+          "id": "presence",
+          "field": "online-status",
+          "format": "text"
+        },
+        {
+          "id": "online",
+          "field": "online",
+          "format": "text"
+        },
+        {
+          "id": "hours",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "level",
+          "field": "trophy-level",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "progress",
+          "field": "trophy-progress",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "trophies-total",
+          "field": "trophies-total",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "all-hours",
+          "field": "all-games-play-hours",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "platinum",
+          "field": "platinum",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "gold",
+          "field": "gold",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "silver",
+          "field": "silver",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "bronze",
+          "field": "bronze",
+          "format": "number",
+          "decimals": 0,
+          "grouping": false
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "games-total",
+          "field": "games-total",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "collections-total",
+          "field": "collections-total",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "details-status",
+          "field": "details-status",
+          "format": "text"
+        },
+        {
+          "id": "games",
+          "field": "games",
+          "format": "table",
+          "rows": 6,
+          "columns": [
+            "name",
+            "platform",
+            "hours",
+            "plays"
+          ]
+        },
+        {
+          "id": "collections",
+          "field": "collections",
+          "format": "table",
+          "rows": 6,
+          "columns": [
+            "name",
+            "platform",
+            "progress",
+            "earned",
+            "available"
+          ]
         }
       ],
       "variant": {

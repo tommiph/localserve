@@ -23,3 +23,7 @@ The APK version is declared in app.json and AndroidManifest.xml. It is independe
 ## Optional device checks
 
 After building the main app, run `plugins/oculus-go/android/test/build.mjs` with the bundled Node runtime. It creates a separately signed instrumentation package in the private build folder; it does not install or run it. Use your own authorized device tools to install the main APK and this test APK. The test targets only `org.localserve.go`, enrolls using an explicitly supplied `server` LAN address and fresh `code`, checks encrypted credential restoration, catalog, favorites, menus and stereo frame submission, and saves screenshots in the app's external files folder. It does not install, remove or launch library titles. Remove `org.localserve.go.tests` afterwards. Keep connection codes and generated screenshots out of public logs and source commits.
+
+## Source verification
+
+The distributable APK records a digest of its manifest, build recipe, first-party Java/native sources, resources/assets and dependency lock. Release preparation rejects changed inputs until the APK is rebuilt with the retained signing identity. This verification does not require connecting a headset.

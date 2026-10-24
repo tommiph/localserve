@@ -64,5 +64,35 @@
     if (!isFinite(seconds) || seconds !== 0 && seconds < 1 || seconds > 3600) return null;
     return { id: match[2], origin: match[1], seconds: seconds };
   }
-  root.VistaUrlTarget = { validUrl: validUrl, fromControl: fromControl, notice: notice };
+  function parts(value) {
+    var valid = validUrl(value);
+    if (!valid) return null;
+    var anchor = document.createElement('a'); anchor.href = valid;
+    return {protocol:anchor.protocol, host:anchor.hostname, port:anchor.port || '',
+      path:(anchor.pathname || '/') + (anchor.search || '') + (anchor.hash || ''),
+      origin:anchor.protocol + '//' + anchor.host,
+      viewerPath:(anchor.pathname || '/') + (anchor.search || '')};
+  }
+  function settings(values) {
+    if (!values || !/^https?:$/.test(values.protocol) || typeof values.host !== 'string'
+      || !/^[a-z0-9](?:[a-z0-9.-]{0,251}[a-z0-9])?$/i.test(values.host)) return null;
+    var port = String(values.port || '');
+    if (port && (!/^\d{1,5}$/.test(port) || Number(port) < 1 || Number(port) > 65535)) return null;
+    if (typeof values.path !== 'string' || values.path.charAt(0) !== '/' || values.path.indexOf('//') === 0) return null;
+    return validUrl(values.protocol + '//' + values.host + (port ? ':' + port : '') + values.path);
+  }
+  function viewer(value) {
+    var target = parts(value);
+    return target && /^(?:\/display|\/vistas\/[a-z0-9-]+)(?:\?|$)/.test(target.viewerPath) ? target : null;
+  }
+  function remote(value) {
+    var target = parts(value);
+    if (!target) return null;
+    if (viewer(value) || /^(?:\/universe|\/phone-information|\/games\/maze)(?:\?|$)/.test(target.viewerPath)) return target;
+    if (/^\/assets\/pages\/(?:scifi|solar-system)\.html$/.test(target.viewerPath)) { target.opaque = true;return target; }
+    if (/^\/tv-notices\/[a-f0-9]{48}(?:\?|$)/.test(target.viewerPath)) return target;
+    return null;
+  }
+  root.VistaUrlTarget = { validUrl: validUrl, fromControl: fromControl, notice: notice,
+    parts:parts, settings:settings, viewer:viewer, remote:remote };
 }(this));

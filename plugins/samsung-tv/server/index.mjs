@@ -4,6 +4,7 @@
 import { createVault, helperReady } from './vault.mjs';
 import { localHost, validPin, validToken, createHttpClient, connectRemote, keys, xmlEscape, wake } from './client.mjs';
 import {createYouTubeControl, YouTubeControlError} from './youtube-control.mjs';
+import {captureNoticeApp,returnNoticeApp} from './notice-return.mjs';
 const text = (value, max = 200) => typeof value === 'string' && value.trim() ? value.replace(/[\u0000-\u001f\u007f]/gu, ' ').trim().slice(0, max) : null;
 const volume = value => /^(?:\d|[1-9]\d|100)$/.test(value || '') ? Number(value) : null;
 const mute = value => value === '1' ? true : value === '0' ? false : null;
@@ -80,6 +81,12 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
       try { auth = await readAuth(values); } catch { auth = null; }
     },
     async stop() { settings = null; auth = null; lastCommandAt = null; },
+    async returnNotice(values,context) {
+      const signal=AbortSignal.any([context.signal,AbortSignal.timeout(4000)]);
+      return returnNoticeApp({appId:values.appId,http,host:settings.host,signal,
+        connect:()=>remote(settings,auth,signal,{saveToken:async(next,active)=>{await vault.save(next,active);auth=next;}}),
+        gate:()=>paceCommand(context,signal)});
+    },
     async execute(actionId, parameters, context) {
       context.signal.throwIfAborted();
       const signal = AbortSignal.any([context.signal, AbortSignal.timeout(20000)]);
@@ -167,6 +174,38 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
             await context.wait(0.01);
             signal.throwIfAborted(); await http.soap(settings.host, 'Play', '<Speed>1</Speed>', 'AVTransport', signal);
           } else await http.soap(settings.host, { play: 'Play', pause: 'Pause', stop: 'Stop' }[actionId], actionId === 'play' ? '<Speed>1</Speed>' : '', 'AVTransport', signal);
+        } else if (actionId === 'close-app') {
+          // An exact app endpoint cannot send Exit/Home to an unrelated foreground
+          // app. Unsupported status reads fail closed; there is no key fallback.
+          const id = parameters.id;
+          if (typeof id !== 'string' || !/^[\w.-]{1,128}$/.test(id)) throw new Error('Enter a supported TV app ID.');
+          const status = await http.app(settings.host, id, 'GET', signal);
+          signal.throwIfAborted();
+          if (!status.running) {
+            await context.log('Selected TV app is not running; no close command sent.', 'info');
+            return {commandSent:false, alreadyStopped:true};
+          }
+          if(id==='LsPsMode01.PlaystationMode' && context.closeLocalserveTv) {
+            const reply=await context.closeLocalserveTv();signal.throwIfAborted();
+            if(reply?.accepted) {
+              // Acknowledging a requested exit is not confirmation that Tizen
+              // closed it. Observe a bounded number of exact-app status reads.
+              for(let attempt=0;attempt<6;attempt++) {
+                await context.wait(.5);signal.throwIfAborted();
+                if(!(await http.app(settings.host,id,'GET',signal)).running)return {commandSent:true,closed:true,cooperative:true};
+              }
+              throw Error('The TV accepted the Localserve close request but still reports the app running.');
+            }
+          }
+          await paceCommand(context, signal); signal.throwIfAborted();
+          try {await http.app(settings.host, id, 'DELETE', signal);}
+          catch(error) {
+            signal.throwIfAborted();
+            // Firmware can reject a DELETE after the app already stopped.
+            // Confirm that exact outcome, never retry the close or send Home.
+            if(!(await http.app(settings.host,id,'GET',signal)).running)return {commandSent:true,closed:true};
+            throw error;
+          }
         } else if (actionId === 'wake') {
           await paceCommand(context, signal); signal.throwIfAborted();
           await wakeImpl(settings.mac, signal);
@@ -186,6 +225,10 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
               reading = { ...reading, ...appReading(await connection.apps(), now()), 'target-host': settings.host };
               signal.throwIfAborted(); await context.saveState(reading); await context.log('TV installed-app list refreshed.', 'success');
               return { completed: true };
+            }
+            if(actionId==='show-notice' && context.captureNoticeReturn){
+              const appId=await captureNoticeApp(connection,http,settings.host,signal);
+              if(appId)await context.captureNoticeReturn(appId);
             }
             // A connection may finish after the user pauses server functions.
             // Gate each effect, including both text/media protocol stages.

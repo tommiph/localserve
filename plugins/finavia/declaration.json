@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "finavia",
   "name": "Finavia",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Finnish airport flight boards · Source: Finavia Public Flights",
   "icon": "flight-takeoff",
   "runtime": {
@@ -1691,6 +1691,68 @@
             "in-minutes"
           ],
           "rows": 1
+        }
+      ]
+    },
+    {
+      "id": "departure-lounge-fullscreen",
+      "name": "Departure lounge · Fullscreen",
+      "sourceLabel": "Location",
+      "directory": "cards/departure-lounge",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "airport",
+          "field": "airport",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "board",
+          "field": "flights",
+          "format": "table",
+          "columns": [
+            "flight",
+            "route",
+            "gate",
+            "status",
+            "scheduled",
+            "time",
+            "in-minutes"
+          ],
+          "rows": 10
+        },
+        {
+          "id": "route-filter",
+          "field": "route-filter",
+          "format": "text"
+        },
+        {
+          "id": "flight-count",
+          "field": "flight-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "flight-filter",
+          "field": "flight-filter",
+          "format": "text"
+        },
+        {
+          "id": "attribution",
+          "field": "attribution",
+          "format": "text"
         }
       ]
     }

@@ -22,6 +22,60 @@ vm.runInContext(await fs.readFile(new URL('../web/card-designer.js', import.meta
 vm.runInContext(await fs.readFile(new URL('../web/plugin-ui.js', import.meta.url), 'utf8') + '\nglobalThis.plugin = PluginUI;', context);
 vm.runInContext(await fs.readFile(new URL('../web/phone-home-ui.js', import.meta.url), 'utf8') + '\nglobalThis.phone = PhoneHomeUI;', context);
 
+async function vistaLaunchFixture() {
+  const state = { paused: false, server: { lanAddress: 'http://192.0.2.10:8123' },
+    vistaDisplay: { revision: 4, vistaId: 'shared' },
+    vistas: [{ id: 'own', name: 'Wall', slug: 'wall', enabled: true }],
+    services: [{ id: 'samsung-tv', enabled: true, config: { revision: 7 },
+      actions: [{ id: 'launch-app', available: true }] }] };
+  const calls = [], messages = [];
+  let finish, failure;
+  const pending = new Promise((resolve, reject) => { finish = resolve; failure = reject; });
+  const scope = { state, document: { addEventListener() {} },
+    escapeHtml: String, icon: () => '', pageHeading: () => '', itemActions: () => '', renderView() {},
+    notify: message => messages.push(message),
+    mutate: (endpoint, values) => { calls.push({ endpoint, values }); return pending; } };
+  const ui = vm.runInNewContext(await fs.readFile(new URL('../web/vistas-ui.js', import.meta.url), 'utf8') + '\nVistaUI;', scope);
+  return { ui, state, calls, messages, finish, failure };
+}
+
+test('Vista TV launch sends one own-URL command with the current TV revision and preserves shared selection', async () => {
+  const f = await vistaLaunchFixture(), before = JSON.stringify(f.state);
+  assert.match(f.ui.render(), /data-action="vista-tv"/);
+  const launch = f.ui.handleAction('vista-tv', 'own', {});
+  await f.ui.handleAction('vista-tv', 'own', {});
+  assert.equal(f.calls.length, 1, 'Repeat clicks cannot queue another launch');
+  assert.equal(f.calls[0].endpoint, 'api/plugins/samsung-tv/actions/launch-app');
+  assert.deepEqual(JSON.parse(JSON.stringify(f.calls[0].values)), { revision: 7,
+    parameters: { id: 'HwGlance01.HomeGlance', mode: 'DEEP_LINK', arguments: 'http://192.0.2.10:8123/vistas/wall' } });
+  assert.equal(f.ui.tvPending, true);
+  f.finish({}); await launch;
+  assert.equal(f.ui.tvPending, false);
+  assert.equal(JSON.stringify(f.state), before);
+  assert.match(f.messages.at(-1), /sent to the TV/);
+});
+
+test('Vista TV controls reject paused, disabled, missing and unavailable targets before sending', async () => {
+  for (const alter of [f => { f.state.paused = true; }, f => { f.state.vistas[0].enabled = false; },
+    f => { f.state.vistas = []; }, f => { f.state.services = []; },
+    f => { f.state.services[0].enabled = false; }, f => { f.state.services[0].actions[0].available = false; },
+    f => { f.state.server.lanAddress = null; }]) {
+    const f = await vistaLaunchFixture(); alter(f);
+    await f.ui.handleAction('vista-tv', 'own', {});
+    assert.equal(f.calls.length, 0); assert.ok(f.messages.length);
+    if(f.state.vistas.length)assert.match(f.ui.render(), /data-action="vista-tv"[^>]*disabled/);
+  }
+});
+
+test('Vista TV failures restore controls and explain uncertainty without an automatic retry', async () => {
+  const f = await vistaLaunchFixture();
+  const launch = f.ui.handleAction('vista-tv', 'own', {});
+  f.failure(new Error('TV connection closed; delivery unknown.')); await launch;
+  assert.equal(f.calls.length, 1); assert.equal(f.ui.tvPending, false);
+  assert.match(f.messages.at(-1), /delivery unknown.*No launch was retried/);
+  assert.equal(f.ui.tvLaunchAvailability().reason, '');
+});
+
 test('declaration presentation metadata round-trips numeric storage units and preserves constraints', () => {
   const fields=validateFields([{id:'interval',label:'Seconds',type:'number',min:0.05,max:0.1,displayScale:60,section:'Readings',advanced:true}]);
   const html=context.plugin.field(fields[0],0.05,'test');
@@ -220,7 +274,7 @@ test('polling restores the same navigation control and Activity disclosure', asy
       : kind === 'activity' ? {dataset: {activityDetails: key}} : null,
     focus() { document.activeElement = this; },
   });
-  const ctx = vm.createContext({document, workspace, AdminDOM: {text() {}}, state: {services: []}, currentView: 'overview',
+  const ctx = vm.createContext({document, workspace, AdminDOM: {text() {}}, ControlsUI: {ownsView: () => false}, state: {services: []}, currentView: 'overview',
     renderSaveFeedback() {}, renderNavigation() {}, renderOverview() {}});
   vm.runInContext(render, ctx);
   for (const kind of ['nav', 'activity']) {

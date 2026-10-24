@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "adsb-lol",
   "name": "adsb.lol",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Nearby aircraft from adsb.lol public position reports",
   "icon": "plane",
   "defaultCardLayout": "table",
@@ -963,6 +963,92 @@
             "distance"
           ],
           "rows": 1
+        }
+      ]
+    },
+    {
+      "id": "airspace-fullscreen",
+      "name": "Airspace · Fullscreen",
+      "sourceLabel": "Area",
+      "directory": "cards/airspace",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "count",
+          "field": "aircraft-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "nearest",
+          "field": "nearest-callsign",
+          "format": "text"
+        },
+        {
+          "id": "distance",
+          "field": "nearest-distance",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "traffic",
+          "field": "aircraft",
+          "format": "table",
+          "columns": [
+            "callsign",
+            "registration",
+            "type",
+            "altitude-label",
+            "speed",
+            "distance",
+            "hex"
+          ],
+          "rows": 10
+        },
+        {
+          "id": "reported-area",
+          "field": "reported-area",
+          "format": "text"
+        },
+        {
+          "id": "radius-nm",
+          "field": "radius-nm",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "excluded-count",
+          "field": "excluded-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "row-count",
+          "field": "row-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "list-limited",
+          "field": "list-limited",
+          "format": "text"
         }
       ]
     }

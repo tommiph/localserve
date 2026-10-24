@@ -10,6 +10,9 @@ const VariablesUI = {
     const add = (owner, ownerName, kind, context, label, code, type, help, file, example) =>
       rows.push({owner, ownerName, kind, context, label, code, type, help, file, example});
     const services = snapshot.services || [], events = snapshot.taskEvents || [];
+    add('server','Server','rule','Task rule combination','AND / OR','ruleMode','string',
+      'Task ruleMode is or (default) or and. AND combines latest reported Event comparisons; time rules must fall due together. Event tags still come only from the triggering report.',
+      'data/tasks.json; server/task-rule-groups.mjs',{ruleMode:'and'});
     for (const [id, name] of Object.entries(TaskUI.ruleTypes)) {
       add('server','Server','rule','Task start rule',name,id,'rule',
         'Use starts[].type. Only Event rules supply captured Event values.', 'data/tasks.json', {type:id});

@@ -2,6 +2,17 @@
 
 ## Administrator and services
 
+**SERVER → Devices** provides manual discovery on an attached private network.
+Choose **Discover devices** to list addresses, reported names and advertised
+services. Unknowns remain explicit and inferred device types are labelled.
+Edit local names/types, copy addresses or select **Use address** to review an
+address change for a compatible plugin. Scans never pair or control a device.
+Sleeping or isolated devices can be missed; neighbor-cache information does not
+prove current availability. **Look up manufacturers** optionally checks public
+MAC prefixes with maclookup.app and caches the registered companies and country.
+Private/randomized MACs are skipped; names, IPs and full MACs are not sent.
+See [Devices](DEVICES.md) for details.
+
 Open the administrator from the tray. Overview shows plugin readiness, polling
 and server status. Enabled pauses or resumes server functions without closing
 the administrator. Configure means a plugin needs settings before operating;
@@ -208,6 +219,7 @@ Only visible tiles load; no prefetch or location history is kept. Map data:
 
 Create an enabled Controls page in a supported plugin and map its declared
 actions. TV Remote uses Remote/Apps/More. Lighting uses Devices/Groups/Scenes.
+Choose **Controls → Lighting animations → Open** to manage lighting sequences.
 For a starting point, see [TV and lighting examples](examples/controls/README.md).
 The optional installer adds disabled examples only to empty Controls stores;
 it never imports another user's devices or overwrites existing remotes.
@@ -270,13 +282,13 @@ successful test; protected credentials remain available on this Windows account.
 
 ## Oculus Go application library
 
-Enable Oculus Go and its APK library, select your own APK folder, then open SERVER → VR library. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
+Enable Oculus Go and its APK library, select your own APK folder, then open Controls → VR library → Open. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
 
 For the native VR interface, download the generic Go app from VR library and install it with your authorized headset tools. It appears as **# Localserve #**. Select Connect headset in the administrator, then enter the LAN address and one-use code in the app's Settings. Browse Library, filter Installed or Updates, search, favorite titles and play locally installed apps. Codes expire after five minutes. See [Localserve Go](plugins/oculus-go/android/README.md) for controls, compatibility and build instructions. Existing Home VR clients can also connect with their matching token; see [Oculus Go](plugins/oculus-go/README.md).
 
 ## Phone connection and detailed settings
 
-Phone home shows the actual bound LAN address, separate Remotes and Card/favorites
+Controls → Phone home → Open shows the actual bound LAN address, separate Remotes and Card/favorites
 sections, and published Tasks. Copy its address to a phone on the same LAN.
 You can also scan its locally generated QR code to open Home. The code contains
 only the bound LAN address; scanning does not install an APK or enable Sensors.
@@ -315,3 +327,34 @@ Vista Preview warns when a visible ready-made Card needs scrolling at that size.
 Collections can show different Cards later. Use a larger region or fewer details
 for a TV, and check its actual fallback layout; the browser warning is not a
 size guarantee. Layout map selection and these fit hints are not saved settings.
+
+## Fullscreen Cards
+
+Choose a ready-made design ending in **· Fullscreen** for a 1920×1080 Vista.
+Use a single full-Canvas Card or collection with zero padding/gap. See
+[Fullscreen layouts and available details](FULLSCREEN-CARDS.md).
+
+### AND / OR rules
+
+In the Task editor, **Combine rules** offers **OR · Any rule** (the default) and
+**AND · All rules**. OR starts when any enabled rule fires. AND combines the
+latest reported comparisons, such as phone connected AND ambient light below
+50 lux. Add a comparison to every enabled Event rule. It runs when all become
+true, then rearms when a comparison becomes false. Unknown readings block it.
+Distinct matching Events, such as separate video releases, can each start it.
+
+In AND mode, schedules, timers, intervals, sunrise and sunset must fall due
+together; the Event comparisons must be true at that moment. A blocked occurrence
+is skipped. Use OR for alternative times. Disabled rules are ignored. With no
+enabled rules, start the Task manually. Manual Run and Rerun bypass these rules.
+
+After restart, pause or source reconfiguration, AND waits for fresh comparison
+reports. Existing true claims are preserved to prevent duplicate runs. Event
+variables come only from the report starting the run, not from other comparisons.
+Time-based starts provide no Event variables. The Variables page documents the
+`ruleMode` property for JSON authors; use the administrator to edit live Tasks.
+
+## Phone shortcut availability
+
+Phone Home and Scenes explain why a Task cannot run, including disabled Tasks, missing Event values, unavailable plugins or scenes, and concurrent-run limits. Fix the indicated setup in the administrator. AND conditions from a phone require its current reporting session; retained sensor values from an offline phone do not satisfy a condition. Offline presence can be selected as its own condition.
+

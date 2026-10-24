@@ -106,7 +106,8 @@ function runLegacy(payload, time = Date, manual = false) {
       this.onreadystatechange();
     }
   }
-  const browser = { matchMedia: () => ({ matches: false }) };
+  let stepCollection,pauseCollection;const heartbeats=[];
+  const browser = { matchMedia: () => ({ matches: false }),LocalserveTvViewer:{install:(callback,controls)=>{stepCollection=callback;pauseCollection=controls.pause;},state:value=>heartbeats.push(value)} };
   vm.runInNewContext(legacy, {
     document, location: { pathname: '/vistas/tv' }, XMLHttpRequest: MockRequest,
     setInterval: callback => intervals.push(callback),
@@ -114,7 +115,7 @@ function runLegacy(payload, time = Date, manual = false) {
     window: browser,
     Date: time, JSON, Math, isFinite, isNaN,
   });
-  return { host, status, body, fontRule, adapter: browser.LocalserveLegacyCard, intervals,
+  return { host, status, body, fontRule, adapter: browser.LocalserveLegacyCard, intervals,heartbeats,pause:mode=>pauseCollection(mode),step:direction=>stepCollection(direction),
     update(next) { offline = false; currentPayload = next; intervals[0](); },
     disconnect() { offline = true; intervals[0](); },
     tick() { intervals[1](); },
@@ -132,6 +133,21 @@ test('TV Vista font sizing scales fallback fonts without compounding on polls', 
   assert.equal(result.fontRule.style.fontSize, '16px');
   result.update(make(100));
   assert.equal(result.fontRule.style.fontSize, '20px');
+});
+
+test('TV remote steps each collection, wraps and restarts its interval without editing the layout',()=>{
+  let now=0;class Clock extends Date {static now(){return now;}}
+  const cards=['A','B','C'].map(id=>({pluginId:'sample',cardId:id,card:{id,name:id,layout:'list',showHeader:true,fields:[{binding:'value',label:'Reading',enabled:true,decimals:0}]},catalog:[{id:'value',type:'number'}],data:{status:'Ready',pluginName:'Sample',values:{value:{type:'number',available:true,value:1}}}}));
+  const collection=(id,refs)=>({id,type:'collection',enabled:true,width:'1fr',height:'1fr',animation:'none',rotation:'interval',intervalSeconds:10,cards:refs.map(cardId=>({pluginId:'sample',cardId}))});
+  const payload={vista:{id:'v',name:'Viewer',padding:0,gap:0,layout:{id:'root',type:'row',enabled:true,children:[collection('many',['A','B','C']),collection('single',['B'])]}},cards,options:{name:'Localserve',theme:'dark'}};
+  const original=JSON.stringify(payload),f=runLegacy(payload,Clock),panel=f.host.children[0].children[0];
+  assert.match(panel.textContent,/A/);assert.equal(f.step(-1),true);assert.match(panel.textContent,/C/);
+  f.step(1);assert.match(panel.textContent,/A/);now=9000;f.step(1);assert.match(panel.textContent,/B/);
+  now=10000;f.tick();assert.match(panel.textContent,/B/);now=19000;f.tick();assert.match(panel.textContent,/C/);
+  f.pause('pause');now=40000;f.tick();assert.match(panel.textContent,/C/);assert.match(f.status.textContent,/paused/);
+  f.step(1);assert.match(panel.textContent,/A/);f.pause('play');now=49000;f.tick();assert.match(panel.textContent,/A/);now=50000;f.tick();assert.match(panel.textContent,/B/);
+  assert.equal(JSON.stringify(payload),original);f.disconnect();assert.equal(f.step(1),false);
+  assert.ok(f.heartbeats.includes(false));
 });
 
 test('empty TV Vista displays an explanation rather than a black page', () => {

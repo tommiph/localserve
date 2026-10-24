@@ -222,9 +222,15 @@ export class PluginRegistry {
     this.fingerprint = '';
     this.queue = Promise.resolve();
     this.closing = false;
+    this.noticeEpoch = 0;
   }
 
-  attachEngine(engine) { this.engine = engine; }
+  attachEngine(engine) {
+    if(this.noticePause)this.engine.gate.off('change',this.noticePause);
+    this.engine = engine;
+    this.noticePause=()=>{if(engine.gate.paused)this.noticeEpoch++;};
+    engine.gate.on('change',this.noticePause);
+  }
 
   discover() {
     const operation = this.queue.then(() => this.scan());
@@ -787,6 +793,14 @@ export class PluginRegistry {
   }
 
   execute(id, actionId, parameters, context = {}) {
+    // Explicit Controls/Tasks take over from a continuous animation. Refreshes
+    // remain observations and must not interrupt it or create another loop.
+    if (id === 'tradfri' && actionId !== 'refresh' && !context.lightingAnimation)
+      this.lightingAnimations?.interrupt('Another lighting control took over.');
+    if (context.lightingAnimation && (this.lightingAnimations?.active?.receipt.id !== context.lightingAnimation
+      || context.signal?.aborted || id !== 'tradfri' || actionId !== 'light-state'
+      || !Number.isFinite(context.lightingFadeSeconds) || context.lightingFadeSeconds < 0 || context.lightingFadeSeconds > 60))
+      throw new HttpError(409, 'Lighting animation is no longer active.');
     this.assertTvQuietHours(id, actionId, context);
     const record = this.get(id);
     this.assertReady(record);
@@ -855,9 +869,12 @@ export class PluginRegistry {
         const webpageTvLaunch = enabledPages.length ? {used: false, revision: sourceConfig.revision,
           pageId: validated['page-id'] || (enabledPages.length === 1 ? enabledPages[0].id : '')} : null;
         const requestContext = {...context, signal: controller.signal, webpageTvLaunch, actionId,
+          ...(record.plugin.id==='samsung-tv'&&actionId==='close-app'?{tvCloseId:validated.id,tvCloseRevision:sourceConfig.revision}:{}),
+          ...(noticeUrl?{noticeClaim:{id:/\/tv-notices\/([a-f0-9]{48})/.exec(noticeUrl)[1],revision:sourceConfig.revision,runtime:record.runtime,epoch:this.noticeEpoch}}:{}),
           ...(record.plugin.runtime.preview ? {previewGeneration: record.previewGeneration || 0} : {})};
         try {
-          const result = await record.runtime.request('execute', { actionId, parameters: validated, noticeUrl }, requestContext, 0);
+          const result = await record.runtime.request('execute', { actionId, parameters: validated, noticeUrl,
+            ...(context.lightingAnimation ? {lightingFadeSeconds:context.lightingFadeSeconds} : {}) }, requestContext, 0);
           if (pollAction && pollGeneration === record.pollGeneration) record.pollObservation = {
             attemptedAt: record.lastPollAt, finishedAt: Date.now(), status: 'completed', error: '',
           };
@@ -902,6 +919,25 @@ export class PluginRegistry {
     await this.activity.add(message, values);
   }
 
+  returnNotice(record,claim,appId,automatic) {
+    // Cleanup is immediate and one-shot. A busy queue, pause, configuration
+    // change or runtime replacement must not defer a surprise app launch.
+    if(this.closing || this.engine.gate.paused || this.noticeEpoch!==claim.epoch || record.pending || record.runtime!==claim.runtime
+      || record.config.snapshot().revision!==claim.revision)return Promise.resolve({restored:false});
+    const controller=new AbortController(),cancel=()=>{if(this.engine.gate.paused)controller.abort(new Error('Server paused.'));};
+    const deadline=setTimeout(()=>controller.abort(new Error('Notice return timed out.')),4500);
+    record.operations.add(controller);record.pending++;this.engine.gate.on('change',cancel);
+    const operation=record.actionQueue.then(async()=>{
+      controller.signal.throwIfAborted();this.assertReady(record);
+      if(this.closing || record.runtime!==claim.runtime || record.config.snapshot().revision!==claim.revision)return {restored:false};
+      const context={signal:controller.signal,actionId:'launch-app',automatic,configRevision:claim.revision};
+      this.assertTvQuietHours('samsung-tv','launch-app',context);
+      return record.runtime.request('notice-return',{appId},context,0);
+    });
+    record.actionQueue=operation.catch(()=>{});
+    return operation.finally(()=>{clearTimeout(deadline);record.pending--;record.operations.delete(controller);this.engine.gate.off('change',cancel);});
+  }
+
   async hostCall(record, operation, values, context) {
     if(context.readOnlyInspection)throw new Error('Setup inspection cannot use plugin host services.');
     context.signal?.throwIfAborted();
@@ -915,8 +951,31 @@ export class PluginRegistry {
       this.assertTvQuietHours(record.plugin.id, context.actionId, context);
     }
     const fields = { taskId: context.taskId, runId: context.runId, stepId: context.stepId };
-    if (operation === 'log') {
+    if(operation==='close-localserve-tv') {
+      if(record.plugin.id!=='samsung-tv'||context.actionId!=='close-app'||context.tvCloseId!=='LsPsMode01.PlaystationMode'
+        ||Object.keys(values).length)throw Error('Cooperative TV close is unavailable.');
+      const runtime=record.runtime;
+      const check=()=>{
+        context.signal.throwIfAborted();this.assertReady(record);
+        if(this.engine.gate.paused||record.runtime!==runtime||record.config.snapshot().revision!==context.tvCloseRevision)
+          throw Error('TV close settings or server state changed.');
+        this.assertTvQuietHours('samsung-tv','close-app',context);
+      };
+      check();
+      const accepted=await this.tvClose.request(record.config.snapshot().settings.host,check,context.signal);
+      check();return {accepted};
+    } else if(operation==='capture-notice-return') {
+      const claim=context.noticeClaim;
+      if(record.plugin.id!=='samsung-tv' || context.actionId!=='show-notice' || !claim || claim.runtime!==record.runtime
+        || record.config.snapshot().revision!==claim.revision || typeof values.appId!=='string' || !/^[\w.-]{1,128}$/.test(values.appId)
+        || values.appId==='HwGlance01.HomeGlance')throw new Error('Notice return capture is unavailable.');
+      if(claim.epoch!==this.noticeEpoch)return null;
+      await this.notices.captureReturn(claim.id,values.appId,()=>this.returnNotice(record,claim,values.appId,context.automatic===true));
+      return null;
+    } else if (operation === 'log') {
       if (typeof values.message !== 'string' || values.message.length > 2000 || !['info', 'success', 'warning'].includes(values.level)) throw new Error('Invalid plugin log entry.');
+      // Continuous runs log their lifecycle once; do not append every fade ACK.
+      if (record.plugin.id === 'tradfri' && context.lightingAnimation && values.level === 'info') return;
       await this.writeLog(record, values.message, { ...fields, level: values.level });
     } else if (operation === 'read-state') return record.state.snapshot();
     else if (operation === 'save-state') {
@@ -1003,6 +1062,7 @@ export class PluginRegistry {
 
   beginClose() {
     this.closing = true;
+    if(this.noticePause)this.engine.gate.off('change',this.noticePause);
     for (const record of this.records.values()) this.cancelOperations(record);
   }
 

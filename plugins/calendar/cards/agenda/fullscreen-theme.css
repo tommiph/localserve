@@ -1,0 +1,6 @@
+/* Agenda uses the shared full-screen geometry and its own motif accent. */
+.fs-card { --fs-accent:#91d5ed; }
+.fs-eyebrow { color:#91d5ed; }
+html[data-theme="light"] .fs-card { --fs-accent:#136784; }
+html[data-theme="light"] .fs-eyebrow { color:#136784; }
+

@@ -73,6 +73,8 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   Events for Tasks. Capture is opt-in; no audio or recordings are stored.
 - **Universe:** 3D Card journeys through Space, Ocean depths, Alpine mountains,
   Calm forest and Sunset dunes, with configurable travel, population and detail.
+- **Lighting animations:** eleven editable TRÅDFRI palettes, per-step fades and
+  explicit Start/Stop controls. See [Lighting animations](LIGHTING-ANIMATIONS.md).
 - **Games:** Neon Labyrinth, an endless first-person maze game with TV remote
   controls, gems, speed scoring and optional local looping music. See [Games](GAMES.md).
 - **Controls:** mobile TV and lighting remotes; local lighting scenes and supported
@@ -82,6 +84,9 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
 - **Phone Home:** personal Favorites, quick lighting/TV controls and explicitly
   published manual Task shortcuts. The included Android app combines the remote
   with optional native Sensors reporting. See [Phone Home](PHONE-HOME.md).
+  For direct lighting scene and Task shortcuts, open `/scenes` and choose
+  **Get Scenes for Android** to install the separate **Scenes** app. See
+  [Scenes](SCENE-SELECTOR.md) and [Android setup](apps/scenes/README.md).
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
 - **Oculus Go:** manual APK library and a separate **# Localserve #** VR client

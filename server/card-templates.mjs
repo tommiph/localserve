@@ -18,7 +18,7 @@ export function validateCardTemplates(values = [], fields = []) {
       || typeof value.directory !== 'string' || !/^cards\/[a-z0-9-]+$/.test(value.directory)
       || !assetPath.test(value.entry) || !value.entry.endsWith('.html')
       || !Array.isArray(value.assets) || !value.assets.includes(value.entry) || value.assets.length > 32 || new Set(value.assets).size !== value.assets.length
-      || value.assets.some(asset => !assetPath.test(asset)) || !Array.isArray(value.slots) || !value.slots.length || value.slots.length > 16) throw new Error('Invalid ready-made Card design or asset allowlist.');
+      || value.assets.some(asset => !assetPath.test(asset)) || !Array.isArray(value.slots) || !value.slots.length || value.slots.length > 32) throw new Error('Invalid ready-made Card design or asset allowlist.');
     ids.add(value.id);
     if (value.preview !== undefined && value.preview !== true) throw new Error('Card preview must explicitly opt in.');
     const slots = new Set();
@@ -82,7 +82,7 @@ export function validateReadyMadeCard(value, plugin, existing, settings) {
   const catalog = readyMadeCatalog(plugin, settings), template = catalog.templates.find(template => template.id === value.templateId);
   const source = catalog.sources.find(source => source.id === value.sourceId);
   if (value.schemaVersion !== 1 || typeof value.enabled !== 'boolean' || !isIdentifier(value.templateId) || !isIdentifier(value.sourceId)) throw new HttpError(400, 'Choose an installed design and data source.');
-  if (existing?.layout === 'readymade' && (!Array.isArray(existing.fields) || !existing.fields.length || existing.fields.length > 16
+  if (existing?.layout === 'readymade' && (!Array.isArray(existing.fields) || !existing.fields.length || existing.fields.length > 32
     || existing.fields.some(field => !field || !isIdentifier(field.id) || typeof field.binding !== 'string' || field.binding.length > 192 || field.enabled !== true))) throw new HttpError(400, 'Invalid saved ready-made fields; original Card is retained.');
   if (existing && existing.layout === 'readymade' && existing.templateId !== value.templateId) throw new HttpError(400, 'Only the data source can be changed for this design.');
   if (value.html !== undefined || value.css !== undefined) throw new HttpError(400, 'Ready-made markup is package-owned.');

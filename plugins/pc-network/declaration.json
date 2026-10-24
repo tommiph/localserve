@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "pc-network",
   "name": "PC and Network",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "Windows CPU, GPU, memory, storage, adapters and network name lookups",
   "icon": "microchip",
   "runtime": {
@@ -1951,6 +1951,160 @@
           "id": "received",
           "field": "updated-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "observatory-fullscreen",
+      "name": "Observatory · Fullscreen",
+      "sourceLabel": "Data source",
+      "directory": "cards/observatory",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "host",
+          "field": "host-name",
+          "format": "text"
+        },
+        {
+          "id": "cpu-model",
+          "field": "cpu-model",
+          "format": "text"
+        },
+        {
+          "id": "cpu",
+          "field": "cpu-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "memory",
+          "field": "memory-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "used",
+          "field": "memory-used-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpu",
+          "field": "gpu-1-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpu-memory",
+          "field": "gpu-1-dedicated-used-gib",
+          "format": "number",
+          "decimals": 1,
+          "percentOf": "gpu-memory-total"
+        },
+        {
+          "id": "gpu-memory-total",
+          "field": "gpu-1-dedicated-total-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "receive",
+          "field": "receive-mbps",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "send",
+          "field": "transmit-mbps",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "uptime",
+          "field": "uptime-hours",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "operating-system",
+          "field": "operating-system",
+          "format": "text"
+        },
+        {
+          "id": "memory-total-gib",
+          "field": "memory-total-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "memory-available-gib",
+          "field": "memory-available-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "logical-processors",
+          "field": "logical-processors",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpu-count",
+          "field": "gpu-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "gpus",
+          "field": "gpus",
+          "format": "table",
+          "rows": 4,
+          "columns": [
+            "name",
+            "percent",
+            "dedicated-used",
+            "dedicated-total",
+            "shared-used",
+            "status"
+          ]
+        },
+        {
+          "id": "disks",
+          "field": "disks",
+          "format": "table",
+          "rows": 5,
+          "columns": [
+            "name",
+            "total",
+            "free",
+            "used"
+          ]
+        },
+        {
+          "id": "adapters",
+          "field": "adapters",
+          "format": "table",
+          "rows": 5,
+          "columns": [
+            "name",
+            "status",
+            "link",
+            "receive",
+            "transmit"
+          ]
         }
       ]
     }

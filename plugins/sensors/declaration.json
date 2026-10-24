@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "sensors",
   "name": "Sensors",
-  "version": "1.4.3",
+  "version": "1.5.3",
   "description": "Selected sensor and phone reports from trusted Android devices on the local network",
   "icon": "sensors",
   "defaultCardLayout": "table",
@@ -3315,6 +3315,158 @@
           "id": "received",
           "field": "received-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "sensorium-fullscreen",
+      "name": "Sensorium · Fullscreen",
+      "sourceLabel": "Android device",
+      "directory": "cards/sensorium",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "acceleration-x",
+          "field": "acceleration-x",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "acceleration-y",
+          "field": "acceleration-y",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "acceleration-z",
+          "field": "acceleration-z",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "rotation-x",
+          "field": "rotation-x",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "rotation-y",
+          "field": "rotation-y",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "rotation-z",
+          "field": "rotation-z",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "proximity",
+          "field": "proximity",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "ambient-light",
+          "field": "ambient-light",
+          "format": "number",
+          "decimals": 2,
+          "grouping": false
+        },
+        {
+          "id": "acceleration-name",
+          "field": "acceleration-name",
+          "format": "text"
+        },
+        {
+          "id": "rotation-name",
+          "field": "rotation-name",
+          "format": "text"
+        },
+        {
+          "id": "acceleration-unit",
+          "field": "acceleration-unit",
+          "format": "text"
+        },
+        {
+          "id": "rotation-unit",
+          "field": "rotation-unit",
+          "format": "text"
+        },
+        {
+          "id": "proximity-unit",
+          "field": "proximity-unit",
+          "format": "text"
+        },
+        {
+          "id": "ambient-light-unit",
+          "field": "ambient-light-unit",
+          "format": "text"
+        },
+        {
+          "id": "reading-status",
+          "field": "reading-status",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "reported-name",
+          "field": "reported-name",
+          "format": "text"
+        },
+        {
+          "id": "sensor-count",
+          "field": "sensor-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "online",
+          "field": "online",
+          "format": "text"
+        },
+        {
+          "id": "sensors-1",
+          "field": "sensors-1",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "name",
+            "values",
+            "unit",
+            "status"
+          ]
+        },
+        {
+          "id": "sensors-2",
+          "field": "sensors-2",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "name",
+            "values",
+            "unit",
+            "status"
+          ]
         }
       ]
     }

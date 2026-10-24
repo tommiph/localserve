@@ -122,3 +122,7 @@ owns foreground streaming; PhoneEvents owns bounded callbacks. TravelSources
 manages location/Google transitions; RegionRules and RegionSettings implement
 geometry and private editing. AndroidManifest declares real platform permissions
 and protected services. No address, account or API key is compiled into the app.
+
+## Scenes and build verification
+
+Localserve Android APK 1.4.3 admits Scenes artwork and opens the explicit Scenes APK download in the system browser. There are no additional permissions or reporting changes. Build receipts include source/resource digests; release preparation rejects mismatched native source and APK files. Rebuild affected clients and keep signing identities private for compatible updates.

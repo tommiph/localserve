@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "tradfri",
   "name": "TRÅDFRI",
-  "version": "1.2.3",
+  "version": "1.4.0",
   "description": "Legacy IKEA gateway lights, groups and lighting controls",
   "icon": "lightbulb",
   "runtime": {
@@ -2488,6 +2488,262 @@
           "id": "received",
           "field": "received-at",
           "format": "datetime"
+        }
+      ],
+      "variant": {
+        "slot": "on",
+        "fallback": "unknown",
+        "choices": {
+          "dark": [
+            "0"
+          ],
+          "lit": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26",
+            "27",
+            "28",
+            "29",
+            "30",
+            "31",
+            "32",
+            "33",
+            "34",
+            "35",
+            "36",
+            "37",
+            "38",
+            "39",
+            "40",
+            "41",
+            "42",
+            "43",
+            "44",
+            "45",
+            "46",
+            "47",
+            "48",
+            "49",
+            "50"
+          ],
+          "lit-many": [
+            "51",
+            "52",
+            "53",
+            "54",
+            "55",
+            "56",
+            "57",
+            "58",
+            "59",
+            "60",
+            "61",
+            "62",
+            "63",
+            "64",
+            "65",
+            "66",
+            "67",
+            "68",
+            "69",
+            "70",
+            "71",
+            "72",
+            "73",
+            "74",
+            "75",
+            "76",
+            "77",
+            "78",
+            "79",
+            "80",
+            "81",
+            "82",
+            "83",
+            "84",
+            "85",
+            "86",
+            "87",
+            "88",
+            "89",
+            "90",
+            "91",
+            "92",
+            "93",
+            "94",
+            "95",
+            "96",
+            "97",
+            "98",
+            "99",
+            "100"
+          ]
+        }
+      }
+    },
+    {
+      "id": "nordic-fullscreen",
+      "name": "Nordic · Fullscreen",
+      "sourceLabel": "Data source",
+      "directory": "cards/nordic",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "on",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "clock",
+          "field": "current-time",
+          "format": "time"
+        },
+        {
+          "id": "sunrise",
+          "field": "sunrise-time",
+          "format": "time"
+        },
+        {
+          "id": "sunset",
+          "field": "sunset-time",
+          "format": "time"
+        },
+        {
+          "id": "bulb-1-brightness",
+          "field": "light-1-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-1-color",
+          "field": "light-1-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-2-brightness",
+          "field": "light-2-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-2-color",
+          "field": "light-2-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-3-brightness",
+          "field": "light-3-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-3-color",
+          "field": "light-3-color",
+          "format": "text"
+        },
+        {
+          "id": "bulb-4-brightness",
+          "field": "light-4-display-brightness",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "bulb-4-color",
+          "field": "light-4-color",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "lights-summary",
+          "field": "lights-summary",
+          "format": "text"
+        },
+        {
+          "id": "connection-status",
+          "field": "connection-status",
+          "format": "text"
+        },
+        {
+          "id": "light-count",
+          "field": "light-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "group-count",
+          "field": "group-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "lights-truncated",
+          "field": "lights-truncated",
+          "format": "text"
+        },
+        {
+          "id": "groups-truncated",
+          "field": "groups-truncated",
+          "format": "text"
+        },
+        {
+          "id": "lights",
+          "field": "lights",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "name",
+            "room",
+            "on",
+            "brightness",
+            "reachable"
+          ]
+        },
+        {
+          "id": "groups",
+          "field": "groups",
+          "format": "table",
+          "rows": 6,
+          "columns": [
+            "name",
+            "on",
+            "brightness",
+            "count"
+          ]
         }
       ],
       "variant": {

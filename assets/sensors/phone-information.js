@@ -4,6 +4,7 @@
 (function(){'use strict';
   var screen=document.getElementById('phone-screen'),content=document.getElementById('content');
   var data=null,device='',page=0,pages=[],request=null,timer=null,online=false,map=null,mapRequest=null,offset=0;
+  var displayPaused=false;
   function text(id,value){document.getElementById(id).textContent=value;}
   function esc(value){return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function shown(value){return value===null||value===undefined?'No data':typeof value==='boolean'?(value?'Yes':'No'):typeof value==='number'?String(Math.round(value*100)/100):String(value);}
@@ -34,7 +35,7 @@
     var view=pages[page];if(!view)return;
     if(view.kind!=='street-map')PhoneStreetMap.stop();
     text('device-name',data.device?data.device.name:'Phone information');text('page-name',view.name);
-    text('connection',(online?'':'Disconnected · ')+data.status+' · '+(raw('online')===true?'Receiving reports':'Retained / no recent reports'));
+    text('connection',displayPaused?'Display paused · Play/Pause to resume':(online?'':'Disconnected · ')+data.status+' · '+(raw('online')===true?'Receiving reports':'Retained / no recent reports'));
     var phoneIndex=0;for(var d=0;d<data.devices.length;d++)if(data.devices[d].id===device)phoneIndex=d;
     text('page-label','Page '+(page+1)+' / '+pages.length+' · Phone '+(data.device?phoneIndex+1:0)+' / '+data.devices.length);
     var html='',boxes=[],gauges=[];
@@ -71,19 +72,23 @@
     }
     content.innerHTML=html;
     if(view.kind==='map'&&map)PhoneMap.draw(document.getElementById('map'),map,data.phone.location?data.phone.location.fields:null,data.device?data.device.name:'Phone');
-    if(view.kind==='street-map')PhoneStreetMap.draw(document.getElementById('map'),data.phone.location?data.phone.location.fields:null,online&&!document.hidden);
+    if(view.kind==='street-map')PhoneStreetMap.draw(document.getElementById('map'),data.phone.location?data.phone.location.fields:null,online&&!document.hidden&&!displayPaused);
   }
   function loadMap(){if(map||mapRequest||document.hidden)return;var xhr=new XMLHttpRequest();mapRequest=xhr;xhr.open('GET','/assets/sensors/map/world.json',true);xhr.timeout=7000;xhr.onload=function(){if(mapRequest!==xhr)return;mapRequest=null;if(xhr.status===200){try{var value=JSON.parse(xhr.responseText);if(value.length<=300)map=value;}catch(e){}if(map)render();}};xhr.onerror=xhr.ontimeout=function(){mapRequest=null;};xhr.send();}
   function apply(next){var previous=device;data=next;device=next.device?next.device.id:'';if(previous!==device){page=0;pages=[];}offset=next.options.now-Date.now();build();render();}
   function schedule(){if(timer)window.clearTimeout(timer);if(!document.hidden)timer=window.setTimeout(refresh,2000);}
-  function refresh(){if(document.hidden||request)return;var xhr=new XMLHttpRequest();request=xhr;xhr.open('GET','/api/phone-information'+(device?'?device='+encodeURIComponent(device):''),true);xhr.timeout=7000;
+  function refresh(){if(document.hidden||request||displayPaused)return;var xhr=new XMLHttpRequest();request=xhr;xhr.open('GET','/api/phone-information'+(device?'?device='+encodeURIComponent(device):''),true);xhr.timeout=7000;
     function finish(ok){if(request!==xhr)return;request=null;online=ok;document.body.setAttribute('data-connected',String(ok));if(!ok){PhoneStreetMap.stop();if(data)render();}schedule();}
     xhr.onload=function(){if(request!==xhr)return;if(xhr.status===200){try{online=true;apply(JSON.parse(xhr.responseText));finish(true);}catch(e){finish(false);}}else{if(xhr.status===404){device='';data=null;page=0;pages=[];render();text('device-name','Phone unavailable');}finish(false);}};xhr.onerror=xhr.ontimeout=function(){finish(false);};xhr.send();}
-  function changePhone(delta){if(!data||data.devices.length<2)return;var index=0;for(var i=0;i<data.devices.length;i++)if(data.devices[i].id===device)index=i;device=data.devices[(index+delta+data.devices.length)%data.devices.length].id;
+  function changePhone(delta){if(!data||data.devices.length<2)return;displayPaused=false;var index=0;for(var i=0;i<data.devices.length;i++)if(data.devices[i].id===device)index=i;device=data.devices[(index+delta+data.devices.length)%data.devices.length].id;
     if(request){var old=request;request=null;old.abort();}data=null;page=0;pages=[];render();text('device-name','Loading phone…');refresh();}
   document.addEventListener('keydown',function(e){var code=e.keyCode||e.which;if(code!==37&&code!==38&&code!==39&&code!==40)return;e.preventDefault();if(e.repeat)return;
     if(code===38||code===40)changePhone(code===38?-1:1);else if(data&&pages.length){page=(page+(code===37?-1:1)+pages.length)%pages.length;render();}});
   function stop(){PhoneStreetMap.stop();if(timer)window.clearTimeout(timer);timer=null;if(request){var old=request;request=null;old.abort();}if(mapRequest){var oldMap=mapRequest;mapRequest=null;oldMap.abort();}}
+  if(window.LocalserveTvViewer)window.LocalserveTvViewer.install(null,{pause:function(mode){
+    displayPaused=mode==='play'?false:mode==='pause'?true:!displayPaused;
+    if(displayPaused){stop();text('connection','Display paused · Play/Pause to resume');}else refresh();
+  }});
   function resize(){var scale=Math.min(window.innerWidth/1920,window.innerHeight/1080),transform='translate('+((window.innerWidth-1920*scale)/2)+'px,'+((window.innerHeight-1080*scale)/2)+'px) scale('+scale+')';screen.style.webkitTransform=transform;screen.style.transform=transform;}
   document.addEventListener('visibilitychange',function(){if(document.hidden)stop();else{content.focus();refresh();}});window.addEventListener('pagehide',function(){stop();online=false;});window.addEventListener('pageshow',function(){content.focus();refresh();});window.addEventListener('resize',resize);
   window.setInterval(function(){if(!document.hidden&&online&&data)text('clock',time(Date.now()+offset));},1000);

@@ -5,13 +5,14 @@ import assert from 'node:assert/strict';
 import {createLocalserve} from '../../server.mjs';
 import {validateTask} from '../../server/tasks.mjs';
 import {formControlsFixture} from './form-controls.mjs';
+import {publicReading as lightingReading} from '../../plugins/tradfri/server/readings.mjs';
 
 const source=path.resolve(import.meta.dirname,'../..'),base=path.join(source,'tests/.tmp');
 await fs.mkdir(base,{recursive:true});
 const root=await fs.mkdtemp(path.join(base,'ui-preview-'));
 for(const directory of ['web','assets/material-symbols','assets/controls','assets/qrcode'])
   await fs.cp(path.join(source,directory),path.join(root,directory),{recursive:true});
-for(const file of ['package.json','styles.css','assets/logo.svg','assets/logo-dark.svg','assets/card-preview.js','assets/vista-boot.js','assets/vista-legacy.js','assets/vista-legacy.css','assets/vista-legacy-ready.css']) {
+for(const file of ['package.json','styles.css','assets/logo.svg','assets/logo-dark.svg','assets/card-preview.js','assets/tv-viewer.js','assets/lighting-ui.js','assets/vista-boot.js','assets/vista-legacy.js','assets/vista-legacy.css','assets/vista-legacy-ready.css']) {
   await fs.mkdir(path.dirname(path.join(root,file)),{recursive:true});
   await fs.copyFile(path.join(source,file),path.join(root,file));
 }
@@ -26,7 +27,9 @@ for(const id of ids) {
   }
   if(id==='simulator')await fs.copyFile(path.join(source,'plugins',id,'server/index.mjs'),path.join(folder,'server/index.mjs'));
   else {
-    const reading=id==='sensors'?{devices:{'test-phone':{'reading-status':'No recent reports · retained readings','received-at':Date.now()-1800000,'acceleration-x':0,'acceleration-y':1,'acceleration-z':2,'acceleration-unit':'m/s²'}}}:{};
+    const reading=id==='sensors'?{devices:{'test-phone':{'reading-status':'No recent reports · retained readings','received-at':Date.now()-1800000,'acceleration-x':0,'acceleration-y':1,'acceleration-z':2,'acceleration-unit':'m/s²'}}}:id==='tradfri'?{
+      ...lightingReading([{id:'100',name:'Colour light',room:'Studio',spectrum:'rgb',on:true,brightness:50,reachable:true,hue:180,saturation:80},
+        {id:'101',name:'White light',room:'Studio',spectrum:'white',on:true,brightness:40,reachable:true,temperature:80}],[],Date.now()),'gateway-host':''}:{};
     // Real provider modules and native helpers are deliberately absent.
     await fs.writeFile(path.join(folder,'server/index.mjs'),`export default {
       validateConfiguration(){return true},async start(){},async stop(){},
@@ -45,7 +48,7 @@ async function close() {
 }
 try {
   app=await createLocalserve(root,{automatic:false});
-  for(const id of ['simulator','sensors','samsung-tv']) {
+  for(const id of ['simulator','sensors','samsung-tv','tradfri']) {
     const service=app.registry.services().find(item=>item.id===id);
     await app.registry.saveConfiguration(id,{revision:service.config.revision,enabled:true,
       ...(id==='sensors'?{settings:{...service.config.settings,devices:[{id:'test-phone',name:'Test phone',enabled:true}]}}:{})});

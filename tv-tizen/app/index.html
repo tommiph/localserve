@@ -1,3 +1,32 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1920"><title>Vista</title><link rel="stylesheet" href="launch.css"><script src="url-target.js" defer></script><script src="launch.js" defer></script></head>
-<body><main id="launcher"><img src="launch-icon.png" width="320" height="180" alt=""><h1>Vista</h1><p id="status">Starting Vista…</p><button id="retry">Try again</button><p class="hint">Websites may restrict embedding.</p></main></body></html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1920"><title>Vista</title><link rel="stylesheet" href="launch.css"><script src="url-target.js" defer></script><script src="pip.js" defer></script><script src="launch.js" defer></script></head>
+<body><main id="launcher">
+  <section id="loading-panel"><img src="launch-icon.png" width="320" height="180" alt=""><h1>Vista</h1></section>
+  <p id="status" role="status">Connecting…</p>
+  <form id="connection-settings" hidden>
+    <h1>Connection</h1>
+    <div class="connection-row">
+      <label>Protocol<select id="server-protocol"><option value="http:">HTTP</option><option value="https:">HTTPS</option></select></label>
+      <label class="wide">Server IP or hostname<input id="server-host" readonly type="text" maxlength="253" autocomplete="off" spellcheck="false"></label>
+      <label>Port<input id="server-port" readonly type="number" min="1" max="65535" inputmode="numeric"></label>
+    </div>
+    <label>Page URL path<input id="server-path" readonly type="text" maxlength="1800" autocomplete="off" spellcheck="false" value="/display"></label>
+    <p class="hint">Press OK to edit an address field. The shared display uses /display. You can also enter a Vista path such as /vistas/living-room.</p>
+    <div class="connection-buttons"><button id="connect" type="submit">Save and connect</button><button id="use-display" type="button">Use /display</button><button id="pip-settings" type="button">Live TV / HDMI</button><button id="connection-back" type="button">Return to display</button></div>
+    <p class="hint">Channel Up opens settings. Play/Pause controls supported content. Back closes the app; Left/Right changes Vista Card collections.</p>
+  </form>
+  <section id="pip-panel" hidden>
+    <h1>Live TV / HDMI</h1>
+    <p id="pip-status" role="status">Select a connected video source.</p>
+    <div class="connection-row">
+      <label class="wide">Source<select id="pip-source" aria-label="Video source"></select></label>
+      <label>Size<select id="pip-size"><option value="25">25%</option><option value="33" selected>33%</option><option value="50">50%</option></select></label>
+      <label class="wide">Position<select id="pip-corner"><option value="br">Bottom right</option><option value="bl">Bottom left</option><option value="tr">Top right</option><option value="tl">Top left</option></select></label>
+    </div>
+    <div class="connection-buttons"><button id="pip-show" type="button">Show video</button><button id="pip-hide" type="button">Hide video</button><button id="pip-refresh" type="button">Refresh sources</button><button id="pip-back" type="button">Back</button></div>
+    <p class="hint">Show video selects this TV input over the current Vista. Use the remote for volume. Installed streaming apps cannot appear in this window.</p>
+    <p class="hint">Channel Up opens settings and hides the video. Back closes the app. Notices, page changes and leaving also hide video. Show it again when needed.</p>
+    <p class="hint">Up/Down moves between controls. Left/Right changes the selected option.</p>
+  </section>
+  <div id="launcher-actions"><button id="retry">Try again</button><button id="settings">Connection settings</button><p class="hint">Websites may restrict embedding.</p></div>
+</main></body></html>

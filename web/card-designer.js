@@ -177,7 +177,7 @@ const CardDesigner = {
 
   readDraft() {
     const form = dialog.querySelector('#card-editor-form');
-    if (form.dataset?.readyMade) return { schemaVersion: 1, layout: 'readymade', templateId: form.dataset.readyMade,
+    if (form.dataset?.readyMade) return { schemaVersion: 1, layout: 'readymade', templateId: form.elements.namedItem('readyTemplate')?.value || form.dataset.readyMade,
       sourceId: form.elements.namedItem('sourceId').value, enabled: dialogContext.readyEnabled };
     const layout = form.elements.namedItem('layout').value;
     const service = state.services.find(service => service.id === dialogContext.pluginId);
@@ -210,7 +210,7 @@ const CardDesigner = {
     const service = state.services.find(service => service.id === dialogContext.pluginId);
     if (dialog.querySelector('#card-editor-form').dataset.readyMade) {
       const draft = this.readDraft();
-      draft.name = dialogContext.readyName;
+      draft.name = service?.cardData.readyMade?.templates.find(template => template.id === draft.templateId)?.name || dialogContext.readyName;
       CardRenderer.mount(dialog.querySelector('#card-preview'), this.renderCard(draft, service)); return;
     }
     const preview = dialog.querySelector('#card-preview');
@@ -336,14 +336,19 @@ const CardDesigner = {
   },
 
   openReadyMade(service, original = null, copy = false) {
-    const template = original ? service.cardData.readyMade?.templates.find(template => template.id === original.templateId) : service.cardData.readyMade?.templates[0];
+    const templates = service.cardData.readyMade?.templates || [];
+    const template = original ? templates.find(template => template.id === original.templateId) : templates[0];
     const sources = service.cardData.readyMade?.sources || [];
     const sourceId = original?.sourceId || sources.find(source => source.enabled)?.id || sources[0]?.id || '';
     const choices = sources.map(source => [source.id, source.name + (source.enabled ? '' : ' · Disabled')]);
     if (!choices.some(([id]) => id === sourceId)) choices.unshift([sourceId, 'Unavailable data source']);
     const templateId = original?.templateId || template?.id;
     const name = template?.name || original?.name || 'Ready-made card';
-    showDialog(`<form id="card-editor-form" data-ready-made="${escapeHtml(templateId)}">${dialogHeader(original ? copy ? 'Copy ready-made card' : 'Edit ready-made card' : 'Add ready-made card', name)}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div><div class="card-design-grid"><div class="card-design-properties">${this.select('sourceId', choices, sourceId, template?.sourceLabel || 'Data source', 'house')}<p class="field-help">The design, graphics and information are fixed. Choose the data source that supplies this card.</p>${sources.length ? '' : '<p class="field-help">Add a data source in plugin Settings first.</p>'}</div><aside class="card-design-preview"><div class="card-preview-heading"><h3>Live preview</h3><span>Read only</span></div><div id="card-preview"></div></aside></div></div>${dialogFooter(original && !copy ? 'Save changes' : 'Create card')}</form>`,
+    // New Cards choose among installed designs. Existing definitions and copies
+    // retain their design identity; their source remains independently editable.
+    const designChoice = !original && templates.length > 1
+      ? this.select('readyTemplate', templates.map(design => [design.id, design.name]), templateId, 'Design', 'table-cells') : '';
+    showDialog(`<form id="card-editor-form" data-ready-made="${escapeHtml(templateId)}">${dialogHeader(original ? copy ? 'Copy ready-made card' : 'Edit ready-made card' : 'Add ready-made card', name)}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div><div class="card-design-grid"><div class="card-design-properties">${designChoice}${this.select('sourceId', choices, sourceId, template?.sourceLabel || 'Data source', 'house')}<p class="field-help">The design, graphics and information are fixed. Choose the data source that supplies this card.</p>${templates.some(design => design.id.endsWith('-fullscreen')) ? '<p class="field-help">Fullscreen designs are intended for a 1920×1080 Canvas. Existing Cards keep their selected design.</p>' : ''}${sources.length ? '' : '<p class="field-help">Add a data source in plugin Settings first.</p>'}</div><aside class="card-design-preview"><div class="card-preview-heading"><h3>Live preview</h3><span>Read only</span></div><div id="card-preview"></div></aside></div></div>${dialogFooter(original && !copy ? 'Save changes' : 'Create card')}</form>`,
       { kind: 'card', pluginId: service.id, id: original?.id, copy, revision: original?.revision,
         readyEnabled: copy || !original ? false : original.enabled, readyName: name });
     this.updatePreview();

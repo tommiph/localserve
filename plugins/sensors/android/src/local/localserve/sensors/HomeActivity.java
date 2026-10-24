@@ -116,6 +116,12 @@ public final class HomeActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(web,false);
         web.setBackgroundColor(BACKGROUND);web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                if(current == generation && request.isForMainFrame() && request.hasGesture()
+                    && "GET".equals(request.getMethod()) && HomePolicy.isScenesDownload(allowedOrigin,request.getUrl().toString())) {
+                    try { startActivity(new Intent(Intent.ACTION_VIEW,request.getUrl()).addCategory(Intent.CATEGORY_BROWSABLE)); }
+                    catch(android.content.ActivityNotFoundException error) { Toast.makeText(HomeActivity.this,"Install a browser to download Scenes.",Toast.LENGTH_LONG).show(); }
+                    return true;
+                }
                 return current != generation || !(request.isForMainFrame()
                     ? HomePolicy.allows(allowedOrigin,request.getUrl().toString(),true)
                     : HomePolicy.allowsFrame(allowedOrigin,request.getUrl().toString()));

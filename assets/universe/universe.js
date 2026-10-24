@@ -294,6 +294,10 @@
     paused = !paused; pauseButton.textContent = paused ? 'Resume flight' : 'Pause flight'; pauseButton.setAttribute('aria-pressed', String(paused));
     adapter.connected(online && !paused && !hidden && !lost); previousTime = 0;
   };
+  if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(null,{pause:function (mode) {
+    var next = mode === 'play' ? false : mode === 'pause' ? true : !paused;
+    if (next !== paused) pauseButton.onclick();
+  }});
   document.getElementById('universe-next').onclick = function () {
     if (!settings || !online || paused || !settings.enabled || !entries.length) return;
     if (flight.phase === 'flight') return;

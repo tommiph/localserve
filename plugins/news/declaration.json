@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "news",
   "name": "News",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Headlines from Google News RSS",
   "icon": "newspaper",
   "runtime": {
@@ -804,6 +804,118 @@
           "id": "date-4",
           "field": "article-4-published-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "front-page-fullscreen",
+      "name": "Front page · Fullscreen",
+      "sourceLabel": "Search",
+      "directory": "cards/front-page",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "feed",
+          "field": "feed-title",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "updated-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-1",
+          "field": "article-1-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-1",
+          "field": "article-1-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-1",
+          "field": "article-1-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-2",
+          "field": "article-2-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-2",
+          "field": "article-2-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-2",
+          "field": "article-2-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-3",
+          "field": "article-3-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-3",
+          "field": "article-3-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-3",
+          "field": "article-3-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "title-4",
+          "field": "article-4-title",
+          "format": "text"
+        },
+        {
+          "id": "publisher-4",
+          "field": "article-4-publisher",
+          "format": "text"
+        },
+        {
+          "id": "date-4",
+          "field": "article-4-published-at",
+          "format": "datetime"
+        },
+        {
+          "id": "article-count",
+          "field": "article-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "feed-language",
+          "field": "feed-language",
+          "format": "text"
+        },
+        {
+          "id": "feed-country",
+          "field": "feed-country",
+          "format": "text"
+        },
+        {
+          "id": "articles",
+          "field": "articles",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "title",
+            "date"
+          ]
         }
       ]
     }

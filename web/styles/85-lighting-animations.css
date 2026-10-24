@@ -1,0 +1,44 @@
+/* Lighting gallery artwork previews palettes without sending light commands. */
+.lighting-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr)); gap:20px; }
+.lighting-preset { overflow:hidden; min-width:0; }
+.lighting-art { position:relative; height:150px; overflow:hidden; background:#111823; isolation:isolate; }
+.lighting-art > span { position:absolute; width:70%; height:220px; border-radius:50%; filter:blur(30px); opacity:.65; transform:rotate(-25deg); animation:lighting-drift 12s ease-in-out infinite alternate; }
+.lighting-art > span:nth-child(1) { background:var(--lighting-one); left:-15%; top:-80px; }
+.lighting-art > span:nth-child(2) { background:var(--lighting-two); left:25%; top:35px; animation-delay:-4s; }
+.lighting-art > span:nth-child(3) { background:var(--lighting-three); right:-30%; top:-40px; animation-delay:-8s; }
+.lighting-art-glyph { position:absolute; inset:0; display:grid; place-items:center; color:#fff; text-shadow:0 3px 20px #0008; font-size:38px; }
+.lighting-preset-body { padding:20px; }
+.lighting-card-title { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+.lighting-card-title h2 { font-size:calc(1.12rem * var(--font-scale)); margin:0; }
+.lighting-preset-body p { color:var(--muted); margin:12px 0 18px; font-size:calc(.9rem * var(--font-scale)); line-height:1.6; }
+.lighting-palette { display:flex; gap:6px; margin-top:14px; }
+.lighting-palette > span { width:23px; height:8px; border-radius:8px; }
+.lighting-card-actions,.lighting-options { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.lighting-card-actions .item-actions { margin-left:auto; }
+.lighting-live { display:flex; gap:18px; align-items:center; padding:20px; margin-bottom:20px; }
+.lighting-live > div { flex:1; min-width:0; }
+.lighting-live h2 { margin:0 0 5px; font-size:calc(1.1rem * var(--font-scale)); }
+.lighting-live p { color:var(--muted); font-size:calc(.9rem * var(--font-scale)); }
+.lighting-live-dot { width:14px; height:14px; border-radius:50%; background:var(--accent); box-shadow:0 0 20px var(--accent); flex-shrink:0; }
+.lighting-history { margin-top:24px; }
+.lighting-targets { border:1px solid var(--border); border-radius:10px; padding:16px; margin:20px 0; min-width:0; }
+.lighting-targets legend { padding:0 8px; font-weight:600; }
+.lighting-target-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:10px; margin-top:14px; }
+.lighting-target { display:flex; gap:10px; align-items:center; padding:12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; min-width:0; }
+.lighting-target:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }
+.lighting-target strong,.lighting-target small { display:block; overflow-wrap:anywhere; }
+.lighting-target small { margin-top:4px; color:var(--muted); font-size:calc(.8rem * var(--font-scale)); }
+.lighting-target input { flex-shrink:0; }
+.lighting-options { margin:16px 0; }
+.lighting-options label,.lighting-step-enabled { display:flex; gap:8px; align-items:center; }
+.lighting-step { border:1px solid var(--border); border-radius:10px; padding:16px; margin-top:14px; background:var(--surface-muted); }
+.lighting-step-heading { display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.lighting-step-heading h3 { margin:0; }
+.lighting-step-heading .item-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.lighting-step-fields { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:12px; }
+.lighting-step-fields .field { margin:0; min-width:0; }
+.lighting-step-fields input { width:100%; }
+.lighting-step-fields input[type="color"] { min-height:40px; padding:4px; cursor:pointer; }
+@keyframes lighting-drift { to { transform:translate(20px,20px) rotate(15deg) scale(1.16); opacity:.9; } }
+@media(prefers-reduced-motion:reduce) { .lighting-art > span { animation:none; } }
+@media(max-width:480px) { .lighting-live { flex-wrap:wrap; } .lighting-step { padding:12px; } .lighting-step-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } }

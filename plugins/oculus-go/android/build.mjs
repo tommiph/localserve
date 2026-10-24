@@ -4,6 +4,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {spawn} from 'node:child_process';
 import {createHash,randomBytes} from 'node:crypto';
+import {androidSourceReceipt} from '../../../tools/android-build/source-receipt.mjs';
 
 const app=fileURLToPath(new URL('./',import.meta.url)),root=fileURLToPath(new URL('../../../',import.meta.url));
 const metadata=JSON.parse(await fs.readFile(path.join(app,'app.json')));
@@ -47,6 +48,6 @@ if(!badging.includes("package: name='org.localserve.go'")||!badging.includes("ap
 const manifest=await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8');
 if(!manifest.includes('android:versionName="'+metadata.version+'"')||!manifest.includes('android:versionCode="'+metadata.versionCode+'"'))throw Error('APK versions disagree.');
 const bytes=await fs.readFile(apk),sha256=createHash('sha256').update(bytes).digest('hex');
-const result={packageName:metadata.packageName,version:metadata.version,versionCode:metadata.versionCode,label:metadata.name,minSdk:25,targetSdk:25,abi:'armeabi-v7a',size:bytes.length,sha256,unconfigured:true,signatureVerified:true,verification:verification.trim()};
+const result={packageName:metadata.packageName,version:metadata.version,versionCode:metadata.versionCode,label:metadata.name,minSdk:25,targetSdk:25,abi:'armeabi-v7a',size:bytes.length,sha256,sourceReceipt:await androidSourceReceipt(root,'plugins/oculus-go/android'),unconfigured:true,signatureVerified:true,verification:verification.trim()};
 await fs.writeFile(path.join(output,'verification.json'),JSON.stringify(result,null,2)+'\n');await fs.writeFile(path.join(output,'localserve-go.apk.sha256'),sha256+'  localserve-go.apk\n');
 console.log(JSON.stringify(result,null,2));

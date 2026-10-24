@@ -7,9 +7,23 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createLocalserve } from '../server.mjs';
 import { remoteSummary } from '../server/phone-home.mjs';
+import {PhoneHome} from '../server/phone-home.mjs';
 import { listenBrowserHttp } from '../server/network.mjs';
 import { EventEmitter } from 'node:events';
 import vm from 'node:vm';
+
+test('phone availability explains supported preflight failures without exposing arbitrary errors',()=>{
+  const task={revision:1},home=Object.create(PhoneHome.prototype);home.closing=false;
+  for(const [message,expected]of [
+    ['Task is disabled.','disabled'],['This Task is already running.','already running'],
+    ['This Task needs the triggering event value title.','Needs Event values'],
+    ['PRIVATE credential and http://private.invalid/token=secret','Check this Task']]){
+    home.engine={assertStart(){throw Error(message);}};
+    const result=home.availability(task);assert.equal(result.available,false);assert.match(result.unavailableReason,new RegExp(expected));
+    assert.doesNotMatch(JSON.stringify(result),/PRIVATE|private\.invalid|token=secret/);
+  }
+  home.engine={assertStart(){}};assert.deepEqual(home.availability(task),{available:true});
+});
 
 test('automatic HTTP binding skips browser-blocked ports and preserves explicit choices and failures', async () => {
   class Listener extends EventEmitter {

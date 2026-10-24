@@ -161,20 +161,22 @@
     document.querySelectorAll('[data-open]').forEach((button) => {
       const item = all().find((item) => item.key === button.dataset.open);
       button.disabled = !online || !item?.value.available;
+      button.title = !online ? 'Connect to Localserve to use this shortcut.' : item?.value.available ? '' : item?.value.unavailableReason || 'Unavailable';
     });
     document.querySelectorAll('[data-status]').forEach((label) => {
       const item = all().find((item) => item.key === label.dataset.status);
       label.textContent = !online
         ? 'Offline'
         : item?.value.available
-          ? item.type === 'card'
+          ? item.type === 'task' ? 'Run Task' : item.type === 'card'
             ? item.value.designName
             : item.value.summary || 'Ready'
-          : 'Unavailable';
+          : item?.value.unavailableReason || 'Unavailable';
     });
   }
   function tile(item, compact = false) {
-    return `<button class="${compact ? 'quick' : 'tile'}" data-open="${esc(item.key)}">${icon(item.icon)}<span><strong>${esc(item.name)}</strong>${compact ? `<small>${item.type === 'task' ? 'Run Task' : esc(item.value.pluginName)}</small>` : ''}</span>${compact ? '' : `<small data-status="${esc(item.key)}">${item.value.available ? 'Ready' : 'Unavailable'}</small>${icon('chevron-right').replace('material-symbol', 'material-symbol arrow')}`}</button>`;
+    const hint=item.value.available ? item.type==='task' ? 'Run Task' : compact ? item.value.pluginName : 'Ready' : item.value.unavailableReason || 'Unavailable';
+    return `<button class="${compact ? 'quick' : 'tile'}" data-open="${esc(item.key)}">${icon(item.icon)}<span><strong>${esc(item.name)}</strong>${compact ? `<small data-status="${esc(item.key)}">${esc(hint)}</small>` : ''}</span>${compact ? '' : `<small data-status="${esc(item.key)}">${esc(hint)}</small>${icon('chevron-right').replace('material-symbol', 'material-symbol arrow')}`}</button>`;
   }
   function render(force = false) {
     if (!model) return;
@@ -190,6 +192,7 @@
       view === 'home' ? 'Home' : view === 'remotes' ? 'Remotes' : view === 'cards' ? 'Cards' : 'Tasks';
     let body = `<div class="page-title"><div><p class="eyebrow">YOUR SPACE</p><h1>${title}</h1></div><button class="text-button" data-action="${view === 'home' ? 'edit' : 'preferences'}">${view === 'home' ? 'Edit' : icon('sliders')}</button></div>`;
     if (view === 'home') {
+      body += `<a class="scene-selector-link" href="scenes"><span class="scene-link-orb">${icon('lightbulb')}</span><span><strong>Scenes & Tasks</strong><small>Quick controls</small></span>${icon('chevron-right')}</a>`;
       const remotes = selected.filter((item) => item.type === 'remote'),
         tasks = selected.filter((item) => item.type === 'task');
       body += remotes.length

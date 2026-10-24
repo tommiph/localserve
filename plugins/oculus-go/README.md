@@ -14,7 +14,7 @@ Test connection reads only the serial. Localserve connects directly to the confi
 
 1. Enable APK library in plugin Settings.
 2. Set APK library folder. The default is library/oculus-go relative to the Localserve folder. Create this folder and add your own standalone APK files. A user-selected absolute folder can point to an external drive. No APKs are supplied, uploaded or fetched from the internet.
-3. Open SERVER → VR library, or /vr-library. Select Scan library after adding or changing files. Subfolders are scanned; directory links and ZIP64/split APK sets are unsupported.
+3. Open Controls → VR library → Open, or /vr-library. Select Scan library after adding or changing files. Subfolders are scanned; directory links and ZIP64/split APK sets are unsupported.
 4. Use search, genre and sorting controls to browse titles and versions. Details & versions shows available APKs. Install selected version sends only the chosen file to the configured headset.
 5. Select Read installed apps for a current snapshot of user applications. Uninstall requires a separate confirmation and deletes the application's saved data. APK files on the PC are retained.
 
@@ -60,3 +60,9 @@ The separate native Localserve Go app is listed as **# Localserve #**. VR librar
 The ready-made design uses two gauge columns in regions up to 540 pixels wide.
 Use Vista Preview to check its complete content at the intended size; smaller
 heights may still require scrolling.
+
+## Fullscreen design
+
+The separate **· Fullscreen** ready-made Card uses a 1920×1080 layout with
+additional declared readings and bounded detail lists. Choose it in Add ready-made
+card; existing Cards keep their design. See [fullscreen setup](../../FULLSCREEN-CARDS.md).

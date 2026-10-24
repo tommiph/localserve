@@ -10,6 +10,9 @@ const text = (value, max = 200) => typeof value === 'string' && value.trim()
 const count = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
 const percent = value => Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
 const stamp = value => typeof value === 'string' && /(?:Z|[+-]\d\d:\d\d)$/u.test(value) && Number.isFinite(Date.parse(value)) ? Date.parse(value) : null;
+const activeTrophyKeys = ['active-trophies','active-trophies-available','active-trophy-progress','active-trophies-received-at',
+  'active-platinum','active-gold','active-silver','active-bronze'];
+const activeDetailKeys = ['active-play-hours','active-play-count','active-first-played','active-last-played',...activeTrophyKeys];
 export function durationSeconds(value) {
   const match = /^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(value || '');
   if (!match || !match.slice(1).some(part => part !== undefined)) return null;
@@ -72,6 +75,30 @@ export function gameReadings(result, titleId) {
   const active = result.rows.find(game => game.titleId === titleId);
   const seconds = durationSeconds(active?.playDuration);
   output['active-play-hours'] = seconds === null ? null : seconds / 3600;
+  output['active-play-count'] = count(active?.playCount);
+  output['active-first-played'] = stamp(active?.firstPlayedDateTime);
+  output['active-last-played'] = stamp(active?.lastPlayedDateTime);
+  return output;
+}
+/** Resolve the current game by exact PSN title ID, never a display-name match.
+ * A title may own several trophy sets; duplicate communication IDs count once. */
+export function activeTrophyReadings(raw, titleId, receivedAt) {
+  const output=Object.fromEntries(activeTrophyKeys.map(key=>[key,null]));
+  const sets=raw?.titles?.find(title=>title.npTitleId===titleId)?.trophyTitles;
+  if(!Array.isArray(sets))return output;
+  if(sets.length>1000)throw new Error('PSN trophy sets exceed their limit.');
+  const unique=new Map();
+  for(const set of sets)if(text(set?.npCommunicationId) && !unique.has(set.npCommunicationId))unique.set(set.npCommunicationId,set);
+  const rows=[...unique.values()];if(!rows.length)return output;
+  if(rows.every(set=>trophyCounts(set.earnedTrophies)!==null)) {
+    for(const grade of ['platinum','gold','silver','bronze'])output['active-'+grade]=count(rows.reduce((sum,set)=>sum+set.earnedTrophies[grade],0));
+    output['active-trophies']=count(rows.reduce((sum,set)=>sum+trophyCounts(set.earnedTrophies),0));
+  }
+  if(rows.every(set=>trophyCounts(set.definedTrophies)!==null))output['active-trophies-available']=count(rows.reduce((sum,set)=>sum+trophyCounts(set.definedTrophies),0));
+  // PSN progress is provider-defined; do not invent a weighted percentage
+  // across multiple collections or replace it with the trophy count ratio.
+  output['active-trophy-progress']=rows.length===1?percent(rows[0].progress):null;
+  output['active-trophies-received-at']=receivedAt;
   return output;
 }
 export function collectionReadings(result) {
@@ -81,6 +108,38 @@ export function collectionReadings(result) {
   rows.sort((left, right) => (right.last ?? -Infinity) - (left.last ?? -Infinity));
   putRows(output, 'collections', 'trophy-row-count', rows, ['name', 'platform', 'progress', 'earned', 'available', 'last']);
   return output;
+}
+
+/** Session times are observations from PSN polling, never console boot times.
+ * Unknown/away readings break duration continuity instead of inventing a start. */
+export function sessionObservation(previous, presence, at, baseline, maximumGap = 180000) {
+  const continuous = baseline && Number.isFinite(previous['received-at']) && at >= previous['received-at'] && at - previous['received-at'] <= maximumGap;
+  const continuing = continuous && previous.online === true && presence.online === true;
+  const started = continuous && previous.online === false && presence.online === true;
+  const validStamp = value => Number.isFinite(value) && value > 0 && value <= at;
+  const gameRunning = presence.online === true && presence['game-running'] === true;
+  const sameGame = continuing && previous['game-running'] === true && (presence['title-id']
+    ? previous['title-id'] === presence['title-id']
+    : previous['active-game'] === presence['active-game'] && previous.platform === presence.platform);
+  const readings = {
+    // The local clock starts at first observation, not the console's unknown
+    // launch instant. Short server restarts retain it; monitoring gaps reset it.
+    'game-session-started-at': gameRunning
+      ? sameGame && validStamp(previous['game-session-started-at']) ? previous['game-session-started-at'] : at : null,
+    'session-started-at': presence.online === true
+      ? started ? at : continuing && validStamp(previous['session-started-at']) ? previous['session-started-at'] : null : null,
+    'session-observed-at': presence.online === true
+      ? continuing && validStamp(previous['session-observed-at']) ? previous['session-observed-at'] : at : null,
+  };
+  const ended = continuous && previous.online === true && presence.online === false;
+  const kind = started ? 'online' : ended ? 'offline'
+    : continuous && typeof previous.online === 'boolean' && typeof presence.online === 'boolean' && previous['active-game'] !== presence['active-game'] ? 'game' : 'presence';
+  return {readings, activity: {
+    kind, status:presence['online-status'], 'previous-status':previous['online-status'] || 'unknown',
+    game:presence['active-game'] || '', 'previous-game':previous['active-game'] || '', 'observed-at':at,
+    ...(ended && validStamp(previous['session-started-at'])
+      ? {'session-seconds':Math.floor((at - previous['session-started-at']) / 1000)} : {}),
+  }};
 }
 function deviceReadings(raw) {
   const values = raw.accountDevices || raw.devices;
@@ -110,17 +169,7 @@ async function details(client, auth, titleId, previous, signal, now) {
     ['consoles', () => client.get(auth, '', signal, true), deviceReadings],
   ];
   if (titleId) tasks.push(['active trophies', () => client.get(auth, 'trophy/v1/users/{account}/titles/trophyTitles?npTitleIds=' + encodeURIComponent(titleId), signal), raw => {
-    const sets = raw.titles?.find(title => title.npTitleId === titleId)?.trophyTitles;
-    if (!Array.isArray(sets)) return { 'active-trophies': null };
-    const seen = new Set(); let total = 0;
-    for (const set of sets) {
-      if (!text(set.npCommunicationId) || seen.has(set.npCommunicationId)) continue;
-      seen.add(set.npCommunicationId);
-      const earned = trophyCounts(set.earnedTrophies);
-      if (earned === null) return { 'active-trophies': null };
-      total += earned;
-    }
-    return { 'active-trophies': seen.size ? total : null };
+    return activeTrophyReadings(raw,titleId,now);
   }]);
   // Independent read-only endpoints share one action deadline. Each section
   // preserves its successful data on failure; diagnostics never use raw errors.
@@ -136,7 +185,7 @@ async function details(client, auth, titleId, previous, signal, now) {
 export function createPlaystationAdapter({ vault = createVault(), fetchImpl = fetch, now = Date.now,
   credentialReady = helperReady, client: suppliedClient } = {}) {
   const client = suppliedClient || createClient({ vault, fetchImpl, now });
-  let auth = null, npsso = '';
+  let auth = null, npsso = '', maximumSessionGap = 180000;
   return {
     async validateConfiguration(settings) {
       if (!await credentialReady() || typeof settings?.npsso !== 'string' || settings.npsso !== '' && !validNpsso(settings.npsso)) return false;
@@ -145,6 +194,7 @@ export function createPlaystationAdapter({ vault = createVault(), fetchImpl = fe
     },
     async start(settings) {
       npsso = settings.npsso.trim();
+      maximumSessionGap = Math.max(180000,Number(settings['poll-minutes']) * 180000 || 180000);
       try { auth = await vault.load(); }
       catch (error) {
         // An explicitly entered replacement credential can repair an unreadable
@@ -175,22 +225,22 @@ export function createPlaystationAdapter({ vault = createVault(), fetchImpl = fe
       const receivedAt = now();
       const gameChanged = previous['title-id'] !== presence['title-id'];
       let detail = {};
-      if (!sameAccount || gameChanged || !Number.isFinite(previous['details-attempted-at']) || receivedAt - previous['details-attempted-at'] >= 300000) {
+      if (!sameAccount || gameChanged || !Object.hasOwn(previous,'active-trophies-available') || !Number.isFinite(previous['details-attempted-at']) || receivedAt - previous['details-attempted-at'] >= 300000) {
         detail = await details(client, auth, presence['title-id'], previous, signal, now());
       }
       signal.throwIfAborted();
       const baseline = sameAccount && Number.isFinite(previous['received-at']);
       const changed = baseline && ['online-status', 'platform', 'active-game', 'title-id'].some(key => previous[key] !== presence[key]);
       const sequence = (count(previous['change-sequence']) ?? 0) + (changed ? 1 : 0);
-      const reading = { ...previous, ...detail, ...presence, 'online-id': auth.onlineId, 'account-id': auth.accountId,
+      const observation = sessionObservation(previous, presence, receivedAt, baseline, maximumSessionGap);
+      const reading = { ...previous, ...detail, ...presence, ...observation.readings, 'online-id': auth.onlineId, 'account-id': auth.accountId,
         'received-at': receivedAt, 'change-sequence': sequence };
       if (gameChanged) {
         // Never attach the previous game's stats to a newly reported title when
         // its detail endpoint failed, or claim a known zero for an absent game.
-        reading['active-play-hours'] = detail['active-play-hours'] ?? null;
-        reading['active-trophies'] = detail['active-trophies'] ?? null;
+        for(const key of activeDetailKeys)reading[key]=detail[key] ?? null;
       }
-      if (!presence['title-id']) { reading['active-play-hours'] = null; reading['active-trophies'] = null; }
+      if (!presence['title-id'])for(const key of activeDetailKeys)reading[key]=null;
       // Presence transition identity commits before effects; a crash can lose
       // an event but restart never replays it. Tokens never enter runtime state.
       await context.saveState(reading);
@@ -200,6 +250,7 @@ export function createPlaystationAdapter({ vault = createVault(), fetchImpl = fe
         ...(presence['game-running'] === null ? {} : { 'game-running': presence['game-running'], game: presence['active-game'] || '' }),
         ...(presence.platform ? { platform: presence.platform } : {}) };
       if (changed) await context.emit('presence-changed', { ...payload, 'change-id': `${auth.accountId}:${sequence}` });
+      if (changed) await context.emit('session-activity', {...observation.activity, 'change-id':`${auth.accountId}:${sequence}`});
       await context.emit('status-updated', payload);
       return { completed: true, changed };
     },

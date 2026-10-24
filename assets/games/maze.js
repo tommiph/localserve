@@ -104,6 +104,9 @@
   document.addEventListener('keydown',function(event){var code=event.keyCode||event.which;if([13,27,37,38,39,40,65,68,77,83,87,10009].indexOf(code)<0)return;event.preventDefault();event.stopPropagation();key(code,true,event.repeat);});
   document.addEventListener('keyup',function(event){key(event.keyCode||event.which,false);});
   start.onclick=resume;buttons[1].onclick=function(){if(music&&settings.musicUrl){var wanted=music.toggle(!paused);buttons[1].textContent=wanted?'Music on':'Music off';}};
+  if(window.LocalserveTvViewer)window.LocalserveTvViewer.install(null,{pause:function(mode){
+    if(mode==='play'||mode==='toggle'&&paused)resume();else if(!paused)pause();
+  }});
   buttons[2].onclick=function(){var element=document.documentElement,enter=element.requestFullscreen||element.webkitRequestFullscreen;if(enter){var request=enter.call(element);if(request&&request.catch)request.catch(function(){});}};
   buttons.forEach(function(button,index){button.addEventListener('focus',function(){menuIndex=index;});});
   window.addEventListener('blur',function(){if(started&&!paused)pause();held={};pressed={};});

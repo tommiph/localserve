@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "calendar",
   "name": "Calendar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "calendar",
   "description": "Subscribed calendars, agendas and Task reminders",
   "defaultCardLayout": "table",
@@ -946,6 +946,86 @@
             "all-day"
           ],
           "rows": 10
+        }
+      ]
+    },
+    {
+      "id": "agenda-fullscreen",
+      "name": "Agenda · Fullscreen",
+      "sourceLabel": "Calendar",
+      "directory": "cards/agenda",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "next-title",
+          "format": "text"
+        },
+        {
+          "id": "location",
+          "field": "next-location",
+          "format": "text"
+        },
+        {
+          "id": "start",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "agenda",
+          "field": "agenda",
+          "format": "table",
+          "columns": [
+            "title",
+            "start",
+            "end",
+            "location",
+            "all-day"
+          ],
+          "rows": 10
+        },
+        {
+          "id": "next-description",
+          "field": "next-description",
+          "format": "text"
+        },
+        {
+          "id": "next-end",
+          "field": "next-end",
+          "format": "datetime"
+        },
+        {
+          "id": "next-all-day",
+          "field": "next-all-day",
+          "format": "text"
+        },
+        {
+          "id": "event-count",
+          "field": "event-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "agenda-limited",
+          "field": "agenda-limited",
+          "format": "text"
         }
       ]
     }

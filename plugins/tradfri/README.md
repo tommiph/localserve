@@ -25,6 +25,6 @@ Plugin actions appear in global Tasks only when the plugin is enabled and ready.
 
 ## Cards
 
-Ready-made designs: Nordic. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.
+Ready-made designs: Nordic, Nordic · Fullscreen. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.
 
 See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin's data folder.

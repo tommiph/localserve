@@ -95,7 +95,9 @@ export function createTradfriAdapter({ vault = createVault(), credentialReady = 
             } else throw new Error('Unsupported lighting action or value.');
             // The gateway owns the fade after acknowledgement. Do not wait for
             // its duration, extend the action deadline or infer completed state.
-            payload = lightPayload(device, operation, settings['fade-seconds']);
+            const fade = actionId === 'light-state' && context.lightingFadeSeconds !== undefined
+              ? context.lightingFadeSeconds : settings['fade-seconds'];
+            payload = lightPayload(device, operation, fade);
             if (actionId === 'light-state') {
               // Differential serialization omits unchanged power. Include power
               // explicitly even when already Off: a dimmer-only gateway PUT can

@@ -9,6 +9,10 @@ import { fileURLToPath } from 'node:url';
 import { randomBytes } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { JsonStore, ActivityLog, HttpError } from './server/storage.mjs';
+import {readScenesApk} from './server/scenes-app.mjs';
+import {AdminSync} from './server/admin-sync.mjs';
+import {Devices} from './server/devices.mjs';
+import {TvCloseRequests} from './server/tv-close.mjs';
 import { PluginRegistry } from './server/plugins.mjs';
 import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
@@ -17,8 +21,10 @@ import { DemoSetup } from './server/demo.mjs';
 import {ApkLibrary, nativeLibraryRoute, serveNativeLibrary, libraryAdminOperation} from './server/apk-library.mjs';
 import { UniverseStore } from './server/universe.mjs';
 import { GamesStore,requireMazeDisplay } from './server/games.mjs';
+import { LightingAnimations } from './server/lighting-animations.mjs';
 import { SensorIngress } from './server/sensor-ingress.mjs';
 import {phoneDisplay} from './server/phone-display.mjs';
+import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
 import {readClientPackages} from './server/client-packages.mjs';
@@ -146,6 +152,7 @@ export async function createLocalserve(root, options = {}) {
     const activity = await new ActivityLog(path.join(root, 'data/activity.jsonl'), 2000,
       { retentionDays: () => config.snapshot().activityRetentionDays }).load();
     registry = new PluginRegistry(path.join(root, 'plugins'), state, activity, config);
+    const tvClose=new TvCloseRequests();registry.tvClose=tvClose;
     const notices = await new TvNotices(root, config, () => server?.address()).load();
     registry.notices = notices;
     const engine = new TaskEngine(tasks, state, config, registry, activity);
@@ -161,8 +168,11 @@ export async function createLocalserve(root, options = {}) {
     const games = await new GamesStore(root,registry,activity).load();
     const controls = await new ControlsStore(root, registry, config, activity).load();
     registry.controls = controls;
+    const lightingAnimations = await new LightingAnimations(root,registry,activity).load();
+    registry.lightingAnimations = lightingAnimations;
     engine.vistas = vistas;
     const phoneHome=await new PhoneHome(root,tasks,engine,controls,config,state,registry).load();
+    const devices=await new Devices(root,registry,engine.gate,options.deviceDiscovery).load();
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
     let administratorWrites=0,demoInstalling=false,demoOperation=null;
     const apkLibrary = await new ApkLibrary(root, registry).load();
@@ -187,17 +197,18 @@ export async function createLocalserve(root, options = {}) {
     }
     const json = (response, code, body) => { response.writeHead(code, { 'Content-Type': contentTypes['.json'] }); response.end(JSON.stringify(body)); };
 
+    const adminSync=new AdminSync();
     function snapshot(browserAddress = origin) {
       // CPU and memory refer only to this process. CPU is an average since process
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: {...config.snapshot(),version:serverVersion}, phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { config: {...config.snapshot(),version:serverVersion}, devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
-        taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(),
+        taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(), lightingAnimations: lightingAnimations.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
         runs: state.snapshot().runs.map(run => ({ ...run, step: engine.active.get(run.id)?.step || run.step })),
-        server: { startedAt, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), address: browserAddress,
+        server: { taskRuleModes:['or','and'], startedAt, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), address: browserAddress,
           lanAddress: registry.localDisplayOrigin(), clientPackages,
           now: Date.now(),
           // A derived clock detail lets the browser display server time even if
@@ -249,7 +260,8 @@ export async function createLocalserve(root, options = {}) {
         const noticeApi = /^\/api\/tv-notices\/([a-f0-9]{48})$/.exec(url.pathname);
         if (noticeApi) {
           // The unguessable per-notice URL grants only its bounded text and
-          // reception lifecycle. It cannot run Tasks or issue device commands.
+          // reception lifecycle, including its previously captured one-use app
+          // return. It cannot select a return app or run arbitrary commands.
           response.setHeader('Referrer-Policy', 'no-referrer');
           if (request.method === 'GET') return json(response, 200, notices.view(noticeApi[1]));
           if (request.method !== 'POST' || request.headers.origin !== browserOrigin) throw new HttpError(403, 'Use this notice page’s server address.');
@@ -265,6 +277,15 @@ export async function createLocalserve(root, options = {}) {
         if(url.pathname==='/api/phone-home'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the Home page.');
           return json(response,200,{...phoneHome.viewer(),version:serverVersion});
+        }
+        if(url.pathname==='/api/scene-selector'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the scene selector.');
+          return json(response,200,{...phoneHome.viewer(true),version:serverVersion});
+        }
+        if(url.pathname==='/scenes/app.webmanifest'){
+          if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use the scene selector manifest.');
+          response.writeHead(200,{'Content-Type':'application/manifest+json; charset=utf-8'});
+          return response.end(request.method==='HEAD'?undefined:JSON.stringify({id:'/scenes',name:'Scenes',short_name:'Scenes',start_url:'/scenes',scope:'/scenes',display:'standalone',background_color:'#ffffff',theme_color:'#f7f6f2',icons:[192,512].map(size=>({src:'/assets/scenes/app-icon-'+size+'.png',sizes:size+'x'+size,type:'image/png',purpose:'any maskable'}))}));
         }
         const phoneCard=/^\/api\/phone-home\/cards\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})$/.exec(url.pathname);
         if(phoneCard){
@@ -301,10 +322,26 @@ export async function createLocalserve(root, options = {}) {
             || devices.length && !/^[a-zA-Z0-9-]{1,64}$/.test(devices[0])) throw new HttpError(400,'Choose a phone.');
           return json(response,200,phoneDisplay(registry,config,devices[0]||null,sensorIngress.display));
         }
+        if(url.pathname==='/api/playstation-mode/close'){
+          if(request.method!=='POST'||url.search||request.headers.origin!==browserOrigin)throw new HttpError(403,'Use the connected TV display.');
+          if(!tvClose.acknowledge(request.socket.remoteAddress,await readBody(request)))throw new HttpError(409,'TV close request is unavailable.');
+          return json(response,200,{accepted:true});
+        }
+        if (request.method === 'GET' && url.pathname === '/api/playstation-mode') {
+          if (url.search) throw new HttpError(400,'PlayStation mode does not accept parameters.');
+          const display=playstationDisplay(registry,config),closeRequest=tvClose.poll(request.socket.remoteAddress);
+          return json(response,200,{...display,...(closeRequest?{closeRequest}:{})});
+        }
         const viewerApi = /^\/api\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
         if (request.method === 'GET' && viewerApi) return json(response, 200, vistas.viewer(viewerApi[1]));
         if (url.pathname.startsWith('/api/')) {
           if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin));
+          if(request.method==='GET'&&url.pathname==='/api/admin-state'){
+            const cursor=url.searchParams.get('cursor');
+            if([...url.searchParams.keys()].some(key=>key!=='cursor')||url.searchParams.getAll('cursor').length>1
+              ||cursor!==null&&!/^[a-f0-9]{32}$/.test(cursor))throw new HttpError(400,'Use a current administrator refresh cursor.');
+            return json(response,200,adminSync.encode(snapshot(browserOrigin),cursor));
+          }
           if (request.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
           if (request.headers.origin !== browserOrigin || request.headers['x-localserve-token'] !== token) throw new HttpError(403, 'Refresh this administration page before making changes.');
           if(demoInstalling)throw new HttpError(409,'Demo setup is in progress. Try again when it finishes.');
@@ -312,7 +349,16 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(/^\/api\/vr-library\/[a-z-]+$/.test(url.pathname)) {
+          if(/^\/api\/devices\/(scan|lookup|cancel|edit|use)$/.test(url.pathname)){
+            if(url.search)throw new HttpError(400,'Unexpected device parameters.');
+            const operation=url.pathname.split('/').at(-1);
+            return json(response,['scan','lookup'].includes(operation)?202:200,await devices[operation==='scan'?'start':operation](values)||{saved:true});
+          } else if (/^\/api\/lighting-animations(?:\/[a-zA-Z0-9-]+(?:\/(?:enabled|copy|delete|start))?)?$/.test(url.pathname)) {
+            const [, , , id, operation] = url.pathname.split('/');
+            if(id==='stop'&&!operation)await lightingAnimations.stop(values);
+            else if(operation==='start')return json(response,202,{run:await lightingAnimations.start(id,values)});
+            else await lightingAnimations.save(values,id||null,operation||null);
+          } else if(/^\/api\/vr-library\/[a-z-]+$/.test(url.pathname)) {
             const controller = new AbortController();
             const cancelled = () => { if (!response.writableEnded) controller.abort(new Error('Client disconnected.')); };
             response.once('close',cancelled);
@@ -471,6 +517,12 @@ export async function createLocalserve(root, options = {}) {
           return response.end(request.method === 'HEAD' ? undefined : asset.content);
         }
         const controlManifest = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)\/app\.webmanifest$/.exec(url.pathname);
+        if (url.pathname === '/downloads/scenes.apk') {
+          if (url.search) throw new HttpError(405,'Use the Scenes download link.');
+          const bytes=await readScenesApk(root);
+          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':bytes.length,'Content-Disposition':'attachment; filename="scenes.apk"'});
+          return response.end(request.method==='HEAD'?undefined:bytes);
+        }
         if (['/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
           if (!['GET','HEAD'].includes(request.method) || url.search) throw new HttpError(405,'Use the Android download link.');
           if (registry.get('sensors').plugin.runtime?.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors app unavailable.');
@@ -495,6 +547,8 @@ export async function createLocalserve(root, options = {}) {
           return response.end(request.method === 'HEAD' ? undefined : JSON.stringify(manifest));
         }
         const viewerPage = /^\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
+        const playstationPage = url.pathname === '/playstation-mode';
+        if (playstationPage && url.search) throw new HttpError(400,'PlayStation mode does not accept parameters.');
         const gamePage = url.pathname === '/games/maze';
         if(gamePage){if(url.search)throw new HttpError(400,'Game URLs do not accept parameters.');games.viewer();await requireMazeDisplay(root);}
         const noticePage = /^\/tv-notices\/([a-f0-9]{48})$/.exec(url.pathname);
@@ -502,16 +556,18 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = url.pathname === '/home' ? 'phone-home.html' : url.pathname === '/vr-library' ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
-        for(const name of ['phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
+        for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('vr-library-ui.js');
+        webFiles.add('devices-ui.js');
         webFiles.add('phone-information.html');
+        webFiles.add('playstation-mode.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
         const builderMatch=/^plugin-task-builders\/([a-z][a-z0-9-]{0,63})\.(js|css)$/.exec(relative);
         const builderPlugin=builderMatch&&registry.services().find(plugin=>plugin.id===builderMatch[1]&&plugin.taskBuilder&&plugin.enabled);
@@ -522,7 +578,7 @@ export async function createLocalserve(root, options = {}) {
         if (!realFile.startsWith(realRoot + path.sep)) throw new HttpError(404, 'File not found.');
         if(builderPlugin&&!realFile.startsWith((await fs.realpath(path.join(root,'plugins',builderPlugin.folder)))+path.sep))throw new HttpError(404,'Task builder unavailable.');
         let content = await fs.readFile(realFile);
-        if(relative==='phone-home.html'){
+        if(relative==='phone-home.html'||relative==='scene-selector.html'){
           response.setHeader('Referrer-Policy','no-referrer');
           response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
         }
@@ -553,6 +609,10 @@ export async function createLocalserve(root, options = {}) {
           // selected phone identifier, route/query or callback values.
           response.setHeader('Referrer-Policy','origin');
           response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://tile.openstreetmap.org; connect-src 'self'; frame-src 'none'; frame-ancestors 'self' file:; object-src 'none'; base-uri 'none'; form-action 'none'");
+        }
+        if(relative==='playstation-mode.html') {
+          response.setHeader('Referrer-Policy','no-referrer');
+          response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'none'; frame-ancestors 'self' file:; object-src 'none'; base-uri 'none'; form-action 'none'");
         }
         // The public Vista page is also inside the packaged Tizen frame, above
         // its inert Cards. Leaving this outer document at frame-ancestors none
@@ -601,19 +661,22 @@ export async function createLocalserve(root, options = {}) {
       try {
         await registry.discover();
         await controls.sync();
+        lightingAnimations.reconcile();
         registry.pollDue();
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, phoneHome, apkLibrary, snapshot, cleanupActivity,
+    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, devices, apkLibrary, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
         if (!closePromise) closePromise = (async () => {
-          closing = true; clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
+          closing = true; tvClose.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
+          await devices.close();
+          await lightingAnimations.close();
           await phoneHome.close();
           await apkLibrary.close();
           registry.beginClose();

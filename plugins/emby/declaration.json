@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "emby",
   "name": "Emby",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Reported playback sessions from your Emby server",
   "icon": "movie",
   "defaultCardLayout": "table",
@@ -1241,6 +1241,123 @@
             "progress"
           ],
           "rows": 10
+        }
+      ]
+    },
+    {
+      "id": "screening-fullscreen",
+      "name": "Screening room · Fullscreen",
+      "directory": "cards/screening",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "current-title",
+          "format": "text"
+        },
+        {
+          "id": "series",
+          "field": "current-series",
+          "format": "text"
+        },
+        {
+          "id": "device",
+          "field": "current-device",
+          "format": "text"
+        },
+        {
+          "id": "playback",
+          "field": "current-state",
+          "format": "text"
+        },
+        {
+          "id": "progress",
+          "field": "current-progress",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "sessions",
+          "field": "sessions",
+          "format": "table",
+          "columns": [
+            "title",
+            "user",
+            "device",
+            "client",
+            "state",
+            "position",
+            "progress"
+          ],
+          "rows": 10
+        },
+        {
+          "id": "current-user",
+          "field": "current-user",
+          "format": "text"
+        },
+        {
+          "id": "current-client",
+          "field": "current-client",
+          "format": "text"
+        },
+        {
+          "id": "current-position",
+          "field": "current-position",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "current-duration",
+          "field": "current-duration",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "session-count",
+          "field": "session-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "playing-count",
+          "field": "playing-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "paused-count",
+          "field": "paused-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "list-limited",
+          "field": "list-limited",
+          "format": "text"
+        },
+        {
+          "id": "current-volume",
+          "field": "current-volume",
+          "format": "number",
+          "decimals": 1
         }
       ]
     }

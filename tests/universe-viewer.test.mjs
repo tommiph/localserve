@@ -10,7 +10,7 @@ const defaults = { schemaVersion:1,revision:1,enabled:true,cards:[],holdSeconds:
   order:'sequential',density:100,detail:'low',viewDistance:6000,motion:50,stars:true,nebulae:true,planets:true,asteroids:true };
 function fixture(graphics = true, search = '') {
   const nodes = {}, listeners = {}, timers = new Map(), frames = [], reads = [], mounts = [], renderers = [];
-  let sequence = 0, time = 0;
+  let sequence = 0, time = 0, remotePause;
   function element() { return { style:{},setAttribute(key,value){ this[key]=value; },addEventListener(key,callback){ this[key]=callback; } }; }
   for (const id of ['universe-space','universe-panel','vista-status','universe-empty','universe-pause','universe-fullscreen','universe-next']) nodes[id] = element();
   nodes['universe-space'].getContext = () => graphics ? {} : null;
@@ -24,6 +24,7 @@ function fixture(graphics = true, search = '') {
     XMLHttpRequest:class {open(method,url){this.url=url;}send(){reads.push(this);}abort(){this.aborted=true;}},
   });
   context.window = context; context.self = context;
+  context.LocalserveTvViewer = {install(step,controls){remotePause=controls.pause;}};
   vm.runInContext(scripts[0], context);
   context.THREE.WebGLRenderer = function () {
     renderers.push(this);this.calls=0;this.setPixelRatio=()=>{};this.setClearColor=()=>{};this.setSize=(w,h)=>{this.size=[w,h];};this.clear=()=>{};
@@ -33,7 +34,7 @@ function fixture(graphics = true, search = '') {
   const cards = [0,1].map(index=>({pluginId:'example',cardId:'card-'+index,card:{id:'card-'+index}}));
   const payload = (patch = {}) => ({ universe:{...defaults,cards:cards.map(({pluginId,cardId})=>({pluginId,cardId})),...patch},cards,
     options:{name:'Test',theme:'dark',fontScale:100,timeFormat:'24',now:12345} });
-  return {nodes,document,listeners,timers,reads,mounts,renderers,payload,
+  return {nodes,document,listeners,timers,reads,mounts,renderers,payload,get remotePause(){return remotePause;},
     deliver(value){ const xhr=reads[reads.length-1];xhr.status=200;xhr.responseText=JSON.stringify(value);xhr.onload(); },
     step(seconds){ for(let i=0;i<seconds*60;i++){time+=1000/60;const fn=frames.shift();fn(time);} },
     poll(){const [id,fn]=[...timers].at(-1);timers.delete(id);fn();},
@@ -164,4 +165,11 @@ test('zero stop keeps the camera moving through successive Card boundaries', () 
   }
   const visited = new Set(f.mounts.filter(item => item.entry).map(item => item.entry.cardId));
   assert.equal(visited.size, 2);
+});
+
+test('dedicated Play and Pause controls are idempotent and hold the flight camera',()=>{
+ const f=fixture();f.deliver(f.payload({holdSeconds:0}));f.step(.2);f.remotePause('pause');
+ const camera=f.renderers[0].camera,before=camera.position.z;f.step(1);assert.equal(camera.position.z,before);
+ assert.equal(f.nodes['universe-pause'].textContent,'Resume flight');f.remotePause('pause');assert.equal(f.nodes['universe-pause'].textContent,'Resume flight');
+ f.remotePause('play');f.step(.2);assert.notEqual(camera.position.z,before);assert.equal(f.nodes['universe-pause'].textContent,'Pause flight');
 });

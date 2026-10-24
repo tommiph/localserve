@@ -3,7 +3,7 @@
 Open `/home` on your Localserve server for a personal phone remote. Home uses
 its own dark appearance and text scale, independent of administrator settings.
 The server must remain running and reachable on your trusted LAN.
-In **Administration → Phone home**, scan the handoff QR code or copy the bound
+In **Controls → Phone home → Open**, scan the handoff QR code or copy the bound
 LAN address. The code is generated on this PC and opens Home only; it does not
 install an app or enable reporting. If no LAN address is bound, configure
 **Settings → Network** first. Scanning does not change firewall rules.
@@ -51,7 +51,7 @@ Install Android app 1.4.0 or later to display Cards in the native app.
 
 ## Manual Task shortcuts
 
-In **Administration → Phone home → Edit**, select the Tasks to publish, choose
+In **Controls → Phone home → Open → Edit**, select the Tasks to publish, choose
 their glyphs and enable their shortcuts. Publishing does not enable or change
 the original Task. Unpublish a Task to remove its shortcut, or disable the
 shortcut while retaining its selection. Up to 32 Tasks may be published.
@@ -119,3 +119,15 @@ server-served phone or full remote. Do not add a JavaScript/native bridge,
 administrator endpoints, arbitrary pages or external navigation. Run
 `tests/phone-home.test.mjs`, the Android host tests through its build script,
 and disposable browser checks before deploying changes.
+
+## Scenes & Tasks
+
+Choose **Scenes & Tasks** in Home, or open `/scenes`, for a focused circular-button
+launcher. Lights lists enabled saved scenes from lighting remotes; Tasks uses
+the same published shortcuts as Home. Tap once to run, with server-reported
+completion feedback. Appearance is personal to the browser. The native Android
+wrapper needs APK 1.4.3 or later for this page. See [Scene selector](SCENE-SELECTOR.md).
+
+## Unavailable shortcuts
+
+A disabled shortcut explains whether its Task is disabled, already running, waiting for Event values, blocked by plugin configuration or missing an enabled Vista/lighting scene. These are sanitized preflight explanations, not device-state confirmation. Updating Localserve on Android to APK 1.4.3 admits Scenes artwork and opens its explicit download link in your system browser; it grants no additional sensor permissions.

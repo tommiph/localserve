@@ -1,0 +1,19 @@
+/* Device inventory keeps evidence readable alongside compact action controls. */
+.device-discovery-bar { display:flex; align-items:end; flex-wrap:wrap; gap:12px; }
+.device-discovery-bar .field { flex:1 1 260px; margin:0; }
+.device-discovery-note { padding-top:0; }
+.device-discovery-note p { margin:0 0 8px; }
+.devices-table td { vertical-align:top; white-space:normal; }
+.devices-table td:first-child { min-width:180px; }
+.devices-table td small { display:block; margin-top:6px; color:var(--muted); }
+.devices-table details { margin-top:8px; }
+.devices-table summary { cursor:pointer; color:var(--muted); padding:6px 0; }
+.devices-table .row-actions { flex-wrap:wrap; justify-content:flex-start; gap:6px; }
+.device-facts { margin:8px 0; font-size:.9em; }
+.device-facts div { margin-bottom:8px; }
+.device-facts dt { color:var(--muted); }
+.device-facts dd { margin:2px 0 0; overflow-wrap:anywhere; }
+@media(max-width:800px) {
+  .devices-table td:first-child { min-width:0; }
+  .device-discovery-bar > button { flex:1 1 auto; }
+}

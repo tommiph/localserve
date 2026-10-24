@@ -169,6 +169,10 @@ dialog.task-editor {
   margin-top: 22px;
 }
 .task-section-heading h3 { margin: 0; }
+.task-section-heading { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.task-section-heading > div { flex: 1 1 240px; }
+.task-rule-mode { display: flex; flex-direction: column; gap: 6px; flex: 0 1 200px; font-size: .9rem; }
+.task-rule-mode select { width: 100%; }
 .task-section-heading p {
   color: var(--muted);
   margin: 6px 0 16px;

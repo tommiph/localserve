@@ -14,7 +14,7 @@ function fixture(fetch) {
     querySelector(selector) {return selector === '#vista-display' ? display : selector === '#vista-status' ? status : favicon;},
     createElement() {return {};}};
   const context = vm.createContext({document, location: {pathname: '/vistas/test'}, fetch, AbortController,
-    VistaRenderer: {create() {return {update(value) {updates.push(value);}, destroy() {disposed++;}};}},
+    VistaRenderer: {create() {return {update(value) {updates.push(value);},pause(){}, destroy() {disposed++;}};}},
     window: {addEventListener(name, handler) {handlers[name] = handler;}},
     setInterval(callback) {const id = ++serial; intervals.set(id, callback); return id;},
     clearInterval(id) {intervals.delete(id);}});

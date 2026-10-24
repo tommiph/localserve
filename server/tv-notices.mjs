@@ -1,5 +1,5 @@
-/** One temporary, read-only TV notice. Claims commit before a TV launch; this
- * store never controls a TV, replays a notice or stores device credentials. */
+/** One temporary TV notice. Launch/return claims commit before effects; this
+ * store retains no credentials and cannot replay a return after a restart. */
 import path from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { JsonStore, HttpError } from './storage.mjs';
@@ -25,6 +25,7 @@ export class TvNotices {
     this.config = config;
     this.address = address;
     this.now = now;
+    this.returns = new Map();
   }
   async load() {
     await this.store.load();
@@ -34,11 +35,13 @@ export class TvNotices {
     if (current) {
       const content = validateNotice(current.content);
       const persistent = current.status === 'shown' && !content['auto-close'];
-      if (!/^[a-f0-9]{48}$/.test(current.id) || !['reserved', 'shown', 'dismissing'].includes(current.status)
+      if (!/^[a-f0-9]{48}$/.test(current.id) || !['reserved', 'shown', 'dismissing','finishing'].includes(current.status)
         || (persistent ? current.expiresAt !== null || current.endsAt !== null || !Number.isFinite(current.shownAt)
           : !Number.isFinite(current.expiresAt) || current.expiresAt > this.now() + 3625000
             || current.status === 'shown' && !Number.isFinite(current.endsAt))) throw new Error('Invalid TV notice state; original file retained.');
       if (current.audioStatus !== undefined && !['playing', 'unavailable'].includes(current.audioStatus)) throw new Error('Invalid TV notice audio reception.');
+      if(current.returnTarget && (typeof current.returnTarget.appId!=='string' || !/^[\w.-]{1,128}$/.test(current.returnTarget.appId)
+        || typeof current.returnTarget.used!=='boolean'))throw new Error('Invalid notice return claim.');
     }
     await this.expire();
     return this;
@@ -54,6 +57,7 @@ export class TvNotices {
       notice = { id: randomBytes(24).toString('hex'), content, status: 'reserved',
         expiresAt: this.now() + (content['auto-close'] ? content.seconds + 25 : 25) * 1000 };
       current.notice = notice;
+      this.returns.clear();
       current.revision = (current.revision || 0) + 1;
     });
     // A failure after this commit keeps the lease: a delivered command can have
@@ -62,6 +66,14 @@ export class TvNotices {
     return `http://${config.listen.host}:${port}/tv-notices/${notice.id}?seconds=${content['auto-close'] ? content.seconds : 0}`;
   }
   active(notice) { return Boolean(notice && (notice.expiresAt === null || notice.expiresAt > this.now())); }
+  async captureReturn(id,appId,restore) {
+    if(typeof appId!=='string' || !/^[\w.-]{1,128}$/.test(appId) || appId==='HwGlance01.HomeGlance' || typeof restore!=='function')throw new Error('Invalid notice return target.');
+    await this.store.update(current=>{
+      if(!this.active(current.notice) || current.notice.id!==id || current.notice.status!=='reserved' || current.notice.returnTarget)throw new Error('Notice return was already captured.');
+      current.notice.returnTarget={appId,used:false};
+    });
+    this.returns.set(id,restore);
+  }
   current(id) {
     const notice = this.store.snapshot().notice;
     if (!this.active(notice) || notice.id !== id) throw new HttpError(404, 'TV notice unavailable.');
@@ -69,7 +81,7 @@ export class TvNotices {
   }
   view(id) {
     const notice = this.current(id), config = this.config.snapshot();
-    return { id, ...validateNotice(notice.content), status: notice.status, dismissed: notice.status === 'dismissing',
+    return { id, ...validateNotice(notice.content), status: notice.status, dismissed: ['dismissing','finishing'].includes(notice.status),
       elapsedMs: notice.status === 'shown' ? Math.max(0, this.now() - (notice.shownAt ?? notice.endsAt - notice.content.seconds * 1000)) : 0,
       remainingMs: notice.content['auto-close'] === false ? null : notice.status === 'shown' ? Math.max(0, notice.endsAt - this.now()) : notice.content.seconds * 1000,
       fontScale: config.vistaFontScale, serverName: config.name };
@@ -83,22 +95,30 @@ export class TvNotices {
   async dismiss(revision) {
     await this.store.update(current => {
       if (!Number.isSafeInteger(revision) || revision !== (current.revision || 0)) throw new HttpError(409, 'The active TV notice changed. Refresh before dismissing.');
-      if (this.active(current.notice)) {
+      if (this.active(current.notice) && current.notice.status!=='finishing') {
         // Reserve a short closing window so another Task cannot race the TV's
         // five-second dismissal poll. Offline/stale screens cannot block forever
         // after the administrator explicitly requests closure.
         current.notice.status = 'dismissing';
         current.notice.expiresAt = this.now() + 10000;
-      } else current.notice = null;
+      } else if(!this.active(current.notice)) current.notice = null;
       current.revision = (current.revision || 0) + 1;
     });
   }
   async report(id, status) {
-    if (!['shown', 'finished', 'sound-playing', 'sound-unavailable'].includes(status)) throw new HttpError(400, 'Invalid notice reception.');
-    let first = false;
+    if (!['shown', 'finished','abandoned', 'sound-playing', 'sound-unavailable'].includes(status)) throw new HttpError(400, 'Invalid notice reception.');
+    let first = false,finish=false,restore;
     await this.store.update(current => {
       this.current(id);
-      if (status === 'finished') { current.notice = null; current.revision = (current.revision || 0) + 1; return; }
+      if (status === 'finished' || status==='abandoned') {
+        if(current.notice.status==='finishing')return;
+        finish=true;
+        if(status==='finished' && ['shown','dismissing'].includes(current.notice.status) && Number.isFinite(current.notice.shownAt)
+          && current.notice.returnTarget && !current.notice.returnTarget.used)restore=this.returns.get(id);
+        if(current.notice.returnTarget)current.notice.returnTarget.used=true;
+        current.notice.status='finishing';current.notice.expiresAt=this.now()+10000;
+        current.revision=(current.revision||0)+1;return;
+      }
       if (status.startsWith('sound-')) {
         if (current.notice.status !== 'shown' || !current.notice.content.sound) throw new HttpError(409, 'This notice has no active sound.');
         // Reception reports browser playback, not audible volume or a TV state.
@@ -116,12 +136,23 @@ export class TvNotices {
         first = true;
       }
     });
-    return status === 'finished' ? { finished: true } : { ...this.view(id), first };
+    if(status==='finished' || status==='abandoned') {
+      if(finish){
+        this.returns.delete(id);
+        // Consumption is durable before effects. Restart loses the callback;
+        // it cannot replay a return or expose its target through the public URL.
+        try {if(restore)await restore();}catch{}
+        finally{await this.store.update(current=>{if(current.notice?.id===id){current.notice=null;current.revision=(current.revision||0)+1;}});}
+      }
+      return {finished:true};
+    }
+    return { ...this.view(id), first };
   }
   async expire() {
     const current = this.store.snapshot().notice;
     if (current && current.expiresAt !== null && current.expiresAt <= this.now()) await this.store.update(value => {
       if (value.notice && value.notice.expiresAt !== null && value.notice.expiresAt <= this.now()) {
+        this.returns.delete(value.notice.id);
         value.notice = null; value.revision = (value.revision || 0) + 1;
       }
     });

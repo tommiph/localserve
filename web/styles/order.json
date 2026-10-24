@@ -9,5 +9,7 @@
   "60-responsive-workspaces.css",
   "70-runtime-history.css",
   "80-libraries-reference.css",
+  "85-lighting-animations.css",
+  "86-devices.css",
   "90-mobile-extensions.css"
 ]

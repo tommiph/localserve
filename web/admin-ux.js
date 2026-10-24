@@ -1,5 +1,55 @@
 /** Presentation helpers shared by administrator views. These derive labels from
  * reported state only; they never execute actions or infer a device's state. */
+/** The cache is an in-memory transport base, independent of modal drafts. A
+ * committed mutation invalidates an older read before it can hydrate the UI. */
+const AdminSync = {
+  cursor:null, snapshot:null, epoch:0, legacy:false,
+  invalidate(){this.epoch++;this.cursor=null;this.snapshot=null;},
+  value(previous,patch){
+    if(patch.kind==='replace')return patch.value;
+    if(patch.kind!=='array'||!Array.isArray(previous))throw Error('Administrator refresh needs a full snapshot.');
+    const entries=new Map(previous.map(item=>[item.id,item])),ids=previous.map(item=>item.id);
+    for(const item of patch.items)entries.set(item.id,item);
+    for(const splice of patch.splices)ids.splice(splice.at,splice.remove,...splice.insert);
+    if(new Set(ids).size!==ids.length||ids.some(id=>!entries.has(id)))throw Error('Administrator list refresh is incomplete.');
+    return ids.map(id=>entries.get(id));
+  },
+  fields(previous,updates,removed){
+    const next={...previous};
+    for(const key of removed)delete next[key];
+    for(const [key,patch]of Object.entries(updates))next[key]=this.value(previous?.[key],patch);
+    return next;
+  },
+  apply(packet){
+    if(packet.protocol!=='admin-fields-v1'||!/^[a-f0-9]{32}$/.test(packet.cursor))throw Error('Unsupported administrator refresh.');
+    if(!packet.full&&!this.snapshot)throw Error('Administrator refresh needs a full snapshot.');
+    const base=packet.full?{}:this.snapshot;
+    const next=this.fields(base,packet.values,packet.removed),services=new Map((base.services||[]).map(service=>[service.id,service]));
+    for(const id of packet.services.removed)services.delete(id);
+    for(const patch of packet.services.updates)services.set(patch.id,this.fields(services.get(patch.id),patch.values,patch.removed));
+    next.services=packet.services.order.map(id=>{if(!services.has(id))throw Error('Incomplete service refresh.');return services.get(id);});
+    this.snapshot=next;this.cursor=packet.cursor;return next;
+  },
+  read(request){
+    if(this.pending?.epoch===this.epoch)return this.pending.promise;
+    const entry={epoch:this.epoch};
+    entry.promise=this.readOnce(request).finally(()=>{if(this.pending===entry)this.pending=null;});
+    this.pending=entry;return entry.promise;
+  },
+  async readOnce(request){
+    const epoch=this.epoch;
+    if(this.legacy){const data=await request('api/state');return epoch===this.epoch?data:null;}
+    let packet;
+    try{packet=await request('api/admin-state'+(this.cursor?'?cursor='+this.cursor:''));}
+    catch(error){
+      if(![404,405].includes(error.status))throw error;
+      this.legacy=true;const data=await request('api/state');return epoch===this.epoch?data:null;
+    }
+    if(epoch!==this.epoch)return null;
+    try{return this.apply(packet);}catch(error){this.invalidate();throw error;}
+  },
+};
+
 const AdminUX = {
   pageServerVersion: null,
   observeServerVersion(version) {
@@ -58,7 +108,7 @@ const AdminUX = {
     const allRules = task.starts.length;
     const activation = !task.enabled ? 'Task disabled' : paused ? 'Server paused'
       : allRules && !rules ? 'Automatic rules disabled' : rules ? `${rules} automatic rule${rules === 1 ? '' : 's'} enabled` : 'Manual only';
-    return `${activation} · ${rules}/${allRules} rules · ${steps}/${task.steps.length} steps enabled`;
+      return `${activation}${task.ruleMode==='and' && rules?' · AND (all rules)':''} · ${rules}/${allRules} rules · ${steps}/${task.steps.length} steps enabled`;
   },
 
   savesDefinition(endpoint) {

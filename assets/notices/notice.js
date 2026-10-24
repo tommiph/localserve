@@ -1,5 +1,5 @@
 /* ES5 page shared by TV presentation and a silent administrator preview.
-   The capability permits only this notice's text/reception, never commands. */
+   Completion permits only this notice's previously captured one-use app return. */
 (function () {
   'use strict';
   var match = /^\/tv-notices\/([a-f0-9]{48})$/.exec(location.pathname);
@@ -7,6 +7,13 @@
   var token = match && match[1], timer = null, pollTimer = null, audio = null, finished = false;
   var content, endsAt, presented = false;
   var audioEngine = null, bufferSource = null, soundRequest = null;
+  var soundPaused = false, soundGain = null;
+  if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(null,{pause:function (mode) {
+    soundPaused = mode === 'play' ? false : mode === 'pause' ? true : !soundPaused;
+    if (soundGain) soundGain.gain.value = soundPaused ? 0 : 1;
+    if (audio) audio.muted = soundPaused;
+    text('sound-status',soundPaused ? 'Sound muted · Play/Pause to resume' : content && content.sound ? 'Sound unmuted' : 'Sound off');
+  }});
   function stopBufferedSound() {
     if (soundRequest) { soundRequest.abort(); soundRequest = null; }
     if (bufferSource) { try { bufferSource.stop(0); } catch (ignore) {} bufferSource = null; }
@@ -37,20 +44,22 @@
     request.onerror = request.ontimeout = function () { callback(null); };
     request.send(JSON.stringify({ status: status }));
   }
-  function finish() {
+  function finish(allowReturn) {
     if (finished || preview) return;
     finished = true; clearInterval(timer); clearInterval(pollTimer);
     stopBufferedSound();
     if (audio) { audio.loop = false; audio.pause(); audio.src = ''; }
-    // Return is local to the packaged parent even if Localserve is unavailable.
-    // The best-effort reception releases the lease; there is no network retry.
+    // Give the server one bounded chance to restore its captured app. The
+    // packaged parent still closes locally when the server is unavailable.
     var returned = false;
+    var restore = allowReturn !== false && !document.hidden;
+    if(restore)parentMessage('localserve-notice-finishing');
     function returnToTv() {
       if (returned) return;
       returned = true; parentMessage('localserve-notice-finished');
     }
-    report('finished', returnToTv);
-    setTimeout(returnToTv, 300);
+    report(restore ? 'finished' : 'abandoned', returnToTv);
+    setTimeout(returnToTv, 6500);
   }
   function show(value) {
     if (!value || ['Notice', 'Alarm', 'Alert', 'Warning'].indexOf(value.template) < 0
@@ -121,7 +130,8 @@
                 try {
                   bufferSource = audioEngine.createBufferSource();
                   bufferSource.buffer = buffer; bufferSource.loop = true;
-                  bufferSource.connect(audioEngine.destination);
+                  soundGain = audioEngine.createGain();soundGain.gain.value = soundPaused ? 0 : 1;
+                  bufferSource.connect(soundGain);soundGain.connect(audioEngine.destination);
                   function startLoop() {
                     if (finished || soundStopped || document.hidden || !bufferSource) return;
                     try { bufferSource.start(0); soundPlaying(); } catch (ignore) { soundFailed(); }
@@ -142,6 +152,7 @@
           // Restart this already-loaded local cue only after a natural end. This
           // is requested repetition, never a retry after a media/network failure.
           audio.loop = false;
+          audio.muted = soundPaused;
           audio.src = soundUrl;
           // Sound ownership still belongs to the first claimed presentation;
           // repeating a cue never creates another reception write or sound claim.
@@ -188,15 +199,15 @@
       }
     });
   }
-  document.addEventListener('visibilitychange', function () { if (document.hidden && presented) finish(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && presented) finish(false); });
   document.addEventListener('keydown', function (event) {
     if (event.keyCode === 10009 || event.keyCode === 27) { event.preventDefault(); finish(); }
   });
   window.addEventListener('message', function (event) {
     if (!preview && window.parent !== window && event.source === window.parent
-      && event.data && event.data.type === 'localserve-notice-dismiss' && event.data.id === token) finish();
+      && event.data && event.data.type === 'localserve-notice-dismiss' && event.data.id === token) finish(event.data.restore !== false);
   });
-  window.addEventListener('pagehide', finish);
+  window.addEventListener('pagehide', function(){finish(false);});
   if (preview) {
     try { show(JSON.parse(decodeURIComponent(location.hash.slice(1)))); } catch (ignore) {}
   } else if (token) {

@@ -7,7 +7,7 @@ const dialog = document.querySelector('#editor-dialog');
 const confirmationDialog = document.querySelector('#confirmation-dialog');
 let confirmationReturnFocus = null;
 let state, config, actionCatalog;
-let currentView = location.pathname === '/vr-library' ? 'vr-library' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
+let currentView = location.pathname === '/devices' ? 'devices' : location.pathname === '/vr-library' ? 'vr-library' : location.pathname === '/lighting-animations' ? 'lighting' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
 let returnFocus = null, toastTimer, preferencesPending = 0, settingsQueue = Promise.resolve();
 let pluginSearch = '';
 const fontTimers = new Map();
@@ -30,7 +30,8 @@ async function request(endpoint, values) {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Localserve-Token': csrfToken }, body: JSON.stringify(values),
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error || 'Request failed.');
+  if(values!==undefined)AdminSync.invalidate();
+  if (!response.ok) {const error=new Error(result.error || 'Request failed.');error.status=response.status;throw error;}
   return result;
 }
 
@@ -68,7 +69,9 @@ function hydrate(data) {
 }
 
 async function refreshState(render = true) {
-  hydrate(await request('api/state'));
+  const data=await AdminSync.read(request);
+  if(!data)return;
+  hydrate(data);
   if (render && !dialog.open) renderView();
 }
 
@@ -190,14 +193,13 @@ function serviceEvidence(service) {
 }
 
 function renderNavigation() {
-  document.querySelector('[data-view="vr-library"]').hidden = !state.services.some(service => service.id === 'oculus-go' && service.actions.some(action => action.id === 'library-install'));
   const plugins = state.services.filter(service => `${service.name} ${service.id}`.toLowerCase().includes(pluginSearch.toLowerCase().trim()));
   AdminDOM.update(document.querySelector('#plugin-navigation'),plugins.map(service => {
     const status = serviceStatus(service);
     return `<button class="nav-item ${currentView === service.id ? 'selected' : ''}" data-view="${escapeHtml(service.id)}" aria-label="${escapeHtml(service.name)}">${icon(service.icon)}<span>${escapeHtml(service.name)}</span><span class="status-dot ${status.className}"></span></button>`;
   }).join('') || '<p class="navigation-empty">No matching plugins</p>');
   document.querySelectorAll('.nav-item[data-view]').forEach(button => {
-    const selected = button.dataset.view === currentView; button.classList.toggle('selected', selected);
+    const selected = button.dataset.view === currentView || button.dataset.view === 'controls' && ControlsUI.ownsView(currentView); button.classList.toggle('selected', selected);
     if (selected) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current');
   });
   AdminDOM.text(document.querySelector('#task-count'),state.tasks.length);
@@ -289,21 +291,23 @@ function renderView() {
   const focusRegion = focused?.closest('#admin-navigation') ? document.querySelector('#admin-navigation') : workspace;
   const signature = node => JSON.stringify([node.tagName, node.dataset, node.getAttribute('aria-label'), node.getAttribute('href'), node.getAttribute('name'), node.closest('[data-activity-details]')?.dataset.activityDetails, node.closest('[data-variable-details]')?.dataset.variableDetails]);
   const focusSignature = focused?.matches('button,a,summary,input,select') ? signature(focused) : null;
-  if (!['overview','tasks','vistas','universe','controls','phone-home','activity','settings','variables','games','vr-library'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
+  if (!['overview','tasks','vistas','universe','controls','devices','phone-home','activity','settings','variables','games','vr-library','lighting'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
   renderNavigation();
   const plugin = state.services.find(service=>service.id===currentView);
-  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls','phone-home':'Phone home',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library'})[currentView] || 'Overview';
-  AdminDOM.text(document.querySelector('#breadcrumb-page'),title);
+  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls',devices:'Devices','phone-home':'Phone home',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library',lighting:'Lighting animations'})[currentView] || 'Overview';
+  AdminDOM.text(document.querySelector('#breadcrumb-page'),currentView !== 'controls' && ControlsUI.ownsView(currentView) ? 'Controls / ' + title : title);
   if (plugin) renderPlugin(plugin);
   else if (currentView==='tasks') renderWorkspace(TaskUI.renderTasks() + runsPanel());
   else if (currentView==='vistas') renderWorkspace(VistaUI.render());
   else if (currentView==='universe') renderWorkspace(UniverseUI.render());
   else if (currentView==='controls') renderWorkspace(ControlsUI.render());
+  else if (currentView==='devices') renderWorkspace(DevicesUI.render());
   else if (currentView==='phone-home') renderWorkspace(PhoneHomeUI.render());
   else if (currentView==='activity') renderWorkspace(pageHeading('Activity','Server and Task activity') + activityPanel(state.activity,true));
   else if (currentView==='settings') renderSettings();
   else if (currentView==='variables') renderWorkspace(VariablesUI.render());
   else if (currentView==='games') renderWorkspace(GamesUI.render());
+  else if (currentView==='lighting') renderWorkspace(LightingUI.render());
   else if (currentView==='vr-library') renderWorkspace(VrLibraryUI.render());
   else renderOverview();
   // Retained controls keep focus. If a structural change replaces one, restore
@@ -361,6 +365,7 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
+    if(action.startsWith('device-'))return await DevicesUI.handle(action,id,control);
     if(action.startsWith('setup-'))return SetupUI.handle(action,id);
     if (action === 'overview-failed-runs') {
       RunUI.task = ''; RunUI.status = 'failed'; RunUI.period = 'day'; RunUI.limit = 20;
@@ -385,6 +390,7 @@ document.addEventListener('click', async event=>{
     if (action === 'navigation-toggle' || action === 'navigation-close') {
       setNavigationOpen(action === 'navigation-toggle' && document.body.dataset.navigationOpen !== 'true'); return;
     }
+    if (action.startsWith('lighting-') || action.endsWith('-lighting')) return await LightingUI.handle(action,id,control);
     if (action.startsWith('vr-')) return await VrLibraryUI.action(action,control);
     if (action.startsWith('game-')) return await GamesUI.action(action);
     if (action.startsWith('universe-')) return await UniverseUI.handleAction(action, control);
@@ -440,17 +446,18 @@ document.addEventListener('click', async event=>{
 
 document.addEventListener('submit',async event=>{
   event.preventDefault();
-  if (event.target.id === 'universe-editor-form') return UniverseUI.submit(event.target);
-  if (event.target.id === 'vista-editor-form') return VistaUI.submit(event.target);
-  if (['controls-editor-form','controls-plugin-form'].includes(event.target.id)) return ControlsUI.submit(event.target);
-  if (event.target.id === 'card-editor-form') return CardDesigner.submit(event.target);
-  if (event.target.id === 'plugin-item-form') return PluginUI.submitItem(event.target);
-  if (event.target.id === 'plugin-lookup-form') return PluginUI.submitLookup(event.target);
-  if (event.target.id === 'task-run-form') return TaskUI.submitRun(event.target);
-  if (event.target.id === 'task-rerun-form') return TaskUI.submitRerun(event.target);
+  if (['device-editor-form','device-use-form','device-forget-form'].includes(formIdentifier(event.target))) return DevicesUI.submit(event.target);
+  if (formIdentifier(event.target) === 'universe-editor-form') return UniverseUI.submit(event.target);
+  if (formIdentifier(event.target) === 'vista-editor-form') return VistaUI.submit(event.target);
+  if (['controls-editor-form','controls-plugin-form'].includes(formIdentifier(event.target))) return ControlsUI.submit(event.target);
+  if (formIdentifier(event.target) === 'card-editor-form') return CardDesigner.submit(event.target);
+  if (formIdentifier(event.target) === 'plugin-item-form') return PluginUI.submitItem(event.target);
+  if (formIdentifier(event.target) === 'plugin-lookup-form') return PluginUI.submitLookup(event.target);
+  if (formIdentifier(event.target) === 'task-run-form') return TaskUI.submitRun(event.target);
+  if (formIdentifier(event.target) === 'task-rerun-form') return TaskUI.submitRerun(event.target);
   if (event.target.matches('.plugin-event-form')) return PluginUI.submit(event.target);
-  if (event.target.id==='editor-form') return TaskUI.submit(event.target);
-  if (event.target.id!=='settings-form') return;
+  if (formIdentifier(event.target)==='editor-form') return TaskUI.submit(event.target);
+  if (formIdentifier(event.target)!=='settings-form') return;
   const values=Object.fromEntries(new FormData(event.target));
   let patch;
   if (dialogContext.kind === 'name') patch = { name: values.name.trim() };
@@ -557,7 +564,7 @@ async function initialize() {
     setInterval(async()=>{
       // Keep one state read in flight. DOM reconciliation retains active fields;
       // open modal drafts keep their captured definitions and save revisions.
-      if (polling) return;
+      if (polling || document.hidden) return;
       polling = true;
       try { await refreshState(!dialog.open && !PluginUI.pending && !CardDesigner.pending && !VistaUI.pending && !ControlsUI.pending && !GamesUI.pending && !document.querySelector('#glyph-picker[open]')); }
       catch {
@@ -699,8 +706,8 @@ function showDialog(content, context) {
 // Selecting a captured run or inspecting a lookup changes no saved definition.
 // Keep both the draft hint and close guard on the same definition boundary.
 function isDefinitionEditor(form) {
-  return form && !['task-run', 'task-rerun', 'task-simulation', 'plugin-lookup', 'vr-install', 'vr-uninstall'].includes(dialogContext?.kind)
-    && dialogContext?.operation !== 'delete' && !form.id.includes('delete');
+  return form && !['task-run', 'task-rerun', 'task-simulation', 'plugin-lookup', 'lighting-start', 'vr-install', 'vr-uninstall'].includes(dialogContext?.kind)
+    && dialogContext?.operation !== 'delete' && !formIdentifier(form).includes('delete');
 }
 
 function updateDraftStatus() {
@@ -721,15 +728,22 @@ function updateDraftStatus() {
 for (const type of ['input', 'change', 'click']) document.addEventListener(type, () => queueMicrotask(updateDraftStatus));
 
 
+function formIdentifier(form) {
+  // Named action inputs can shadow HTMLFormElement properties such as id.
+  // Read the element's attribute through the native method instead.
+  return Element.prototype.getAttribute.call(form,'id') || '';
+}
 function serializeForm(form) {
-  if(form.id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked,label:row.querySelector('[name="label"]').value.trim()})));
+  const id=formIdentifier(form);
+  if(id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked,label:row.querySelector('[name="label"]').value.trim()})));
   // Optional builders keep one canonical draft across their changing pages.
   // Navigation/search are presentation; only meaningful choices affect discard.
-  if(form.id==='recipe-builder-form'&&form.querySelector('[data-task-builder-draft]'))return form.querySelector('[data-task-builder-draft]').value;
-  if (form.id === 'universe-editor-form') return JSON.stringify(UniverseUI.readDraft());
-  if (form.id === 'vista-editor-form') return JSON.stringify(VistaUI.readDraft());
-  if (form.id === 'card-editor-form') return JSON.stringify(CardDesigner.readDraft());
-  if (form.id === 'controls-editor-form') return JSON.stringify(ControlsUI.readDraft());
+  if(id==='recipe-builder-form'&&form.querySelector('[data-task-builder-draft]'))return form.querySelector('[data-task-builder-draft]').value;
+  if (id === 'universe-editor-form') return JSON.stringify(UniverseUI.readDraft());
+  if (id === 'vista-editor-form') return JSON.stringify(VistaUI.readDraft());
+  if (id === 'lighting-animation-form') return JSON.stringify(LightingUI.readDraft());
+  if (id === 'card-editor-form') return JSON.stringify(CardDesigner.readDraft());
+  if (id === 'controls-editor-form') return JSON.stringify(ControlsUI.readDraft());
   // timeText is presentation only; its hidden HH:mm value determines changes.
   return JSON.stringify([...new FormData(form).entries()].filter(([name]) => name !== 'timeText'));
 }

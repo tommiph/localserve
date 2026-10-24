@@ -48,6 +48,19 @@ export function soapValues(xml) {
 const soapActions = new Set(['GetVolume', 'GetMute', 'SetVolume', 'SetMute', 'GetTransportInfo', 'GetPositionInfo', 'SetAVTransportURI', 'Play', 'Pause', 'Stop']);
 export function createHttpClient(fetchImpl = fetch) {
   return {
+    async app(host, id, method, signal) {
+      if (!localHost(host) || typeof id !== 'string' || !/^[\w.-]{1,128}$/.test(id) || !['GET', 'DELETE'].includes(method)) throw new Error('Enter a supported TV app ID.');
+      signal.throwIfAborted();
+      const response = await fetchImpl(`http://${host}:8001/api/v2/applications/${encodeURIComponent(id)}`, {method, redirect:'manual', signal});
+      const raw = await responseText(response, signal, 8192);
+      const result = raw.trim() ? JSON.parse(raw) : null;
+      if (method === 'GET') {
+        if (!result || result.id !== id || typeof result.running !== 'boolean') throw new Error('TV app status is unavailable or invalid.');
+        return {running:result.running,...(typeof result.visible==='boolean'?{visible:result.visible}:{})};
+      }
+      if (result && (typeof result !== 'object' || Array.isArray(result) || result.error || result.errors)) throw new Error('Samsung TV rejected the app close request.');
+      return {acknowledged:true};
+    },
     async info(host, signal) {
       if (!localHost(host)) throw new Error('Enter a private IPv4 TV address.');
       const response = await fetchImpl(`http://${host}:8001/api/v2/`, { redirect: 'manual', signal });

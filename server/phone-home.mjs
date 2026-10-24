@@ -97,11 +97,29 @@ export class PhoneHome {
     );
   }
   available(task) {
+    return this.availability(task).available;
+  }
+  availability(task) {
     try {
+      if(this.closing)return {available:false,unavailableReason:'Localserve is stopping.'};
       this.engine.assertStart(task, null, task.revision);
-      return true;
-    } catch {
-      return false;
+      return {available:true};
+    } catch(error) {
+      // Only first-party preflight messages become public explanations. Worker
+      // errors and action arguments never belong in a phone catalogue.
+      const reasons={
+        'Server is paused.':'Server functions are paused.',
+        'Task is disabled.':'This Task is disabled in the administrator.',
+        'This Task is already running.':'This Task is already running.',
+        'The server has reached its concurrent Task limit.':'The server is busy. Wait for a Task to finish.',
+        'A Task step needs an enabled Vista.':'Enable the Vista used by this Task.',
+        'A Task step needs an available plugin.':'Check this Task’s plugin configuration and Enabled settings.',
+        'Choose an enabled stored lighting scene on an enabled Controls page.':'Enable the lighting scene and its Controls page.',
+      };
+      return {available:false,unavailableReason:reasons[error.message]
+        || (/^This Task needs the triggering event value /.test(error.message)
+          ? 'Needs Event values. Run it from Task history in the administrator.'
+          : 'Check this Task’s actions and settings in the administrator.')};
     }
   }
   cardIndex(services = this.registry?.services() || []) {
@@ -148,13 +166,22 @@ export class PhoneHome {
       },
     };
   }
-  viewer() {
+  viewer(selector = false) {
     const home = this.store.snapshot(),
       expires = (Math.floor(Date.now() / 60000) + 5) * 60000;
+    const scenes = [];
     const pages = this.controls.index().pages.map((page) => {
       let summary = null;
       try {
-        summary = remoteSummary(this.controls.viewer(page.pluginId, page.slug));
+        const detail = this.controls.viewer(page.pluginId, page.slug);
+        summary = remoteSummary(detail);
+        if (selector && detail.lighting) {
+          for (const item of detail.page.items.filter(item => item.kind === 'scene')) scenes.push({
+            id: item.id, name: item.label, icon: item.icon, pluginId: page.pluginId, slug: page.slug,
+            group: page.name, revision: detail.page.revision, token: detail.token,
+            available: !this.closing && detail.available && !detail.busy && item.available,
+          });
+        }
       } catch {
         /* An unavailable mapping remains visible without guessed state. */
       }
@@ -164,8 +191,7 @@ export class PhoneHome {
       name: this.config.snapshot().name,
       paused: this.engine.gate.paused,
       revision: home.revision,
-      remotes: pages,
-      cards: this.cardIndex(),
+      ...(selector ? {scenes} : {remotes: pages, cards: this.cardIndex()}),
       tasks: home.tasks
         .filter((item) => item.enabled)
         .flatMap((item) => {
@@ -178,7 +204,7 @@ export class PhoneHome {
               taskName: task.name,
               icon: item.icon,
               revision: task.revision,
-              available: !this.closing && this.available(task),
+              ...this.availability(task),
               expires,
               token: this.taskToken(task.id, task.revision, expires, home.revision),
             },

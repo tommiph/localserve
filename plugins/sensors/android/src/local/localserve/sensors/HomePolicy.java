@@ -9,11 +9,12 @@ import java.util.Set;
  * arbitrary page, file access or external navigation belongs in this surface. */
 public final class HomePolicy {
     private static final Set<String> FILES = new HashSet<>(Arrays.asList(
-        "/phone-home.js", "/phone-home.css", "/card-renderer.js", "/assets/card-preview.js", "/styles.css", "/browser-compat.js",
+        "/scene-selector.js", "/scene-selector.css", "/phone-home.js", "/phone-home.css", "/card-renderer.js", "/assets/card-preview.js", "/styles.css", "/browser-compat.js",
         "/controls-renderer.js", "/lighting-controls.js", "/television-controls.js", "/controls-viewer.js", "/control-app.js",
         "/assets/logo.svg", "/assets/logo-dark.svg", "/assets/material-symbols/material-symbols.css",
         "/assets/material-symbols/material-symbols-outlined.ttf", "/assets/controls/app-icon.svg",
         "/assets/controls/app-icon-192.png", "/assets/controls/app-icon-512.png", "/assets/controls/lighting.css",
+        "/assets/scenes/app-icon.svg", "/assets/scenes/app-icon-192.png", "/assets/scenes/app-icon-512.png",
         "/assets/controls/television.css", "/assets/controls/app.css"));
     public static boolean allows(String origin, String address, boolean navigation) {
         try {
@@ -22,14 +23,14 @@ public final class HomePolicy {
                 || !base.getRawAuthority().equals(uri.getRawAuthority()) || uri.getUserInfo() != null || uri.getFragment() != null) return false;
             String path = uri.getRawPath();
             if (!path.equals(uri.getPath()) || path.contains("..") || path.contains("//")) return false;
-            boolean page = path.equals("/home") || path.equals("/controls") || path.matches("/controls/[a-z0-9-]+/[a-z0-9-]+");
+            boolean page = path.equals("/scenes") || path.equals("/home") || path.equals("/controls") || path.matches("/controls/[a-z0-9-]+/[a-z0-9-]+");
             if (page) return uri.getQuery() == null;
             if (navigation) return false;
             if (FILES.contains(path)) return uri.getQuery() == null || uri.getQuery().matches("v=[0-9]+");
             if (path.matches("/api/plugin-preview/[a-z][a-z0-9-]{0,63}/frame\\.jpg"))
                 return uri.getQuery() == null || uri.getQuery().matches("v=[0-9]{1,20}");
             if (uri.getQuery() != null) return false;
-            return path.equals("/api/phone-home") || path.equals("/api/phone-home/run")
+            return path.equals("/api/scene-selector") || path.equals("/scenes/app.webmanifest") || path.equals("/api/phone-home") || path.equals("/api/phone-home/run")
                 || path.matches("/api/phone-home/cards/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}")
                 || path.matches("/plugin-card-assets/[a-z0-9-]+/[a-z0-9-]+/(?:[a-z0-9-]+/)*[a-z0-9-]+\\.(?:html|css|svg|png|webp)")
                 || path.matches("/api/phone-home/receipts/[a-f0-9-]{36}") || path.equals("/api/control-view")
@@ -43,6 +44,15 @@ public final class HomePolicy {
         try {
             return allows(origin, address, false) && new URI(address).getPath().matches(
                 "/plugin-card-assets/[a-z0-9-]+/[a-z0-9-]+/(?:[a-z0-9-]+/)*[a-z0-9-]+\\.html");
+        } catch (Exception error) { return false; }
+    }
+    /** A user-tapped download leaves the WebView for the system browser. */
+    public static boolean isScenesDownload(String origin, String address) {
+        try {
+            URI base = new URI(origin), uri = new URI(address);
+            return "http".equals(uri.getScheme()) && base.getRawAuthority().equals(uri.getRawAuthority())
+                && uri.getUserInfo() == null && uri.getQuery() == null && uri.getFragment() == null
+                && "/downloads/scenes.apk".equals(uri.getRawPath());
         } catch (Exception error) { return false; }
     }
     private HomePolicy() {}

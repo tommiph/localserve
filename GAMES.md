@@ -90,3 +90,9 @@ Geometry is released when the visible window changes; rendering and audio
 resources are released on page exit. Reduced-motion preferences remove gem
 animation and walking/turning interpolation. No remote artwork, analytics,
 score upload, plugin polling or device commands originate from the game page.
+
+In the installed Vista TV app, Channel Up opens application settings, Play/Pause
+pauses/resumes the maze, and Back closes the TV app. Enter remains a start/pause
+shortcut. Keyboard Esc in a standalone browser pauses the game. See the shared
+[TV remote controls](tv-tizen/README.md#remote-control) for return limitations.
+

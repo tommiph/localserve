@@ -8,13 +8,21 @@ let vistaController = VistaRenderer.create(vistaDisplay);
 const vistaSlug = location.pathname.split('/').at(-1);
 const followsDisplay = location.pathname === '/display';
 let lastVista;
+let rotationPaused = false;
+function rotationStatus() { if (rotationPaused) { vistaStatus.textContent = 'Collection rotation paused · Play/Pause to resume';vistaStatus.hidden = false; } }
+if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(direction => vistaController?.step(direction) || false,{pause(mode) {
+  rotationPaused = mode === 'play' ? false : mode === 'pause' ? true : !rotationPaused;
+  vistaController?.pause(rotationPaused);vistaStatus.hidden = !rotationPaused;rotationStatus();
+}});
 
 async function refreshVista(signal) {
+  let reachableUnavailable = false;
   try {
     const response = await fetch(followsDisplay ? '/api/display' : `../api/vistas/${encodeURIComponent(vistaSlug)}`, { signal });
     if (signal.aborted) return;
     if (!response.ok) {
       if (response.status === 404) {
+        reachableUnavailable = true;
         vistaController?.destroy();
         vistaController = null;
         vistaDisplay.replaceChildren(Object.assign(document.createElement('p'), { className: 'vista-empty', textContent: 'Vista unavailable' }));
@@ -25,6 +33,7 @@ async function refreshVista(signal) {
     const current = await response.json();
     if (signal.aborted) return;
     lastVista = current;
+    window.LocalserveTvViewer?.state(true);
     document.title = `${lastVista.vista?.name || 'Display'} · ${lastVista.options.name}`;
     vistaDisplay.setAttribute('aria-label', lastVista.vista?.name || 'Display');
     document.documentElement.dataset.theme = lastVista.options.theme;
@@ -39,13 +48,15 @@ async function refreshVista(signal) {
       vistaStatus.hidden = true;
       return;
     }
-    if (!vistaController) vistaController = VistaRenderer.create(vistaDisplay);
+    if (!vistaController) { vistaController = VistaRenderer.create(vistaDisplay);vistaController.pause(rotationPaused); }
     vistaController.update(lastVista);
     vistaStatus.hidden = true;
+    rotationStatus();
   } catch {
     if (signal.aborted) return;
     vistaStatus.textContent = lastVista ? 'Disconnected' : 'Vista unavailable';
     vistaStatus.hidden = false;
+    window.LocalserveTvViewer?.state(reachableUnavailable);
     if (lastVista?.vista) vistaController?.update({ ...lastVista, options: { ...lastVista.options, connected: false } });
   }
 }

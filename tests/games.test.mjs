@@ -100,7 +100,7 @@ test('music loads only on opt-in, loops decoded audio and stops on pause/disposa
 });
 
 async function viewerFixture(graphics=true){
-  const nodes={},listeners={},frames=new Map(),reads=[],renderers=[];let time=0,sequence=0;
+  const nodes={},listeners={},frames=new Map(),reads=[],renderers=[];let time=0,sequence=0,remotePause;
   function element(){return{hidden:false,disabled:false,textContent:'',style:{},userData:{},addEventListener(key,fn){this['on'+key]=fn;},focus(){this.focused=true;if(this.onfocus)this.onfocus();},click(){if(!this.disabled&&this.onclick)this.onclick();}};}
   for(const id of ['maze','menu','start','music','fullscreen','level','score','gems','time','bearing','best','toast','menu-message','stage-result','music-status'])nodes[id]=element();
   const paint={fillRect(){},fillText(){},strokeRect(){},beginPath(){},arc(){},fill(){},createLinearGradient:()=>({addColorStop(){}})};
@@ -111,9 +111,10 @@ async function viewerFixture(graphics=true){
   context.THREE.WebGLRenderer=function(){renderers.push(this);this.setPixelRatio=()=>{};this.setClearColor=()=>{};this.setSize=(w,h)=>{this.size=[w,h];};this.render=(scene,camera)=>{this.scene=scene;this.camera=camera;};this.dispose=()=>{this.disposed=true;};};
   vm.runInContext(sources['maze-core.js'],context);
   let current;for(const name of ['create','stage']){const original=context.MazeCore[name];context.MazeCore[name]=(...args)=>(current=original(...args));}
+  context.LocalserveTvViewer={install(step,controls){remotePause=controls.pause;}};
   vm.runInContext(sources['music.js'],context);vm.runInContext(sources['maze.js'],context);
   const xhr=reads[0];xhr.status=200;xhr.responseText=JSON.stringify({settings:gameDefaults});xhr.onload();
-  return{nodes,listeners,document,renderers,frames,reads,get current(){return current;},step(seconds){for(let n=0;n<seconds*30;n++){time+=1000/30;const entry=frames.entries().next().value;if(!entry)break;frames.delete(entry[0]);entry[1](time);}},key(code,down=true,repeat=false){listeners[down?'keydown':'keyup']({keyCode:code,repeat,preventDefault(){},stopPropagation(){}});}};
+  return{nodes,listeners,document,renderers,frames,reads,remotePause,get current(){return current;},step(seconds){for(let n=0;n<seconds*30;n++){time+=1000/30;const entry=frames.entries().next().value;if(!entry)break;frames.delete(entry[0]);entry[1](time);}},key(code,down=true,repeat=false){listeners[down?'keydown':'keyup']({keyCode:code,repeat,preventDefault(){},stopPropagation(){}});}};
 }
 test('real geometry stays bounded, remote starts/turns/pauses, hidden time freezes and resources close',async()=>{
   const f=await viewerFixture();f.step(.2);const renderer=f.renderers[0];assert.deepEqual(renderer.size,[960,540]);assert.equal(f.nodes.start.disabled,false);
@@ -135,5 +136,12 @@ test('remote traversal reaches EXIT, awards one bonus and starts a larger maze',
   assert.equal(f.nodes.menu.hidden,false);assert.equal(f.nodes.start.textContent,'Next maze');assert.match(f.nodes['stage-result'].textContent,/Speed bonus/);
   const score=Number(f.nodes.score.textContent);assert.ok(score>0);f.step(3);assert.equal(Number(f.nodes.score.textContent),score);
   f.key(13);f.key(13,false);assert.equal(f.current.level,2);assert.equal(f.current.size,7);assert.equal(Number(f.nodes.score.textContent),score);assert.equal(f.nodes.menu.hidden,true);f.listeners.pagehide();
+});
+
+test('dedicated media controls start, pause and resume without advancing a paused run',async()=>{
+ const f=await viewerFixture();f.remotePause('play');assert.equal(f.nodes.menu.hidden,true);
+ f.step(1);f.remotePause('pause');assert.equal(f.nodes.menu.hidden,false);const time=f.nodes.time.textContent;
+ f.step(3);assert.equal(f.nodes.time.textContent,time);f.remotePause('play');assert.equal(f.nodes.menu.hidden,true);
+ f.remotePause('toggle');assert.equal(f.nodes.menu.hidden,false);f.listeners.pagehide();
 });
 

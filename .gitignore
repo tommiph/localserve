@@ -30,6 +30,9 @@
 **/.env.*
 /tv-tizen/private/
 /tv-tizen/dist/
+/tv-tizen/playstation/dist/
+/tv-tizen/playstation/app/author-signature.xml
+/tv-tizen/playstation/app/signature*.xml
 /tv-tizen/app/author-signature.xml
 /tv-tizen/app/signature*.xml
 /tools/tizen/
@@ -41,6 +44,7 @@
 /tools/android-build/platform/
 /tools/android-build/private/
 /plugins/sensors/android/build/
+/apps/scenes/build/
 
 # User content is excluded. Only these generic display assets are bundled.
 /assets/pages/*

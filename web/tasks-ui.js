@@ -171,7 +171,9 @@ const TaskUI = {
       : field.type === 'number'
         ? `<input name="conditionValue" type="number" step="any" required ${field.min !== undefined ? `min="${field.min}"` : ''} ${field.max !== undefined ? `max="${field.max}"` : ''} value="${escapeHtml(value ?? '')}">`
         : `<input name="conditionValue" type="text" required maxlength="${field.maxLength || 4000}" value="${escapeHtml(value ?? '')}">`;
-    const triggerHelp = event.occurrenceKey
+    const triggerHelp = this.editorRuleMode==='and'
+      ? 'This comparison gates the AND group. All enabled comparisons must match before a run; unknown readings block it.'
+      : event.occurrenceKey
       ? 'Triggers for each distinct matching occurrence. Repeated readings of the same occurrence do not trigger again.'
       : 'Triggers when this condition becomes true. A nonmatching reading rearms it. The first matching reading can trigger.';
     const textHelp = field.type === 'string' ? ' Contains text matches anywhere in the value and ignores letter case.' : '';
@@ -308,14 +310,19 @@ const TaskUI = {
     const existing = state.tasks.find(task => task.id === id);
     const task = existing || draft || { name: '', enabled: false, starts: [], steps: [] };
     this.editorStarts = task.starts;
+    this.editorRuleMode = task.ruleMode || 'or';
     this.replaceStepId = null;
     this.librarySearch = ''; this.libraryCategory = 'all';
     showDialog(`<form id="editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} task` : 'Add task')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>
       <div class="field-row">${this.field('Task name', 'tag', `<input name="name" required maxlength="48" value="${escapeHtml(copy ? task.name + ' copy' : task.name)}">`)}<label class="check-field task-enabled"><input name="enabled" type="checkbox" ${task.enabled && !copy ? 'checked' : ''}>Task enabled</label></div>
-      <details class="editor-help"><summary>How Task activation works</summary><p>Task enabled permits runs. Any enabled rule can start it automatically; enabled steps run in order. With no enabled rules, use manual Run.</p></details><div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p>Any enabled rule can start this Task.</p></div></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
+      <details class="editor-help"><summary>How Task activation works</summary><p>Task enabled permits runs. OR lets any enabled rule start it. AND combines the latest reported comparisons; all enabled rules must match. AND does not merge Event values: action text uses the report that starts the run. Enabled steps run in order. With no enabled rules, use manual Run.</p></details><div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p id="task-rule-help">${this.ruleModeHelp(task.ruleMode)}</p></div><label class="task-rule-mode">Combine rules<select name="ruleMode" aria-label="Combine rules" aria-describedby="task-rule-help"><option value="or" ${task.ruleMode!=='and'?'selected':''}>OR · Any rule</option><option value="and" ${task.ruleMode==='and'?'selected':''} ${state.server?.taskRuleModes?.includes('and')?'':'disabled'}>AND · All rules</option></select></label></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
       <section class="task-editor-section"><div class="task-section-heading"><div><h3>Run these steps in order</h3><p>Choose actions from the library. Tap a block’s parameters to edit them.</p></div></div><div id="task-steps">${task.steps.map(step => this.card(copy ? { ...step, id: crypto.randomUUID() } : step, 'step')).join('')}</div><button class="button add-action-button" type="button" data-action="task-focus-library">${icon('plus')}Add action</button></section></div>${this.renderLibrary()}</div>
       ${copy ? '<p class="aside-note">The copied task starts disabled.</p>' : ''}</div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create task')}</form>`, { kind: 'task', id, copy, revision: existing?.revision });
     this.numberCards();
+  },
+
+  ruleModeHelp(mode) {
+    return mode==='and' ? 'All enabled comparisons must match their latest reports. Add a comparison to each Event rule. Time rules must fall due together; comparisons gate that moment.' : 'Any enabled rule can start this Task. With no enabled rules, use manual Run.';
   },
 
   numberCards() {
@@ -361,7 +368,7 @@ const TaskUI = {
       const field = state.taskEvents.find(event => event.id === item.eventId)?.payload?.find(field => field.id === item.condition.field);
       const comparison = this.conditionOperators(field?.type)[item.condition.operator] || item.condition.operator;
       const event = state.taskEvents.find(event => event.id === item.eventId);
-      detail += ` · ${field?.label || item.condition.field} ${comparison.toLowerCase()} ${typeof item.condition.value === 'boolean' ? item.condition.value ? 'Yes' : 'No' : item.condition.value} · ${event?.occurrenceKey ? 'Each matching occurrence' : 'Once when true; nonmatching reading rearms'}`;
+      detail += ` · ${field?.label || item.condition.field} ${comparison.toLowerCase()} ${typeof item.condition.value === 'boolean' ? item.condition.value ? 'Yes' : 'No' : item.condition.value} · ${this.editorRuleMode==='and' ? 'AND group comparison' : event?.occurrenceKey ? 'Each matching occurrence' : 'Once when true; nonmatching reading rearms'}`;
     }
     if (item.type === 'delay') detail = `${item.seconds} second${item.seconds === 1 ? '' : 's'}`;
     if (item.type === 'show-vista') detail = `Show Vista · ${state.vistas?.find(vista => vista.id === item.vistaId)?.name || 'Unavailable Vista'}`;
@@ -468,7 +475,7 @@ const TaskUI = {
     const existing = state.tasks.find(task => task.id === dialogContext.id);
     const isNew = !existing || dialogContext.copy;
     if (state.tasks.some(task => task.name.toLowerCase() === name.toLowerCase() && (isNew || task.id !== existing.id))) return showFormError('Use a different task name.');
-    const task = { id: isNew ? crypto.randomUUID() : existing.id, name, enabled: form.querySelector('[name="enabled"]').checked, starts: [], steps: [] };
+    const task = { id: isNew ? crypto.randomUUID() : existing.id, name, enabled: form.querySelector('[name="enabled"]').checked, ruleMode: form.querySelector('[name="ruleMode"]').value, starts: [], steps: [] };
     for (const card of form.querySelectorAll('.task-block')) {
       const item = this.readCard(card);
       const error = this.validateCard(item);
@@ -476,6 +483,8 @@ const TaskUI = {
       task[card.dataset.group === 'start' ? 'starts' : 'steps'].push(item);
     }
     if (!task.steps.length) return showFormError('Add at least one step.');
+    if(task.ruleMode==='and' && task.starts.some(rule=>rule.enabled && rule.type==='event' && !rule.condition))return showFormError('AND requires a comparison on every enabled Event rule.');
+    if(task.ruleMode==='and' && !state.server?.taskRuleModes?.includes('and'))return showFormError('AND rules require the updated server. Refresh after the server update before saving.');
     if (!isNew) task.revision = dialogContext.revision;
     const button = form.querySelector('[type="submit"]'); button.disabled = true;
     try {
@@ -701,6 +710,15 @@ const TaskUI = {
 
 // Library filters and captured-value inspection are local UI state only.
 document.addEventListener('change', event => {
+  if(event.target.name==='ruleMode' && event.target.closest('#editor-form')) {
+    TaskUI.editorRuleMode=event.target.value;
+    dialog.querySelector('#task-rule-help').textContent=TaskUI.ruleModeHelp(event.target.value);
+    for(const card of dialog.querySelectorAll('.task-start')) {
+      const rule=TaskUI.readCard(card);
+      if(rule.type==='event')card.querySelector('[data-event-condition]').innerHTML=TaskUI.eventConditionFields(rule);
+      TaskUI.updateSummary(card);
+    }
+  }
   if (event.target.id === 'action-plugin-filter') {
     TaskUI.libraryCategory = event.target.value; TaskUI.refreshLibrary();
   }
@@ -710,3 +728,4 @@ document.addEventListener('change', event => {
     dialog.querySelector('#task-event-preview').innerHTML = TaskUI.previewEvent(run);
   }
 });
+

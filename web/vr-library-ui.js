@@ -12,7 +12,7 @@ const VrLibraryUI = {
   render() {
     void this.refresh();
     const value = this.data, escape = escapeHtml;
-    const heading = pageHeading('VR library', 'Oculus Go applications', `<button class="button" data-action="vr-settings">${icon('sliders')}Connection & settings</button>`);
+    const heading = pageHeading('VR library', 'Oculus Go applications', `<button class="button" data-view="controls">${icon('arrow-left')}Controls</button><button class="button" data-action="vr-settings">${icon('sliders')}Connection & settings</button>`);
     if (this.error) return heading + `<section class="panel vr-library-section"><div class="empty-state" role="status">${escape(this.error)} <button class="button" data-action="vr-refresh">Try again</button></div></section>`;
     if (!value) return heading + '<section class="panel vr-library-section"><div class="empty-state" role="status">Loading library…</div></section>';
     if (!value.available) return heading + `<section class="panel vr-library-section"><div class="empty-state">${icon('vr-cardboard')}<h2>Set up your library</h2><p>${escape(value.reason)}</p><button class="button primary" data-action="vr-settings">Open Oculus Go settings</button></div></section>`;

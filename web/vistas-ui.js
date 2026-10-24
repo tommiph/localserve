@@ -6,6 +6,7 @@ const VistaUI = {
   preview: null,
   fitFrame: null,
   pending: false,
+  tvPending: false,
   tab: 'layout',
   splitPreview: false,
   selectedNodeId: null,
@@ -125,11 +126,43 @@ const VistaUI = {
     contents.splice(index, 0, item);
   },
 
+  tvLaunchAvailability() {
+    const service = state.services.find(service => service.id === 'samsung-tv');
+    const action = service?.actions?.find(action => action.id === 'launch-app');
+    const reason = this.tvPending ? 'Sending to TV…' : state.paused ? 'Enable server functions first.'
+      : !service?.enabled || !action?.available ? action?.unavailableReason || 'Configure and enable Samsung TV first.'
+      : !state.server?.lanAddress ? 'Configure a LAN server address first.' : '';
+    return { service, reason };
+  },
+
+  async openOnTv(vista) {
+    if (this.tvPending) return;
+    const { service, reason } = this.tvLaunchAvailability();
+    if (!vista?.enabled || reason) return notify(reason || 'Enable this Vista first.');
+    // The server supplies the reachable LAN origin. Opening an own-URL Vista
+    // never changes the shared display selection or creates a saved Task.
+    const url = `${state.server.lanAddress}/vistas/${vista.slug}`;
+    const revision = service.config.revision;
+    this.tvPending = true;
+    renderView();
+    try {
+      await mutate('api/plugins/samsung-tv/actions/launch-app', { revision,
+        parameters: { id: 'HwGlance01.HomeGlance', mode: 'DEEP_LINK', arguments: url } });
+      notify('Vista sent to the TV. Check its display.');
+    } catch (error) {
+      notify(`${error.message} No launch was retried.`);
+    } finally {
+      this.tvPending = false;
+      renderView();
+    }
+  },
+
   render() {
     const selected = state.vistas?.find(vista => vista.id === state.vistaDisplay?.vistaId);
+    const tv = this.tvLaunchAvailability();
     return pageHeading('Vistas', 'Layouts for end-user displays', `<button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
       `<section class="panel vista-display-panel"><div class="panel-header"><h2>${icon('display')}End-user display</h2><a class="button" href="display" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open shared /display</a></div><div class="panel-body"><p>${selected?.enabled ? escapeHtml(selected.name) : 'No enabled Vista selected'} · /display</p><p class="field-help">Use on shared display changes /display for everyone. Open this Vista only opens its own URL. Tasks → Server → Show Vista can change it using Timer, Interval, Schedule or Event rules. All open display pages follow the same selection.</p></div></section>` +
-      `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
+      `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button><button class="button" data-action="vista-tv" data-id="${vista.id}" title="${escapeHtml(!vista.enabled ? 'Enable this Vista first.' : tv.reason || 'Open this Vista on the TV without changing /display.')}" ${vista.enabled && !tv.reason ? '' : 'disabled'}>${icon('display')}Open on TV</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
   },
 
   find(id, node = this.draft?.layout, parent = null) {
@@ -454,6 +487,8 @@ const VistaUI = {
       control.disabled = true;
       try { await mutate('api/display', { vistaId: id, revision: state.vistaDisplay.revision }); renderView(); notify('Display Vista selected'); }
       finally { if (control.isConnected) control.disabled = false; }
+    } else if (action === 'vista-tv') {
+      return this.openOnTv(vista);
     } else if (action === 'vista-open') {
       // Browser-native navigation preserves the administrator in its own tab.
       window.open(`vistas/${vista.slug}`, '_blank', 'noopener');

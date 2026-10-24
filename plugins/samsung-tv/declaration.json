@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.3.1",
+  "version": "1.6.1",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -812,6 +812,22 @@
       "description": "Send one explicit TV operation without retry. Supported behavior depends on this TV’s firmware."
     },
     {
+      "id": "close-app",
+      "name": "Close installed app",
+      "description": "Close only the selected app by its reported ID. Reads its running status first; unsupported firmware fails without sending Exit or Home. No wake or retry.",
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Reported app ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.-]{1,128}$",
+          "help": "Use the exact installed app ID. Closing a background app does not send keys to another app."
+        }
+      ]
+    },
+    {
       "id": "play-youtube",
       "name": "Play YouTube video",
       "description": "Play a Video ID through the TV YouTube app. Requires YouTube playback enabled in Samsung TV Settings; no wake or retry.",
@@ -1097,6 +1113,129 @@
           "id": "details",
           "field": "details-status",
           "format": "text"
+        }
+      ]
+    },
+    {
+      "id": "home-cinema-fullscreen",
+      "name": "Home cinema · Fullscreen",
+      "sourceLabel": "Data source",
+      "directory": "cards/home-cinema",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "name",
+          "field": "tv-name",
+          "format": "text"
+        },
+        {
+          "id": "model",
+          "field": "model",
+          "format": "text"
+        },
+        {
+          "id": "resolution",
+          "field": "resolution",
+          "format": "text"
+        },
+        {
+          "id": "power",
+          "field": "reported-power",
+          "format": "text"
+        },
+        {
+          "id": "connection",
+          "field": "connection-status",
+          "format": "text"
+        },
+        {
+          "id": "volume",
+          "field": "volume",
+          "format": "number"
+        },
+        {
+          "id": "muted",
+          "field": "muted",
+          "format": "text"
+        },
+        {
+          "id": "playback",
+          "field": "playback-state",
+          "format": "text"
+        },
+        {
+          "id": "position",
+          "field": "playback-position",
+          "format": "text"
+        },
+        {
+          "id": "duration",
+          "field": "playback-duration",
+          "format": "text"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "details",
+          "field": "details-status",
+          "format": "text"
+        },
+        {
+          "id": "model-description",
+          "field": "model-description",
+          "format": "text"
+        },
+        {
+          "id": "firmware-version",
+          "field": "firmware-version",
+          "format": "text"
+        },
+        {
+          "id": "operating-system",
+          "field": "operating-system",
+          "format": "text"
+        },
+        {
+          "id": "network-type",
+          "field": "network-type",
+          "format": "text"
+        },
+        {
+          "id": "app-count",
+          "field": "app-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "apps-truncated",
+          "field": "apps-truncated",
+          "format": "text"
+        },
+        {
+          "id": "apps-received-at",
+          "field": "apps-received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "apps",
+          "field": "apps",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "name",
+            "type",
+            "id"
+          ]
         }
       ]
     }

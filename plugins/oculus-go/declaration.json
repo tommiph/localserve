@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "oculus-go",
   "name": "Oculus Go",
-  "version": "1.3.2",
+  "version": "1.4.1",
   "description": "Wi-Fi headset diagnostics and a manual APK library",
   "icon": "vr-cardboard",
   "runtime": {
@@ -1831,6 +1831,128 @@
           "id": "received",
           "field": "received-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "orbital-fullscreen",
+      "name": "Orbital · Fullscreen",
+      "sourceLabel": "Data source",
+      "directory": "cards/orbital",
+      "entry": "fullscreen.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/motif.svg",
+        "fullscreen.html",
+        "fullscreen.css"
+      ],
+      "slots": [
+        {
+          "id": "app",
+          "field": "active-app-display",
+          "format": "text"
+        },
+        {
+          "id": "state",
+          "field": "headset-state",
+          "format": "text"
+        },
+        {
+          "id": "charging",
+          "field": "battery-status",
+          "format": "text"
+        },
+        {
+          "id": "battery",
+          "field": "battery-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "storage",
+          "field": "storage-used-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "battery-temp",
+          "field": "battery-temperature",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "storage-free",
+          "field": "storage-free-percent",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "temperature",
+          "field": "chip-temperature-max",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "temperature-min",
+          "field": "chip-temperature-min",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "free",
+          "field": "storage-free-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "storage-total",
+          "field": "storage-total-gib",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "connection-status",
+          "field": "connection-status",
+          "format": "text"
+        },
+        {
+          "id": "controller-status",
+          "field": "controller-status",
+          "format": "text"
+        },
+        {
+          "id": "sensor-count",
+          "field": "sensor-count",
+          "format": "number",
+          "decimals": 1
+        },
+        {
+          "id": "thermal-summary",
+          "field": "thermal-summary",
+          "format": "text"
+        },
+        {
+          "id": "details-status",
+          "field": "details-status",
+          "format": "text"
+        },
+        {
+          "id": "sensors",
+          "field": "sensors",
+          "format": "table",
+          "rows": 10,
+          "columns": [
+            "label",
+            "type",
+            "raw",
+            "celsius"
+          ]
         }
       ]
     }

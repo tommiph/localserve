@@ -55,7 +55,10 @@ try {
     'assets/games/maze-core.js','assets/games/maze.js','assets/games/maze.css','assets/games/music.js',
     'assets/games/music/README.md','GAMES.md','tests/games.test.mjs','tools/initialize-settings.mjs','tests/source.test.mjs',
     'tools/install-control-examples.mjs','examples/controls/README.md','examples/controls/samsung-tv.json','examples/controls/tradfri.json',
-    'plugins/sensors/android/dist/localserve-sensors.apk','plugins/sensors/android/vendor/lock.json'])assert.ok(actual.includes(file),file);
+    'plugins/sensors/android/dist/localserve-sensors.apk','plugins/sensors/android/vendor/lock.json',
+    'apps/scenes/AndroidManifest.xml','apps/scenes/dist/scenes.apk','apps/scenes/dist/verification.json',
+    'assets/scenes/app-icon.svg','tests/fixtures/scene-selector.mjs','SCENE-SELECTOR.md',
+    'DEVICES.md','server/devices.mjs','server/device-vendors.mjs','server/device-discovery.mjs','server/devices-windows.ps1','web/devices-ui.js','tests/devices.test.mjs','tests/device-vendors.test.mjs'])assert.ok(actual.includes(file),file);
   assert.deepEqual(actual.filter(file => file.startsWith('assets/pages/')).sort(),['README.md','scifi.html','scifi-display.js','scifi-tv.css','scifi.utilities.css','solar-system.html','solar-system.js','vendor/three-r97/LICENSE.txt','vendor/three-r97/README.md','vendor/three-r97/three.min.js'].map(file=>'assets/pages/'+file).sort());
   assert.deepEqual(actual.filter(file => file.startsWith('assets/games/music/')),['assets/games/music/README.md']);
   for (const file of ['assets/scifi.html','assets/scifi.js','assets/task-model.js',
