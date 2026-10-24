@@ -338,6 +338,10 @@
 .client-version-row dt { flex:1 1 220px; color:var(--muted); }
 .client-version-row dd { margin:0; overflow-wrap:anywhere; }
 .client-version-note { padding:12px; border:1px solid var(--warning); border-radius:6px; color:var(--warning); }
+.relay-setup .row-actions { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; }
+.relay-setup .row-actions .button { white-space:normal; text-align:center; }
+.relay-setup td small { display:block; margin-top:4px; color:var(--muted); }
+.panel-header h2:has(> .material-symbol) { display:flex; align-items:center; gap:8px; }
 @media (max-width:760px) {
   .settings-item > .definition-actions { width:100%; justify-content:flex-start; margin-left:0; }
   .definition-actions .definition-action { min-height:44px; }

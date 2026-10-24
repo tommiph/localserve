@@ -1,5 +1,8 @@
 # Localserve Go
 
+Version 1.0.2 uses the shared circle launcher and library mark. Install over the
+existing package to retain its connection; no headset reset is required.
+
 Native Oculus Go app, listed as **# Localserve #**. Package identity: org.localserve.go. It can coexist with Home VR.
 
 ## Connect

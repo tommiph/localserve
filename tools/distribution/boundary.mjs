@@ -6,6 +6,7 @@ export function assertPublicPath(file,{seeds=false}={}) {
     if(seeds)return;
     throw Error('Installation settings cannot be committed: '+file);
   }
+  if(/(?:^|\/)localserve-[a-z0-9-]+-private\.json$/i.test(file))throw Error('Private relay export: '+file);
   if(/^(?:data|work|dist|backups|reference|library|\.git|\.codex|\.agents)\//.test(file)
     ||/(?:^|\/)(?:data|private|\.git|\.tmp|\.cache)\//.test(file)
     ||/(?:^|\/)\.env(?:\.[^/]*)?$/.test(file)

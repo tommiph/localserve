@@ -1,95 +1,110 @@
-# Localserve for Android
+# Controller phone reporting
 
-Requires Android 8.0/API 26 or later. The included sideload APK is version 1.4.0
-(package local.localserve.sensors). Install from your server's `/sensors` page or
-plugins/sensors/android/dist/localserve-sensors.apk using Android's own prompts.
-A Google account is not required. Only optional activity recognition needs
-installed Google Play services.
+Use [Controller](../../../CONTROLLER.md) for Lights, Tasks, full Remotes and Cards.
+Open **Settings → Phone reporting** for the native sources below. The server address
+and approved relay details come from Controller’s single connection screen; no
+profile import or separate transport selector is required. Reporting remains
+explicitly started and stopped, with Android permissions for each selected source.
 
-## Phone Home
+## Phone events
 
-The app launches as **Localserve** with a native logo splash screen. Enter your
-server's numeric private LAN HTTP address in **Connection**. Home is served by
-that server and needs Wi-Fi plus an up-to-date Android System WebView. Enabled
-Controls pages appear under Remotes. Ready-made designs from enabled plugins
-and sources appear under **Cards** and can be added to Home as live information
-favorites. Card views are read-only and do not send device commands.
-Publish manual Tasks in **Administration →
-Phone home**. Choose and arrange Favorites with **Home → Edit**. Optional quiet
-interface sounds are in phone preferences. Motion follows reduced-motion settings.
+Phone events default off. Stop streaming, select the sources, grant Android
+access, then Start.
 
-Install over Localserve Sensors to retain its device identity and preferences;
-the package and signing identity are unchanged. **Sensors** opens the native
-reporting screen. Remote use does not request sensor permissions or start
-reporting. Stop reporting before changing the shared server address. The WebView
-accepts only fixed Home/remote routes and script-free installed Card frames on that origin, with no native bridge or
-administrator access. See [Phone Home](../../../PHONE-HOME.md).
+Available sources: battery/charging (percentage, plugged code and reported °C),
+screen/lock state, unlock, network transport/validated internet/metering,
+Bluetooth ACL connections (not scans), audio-device connections, mobile call
+state, notifications, media metadata/playback, foreground app, NFC tag and manual
+button. Bluetooth and call state request runtime permissions only when selected.
+Notification/media require Android Notification access; foreground app requires
+Usage access and checks every five seconds. Missing access prevents that source
+from reporting; it does not grant itself access. Restart after access changes.
 
-## Connect and select sources
+Notifications forward only the up-to-twenty explicitly entered package names;
+blank sends none. Titles/text are bounded to 500 characters, with no artwork,
+actions or initial notification dump. Android may redact protected content.
+Media is limited to eight published sessions; each report holds only the latest
+callback per kind. Foreground app uses usage events, not Accessibility.
 
-Enable Sensors and configure Localserve's reachable private LAN address. Enter
-that address in the app, select hardware sensors and tap Start. Stop from the app
-or foreground notification. Devices register without pairing. Each app install
-has a persistent device identity; clearing app data creates a new identity.
-Multiple phones can stream to one server.
+Manual events can come from the app button, a user-added Localserve Quick Settings
+tile, or the Localserve home-screen widget. Select Manual button and keep streaming
+running first; these controls never start the streamer or queue a later command.
+The name field distinguishes Manual button / Quick Settings / Home screen.
+NFC reads tag IDs/technology only while the setup activity is visible and NFC
+is enabled. No tag writes, payment access or background tag scanning is added.
 
-Reports contain selected latest readings, units and timestamps. There is no
-history/offline queue, command channel, cloud relay or boot startup. Android's
-permissions and power management still apply. Test with your own phone.
+At most forty latest callbacks are consumed once per report; failed/offline
+reports are not retried or saved. State callbacks deduplicate unchanged values;
+discrete unlock/notification/NFC/button callbacks remain distinct occurrences.
+The server baselines initial/reconnected snapshots, commits timestamp claims
+before dispatch and stores no callback content in plugin state/activity. A
+configured Task can capture its public payload normally. Leaving LAN can prevent
+delivery of the network-loss event itself in LAN mode. Optional relay mode uses
+separate relay-presence Events and never creates a LAN/home-arrival fallback.
 
-Stop streaming to select optional sources, grant their real Android access,
-then Start from the visible app. New sources default off:
+## Location, named regions and activities
 
-- Battery/charging, screen/lock, unlock and network transport/metering.
-- Bluetooth ACL connections (not scans), audio-device changes and call state.
-- Notifications from up to twenty allowed package names; blank sends none.
-  Notification access is required. Text is bounded and Android may redact it;
-  no initial dump, artwork or notification actions are sent.
-- Media from up to eight published sessions using Notification access.
-- Foreground app with Usage access, checked every five seconds; no Accessibility.
-- NFC ID/technologies while the setup activity is visible; no writes/payment use.
-- Manual app button, Quick Settings tile or home-screen widget. Select Manual
-  button and keep streaming active; these controls never start the service.
+These sources are opt-in under Phone events. Stop streaming before editing them.
 
-Restart after access changes. Losing LAN access can prevent the network-loss
-event itself from reaching Localserve. Initial/reconnected reports baseline;
-missed Events are not replayed. Tasks can retain public Event values in run
-history: consider notification/location sensitivity when creating rules.
+- **Location:** select Location, choose the 5/15/30/60/120-second requested
+  interval, then Start from the visible app. Android requests location access;
+  approximate access is respected and is not repeatedly escalated. Enable the
+  phone's Location setting. The app uses enabled Android GPS/network providers;
+  provider availability and update cadence depend on the phone. No last-known
+  location is read, and no background-location permission is requested. The
+  user-started location foreground service can continue while the app is hidden.
+  Permission revocation, source unavailability or Android stopping the service
+  leave readings unavailable; they do not invent a position. Restart streaming
+  after changing provider settings or permissions. The status area reports which
+  source is waiting, unavailable or active.
+- **Named regions:** add up to twenty unique named circular regions with latitude,
+  longitude and radius (25–100000 metres). New/copy regions start disabled; enable
+  the desired entries and select Named region transitions. Each entry supports
+  Edit, Copy, Delete and Enabled. Definitions remain private in Android settings;
+  only actual transition payloads are sent. No default coordinates, map lookup,
+  external map assets or region imports are used.
+- A region uses calculated great-circle distance and the fix's reported accuracy.
+  Inside requires `distance + accuracy < radius`; outside requires
+  `distance - accuracy > radius`. Boundary overlap is uncertain and produces no
+  transition. The first confident observation, service restart and observation
+  gaps over two minutes establish a baseline. No path between fixes is inferred.
+  Disabled regions are not evaluated. This is foreground coordinate-based region
+  monitoring, not an Android background geofence registration.
+- **Activity transitions:** select the activity source and grant Physical activity
+  permission. Google Play services reports Walking, Running, Cycling, In vehicle
+  or Still with Enter/Exit. In vehicle does not identify a driver, and these are
+  provider classifications, not facts inferred by Localserve from raw sensors.
+  Unsupported/missing/outdated services or denied access show an unavailable
+  status. The app does not install/update services, resolve failures, request an
+  account, infer a replacement classification or retry registration automatically.
 
-## Location and named regions
+Task choices are **Location**, **Region entered**, **Region left**, **Activity
+entered**, and **Activity left**, under each device. For a named arrival use Region
+entered with Region-name Equals Home; for walking use Activity entered with
+Activity Equals Walking. These examples are instructions only; no Tasks are
+created. Location payloads contain reported coordinates, accuracy, provider, fix
+time/age and mock flag, plus optional reported altitude/speed. Region payloads
+contain ID/name, inside/outside and explicitly calculated distance/accuracy.
+Activity payloads contain the reported activity and transition. No location track
+or callback content is written to plugin state/activity; a user-configured Task
+can capture its public payload in normal run history.
 
-Select Location and a requested interval of 5/15/30/60/120 seconds. Start from
-the visible app and grant approximate or precise location. Enable Android
-Location. Native GPS/network availability/cadence depend on the phone. No
-last-known fix or background-location permission is used. The user-started
-location foreground service can continue while the setup screen is hidden.
+Regions retain one latest transition per region, activities one latest transition
+per activity, and other sources one latest callback per kind. Thus simultaneous
+regions or Still-exit/Walking-enter reports do not overwrite each other. Very
+rapid opposite transitions before a report can still merge. Old/duplicate
+timestamps, expired fixes, callbacks from a stopped stream and old registration
+generations are rejected. Stop removes owned listeners/registrations and revokes
+the callback PendingIntent; nothing starts from boot, a callback, tile or widget.
+Losing LAN access can prevent an arrival/departure report from reaching Localserve;
+there is no offline replay. Optional relay reporting requires its own configured
+internet connection. Android/Google providers follow device
+settings and may have their own network behavior. No radio/room analysis exists.
 
-Add up to twenty uniquely named circular regions with coordinates, radius
-(25–100000 metres) and Enabled. Edit/Copy/Delete are available; new/copied regions
-start disabled. Select Named region transitions. Definitions remain in Android
-preferences; no map service or default location is provided.
-
-Inside means calculated great-circle distance + reported accuracy < radius;
-outside means distance - accuracy > radius. Uncertain boundaries emit nothing.
-First confident fixes and gaps over two minutes baseline. No path between fixes
-is inferred. This is foreground monitoring, not Android background geofencing.
-
-In Tasks choose the device's Location, Region entered or Region left. For example,
-compare Region name Equals Home. Location offers actual coordinates, accuracy,
-provider, fix time/age, mock flag and optional reported altitude/speed.
-
-## Activity transitions
-
-Select Activity transitions and grant Physical activity access. Google Play
-services reports Walking, Running, Cycling, In vehicle or Still with Enter/Exit.
-In vehicle does not identify a driver. Localserve does not infer classifications
-from raw sensors. Missing/outdated services or denied access display unavailable;
-the app does not install services or automatically retry registration.
-
-Use Activity entered/left and compare Activity Equals Walking, for example.
-Regions and activities each have one latest callback slot; rapid opposite changes
-between reports may merge. Freshness/per-device timestamp claims reject stale
-or duplicate callbacks before Task dispatch.
+Physical permission/UI/provider/background tests require installing and trying the
+APK on the phone; these are not confirmed by host tests. Official references:
+[foreground location permissions](https://developer.android.com/develop/sensors-and-location/location/permissions),
+[activity transitions](https://developer.android.com/develop/sensors-and-location/location/transitions).
 
 ## Rebuild on Windows
 
@@ -100,29 +115,59 @@ From the Localserve root:
 .\runtime\node.exe plugins/sensors/android/build.mjs
 ```
 
-Preparation downloads pinned official tools with hash checks into this project;
-read tools/android-build/README.md. No global install, PATH change, ADB command
-or device connection occurs. Normal builds verify the 33 local client libraries
-in vendor/lock.json without Maven. Explicit prepare-vendor.mjs downloads that
-graph. License notices are in the APK and its Third-party licenses viewer.
+Preparation downloads pinned official Google Android platform/build tools and
+Eclipse Temurin JDK into `tools/android-build/`, verifies their upstream hashes,
+and extracts locally. It does not install globally, change PATH, invoke ADB,
+contact a device or change any existing Android/Tizen SDK. Upstream licenses and
+notices remain with the extracted tools. Network access is needed only for the
+initial missing build-tool downloads.
 
-The builder runs host address/region/linkage tests, compiles, aligns, signs and
-verifies the APK, then updates dist/ and its checksum/report. Build tests do not
-verify physical sensor delivery, platform permissions or background behavior.
+The builder compiles resources/Java in a fresh project-local workspace, runs the
+pure Java server-address and region geometry/transition tests, emits DEX, aligns, signs, verifies, and atomically
+publishes `dist/localserve-sensors.apk`. Its hash and certificate verification
+are in `dist/verification.json` and `dist/localserve-sensors.apk.sha256`.
 
-A clean build creates your own signing identity/password under
-tools/android-build/private/. Keep it securely for updates and never commit it.
-A differently signed APK cannot update an existing app in place. Removing the
-installed app to change signing identity loses its app data/device ID.
+`vendor/lock.json` pins all 33 SDK artifacts and origin/hash/license metadata.
+Normal builds verify SHA-256 and remain offline. Only an explicit
+`.\runtime\node.exe plugins/sensors/android/prepare-vendor.mjs` downloads the
+official Maven graph and license snapshots. See [vendor provenance](vendor/README.md).
+APK assets and the in-app Third-party licenses viewer retain license notices.
+SDK/JDK/signing workspaces remain excluded from distributions; clean source
+packages include only the locked Android runtime artifacts, source and licenses.
+
+The generated signing key/password are private under `tools/android-build/private/`.
+Keep that identity to sign later updates. They are not pairing credentials and
+are never embedded into APKs/downloads/releases. A build on a clean installation
+creates its own signing identity; Android will not treat another identity's APK
+as an update of an already-installed app. Removing app data changes its device ID.
 
 ## Source
 
-MainActivity owns setup/permissions; SensorCatalog discovers sensors; SensorService
-owns foreground streaming; PhoneEvents owns bounded callbacks. TravelSources
-manages location/Google transitions; RegionRules and RegionSettings implement
-geometry and private editing. AndroidManifest declares real platform permissions
-and protected services. No address, account or API key is compiled into the app.
+- `MainActivity.java`: editable setup, selection and permission requests.
+- `SensorCatalog.java`: runtime discovery, stable app-local IDs and unit labels.
+- `SensorService.java`: bounded latest-value sampling, foreground notification,
+  one serial LAN request, normal fresh-report backoff and explicit cleanup.
+- `TravelSources.java`: fresh foreground fixes, accuracy-aware named regions and
+  private-generation Google activity callbacks with owned cleanup.
+- `RegionRules.java` / `RegionSettings.java`: tested geometry/state rules and
+  private editable region definitions.
+- `AndroidManifest.xml`: native lifecycle/permissions; exported notification/tile
+  services retain Android binding permissions, callback receivers stay private.
+- `res/drawable/app_icon.png`: project's white-on-black application logo.
+- `test/`: host URI/region and SDK linkage checks; not packaged into the APK.
 
-## Scenes and build verification
+All app and build paths derive from this project; no configured IP, account,
+token, Task, log or other installation data is built into the APK. Raw values
+remain in memory on Android; preferences contain only user choices/identity.
 
-Localserve Android APK 1.4.3 admits Scenes artwork and opens the explicit Scenes APK download in the system browser. There are no additional permissions or reporting changes. Build receipts include source/resource digests; release preparation rejects mismatched native source and APK files. Rebuild affected clients and keep signing identities private for compatible updates.
+Sensors depend on device hardware and Android permissions. The foreground service
+declares specialUse for user-started sources and adds location only when selected,
+permitted and enabled.
+This is not a Google Play policy approval. Target-API/permission changes should
+be reviewed before any store publication. Build and signature checks are not a
+physical-phone test; verify sensor delivery/permissions/power behavior on a phone.
+
+Controller displays ready-made Cards and full remotes only on the configured LAN.
+Its private connection provisioning is native-only and never exposed to the WebView.
+APK verification binds the binary to current first-party sources, resources and
+bundled Material assets. Rebuild after changing native inputs.

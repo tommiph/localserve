@@ -13,6 +13,7 @@ public final class RegionSettings {
     private final Activity activity;
     private final SharedPreferences preferences;
     private final LinearLayout rows;
+    private final ControllerStyle style;
     private final List<android.view.View> controls=new ArrayList<>();
     private boolean editable=true;
     public static List<RegionRules.Region> read(SharedPreferences preferences) throws JSONException {
@@ -27,7 +28,7 @@ public final class RegionSettings {
         return values;
     }
     public RegionSettings(Activity activity,LinearLayout parent) {
-        this.activity=activity;preferences=activity.getSharedPreferences("sender",Context.MODE_PRIVATE);
+        this.activity=activity;preferences=activity.getSharedPreferences("sender",Context.MODE_PRIVATE);style=new ControllerStyle(activity);
         TextView title=new TextView(activity);title.setText("Named regions");title.setTextSize(20);parent.addView(title);
         rows=new LinearLayout(activity);rows.setOrientation(LinearLayout.VERTICAL);parent.addView(rows);render();
     }
@@ -44,14 +45,15 @@ public final class RegionSettings {
                 toggle.setOnCheckedChangeListener((button,enabled)->change(region,"enabled",enabled));
                 LinearLayout buttons=new LinearLayout(activity);rows.addView(buttons);
                 button(buttons,"Edit",()->edit(region));button(buttons,"Copy",()->change(region,"copy",false));
-                button(buttons,"Delete",()->new AlertDialog.Builder(activity).setTitle("Delete "+region.name+"?").setNegativeButton("Cancel",null).setPositiveButton("Delete",(dialog,which)->change(region,"delete",false)).show());
+                button(buttons,"Delete",()->ControllerStyle.dialog(activity).setTitle("Delete "+region.name+"?").setNegativeButton("Cancel",null).setPositiveButton("Delete",(dialog,which)->change(region,"delete",false)).show());
             }
             Button add=button(rows,"Add region",()->edit(null));add.setEnabled(editable && values.size()<20);
         } catch(Exception error) {
             TextView warning=new TextView(activity);warning.setText("Saved regions could not be read. They have been retained.");rows.addView(warning);
-            button(rows,"Reset regions",()->new AlertDialog.Builder(activity).setTitle("Delete saved region settings?").setNegativeButton("Cancel",null).setPositiveButton("Reset",(dialog,which)->{preferences.edit().remove("regions").apply();render();}).show());
+            button(rows,"Reset regions",()->ControllerStyle.dialog(activity).setTitle("Delete saved region settings?").setNegativeButton("Cancel",null).setPositiveButton("Reset",(dialog,which)->{preferences.edit().remove("regions").apply();render();}).show());
         }
         for(android.view.View view:controls)if(!editable)view.setEnabled(false);
+        style.tree(rows);
     }
     private Button button(LinearLayout parent,String text,Runnable action){Button button=new Button(activity);button.setText(text);parent.addView(button);controls.add(button);button.setOnClickListener(view->action.run());return button;}
     private void change(RegionRules.Region region,String operation,boolean enabled) {
@@ -78,10 +80,11 @@ public final class RegionSettings {
     }
     private void edit(RegionRules.Region existing) {
         if(!editable)return;
-        LinearLayout form=new LinearLayout(activity);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(24,8,24,8);
+        LinearLayout form=new LinearLayout(activity);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(style.dp(20),style.dp(8),style.dp(20),style.dp(16));form.setBackgroundColor(style.background);
         EditText name=field(form,"Name",existing==null?"":existing.name,false),lat=field(form,"Latitude",existing==null?"":Double.toString(existing.latitude),true),lon=field(form,"Longitude",existing==null?"":Double.toString(existing.longitude),true),radius=field(form,"Radius (metres)",existing==null?"100":Double.toString(existing.radius),true);
         TextView error=new TextView(activity);form.addView(error);
-        AlertDialog dialog=new AlertDialog.Builder(activity).setTitle(existing==null?"Add region":"Edit region").setView(form).setNegativeButton("Cancel",null).setPositiveButton("Save",null).create();
+        style.tree(form);ScrollView scroll=new ScrollView(activity);scroll.addView(form);
+        AlertDialog dialog=ControllerStyle.dialog(activity).setTitle(existing==null?"Add region":"Edit region").setView(scroll).setNegativeButton("Cancel",null).setPositiveButton("Save",null).create();
         dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
             try {
                 List<RegionRules.Region> values=read(preferences);

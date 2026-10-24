@@ -9,6 +9,7 @@ import {androidSourceReceipt} from '../../../tools/android-build/source-receipt.
 
 const app=fileURLToPath(new URL('./',import.meta.url));
 const root=fileURLToPath(new URL('../../../',import.meta.url));
+const inputReceipt=await androidSourceReceipt(root,'plugins/sensors/android');
 const tools=path.join(root,'tools/android-build');
 async function childDirectory(folder) {
   const children=await fs.readdir(folder,{withFileTypes:true});
@@ -114,7 +115,7 @@ async function files(folder,extension) {
   }return result;
 }
 await run(path.join(jdk,'bin/javac.exe'),['-encoding','UTF-8','--release','8','-classpath',[androidJar,...libraries].join(path.delimiter),'-d',path.join(build,'classes'),
-  ...await files(path.join(app,'src'),'.java'),...await files(path.join(build,'generated'),'.java')]);
+  ...await files(path.join(app,'src'),'.java'),...await files(path.join(root,'apps/shared/android'),'.java'),...await files(path.join(build,'generated'),'.java')]);
 await run(path.join(jdk,'bin/javac.exe'),['-encoding','UTF-8','--release','8','-classpath',androidJar+path.delimiter+path.join(build,'classes'),'-d',path.join(build,'test'),...await files(path.join(app,'test'),'.java')]);
 const addressCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes'),androidJar].join(path.delimiter),'local.localserve.sensors.ServerAddressTest']);
 const regionCheck=await run(java,['-cp',[path.join(build,'test'),path.join(build,'classes')].join(path.delimiter),'local.localserve.sensors.RegionRulesTest']);
@@ -124,6 +125,19 @@ const diagnostics=await run(java,['-cp',path.join(sdk,'lib/d8.jar'),'com.android
 await fs.writeFile(path.join(build,'dex-diagnostics.txt'),diagnostics);
 if(/was not found|Missing class/i.test(diagnostics))throw new Error('DEX reports a missing runtime class; inspect the build diagnostics.');
 for(const dex of await files(path.join(build,'dex'),'.dex'))await run(jar,['--update','--file',unsigned,'-C',path.join(build,'dex'),path.basename(dex)]);
+const relayAssets=path.join(build,'assets/relay');await fs.mkdir(relayAssets,{recursive:true});
+// Both transports render the same markup and stylesheet. Only the offline
+// catalogue adapter changes; credentials never enter the document.
+const selector=(await fs.readFile(path.join(root,'web/scene-selector.html'),'utf8'))
+  .replace(/<link\b[^>]*>/g,tag=>/stylesheet/.test(tag)&&/scene-selector\.css|material-symbols\.css/.test(tag)?tag:'')
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/g,'')
+  .replace('</head>','<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; script-src \'self\'; style-src \'self\' \'unsafe-inline\'; font-src \'self\'; base-uri \'none\'; form-action \'none\'"><script src="controller-relay.js" defer></script></head>');
+await fs.writeFile(path.join(relayAssets,'index.html'),selector);
+await fs.copyFile(path.join(root,'web/scene-selector.css'),path.join(relayAssets,'scene-selector.css'));
+await fs.copyFile(path.join(app,'assets/controller-relay.js'),path.join(relayAssets,'controller-relay.js'));
+await fs.copyFile(path.join(root,'assets/material-symbols/material-symbols.css'),path.join(relayAssets,'material-symbols.css'));
+for(const [source,target] of [['catalog.json','glyphs.json'],['material-symbols-outlined.ttf','material-symbols.ttf'],['LICENSE.txt','LICENSE.txt']])await fs.copyFile(path.join(root,'assets/material-symbols',source),path.join(relayAssets,target));
+await run(jar,['--update','--file',unsigned,'-C',build,'assets']);
 await run(path.join(sdk,'zipalign.exe'),['-f','4',unsigned,aligned]);
 const key=path.join(secret,'sensors-signing.p12');
 try {await fs.access(key);} catch {
@@ -135,10 +149,11 @@ const signed=path.join(build,'signed.apk');
 await run(java,['-jar',path.join(sdk,'lib/apksigner.jar'),'sign','--ks',key,'--ks-pass','env:LOCAL_SERVE_APK_PASSWORD','--ks-key-alias','sensors','--out',signed,aligned]);
 const verification=await run(java,['-jar',path.join(sdk,'lib/apksigner.jar'),'verify','--verbose','--print-certs',signed]);
 const bytes=await fs.readFile(signed);
+if(JSON.stringify(await androidSourceReceipt(root,'plugins/sensors/android'))!==JSON.stringify(inputReceipt))throw new Error('Android source inputs changed during the build. Rebuild before publishing.');
 // Publish only the complete verified APK; an in-progress build stays private.
 await fs.rename(signed,apk);
 const report={file:'plugins/sensors/android/dist/localserve-sensors.apk',bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex'),
-  minSdk:26,targetSdk:35,version:(await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8')).match(/android:versionName="([^"]+)"/)[1],sourceReceipt:await androidSourceReceipt(root,'plugins/sensors/android'),vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),homeCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
+  minSdk:26,targetSdk:35,version:(await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8')).match(/android:versionName="([^"]+)"/)[1],sourceReceipt:inputReceipt,vendorArtifacts:lock.artifacts.length,javaResources:resourceFiles.size,checks:[addressCheck.trim(),regionCheck.trim(),dependencyCheck.trim(),homeCheck.trim(),'No missing DEX runtime classes'],verification:verification.trim()};
 await fs.writeFile(path.join(output,'verification.json'),JSON.stringify(report,null,2)+'\n');
 await fs.writeFile(path.join(output,'localserve-sensors.apk.sha256'),report.sha256+'  localserve-sensors.apk\n');
 console.log(JSON.stringify(report,null,2));

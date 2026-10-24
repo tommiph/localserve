@@ -6,16 +6,17 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { JsonStore, ActivityLog, HttpError } from './server/storage.mjs';
-import {readScenesApk} from './server/scenes-app.mjs';
 import {AdminSync} from './server/admin-sync.mjs';
 import {Devices} from './server/devices.mjs';
+import {CloudRelay} from './server/cloud-relay.mjs';
 import {TvCloseRequests} from './server/tv-close.mjs';
 import { PluginRegistry } from './server/plugins.mjs';
 import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
+import {explainTask} from './server/task-explanation.mjs';
 import { VistaStore } from './server/vistas.mjs';
 import { DemoSetup } from './server/demo.mjs';
 import {ApkLibrary, nativeLibraryRoute, serveNativeLibrary, libraryAdminOperation} from './server/apk-library.mjs';
@@ -172,6 +173,7 @@ export async function createLocalserve(root, options = {}) {
     registry.lightingAnimations = lightingAnimations;
     engine.vistas = vistas;
     const phoneHome=await new PhoneHome(root,tasks,engine,controls,config,state,registry).load();
+    const cloudRelay=await new CloudRelay(root,registry,phoneHome,controls,sensorIngress).load();registry.cloudRelay=cloudRelay;
     const devices=await new Devices(root,registry,engine.gate,options.deviceDiscovery).load();
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
     let administratorWrites=0,demoInstalling=false,demoOperation=null;
@@ -203,7 +205,7 @@ export async function createLocalserve(root, options = {}) {
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: {...config.snapshot(),version:serverVersion}, devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { config: {...config.snapshot(),version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(), lightingAnimations: lightingAnimations.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -282,10 +284,24 @@ export async function createLocalserve(root, options = {}) {
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the scene selector.');
           return json(response,200,{...phoneHome.viewer(true),version:serverVersion});
         }
+        if(url.pathname==='/api/controller/status'){
+          if(request.method!=='GET'||url.search||request.headers['x-localserve-controller']!=='1'||request.headers.origin||request.headers['sec-fetch-site'])throw new HttpError(403,'Use the Controller app on the local network.');
+          response.setHeader('Cache-Control','no-store');
+          return json(response,200,{serverVersion,controllerVersion:clientPackages.android,now:Date.now()});
+        }
+        if(url.pathname==='/api/controller/connection'){
+          // Same trusted-LAN boundary as Sensors, with no browser credential
+          // route. A foreign origin or WebView cannot export private profiles.
+          if(request.method!=='POST'||url.search||request.headers['x-localserve-controller']!=='1'||request.headers.origin||request.headers['sec-fetch-site'])throw new HttpError(403,'Use the Controller app on the local network.');
+          const device=await readBody(request);
+          if(closing)throw new HttpError(503,'Server is stopping.');
+          response.setHeader('Cache-Control','no-store');
+          return json(response,200,await cloudRelay.connectController(device));
+        }
         if(url.pathname==='/scenes/app.webmanifest'){
           if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use the scene selector manifest.');
           response.writeHead(200,{'Content-Type':'application/manifest+json; charset=utf-8'});
-          return response.end(request.method==='HEAD'?undefined:JSON.stringify({id:'/scenes',name:'Scenes',short_name:'Scenes',start_url:'/scenes',scope:'/scenes',display:'standalone',background_color:'#ffffff',theme_color:'#f7f6f2',icons:[192,512].map(size=>({src:'/assets/scenes/app-icon-'+size+'.png',sizes:size+'x'+size,type:'image/png',purpose:'any maskable'}))}));
+          return response.end(request.method==='HEAD'?undefined:JSON.stringify({id:'/scenes',name:'Controller',short_name:'Controller',start_url:'/scenes',scope:'/scenes',display:'standalone',background_color:'#000000',theme_color:'#f7f6f2',icons:[192,512].map(size=>({src:'/assets/scenes/app-icon-'+size+'.png',sizes:size+'x'+size,type:'image/png',purpose:'any maskable'}))}));
         }
         const phoneCard=/^\/api\/phone-home\/cards\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})\/([a-z0-9-]{1,80})$/.exec(url.pathname);
         if(phoneCard){
@@ -335,6 +351,8 @@ export async function createLocalserve(root, options = {}) {
         const viewerApi = /^\/api\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
         if (request.method === 'GET' && viewerApi) return json(response, 200, vistas.viewer(viewerApi[1]));
         if (url.pathname.startsWith('/api/')) {
+          const explanation=/^\/api\/tasks\/([a-zA-Z0-9-]{1,80})\/explanation$/.exec(url.pathname);
+          if(request.method==='GET'&&explanation&&!url.search)return json(response,200,explainTask(engine,explanation[1]));
           if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin));
           if(request.method==='GET'&&url.pathname==='/api/admin-state'){
             const cursor=url.searchParams.get('cursor');
@@ -349,7 +367,10 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(/^\/api\/devices\/(scan|lookup|cancel|edit|use)$/.test(url.pathname)){
+          if(url.pathname==='/api/cloud-relay/setup'){
+            if(url.search)throw new HttpError(400,'Unexpected relay parameters.');
+            return json(response,200,await cloudRelay.setup(values));
+          } else if(/^\/api\/devices\/(scan|lookup|cancel|edit|use)$/.test(url.pathname)){
             if(url.search)throw new HttpError(400,'Unexpected device parameters.');
             const operation=url.pathname.split('/').at(-1);
             return json(response,['scan','lookup'].includes(operation)?202:200,await devices[operation==='scan'?'start':operation](values)||{saved:true});
@@ -518,12 +539,10 @@ export async function createLocalserve(root, options = {}) {
         }
         const controlManifest = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)\/app\.webmanifest$/.exec(url.pathname);
         if (url.pathname === '/downloads/scenes.apk') {
-          if (url.search) throw new HttpError(405,'Use the Scenes download link.');
-          const bytes=await readScenesApk(root);
-          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':bytes.length,'Content-Disposition':'attachment; filename="scenes.apk"'});
-          return response.end(request.method==='HEAD'?undefined:bytes);
+          if (!['GET','HEAD'].includes(request.method)||url.search) throw new HttpError(405,'Use the Controller download link.');
+          response.writeHead(307,{Location:'/downloads/controller.apk'});return response.end();
         }
-        if (['/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
+        if (['/downloads/controller.apk','/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
           if (!['GET','HEAD'].includes(request.method) || url.search) throw new HttpError(405,'Use the Android download link.');
           if (registry.get('sensors').plugin.runtime?.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors app unavailable.');
           const realRoot=await fs.realpath(root);
@@ -536,8 +555,10 @@ export async function createLocalserve(root, options = {}) {
           catch {throw new HttpError(404,'Sensors app unavailable. Build the Android APK first.');}
           if (!realPlugin.startsWith(realRoot+path.sep) || !realDist.startsWith(realPlugin+path.sep) || !apk.startsWith(realDist+path.sep)
             || !stat.isFile() || stat.size>16*1024*1024) throw new HttpError(404,'Sensors app unavailable.');
-          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':stat.size,'Content-Disposition':'attachment; filename="localserve.apk"'});
-          return response.end(request.method==='HEAD'?undefined:await fs.readFile(apk));
+          const bytes=await fs.readFile(apk),meta=JSON.parse(await fs.readFile(path.join(realDist,'verification.json'),'utf8'));
+          if(meta.bytes!==bytes.length||meta.sha256!==createHash('sha256').update(bytes).digest('hex'))throw new HttpError(404,'Controller package verification failed.');
+          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':bytes.length,'Content-Disposition':'attachment; filename="controller.apk"'});
+          return response.end(request.method==='HEAD'?undefined:bytes);
         }
         if (controlManifest) {
           if (!['GET', 'HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
@@ -565,7 +586,7 @@ export async function createLocalserve(root, options = {}) {
         webFiles.add('demo-ui.js');
         for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('vr-library-ui.js');
-        webFiles.add('devices-ui.js');
+        webFiles.add('devices-ui.js');webFiles.add('cloud-relay-ui.js');
         webFiles.add('phone-information.html');
         webFiles.add('playstation-mode.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
@@ -588,6 +609,7 @@ export async function createLocalserve(root, options = {}) {
           response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self'; connect-src 'self'; frame-src 'none'; frame-ancestors 'self' file:; object-src 'none'; base-uri 'none'; form-action 'none'");
         }
         if (relative === 'controls.html') {
+          response.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src 'none'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'");
           // Supply metadata in the first HTML response so browser installation
           // does not depend on a successful telemetry/capability refresh.
           const manifest = controlDefinition ? controlAppManifest(controlDefinition, config.snapshot().name) : null;
@@ -666,7 +688,7 @@ export async function createLocalserve(root, options = {}) {
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, devices, apkLibrary, snapshot, cleanupActivity,
+    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, devices, cloudRelay, apkLibrary, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
@@ -675,7 +697,7 @@ export async function createLocalserve(root, options = {}) {
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
-          await devices.close();
+          await cloudRelay.close();await devices.close();
           await lightingAnimations.close();
           await phoneHome.close();
           await apkLibrary.close();

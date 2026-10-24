@@ -1,4 +1,8 @@
 /* Persistent application shell. The sidebar contains destinations, not editors. */
+/* Reconciliation owns scroll preservation. Native anchoring must not apply a
+   second, delayed offset after retained rows have changed above the viewport. */
+html.admin-page { overflow-anchor: none; }
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -34,15 +38,14 @@
 }
 
 .brand-mark {
-  width: 48px;
-  height: 33px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
 }
 
-/* Preserve the selected SVG's proportions: original in light, negative in dark. The
-   neighbouring server name supplies the branding text, so the image is decorative. */
+/* The circle remains square in both themes. Its neighbouring name supplies text. */
 .brand-mark .application-logo {
   display: block;
   width: 100%;

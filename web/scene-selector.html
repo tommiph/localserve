@@ -1,19 +1,20 @@
 <!doctype html>
-<html lang="en" data-theme="light"><head><meta charset="utf-8">
+<html lang="en" data-theme="dark"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f6f2"><meta name="apple-mobile-web-app-capable" content="yes">
-<title>Localserve · Scenes</title><link rel="icon" href="assets/scenes/app-icon.svg">
+<meta name="theme-color" content="#171c19"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>Controller</title><link rel="icon" href="assets/scenes/app-icon.svg">
 <link rel="manifest" href="scenes/app.webmanifest"><link rel="apple-touch-icon" href="assets/scenes/app-icon-192.png">
 <link rel="stylesheet" href="assets/material-symbols/material-symbols.css">
-<link rel="stylesheet" href="scene-selector.css?v=2"><script src="scene-selector.js?v=2" defer></script></head>
+<link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="scene-selector.css?v=3"><script src="assets/card-preview.js?v=4" defer></script><script src="card-renderer.js" defer></script><script src="scene-selector.js?v=3" defer></script></head>
 <body><div class="selector-shell">
-  <header class="selector-header"><a href="home" class="brand" aria-label="Open Localserve Home"><img src="assets/scenes/app-icon.svg" alt=""><span id="server-name">Localserve</span></a><div class="header-actions"><span id="connection" class="connection" role="status">Connecting</span><a id="app-connection" class="icon-button" href="scenes/connection" aria-label="Server connection" title="Server connection" hidden><i class="material-symbol ms-gear" aria-hidden="true"></i></a><button id="appearance" class="icon-button" aria-label="Use dark appearance" title="Change appearance"><i class="material-symbol ms-moon" aria-hidden="true"></i></button></div></header>
-  <main id="main"><div class="page-heading"><div><p id="eyebrow">YOUR LIGHTS</p><h1 id="heading">Lighting scenes</h1><p id="item-count" class="item-count">Connecting…</p></div><span class="heading-mark" aria-hidden="true"><i class="material-symbol ms-lightbulb"></i></span></div>
+  <header class="selector-header"><a href="scenes" class="brand" aria-label="Controller"><span class="circle-logo" aria-hidden="true">○</span><span id="server-name" hidden>Controller</span></a><div class="header-actions"><span id="connection" class="connection" role="status">Connecting</span><a id="app-connection" class="icon-button" href="scenes/connection" aria-label="Settings" title="Settings" hidden><i class="material-symbol ms-gear" aria-hidden="true"></i></a><button id="appearance" class="icon-button" aria-label="Use dark appearance" title="Change appearance"><i class="material-symbol ms-moon" aria-hidden="true"></i></button></div></header>
+  <main id="main"><div class="page-heading" hidden><div><p id="eyebrow">YOUR LIGHTS</p><h1 id="heading">Lighting scenes</h1><p id="item-count" class="item-count">Connecting…</p></div><span class="heading-mark" aria-hidden="true"><i class="material-symbol ms-lightbulb"></i></span></div>
     <div id="server-state" class="server-state" role="status" hidden></div>
     <section id="choices" class="choices" aria-label="Lighting scenes"><p class="empty">Connecting to Localserve…</p></section>
     <p id="collection-help" class="collection-help"></p>
-    <a id="android-download" class="android-download" href="downloads/scenes.apk">Get Scenes for Android</a>
+    <a id="android-download" class="android-download" href="downloads/controller.apk">Get Controller for Android</a>
   </main>
   <aside id="receipt" class="receipt" role="status" aria-live="polite" hidden><span id="receipt-symbol" aria-hidden="true"></span><div><strong id="receipt-name"></strong><p id="receipt-status"></p></div><button id="dismiss" class="icon-button" aria-label="Dismiss result" hidden><i class="material-symbol ms-xmark" aria-hidden="true"></i></button></aside>
-  <nav class="selector-nav" aria-label="Quick controls"><button data-group="scenes" aria-current="page"><i class="material-symbol ms-lightbulb" aria-hidden="true"></i><span>Lights</span><small id="scene-count">0</small></button><button data-group="tasks"><i class="material-symbol ms-play" aria-hidden="true"></i><span>Tasks</span><small id="task-count">0</small></button></nav>
+  <nav class="selector-nav" aria-label="Controller navigation"><button data-group="scenes" aria-current="page"><i class="material-symbol ms-lightbulb" aria-hidden="true"></i><span>Lights</span><small id="scene-count" hidden>0</small></button><button data-group="tasks"><i class="material-symbol ms-play" aria-hidden="true"></i><span>Tasks</span><small id="task-count" hidden>0</small></button><button data-group="remotes"><i class="material-symbol ms-gamepad" aria-hidden="true"></i><span>Remotes</span></button><button data-group="cards"><i class="material-symbol ms-dashboard" aria-hidden="true"></i><span>Cards</span></button></nav>
+  <dialog id="controller-sheet" aria-labelledby="controller-sheet-title"><header><h2 id="controller-sheet-title"></h2><button id="controller-close" class="icon-button" aria-label="Close"><i class="material-symbol ms-xmark" aria-hidden="true"></i></button></header><div id="controller-detail"></div></dialog>
 </div><noscript>Enable JavaScript to use the scene selector.</noscript></body></html>

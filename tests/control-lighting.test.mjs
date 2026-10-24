@@ -137,3 +137,12 @@ test('capture rejects stale, missing, duplicate or incomplete readings and faile
   await f.scene({action:'capture',name:'Saved',lightIds:['2']});
   assert.equal(f.effects.length,0);
 });
+
+test('scene glyph edits, capture and copy persist and project without lighting effects',async t=>{
+  const f=await fixture(t);await f.scene({action:'capture',name:'Evening',lightIds:['1'],icon:'moon'});
+  const scene=f.view().lighting.scenes[0];assert.equal(scene.icon,'moon');assert.ok(f.view().lighting.glyphs.includes('restaurant'));
+  const original=f.store.pages('tradfri')[0].items[0].steps;
+  await f.scene({action:'edit',itemId:scene.id,name:'Evening',icon:'restaurant'});assert.equal(f.view().lighting.scenes[0].icon,'restaurant');assert.deepEqual(f.store.pages('tradfri')[0].items[0].steps,original);
+  await f.scene({action:'copy',itemId:scene.id,name:'Dinner copy'});assert.equal(f.view().lighting.scenes[1].icon,'restaurant');
+  await assert.rejects(f.scene({action:'edit',itemId:scene.id,name:'Bad',icon:'<script>'}),/glyph/);assert.equal(f.view().lighting.scenes[0].label,'Evening');assert.equal(f.effects.length,0);
+});

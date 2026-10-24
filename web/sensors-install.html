@@ -3,27 +3,27 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Localserve · Android app</title>
-  <link rel="icon" href="/assets/logo-dark.svg" type="image/svg+xml">
+  <title>Controller for Android</title>
+  <link rel="icon" href="/assets/controls/app-icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/sensors/install.css">
   <script src="/assets/sensors/install.js" defer></script>
 </head>
 <body>
   <main>
-    <img class="logo" src="/assets/controls/app-icon-192.png" alt="Localserve">
-    <h1>Localserve</h1>
+    <div class="controller-mark" aria-label="Controller">○</div>
+    <h1>Controller</h1>
     <p>Android 8.0 or later</p>
-    <a class="download" href="/downloads/localserve.apk" download="localserve.apk">Download Android APK</a>
+    <a class="download" href="/downloads/controller.apk" download="controller.apk">Download Controller APK</a>
     <ol>
       <li>Open this page on Android, download the APK and open the downloaded file. Allow installation from your browser if Android asks.</li>
-      <li>Open Localserve → Connection and enter the server address below. Home loads your remotes and published Tasks.</li>
-      <li>Tap Edit on Home to choose and arrange your favorites. Interface sounds are optional in phone preferences.</li>
+      <li>Open Controller → Settings, enter the server address below and tap Connect while on your home network. Approved relay details are retrieved automatically.</li>
+      <li>Use the bottom Lights, Tasks, Remotes and Cards tabs. Content is configured in the server administrator; no profile files need to be copied.</li>
     </ol>
     <label for="server-address">Server address</label>
     <input id="server-address" readonly aria-label="Server address">
     <p id="lan-hint"></p>
-    <p>Optional phone reporting: enable the Sensors plugin, open Sensors in the Android app, select sources and tap Start. Grant access only for your selected sources. Devices appear automatically in Sensors. Stop reporting from the app or its notification.</p>
-    <p>The remote requires your running server and Wi-Fi connection. Use an up-to-date Android System WebView. Location and named regions run during explicit streaming. Activity transitions require Google Play services. Install over the existing Localserve Sensors app to retain its device identity and settings.</p>
+    <p>Optional phone reporting: enable the Sensors plugin, open Settings → Phone reporting in Controller, select sources and tap Start. Grant access only for your selected sources. Devices appear automatically in Sensors. Stop reporting from the app or its notification.</p>
+    <p>Keep your server running. Full remotes and Cards require LAN; approved lighting scenes and Tasks can use the Google relay away from home. Use an up-to-date Android System WebView. Install over the Localserve phone-reporting app to retain its device identity and settings.</p>
     <p class="detail">Reports use the local network without pairing credentials. Sampling and reporting rates can differ; each report contains the latest raw sensor values. Sensor availability depends on the Android device and granted permissions.</p>
   </main>
 </body>

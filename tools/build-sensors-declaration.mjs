@@ -10,7 +10,7 @@ const payload=[...identity,string('sensor-id','Sensor ID',18,true),string('senso
   string('timestamp-ns','Raw sensor timestamp (nanoseconds since boot)',20,true),number('sent-at','Device send time (epoch ms)',true),number('received-at','Server reception (epoch ms)',true),
   ...Array.from({length:16},(_,i)=>number('value-'+i,i===0?'Value 0 / scalar':'Raw value '+i)),
   number('x','X (vector sensors)'),number('y','Y (vector sensors)'),number('z','Z (vector sensors)'),
-  number('value-count','Reported value count',true),number('sample-age-ms','Sample age on sender (ms)',true),string('string-type','Android sensor string type',100)];
+  number('value-count','Reported value count',true),number('sample-age-ms','Sample age including transport (ms)',true),string('string-type','Android sensor string type',100)];
 const stateField=(id,label,type)=>({id,label,type,icon:type==='timestamp'?'clock':'gauge',source:{kind:'state',key:id}});
 const columns=[['name','Sensor','string'],['type','Type','number'],['values','Raw values','string'],['unit','Units','string'],['accuracy','Accuracy','number'],['age','Sample age (ms)','number'],['status','Status','string']].map(([id,label,type])=>({id,label,type}));
 const declaration={schemaVersion:1,apiVersion:1,id:'sensors',name:'Sensors',version:'1.2.0',description:'Selected sensor and phone reports from trusted Android devices on the local network',icon:'gauge',defaultCardLayout:'table',
@@ -63,8 +63,12 @@ const declaration={schemaVersion:1,apiVersion:1,id:'sensors',name:'Sensors',vers
       ...Object.entries(fields).map(([id,type])=>({id,label:id[0].toUpperCase()+id.slice(1),type,...((requiredPhoneFields[kind]||[]).includes(id)?{required:true}:{}),...(type==='string'?{maxLength:500}:{}),...phoneFieldHints[kind]?.[id]}))]}))),
     ...sensorTypes.map(([type,name])=>({id:'sensor-'+type,name,description:'Latest fresh raw sample. Continuous/on-change conditions use threshold edges; reported one-shot/special-trigger modes use distinct timestamp occurrences. Values are not smoothed or converted.',payload})),
     {id:'other-reading',name:'Other sensor',description:'A reported vendor or unknown Android sensor type. Choices use the device and physical sensor name.',payload},
-    ...[['device-online','Reports resumed'],['device-offline','No recent reports']].map(([id,name])=>({id,name,occurrenceKey:'transition-id',payload:[...identity,number('received-at','Last server reception (epoch ms)',true),string('transition-id','Reception transition ID',36,true)]}))]
+    ...[['device-online','LAN reports resumed'],['device-offline','No recent LAN reports'],['relay-online','Relay reports resumed'],['relay-offline','No recent relay reports']].map(([id,name])=>({id,name,occurrenceKey:'transition-id',payload:[...identity,number('received-at','Last server reception (epoch ms)',true),string('transition-id','Reception transition ID',36,true)]}))]
 };
 await fs.mkdir(new URL('../plugins/sensors/server/',import.meta.url),{recursive:true});
-await fs.writeFile(new URL('../plugins/sensors/declaration.json',import.meta.url),JSON.stringify(declaration,null,2)+'\n');
+const file=new URL('../plugins/sensors/declaration.json',import.meta.url);
+let existing;try{existing=JSON.parse(await fs.readFile(file,'utf8'));}catch(error){if(error.code!=='ENOENT')throw error;}
+// Preserve independently maintained software versions, glyphs, guides and Card
+// designs; this generator owns the protocol Event catalogue.
+await fs.writeFile(file,JSON.stringify(existing?{...existing,events:declaration.events}:declaration,null,2)+'\n');
 console.log('Sensors declaration written.');

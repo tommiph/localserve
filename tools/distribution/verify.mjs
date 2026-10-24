@@ -8,6 +8,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import assert from 'node:assert/strict';
 import {assertPublicPath} from './boundary.mjs';
+import {androidPackages,verifyAndroidPackage} from '../android-build/source-receipt.mjs';
 
 const run = promisify(execFile);
 const root = fileURLToPath(new URL('../../',import.meta.url));
@@ -42,6 +43,11 @@ try {
     assert.equal(hash(bytes),file.sha256,file.path);
   }
   assert.ok(actual.includes('.gitignore'));
+  for(const entry of androidPackages)await verifyAndroidPackage(installation,entry);
+  for(const file of ['GOOGLE-APPS-SCRIPT.md','server/cloud-relay.mjs','server/relay-protocol.mjs','web/cloud-relay-ui.js',
+    'plugins/google-apps-script/server/apps-script/Code.gs','plugins/google-apps-script/server/apps-script/send-example.mjs',
+    'apps/shared/android/local/localserve/relay/RelayClient.java','apps/shared/android/local/localserve/relay/RelaySettings.java',
+    'apps/shared/android/local/localserve/relay/RelayProtocol.java','tests/google-apps-script.test.mjs','tools/build-sensors-declaration.mjs'])assert.ok(actual.includes(file),file);
   assert.ok(actual.includes('runtime/LICENSE.txt'));
   assert.ok(actual.includes('plugins/calendar/vendor/ical.js/lib/ical/module.js'));
   assert.ok(actual.includes('plugins/pc-network/native/Collector.exe'));
@@ -56,7 +62,6 @@ try {
     'assets/games/music/README.md','GAMES.md','tests/games.test.mjs','tools/initialize-settings.mjs','tests/source.test.mjs',
     'tools/install-control-examples.mjs','examples/controls/README.md','examples/controls/samsung-tv.json','examples/controls/tradfri.json',
     'plugins/sensors/android/dist/localserve-sensors.apk','plugins/sensors/android/vendor/lock.json',
-    'apps/scenes/AndroidManifest.xml','apps/scenes/dist/scenes.apk','apps/scenes/dist/verification.json',
     'assets/scenes/app-icon.svg','tests/fixtures/scene-selector.mjs','SCENE-SELECTOR.md',
     'DEVICES.md','server/devices.mjs','server/device-vendors.mjs','server/device-discovery.mjs','server/devices-windows.ps1','web/devices-ui.js','tests/devices.test.mjs','tests/device-vendors.test.mjs'])assert.ok(actual.includes(file),file);
   assert.deepEqual(actual.filter(file => file.startsWith('assets/pages/')).sort(),['README.md','scifi.html','scifi-display.js','scifi-tv.css','scifi.utilities.css','solar-system.html','solar-system.js','vendor/three-r97/LICENSE.txt','vendor/three-r97/README.md','vendor/three-r97/three.min.js'].map(file=>'assets/pages/'+file).sort());

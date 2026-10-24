@@ -1,5 +1,15 @@
 # Using Localserve
 
+## Away from home
+
+The optional Google Apps Script plugin accepts selected phone reports, lighting
+scenes, published Task shortcuts and external Events through your own Google
+project. Localserve polls outbound HTTPS; no server port needs to be exposed.
+Controller retrieves approved connection details automatically when connected at home.
+Use [Controller](CONTROLLER.md) for setup, the four tabs and phone reporting.
+Remote use is polled, with bounded expiry and queue/completion receipts; LAN
+remains the default. Follow [setup and privacy details](GOOGLE-APPS-SCRIPT.md).
+
 ## Administrator and services
 
 **SERVER → Devices** provides manual discovery on an attached private network.

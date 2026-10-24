@@ -32,6 +32,9 @@ global Node installation, AI subscription or cloud hosting is required. Provider
 plugins need their services and your own credentials. Android and TV components
 are optional.
 
+For remote phone reports and scene/Task shortcuts without exposing your PC,
+see the optional [Google Apps Script relay](GOOGLE-APPS-SCRIPT.md).
+
 Read [installation and troubleshooting](INSTALL.md), [the user guide](USER-GUIDE.md)
 and [plugin setup](PLUGINS.md). Developers and AI coding tools should start with
 [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md).
@@ -84,9 +87,9 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
 - **Phone Home:** personal Favorites, quick lighting/TV controls and explicitly
   published manual Task shortcuts. The included Android app combines the remote
   with optional native Sensors reporting. See [Phone Home](PHONE-HOME.md).
-  For direct lighting scene and Task shortcuts, open `/scenes` and choose
-  **Get Scenes for Android** to install the separate **Scenes** app. See
-  [Scenes](SCENE-SELECTOR.md) and [Android setup](apps/scenes/README.md).
+  For lighting scenes, Tasks, full Remotes and Cards, install **Controller** from
+  `/downloads/controller.apk`. Phone reporting is under Settings. See
+  [Controller setup](CONTROLLER.md).
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
 - **Oculus Go:** manual APK library and a separate **# Localserve #** VR client

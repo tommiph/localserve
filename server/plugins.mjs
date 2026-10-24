@@ -757,7 +757,7 @@ export class PluginRegistry {
     return operation.finally(()=>{record.inspectionPending=false;record.pending--;record.operations.delete(controller);signal.removeEventListener('abort',abort);});
   }
 
-  ingestSensors(packet, receivedAt, signal, revision) {
+  ingestSensors(packet, receivedAt, signal, revision,transport={}) {
     const record=this.get('sensors');this.assertReady(record);
     if (record.plugin.runtime.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors receiver unavailable.');
     if (record.pending>=8) throw new HttpError(429,'Sensor processing queue is full.');
@@ -769,7 +769,7 @@ export class PluginRegistry {
       controller.signal.throwIfAborted();this.assertReady(record);
       if (record.config.snapshot().revision!==revision) throw new HttpError(409,'Sensors settings changed. Send a fresh report.');
       if (this.engine.gate.paused || Date.now()-receivedAt>4000) throw new HttpError(409,'Sensor report is paused or expired.');
-      return record.runtime.request('ingest',{packet,receivedAt},
+      return record.runtime.request('ingest',{packet,receivedAt,...transport},
         {signal:controller.signal,sensorIngress:true},5000);
     });
     record.actionQueue=operation.catch(()=>{});
@@ -869,6 +869,7 @@ export class PluginRegistry {
         const webpageTvLaunch = enabledPages.length ? {used: false, revision: sourceConfig.revision,
           pageId: validated['page-id'] || (enabledPages.length === 1 ? enabledPages[0].id : '')} : null;
         const requestContext = {...context, signal: controller.signal, webpageTvLaunch, actionId,
+          ...(record.plugin.id==='google-apps-script'?{relayClaim:{epoch:this.cloudRelay?.epoch,runtime:record.runtime,revision:sourceConfig.revision}}:{}),
           ...(record.plugin.id==='samsung-tv'&&actionId==='close-app'?{tvCloseId:validated.id,tvCloseRevision:sourceConfig.revision}:{}),
           ...(noticeUrl?{noticeClaim:{id:/\/tv-notices\/([a-f0-9]{48})/.exec(noticeUrl)[1],revision:sourceConfig.revision,runtime:record.runtime,epoch:this.noticeEpoch}}:{}),
           ...(record.plugin.runtime.preview ? {previewGeneration: record.previewGeneration || 0} : {})};
@@ -951,7 +952,10 @@ export class PluginRegistry {
       this.assertTvQuietHours(record.plugin.id, context.actionId, context);
     }
     const fields = { taskId: context.taskId, runId: context.runId, stepId: context.stepId };
-    if(operation==='close-localserve-tv') {
+    if(operation==='cloud-relay'){
+      if(record.plugin.id!=='google-apps-script'||context.actionId!=='sync'||!this.cloudRelay)throw new HttpError(403,'Relay host operation is unavailable.');
+      return this.cloudRelay.exchange(record,values,context);
+    } else if(operation==='close-localserve-tv') {
       if(record.plugin.id!=='samsung-tv'||context.actionId!=='close-app'||context.tvCloseId!=='LsPsMode01.PlaystationMode'
         ||Object.keys(values).length)throw Error('Cooperative TV close is unavailable.');
       const runtime=record.runtime;

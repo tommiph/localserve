@@ -826,6 +826,118 @@
       "from": "0.37.0",
       "version": "0.38.0",
       "summary": "Add manual MAC manufacturer enrichment to Devices with prefix-only requests, cached registry details and provider rate-limit handling."
+    },
+    {
+      "date": "2026-10-24T09:36:08.716Z",
+      "component": "server",
+      "from": "0.38.0",
+      "version": "0.39.0",
+      "summary": "Add an optional authenticated cloud inbox and explicit Android relay profiles for remote scenes, published Tasks and selected phone reports."
+    },
+    {
+      "date": "2026-10-24T09:36:09.456Z",
+      "component": "sensors",
+      "from": "1.5.3",
+      "version": "1.6.0",
+      "summary": "Accept authenticated relay reports with transport-aware freshness and separate LAN and remote presence Events."
+    },
+    {
+      "date": "2026-10-24T09:36:10.187Z",
+      "component": "google-apps-script",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Provide a bounded Google Apps Script inbox, setup exports, scoped remote shortcuts and typed external Task Events."
+    },
+    {
+      "date": "2026-10-24T13:56:26.183Z",
+      "component": "server",
+      "from": "0.39.0",
+      "version": "0.40.0",
+      "summary": "Unified Controller launcher, native LAN provisioning and consistent administrator connection controls"
+    },
+    {
+      "date": "2026-10-24T13:56:26.291Z",
+      "component": "sensors",
+      "from": "1.6.0",
+      "version": "1.7.0",
+      "summary": "Combined Controller Android app with optional phone reporting and automatic LAN or relay transport"
+    },
+    {
+      "date": "2026-10-24T13:56:26.404Z",
+      "component": "google-apps-script",
+      "from": "1.0.0",
+      "version": "1.0.1",
+      "summary": "Controller connection instructions and administrator-managed automatic phone grants"
+    },
+    {
+      "date": "2026-10-24T15:16:21.511Z",
+      "component": "server",
+      "from": "0.40.0",
+      "version": "0.41.0",
+      "summary": "Approve Controller phones with expiring codes and provision individual relay access automatically."
+    },
+    {
+      "date": "2026-10-24T15:16:21.616Z",
+      "component": "sensors",
+      "from": "1.7.0",
+      "version": "1.7.1",
+      "summary": "Polish Controller startup and grouped reporting settings, prevent local launcher stalls and refresh approved relay grants."
+    },
+    {
+      "date": "2026-10-24T15:16:21.723Z",
+      "component": "google-apps-script",
+      "from": "1.0.1",
+      "version": "1.1.0",
+      "summary": "Synchronize approved phone credentials through the signed collector and guide new phone enrollment."
+    },
+    {
+      "date": "2026-10-24T15:45:57.932Z",
+      "component": "server",
+      "from": "0.41.0",
+      "version": "0.41.1",
+      "summary": "Unify administrator panel and content spacing and remove underlines from button links."
+    },
+    {
+      "date": "2026-10-24T19:13:36.307Z",
+      "component": "server",
+      "from": "0.41.1",
+      "version": "0.42.0",
+      "summary": "Add live Controller connection recovery, shared relay layouts, scene glyphs, read-only Task explanations and verified publication tooling."
+    },
+    {
+      "date": "2026-10-24T19:13:36.429Z",
+      "component": "sensors",
+      "from": "1.7.1",
+      "version": "1.8.0",
+      "summary": "Unify local and remote Controller presentation, monitor active connections, show update information and polish native settings."
+    },
+    {
+      "date": "2026-10-24T19:55:11.248Z",
+      "component": "server",
+      "from": "0.42.0",
+      "version": "0.42.1",
+      "summary": "Unify lighting scene switches with administrator controls and preserve consistent light-selection checkbox sizing."
+    },
+    {
+      "date": "2026-10-24T20:10:44.067Z",
+      "component": "server",
+      "from": "0.42.1",
+      "version": "0.42.2",
+      "summary": "Preserve administrator scrolling across live refreshes and unify application circle icons"
+    },
+    {
+      "date": "2026-10-24T20:10:45.227Z",
+      "component": "sensors",
+      "from": "1.8.0",
+      "version": "1.8.1",
+      "summary": "Use the shared circle mark for phone event shortcuts"
+    },
+    {
+      "date": "2026-10-24T20:10:46.107Z",
+      "component": "oculus-go",
+      "from": "1.4.1",
+      "version": "1.4.2",
+      "summary": "Use the application circle on the headset launcher and library screen"
     }
   ]
 }

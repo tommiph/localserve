@@ -417,9 +417,11 @@ test('Android download route serves only the APK, leaves signing/source files pr
   const directory=path.join(root,'plugins/sensors/android/dist');await fs.mkdir(directory,{recursive:true});
   const original=await fs.readFile(new URL('../plugins/sensors/android/dist/localserve-sensors.apk',import.meta.url));
   await fs.writeFile(path.join(directory,'localserve-sensors.apk'),original);
+  await fs.copyFile(new URL('../plugins/sensors/android/dist/verification.json',import.meta.url),path.join(directory,'verification.json'));
   const response=await fetch(app.origin+'/downloads/localserve-sensors.apk');
   assert.equal(response.status,200);assert.equal(response.headers.get('content-type'),'application/vnd.android.package-archive');
   assert.deepEqual(Buffer.from(await response.arrayBuffer()),original);
+  const controller=await fetch(app.origin+'/downloads/controller.apk');assert.equal(controller.status,200);assert.equal(controller.headers.get('content-disposition'),'attachment; filename="controller.apk"');
   assert.equal((await fetch(app.origin+'/downloads/localserve-sensors.apk',{method:'HEAD'})).status,200);
   assert.equal((await fetch(app.origin+'/downloads/localserve-sensors.apk?file=anything')).status,405);
   assert.equal((await fetch(app.origin+'/tools/android-build/private/sensors-signing.p12')).status,404);

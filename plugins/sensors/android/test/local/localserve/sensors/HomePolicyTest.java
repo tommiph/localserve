@@ -18,6 +18,9 @@ public final class HomePolicyTest {
             if(!HomePolicy.allows(origin,origin+path,false)||HomePolicy.allows(origin,origin+path,true))throw new AssertionError("Card resource boundary failed");
         }
         if(!HomePolicy.allowsFrame(origin,origin+"/plugin-card-assets/example/design/index.html"))throw new AssertionError("Card frame rejected");
+        if(!HomePolicy.allowsFrame(origin,origin+"/controls/example/remote"))throw new AssertionError("Full remote frame rejected");
+        for(String path:new String[]{"/api/controller/connection","/api/control-view/example/remote/scene"})
+            if(HomePolicy.allows(origin,origin+path,false))throw new AssertionError("Private/native or administrator route admitted");
         for(String path:new String[]{"/assets/card-preview.js?v=4","/api/plugin-preview/webcam/frame.jpg","/api/plugin-preview/webcam/frame.jpg?v=12345"})
             if(!HomePolicy.allows(origin,origin+path,false)||HomePolicy.allows(origin,origin+path,true)||HomePolicy.allowsFrame(origin,origin+path))throw new AssertionError("Preview boundary failed");
         for(String path:new String[]{"/api/plugin-preview/webcam/frame.jpg?token=secret","/api/plugin-preview/webcam/state","/api/plugin-preview/webcam/frame.jpg?v=x","/api/plugin-preview/webcam/frame.jpg?x=1&v=2","/api/plugin-preview/webcam/%66rame.jpg"})

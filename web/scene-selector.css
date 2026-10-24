@@ -16,3 +16,15 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .icon-button{width:44px;height:44px}.brand{min-height:44px}
+/* Controller shares one compact launcher across scenes, shortcuts and viewers. */
+body{color:var(--ink);background:var(--page);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.selector-header{height:80px}.circle-logo{font:52px/1 system-ui;color:var(--ink)}
+.selector-shell{max-width:900px;padding-top:8px}.selector-nav{width:min(480px,calc(100% - 28px));gap:2px;padding:6px;border-radius:25px}
+.selector-nav button{flex-direction:column;gap:4px;min-width:0;min-height:60px;font-size:12px;border-radius:19px}
+.selector-nav button i{font-size:25px}.choices{padding-top:12px}.choices .scene-button{color:var(--ink);box-shadow:none}
+#controller-sheet{color:var(--ink);background:var(--page);border:1px solid var(--line);border-radius:22px;padding:0;width:min(900px,calc(100% - 24px));max-width:none;max-height:calc(100dvh - 24px)}
+#controller-sheet::backdrop{background:rgba(0,0,0,.65)}#controller-sheet>header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line)}
+#controller-sheet h2{font-size:17px;margin:0}#controller-detail{padding:12px;min-height:180px}#controller-detail iframe.controller-remote{border:0;width:100%;height:calc(100dvh - 120px);display:block;border-radius:12px;background:var(--page)}
+.controller-card{height:min(65vh,560px);position:relative;overflow:hidden;border-radius:16px;background:var(--surface)}
+.controller-card>.card-content{height:100%}.controller-card .card-preview-frame{width:100%;height:100%}
+@media(max-width:350px){.selector-header{height:70px}.selector-nav button{font-size:11px}.selector-shell{padding-left:16px;padding-right:16px}}

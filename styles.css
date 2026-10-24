@@ -274,7 +274,7 @@ h3 {
   cursor:not-allowed;
   opacity:.55;
 }
-:where(.app-shell, #editor-dialog) input:is([type="checkbox"], [type="radio"]):not(.switch) {
+:where(.app-shell, #editor-dialog, .controls-viewer) input:is([type="checkbox"], [type="radio"]):not(.switch) {
   width:18px;
   height:18px;
   min-width:18px;
@@ -285,7 +285,6 @@ h3 {
   vertical-align:middle;
   accent-color:var(--accent);
 }
-:where(.controls-viewer) input:is([type="checkbox"], [type="radio"]):not(.switch) { accent-color:var(--accent); }
 :where(.app-shell, #editor-dialog, .controls-viewer) input[type="range"] {
   width:100%;
   min-height:32px;
@@ -294,7 +293,7 @@ h3 {
   accent-color:var(--accent);
   cursor:pointer;
 }
-:where(.app-shell, #editor-dialog) input.switch {
+:where(.app-shell, #editor-dialog, .controls-viewer) input.switch {
   appearance:none;
   display:inline-flex;
   width:34px;
@@ -305,8 +304,9 @@ h3 {
   vertical-align:middle;
   cursor:pointer;
 }
-:where(.app-shell, #editor-dialog) input.switch:checked { background:var(--accent); }
-:where(.app-shell, #editor-dialog) input.switch:checked::after { margin-left:auto; }
+/* Checkbox switches derive their appearance from the native checked state. */
+:where(.app-shell, #editor-dialog, .controls-viewer) input.switch:checked { background:var(--accent); }
+:where(.app-shell, #editor-dialog, .controls-viewer) input.switch:checked::after { margin-left:auto; }
 :where(.app-shell, #editor-dialog) fieldset { min-width:0; min-inline-size:0; }
 :where(.app-shell, #editor-dialog, .controls-viewer) input[type="color"] {
   width:52px;
@@ -327,7 +327,17 @@ h3 {
   cursor:pointer;
 }
 :where(.app-shell, #editor-dialog) input[type="file"] { width:100%; padding:2px 4px; }
+/* Search, connection and export forms retain the same readable read-only state. */
+:where(.app-shell, #editor-dialog, #confirmation-dialog) :where(input, textarea)[readonly] {
+  background:var(--surface-muted);
+  color:var(--text);
+  opacity:1;
+}
 /* Persistent application shell. The sidebar contains destinations, not editors. */
+/* Reconciliation owns scroll preservation. Native anchoring must not apply a
+   second, delayed offset after retained rows have changed above the viewport. */
+html.admin-page { overflow-anchor: none; }
+
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
@@ -363,15 +373,14 @@ h3 {
 }
 
 .brand-mark {
-  width: 48px;
-  height: 33px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   flex: 0 0 auto;
 }
 
-/* Preserve the selected SVG's proportions: original in light, negative in dark. The
-   neighbouring server name supplies the branding text, so the image is decorative. */
+/* The circle remains square in both themes. Its neighbouring name supplies text. */
 .brand-mark .application-logo {
   display: block;
   width: 100%;
@@ -627,10 +636,12 @@ h3 {
   font-size: calc(12px * var(--font-scale));
   font-weight: 550;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .button:hover {
   background: var(--surface-hover);
+  text-decoration: none;
 }
 
 .button.primary {
@@ -658,6 +669,7 @@ h3 {
 }
 
 .icon-button {
+  text-decoration: none;
   display: inline-grid;
   place-items: center;
   min-width: 30px;
@@ -719,7 +731,20 @@ h3 {
   padding: 19px 20px;
 }
 
+/* Block-flow workspaces need their own rhythm; grid layouts own their gaps. */
+:where(#workspace, #plugin-panel) > :is(.panel, .plugin-list) + :is(.panel, .plugin-list) {
+  margin-block-start: 20px;
+}
+
+/* Prose, actions and tables have readable separation inside ordinary panels.
+ * Form fields and flex/grid children keep their dedicated layout rules. */
+#workspace .panel-body:not(.device-discovery-bar) > :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button)
+  + :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button) {
+  margin-block-start: 12px;
+}
+
 .text-button {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -732,7 +757,8 @@ h3 {
 }
 
 .text-button:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  color: var(--accent-ink);
 }
 
 .status-dot {
@@ -1963,6 +1989,10 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
   text-align: left;
 }
 
+
+/* A phone approval code is transient administration state, never a saved setting. */
+.controller-approval { display:flex;flex-direction:column;gap:10px;padding:18px;margin:16px 0;border:1px solid var(--border);border-radius:12px; }
+.controller-approval-code { font:700 2rem ui-monospace,monospace;letter-spacing:.25em;overflow-wrap:anywhere; }
 /* The Vista host must assign a definite width/height (and zero min-width/
    min-height on grid/flex slots). Only the information body scrolls.
    Designer preview dimensions belong to wrappers, never to this renderer. */
@@ -3522,6 +3552,10 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
 .client-version-row dt { flex:1 1 220px; color:var(--muted); }
 .client-version-row dd { margin:0; overflow-wrap:anywhere; }
 .client-version-note { padding:12px; border:1px solid var(--warning); border-radius:6px; color:var(--warning); }
+.relay-setup .row-actions { display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; }
+.relay-setup .row-actions .button { white-space:normal; text-align:center; }
+.relay-setup td small { display:block; margin-top:4px; color:var(--muted); }
+.panel-header h2:has(> .material-symbol) { display:flex; align-items:center; gap:8px; }
 @media (max-width:760px) {
   .settings-item > .definition-actions { width:100%; justify-content:flex-start; margin-left:0; }
   .definition-actions .definition-action { min-height:44px; }

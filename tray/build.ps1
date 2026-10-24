@@ -16,8 +16,7 @@ if (-not (Test-Path -LiteralPath $compiler)) { throw 'The Windows .NET Framework
 Add-Type -AssemblyName PresentationCore, WindowsBase
 
 function New-LogoIcon([string]$outputFile, [bool]$negative) {
-    # Compile the supplied SVG's native vector paths. Nothing is redrawn and the
-    # original SVG is untouched. ICO contains multiple transparent PNG sizes.
+    # Launcher and tray sizes share the application circle on a black square.
     [xml]$svg = Get-Content -LiteralPath (Join-Path $projectFolder 'assets/logo.svg') -Raw
     $paths = $svg.SelectNodes('//*[local-name()="path"]')
     $width = [double]$svg.svg.width
@@ -26,11 +25,12 @@ function New-LogoIcon([string]$outputFile, [bool]$negative) {
     foreach ($size in @(16, 20, 24, 32, 48, 64)) {
         $visual = New-Object System.Windows.Media.DrawingVisual
         $drawing = $visual.RenderOpen()
+        $drawing.DrawRectangle([System.Windows.Media.Brushes]::Black, $null, [System.Windows.Rect]::new(0,0,$size,$size))
         $scale = [Math]::Min($size / $width, $size / $height)
         $matrix = [System.Windows.Media.Matrix]::new($scale, 0, 0, $scale, (($size - $width * $scale) / 2), (($size - $height * $scale) / 2))
         $drawing.PushTransform(([System.Windows.Media.MatrixTransform]::new($matrix)))
         foreach ($shape in $paths) {
-            $brush = if ($negative) { [System.Windows.Media.Brushes]::White } else { [System.Windows.Media.Brushes]::Black }
+            $brush = [System.Windows.Media.Brushes]::White
             if ($shape.GetAttribute('fill').StartsWith('url(')) {
                 $gradient = $svg.SelectSingleNode('//*[local-name()="linearGradient"]')
                 $brush = New-Object System.Windows.Media.LinearGradientBrush

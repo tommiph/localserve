@@ -49,10 +49,12 @@
   font-size: calc(12px * var(--font-scale));
   font-weight: 550;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .button:hover {
   background: var(--surface-hover);
+  text-decoration: none;
 }
 
 .button.primary {
@@ -80,6 +82,7 @@
 }
 
 .icon-button {
+  text-decoration: none;
   display: inline-grid;
   place-items: center;
   min-width: 30px;
@@ -141,7 +144,20 @@
   padding: 19px 20px;
 }
 
+/* Block-flow workspaces need their own rhythm; grid layouts own their gaps. */
+:where(#workspace, #plugin-panel) > :is(.panel, .plugin-list) + :is(.panel, .plugin-list) {
+  margin-block-start: 20px;
+}
+
+/* Prose, actions and tables have readable separation inside ordinary panels.
+ * Form fields and flex/grid children keep their dedicated layout rules. */
+#workspace .panel-body:not(.device-discovery-bar) > :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button)
+  + :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button) {
+  margin-block-start: 12px;
+}
+
 .text-button {
+  text-decoration: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -154,7 +170,8 @@
 }
 
 .text-button:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  color: var(--accent-ink);
 }
 
 .status-dot {

@@ -26,6 +26,9 @@ in tools/testing/public-tests.mjs also drives clean-release verification.
 Add focused isolated tests alongside new capabilities.
 Running a checkout creates private files; keep them out of commits.
 
+For verified source and matching preview downloads, use the root `Publish.ps1`
+command described in [Publishing](tools/distribution/PUBLISHING.md).
+
 ## Code map
 
 The Windows checks workflow runs on pushes and pull requests using a pinned

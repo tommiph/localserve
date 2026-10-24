@@ -9,6 +9,7 @@ All start disabled with fresh defaults. No live settings or saved Cards are incl
 | [Emby](plugins/emby/README.md) | Reported playback sessions from your Emby server | Screening room, Screening room · Fullscreen |
 | [Finavia](plugins/finavia/README.md) | Finnish airport flight boards · Source: Finavia Public Flights | Departure lounge, Departure lounge · Fullscreen |
 | [Fingrid](plugins/fingrid/README.md) | Finland electricity system datasets and latest readings | Grid, Grid · Fullscreen |
+| [Google Apps Script](plugins/google-apps-script/README.md) | Authenticated cloud inbox for phone sensors, lighting scenes, published Tasks and external events | Ordinary Cards |
 | [HSL Trains](plugins/hsl-trains/README.md) | Finnish passenger train station boards · Source: Fintraffic / Digitraffic, CC BY 4.0 | Platform, Platform · Fullscreen |
 | [News](plugins/news/README.md) | Headlines from Google News RSS | Front page, Front page · Fullscreen |
 | [Oculus Go](plugins/oculus-go/README.md) | Wi-Fi headset diagnostics and a manual APK library | Orbital, Orbital · Fullscreen |
@@ -16,7 +17,7 @@ All start disabled with fresh defaults. No live settings or saved Cards are incl
 | [PlayStation](plugins/playstation/README.md) | PSN presence, active game, playtime and trophies | Gaming lounge, Gaming lounge · Fullscreen |
 | [Recipes](plugins/recipes/README.md) | Build Tasks by choosing what you want and when it should happen | Ordinary Cards |
 | [Samsung TV](plugins/samsung-tv/README.md) | Local Samsung TV readings, apps and remote controls | Home cinema, Home cinema · Fullscreen |
-| [Sensors](plugins/sensors/README.md) | Selected sensor and phone reports from trusted Android devices on the local network | Sensorium, Sensorium · Fullscreen |
+| [Sensors](plugins/sensors/README.md) | Selected Android sensor and phone reports through LAN or an explicitly configured cloud relay | Sensorium, Sensorium · Fullscreen |
 | [Simulator](plugins/simulator/README.md) | Local actions, values, and events | Signal lab, Signal lab · Fullscreen |
 | [TRÅDFRI](plugins/tradfri/README.md) | Legacy IKEA gateway lights, groups and lighting controls | Nordic, Nordic · Fullscreen |
 | [Weather](plugins/weather/README.md) | Current weather from wttr.in | Atmosphere, Atmosphere · Fullscreen |

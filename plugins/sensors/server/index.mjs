@@ -67,11 +67,12 @@ export function createSensorsAdapter({now=Date.now}={}) {
       for(const id of Object.keys(state.devices)) if(!settings.devices.some(device=>device.id===id))delete state.devices[id];
       const old=state.devices[packet.deviceId];
       if(old?.sessionId===packet.sessionId && packet.sequence<=old.sequence || old?.retiredSessions?.includes(packet.sessionId)) return {accepted:false,reason:'duplicate-or-old-report'};
-      const first=!live.has(packet.deviceId) || !old?.online || old.sessionId!==packet.sessionId;
-      const resumed=live.has(packet.deviceId) && old?.online===false;
+      const transport=context.reportTransport==='relay'?'relay':'lan';
+      const first=!live.has(packet.deviceId) || !old?.online || old.sessionId!==packet.sessionId || (old.transport||'lan')!==transport;
+      const resumed=live.has(packet.deviceId) && (old?.online===false || (old.transport||'lan')!==transport);
       const retired=old?.retiredSessions || [];
       if(old && old.sessionId!==packet.sessionId)retired.push(old.sessionId);
-      const device={id:packet.deviceId,name:configured.name,'reported-name':packet.deviceName,online:true,
+      const device={id:packet.deviceId,name:configured.name,'reported-name':packet.deviceName,online:true,transport,'relay-timeout-ms':transport==='relay'?context.relayTimeoutMs:0,
         'received-at':receivedAt,sessionId:packet.sessionId,sequence:packet.sequence,retiredSessions:retired.slice(-8),
         transitionId:resumed?randomUUID():old?.transitionId || '',
         catalog:packet.catalog,samples:{},events:first?{}:old.events || {},phoneClaims:first?{}:old.phoneClaims || {},cursor:first?0:old.cursor || 0};
@@ -110,7 +111,8 @@ export function createSensorsAdapter({now=Date.now}={}) {
       let sensorEvents=0;
       for(const sensor of ordered) {
         const sample=device.samples[sensor.id];let claim=device.events[sensor.id];
-        if(!sample || sample.receivedAt!==receivedAt || sample.ageMs>settings['offline-seconds']*1000 || sensor.status!=='Streaming')continue;
+        const maximumAge=transport==='relay'?120000:settings['offline-seconds']*1000;
+        if(!sample || sample.receivedAt!==receivedAt || sample.ageMs>maximumAge || sensor.status!=='Streaming')continue;
         // A connected trigger sensor can have no sample until the first real
         // gesture. Accept that occurrence after an established metadata report,
         // but baseline cached/older samples and all restart/reconnect snapshots.
@@ -138,7 +140,7 @@ export function createSensorsAdapter({now=Date.now}={}) {
       if(Buffer.byteLength(JSON.stringify(device),'utf8')>45000)throw new Error('Device snapshot exceeds 45000 bytes; select fewer sensors.');
       state.devices[device.id]=device;
       context.signal.throwIfAborted();await context.saveState(state);live.add(device.id);
-      if(resumed)await context.emit('device-online',{'device-id':device.id,'device-name':device.name,'received-at':receivedAt,'transition-id':device.transitionId});
+      if(resumed)await context.emit(transport==='relay'?'relay-online':'device-online',{'device-id':device.id,'device-name':device.name,'received-at':receivedAt,'transition-id':device.transitionId});
       for(const event of events) {context.signal.throwIfAborted();await context.emit(event.id,event.payload);}
       return {accepted:true,sensors:packet.catalog.length,events:events.length};
     },
@@ -150,16 +152,16 @@ export function createSensorsAdapter({now=Date.now}={}) {
         const configured=settings.devices.find(item=>item.id===id);
         if(!configured) {delete state.devices[id];continue;}
         device.name=configured.name;
-        const offline=!live.has(id) || at-device['received-at']>settings['offline-seconds']*1000;
+        const offline=!live.has(id) || at-device['received-at']>Math.max(settings['offline-seconds']*1000,device.transport==='relay'?device['relay-timeout-ms']||0:0);
         if(device.online && offline && live.has(id) && configured.enabled) {
           device.transitionId=randomUUID();
-          events.push({'device-id':id,'device-name':device.name,'received-at':device['received-at'],'transition-id':device.transitionId});
+          events.push({relay:device.transport==='relay','device-id':id,'device-name':device.name,'received-at':device['received-at'],'transition-id':device.transitionId});
         }
         if(offline)device.online=false;
         rows(device,at);
       }
       context.signal.throwIfAborted();await context.saveState(state);
-      for(const payload of events)await context.emit('device-offline',payload);
+      for(const item of events){const {relay,...payload}=item;await context.emit(relay?'relay-offline':'device-offline',payload);}
       return {completed:true};
     }
   };

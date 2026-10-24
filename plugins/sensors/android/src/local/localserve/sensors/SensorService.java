@@ -19,6 +19,7 @@ import java.util.concurrent.*;
  * callbacks only copy raw values; there is no sample history/offline queue. */
 public final class SensorService extends Service implements SensorEventListener {
     public static volatile boolean running;
+    public static volatile long lastLocalSuccess,lastRelayQueued;
     public static volatile String status = "Stopped";
     private static final String STOP = "local.localserve.sensors.STOP";
     private final Object samplesLock = new Object();
@@ -32,6 +33,11 @@ public final class SensorService extends Service implements SensorEventListener 
     private PhoneEvents phoneEvents;
     private PowerManager.WakeLock wakeLock;
     private volatile HttpURLConnection connection;
+    private volatile local.localserve.relay.RelayClient relayClient;
+    private boolean relayMode;
+    private boolean automatic;
+    private long probeAt;
+    private String savedRelay;
     private volatile boolean stopped;
     private String endpoint, deviceId, deviceName, sessionId;
     private Set<String> selected;
@@ -55,13 +61,14 @@ public final class SensorService extends Service implements SensorEventListener 
         if (intent != null && STOP.equals(intent.getAction())) { stopSelf(); return START_NOT_STICKY; }
         if (running) return START_NOT_STICKY;
         SharedPreferences preferences = getSharedPreferences("sender", MODE_PRIVATE);
-        try { endpoint = MainActivity.serverOrigin(preferences.getString("server", "")) + "/api/sensors/report"; }
+        automatic=preferences.getBoolean("automaticConnection",false);relayMode=!automatic&&preferences.getBoolean("relayMode",false);savedRelay=preferences.getString("relayProfile","");
+        try {if(!savedRelay.isEmpty())relayClient=new local.localserve.relay.RelayClient(savedRelay);if(!relayMode)endpoint=MainActivity.serverOrigin(preferences.getString("server", ""))+"/api/sensors/report";else endpoint="";}
         catch (Exception error) { status = "Set a private LAN server address first"; stopSelf(); return START_NOT_STICKY; }
         deviceId = preferences.getString("deviceId", ""); deviceName = preferences.getString("name", "Android");
         sessionId = UUID.randomUUID().toString();
         selected = new HashSet<>(preferences.getStringSet("selected", Collections.emptySet()));
         sampleMicros = Math.max(5000, preferences.getInt("samplingMs", 50) * 1000);
-        userInterval = Math.max(250, preferences.getInt("reportingMs", 1000));
+        userInterval = Math.max(relayMode?relayClient.reportIntervalMs:250, preferences.getInt("reportingMs", 1000));
         try {
             NotificationManager notifications = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             notifications.createNotificationChannel(new NotificationChannel("stream", "Sensor streaming", NotificationManager.IMPORTANCE_LOW));
@@ -151,10 +158,22 @@ public final class SensorService extends Service implements SensorEventListener 
 
     private void report() {
         if (stopped) return;
+        if(automatic){
+            String current=getSharedPreferences("sender",MODE_PRIVATE).getString("relayProfile","");
+            if(!current.equals(savedRelay)){
+                try{local.localserve.relay.RelayClient next=current.isEmpty()?null:new local.localserve.relay.RelayClient(current);if(relayClient!=null)relayClient.close();relayClient=next;savedRelay=current;relayMode=false;serverInterval=0;}
+                catch(Exception ignored){/* Retain the last validated connection until a valid grant arrives. */}
+            }
+        }
+        if(automatic&&relayMode&&System.currentTimeMillis()>=probeAt){relayMode=false;serverInterval=0;}
         int delay = Math.max(userInterval, serverInterval);
         try {
             renewWakeLock(); byte[] data = packet().toString().getBytes(StandardCharsets.UTF_8);
             if (data.length > 65536) throw new IOException("Select fewer sensors (report exceeds 64 KiB)");
+            if(relayMode){
+                JSONObject reply=relayClient.sensor(data,deviceId);serverInterval=Math.max(60000,Math.min(600000,reply.optInt("reportIntervalMs",60000)));delay=Math.max(userInterval,serverInterval);failures=0;
+                lastRelayQueued=System.currentTimeMillis();status="Relay queued · "+(++sent)+" reports sent to Google (not a server receipt)";return;
+            }
             HttpURLConnection current = (HttpURLConnection) new URL(endpoint).openConnection(Proxy.NO_PROXY); connection = current;
             current.setRequestMethod("POST"); current.setInstanceFollowRedirects(false); current.setConnectTimeout(3000); current.setReadTimeout(3000);
             current.setRequestProperty("Content-Type", "application/json"); current.setRequestProperty("X-Localserve-Sensors", "1");
@@ -164,15 +183,22 @@ public final class SensorService extends Service implements SensorEventListener 
             InputStream body = code < 400 ? current.getInputStream() : current.getErrorStream();
             String text = readBounded(body);
             if (code == 200) {
+                lastLocalSuccess=System.currentTimeMillis();
                 JSONObject response = new JSONObject(text);
                 serverInterval = Math.max(250, Math.min(60000, response.optInt("reportIntervalMs", 1000)));
                 delay = Math.max(userInterval, serverInterval); failures = 0;
                 status = "Streaming · " + (++sent) + " reports sent";
             } else {
-                failures = Math.min(5, failures + 1); delay = Math.max(delay, Math.min(30000, 1000 << failures));
+                failures = Math.min(5, failures + 1); delay = Math.max(delay, Math.min(relayMode?600000:30000, 1000 << failures));
                 status = "Server " + code + " · " + new JSONObject(text).optString("error", "Waiting for next fresh report");
             }
         } catch (Exception error) {
+            // Never resend the failed packet through another transport. The next
+            // tick samples fresh data; relay presence stays distinct from LAN.
+            if(automatic&&!relayMode&&!stopped){
+                String profile=getSharedPreferences("sender",MODE_PRIVATE).getString("relayProfile","");
+                try{if(!profile.isEmpty()){if(relayClient!=null)relayClient.close();relayClient=new local.localserve.relay.RelayClient(profile);relayMode=true;probeAt=System.currentTimeMillis()+Math.max(60000,relayClient.reportIntervalMs*2);delay=1000;status="Switching to remote reporting · next fresh report";return;}}catch(Exception ignored){}
+            }
             failures = Math.min(5, failures + 1); delay = Math.max(delay, Math.min(30000, 1000 << failures));
             if (!stopped) status = "Waiting for server · " + error.getClass().getSimpleName();
         } finally {
@@ -192,6 +218,7 @@ public final class SensorService extends Service implements SensorEventListener 
     }
     @Override public void onDestroy() {
         stopped = true; running = false;
+        if(relayClient!=null)relayClient.close();
         if(phoneEvents!=null)phoneEvents.stop();
         if (manager != null) { manager.unregisterListener(this); if (sensors != null) for (Sensor sensor : sensors.values()) manager.cancelTriggerSensor(trigger, sensor); }
         HttpURLConnection current = connection; if (current != null) current.disconnect();

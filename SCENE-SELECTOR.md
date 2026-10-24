@@ -1,10 +1,9 @@
-# Scenes & Tasks
+# Controller
 
-Open `/scenes` on your Localserve server, or choose **Scenes & Tasks** in Phone
-Home. The page is designed for phones, tablets and desktop browsers. **Lights**
-shows enabled stored scenes from enabled lighting Controls pages. **Tasks**
-shows the enabled shortcuts published under **Administration → Phone home**.
-Existing scene names and glyphs are used; the selector creates no new scenes
+Open `/scenes` in a browser or install [Controller](CONTROLLER.md). Its bottom
+tabs show Lights, Tasks, full Remotes and ready-made Cards. Phone reporting and
+the active connection are available in the Android Settings screen. Administration
+stays on the server. Existing scene names and glyphs are used; the selector creates no new scenes
 or Tasks. Disabled plugins and unavailable actions cannot run.
 
 Tap a circular button to run its scene or Task once. The result banner reports
@@ -26,29 +25,17 @@ home. The selector uses those existing definitions and permissions.
 
 ## Android app
 
-Choose **Get Scenes for Android** on `/scenes`, install the APK, then open
-**Scenes**. Set the server's private LAN IP address and port once in **Server
-connection**. Future launches open the selector directly. The gear changes the
-connection; a failed connection offers address settings and a manual retry.
-The launcher uses the black Localserve logo on white; the splash uses a white
-logo on black. This separate
-app requires no sensor permissions and does not replace Localserve/Sensors.
-See [Scenes for Android](apps/scenes/README.md) for installation and building.
-
-The page also has a standalone web-app manifest and local application icons. Use the
-browser menu to install it or add it to the home screen if supported. HTTP LAN
-addresses may offer only a browser shortcut. No service worker caches private
-capabilities or queues offline actions. The Android Localserve APK 1.4.3 also
-opens the selector from Home; install the update over the existing app to add
-its fixed routes to the native wrapper. Existing sensor settings are retained.
+Install [Controller](CONTROLLER.md) from `/downloads/controller.apk`. Set the
+server address once at home. Approved remote connection details are retrieved
+automatically. Phone reporting is optional under Settings.
 
 ## Contributor contract
 
-`PhoneHome.viewer(true)` projects only scene identities, labels/glyphs, owning
-Controls page, current revision/capability, availability and already-published
-Task shortcuts. It excludes step arguments, credentials, private readings and
-administrator tokens. `/api/scene-selector` is GET-only and accepts no queries.
-Writes use the existing revisioned Controls and Phone Home APIs, fresh durable
-request identities, exact Origin checks, pause/readiness and shutdown guards.
-Scene and Task definitions are never modified by this page. Capability and
-receipt data remain in memory; only appearance is saved in browser storage.
+The browser uses scoped Scene, Phone home and Card APIs. It receives no
+administrator token or relay credentials. One action UUID is committed before
+dispatch and uncertain commands are never resubmitted. Preserve stable buttons,
+keyboard focus, reduced motion, local themes and cancelled/hidden reads.
+Embedded full remotes expose activation controls; scene authoring stays outside
+the Controller shell. Native policies allow only the configured private origin
+and fixed viewer resources. Private provisioning is deliberately excluded from
+WebView resources. Android source lives under `plugins/sensors/android`.

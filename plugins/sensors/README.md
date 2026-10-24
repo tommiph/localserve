@@ -1,6 +1,6 @@
 # Sensors
 
-Selected sensor and phone reports from trusted Android devices on the local network
+Selected Android sensor and phone reports through LAN or an explicitly configured cloud relay
 
 ## Setup
 
@@ -24,7 +24,7 @@ Starts disabled with fresh default settings, no cached readings, saved Cards or 
 
 Actions: Check sensor connections.
 
-Events: Battery; Screen; Unlocked; Network; Bluetooth; Audio device; Phone call; Notification; Media playback; Foreground app; NFC tag; Manual button; Location; Region entered; Region left; Activity entered; Activity left; Accelerometer; Magnetic field; Orientation (legacy); Gyroscope; Light; Pressure; Temperature (legacy); Proximity; Gravity; Linear acceleration; Rotation vector; Relative humidity; Ambient temperature; Uncalibrated magnetic field; Game rotation vector; Uncalibrated gyroscope; Significant motion; Step detector; Step counter; Geomagnetic rotation vector; Heart rate; Tilt detector; Wake gesture; Glance gesture; Pick-up gesture; Wrist tilt gesture; Device orientation; Pose 6DOF; Stationary detection; Motion detection; Heart beat; Dynamic sensor metadata; Low latency off-body detection; Uncalibrated accelerometer; Hinge angle; Head tracker; Limited-axis accelerometer; Limited-axis gyroscope; Limited-axis uncalibrated accelerometer; Limited-axis uncalibrated gyroscope; Heading; Other sensor; Reports resumed; No recent reports.
+Events: Battery; Screen; Unlocked; Network; Bluetooth; Audio device; Phone call; Notification; Media playback; Foreground app; NFC tag; Manual button; Location; Region entered; Region left; Activity entered; Activity left; Accelerometer; Magnetic field; Orientation (legacy); Gyroscope; Light; Pressure; Temperature (legacy); Proximity; Gravity; Linear acceleration; Rotation vector; Relative humidity; Ambient temperature; Uncalibrated magnetic field; Game rotation vector; Uncalibrated gyroscope; Significant motion; Step detector; Step counter; Geomagnetic rotation vector; Heart rate; Tilt detector; Wake gesture; Glance gesture; Pick-up gesture; Wrist tilt gesture; Device orientation; Pose 6DOF; Stationary detection; Motion detection; Heart beat; Dynamic sensor metadata; Low latency off-body detection; Uncalibrated accelerometer; Hinge angle; Head tracker; Limited-axis accelerometer; Limited-axis gyroscope; Limited-axis uncalibrated accelerometer; Limited-axis uncalibrated gyroscope; Heading; Other sensor; LAN reports resumed; No recent LAN reports; Relay reports resumed; No recent relay reports.
 
 Plugin actions appear in global Tasks only when the plugin is enabled and ready. Explicit device actions can have real effects. Polling failures retain successful same-target readings; missing values remain explicit and uncertain effects are not automatically retried/replayed.
 

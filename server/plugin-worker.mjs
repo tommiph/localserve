@@ -25,6 +25,7 @@ function context(requestId, signal, noticeUrl, lightingFadeSeconds) {
     signal,
     noticeUrl,
     lightingFadeSeconds,
+    cloudRelay: values => hostCall(requestId,'cloud-relay',values),
     log: (message, level = 'info') => hostCall(requestId, 'log', { message, level }),
     emit: (eventId, payload = {}) => hostCall(requestId, 'event', { eventId, payload }),
     readState: () => hostCall(requestId, 'read-state', {}),
@@ -68,7 +69,7 @@ async function handleRequest(message) {
       result=await adapter.returnNotice(message.values,context(message.id,controller.signal));
     } else if (message.operation === 'ingest') {
       if (typeof adapter.ingest !== 'function') throw new Error('Plugin cannot receive native reports.');
-      result = await adapter.ingest(message.values.packet, message.values.receivedAt, context(message.id, controller.signal));
+      result = await adapter.ingest(message.values.packet, message.values.receivedAt, {...context(message.id, controller.signal),reportTransport:message.values.transport||'lan',relayTimeoutMs:message.values.relayTimeoutMs||0});
     } else throw new Error('Unknown runtime operation.');
     send({ type: 'result', id: message.id, result: result ?? null });
   } catch (error) {

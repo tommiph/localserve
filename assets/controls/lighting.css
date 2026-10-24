@@ -66,7 +66,7 @@
 .lighting-scene-run { grid-column: 1 / -1; min-height: 46px; border-radius: 10px; }
 .lighting-scene-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; border-top: 1px solid var(--border); padding-top: 10px; gap: 6px; }
 .lighting-scene-actions button { display: flex; align-items: center; justify-content: center; gap: 7px; background: transparent; color: var(--muted); border: 0; min-height: 44px; font: inherit; font-size: calc(11px * var(--font-scale)); padding: 0 8px; cursor: pointer; }
-.lighting-scene-actions label { margin-left: auto; padding: 8px 0 8px 6px; }
+.lighting-scene-actions label { margin-left: auto; padding: 8px 0 8px 6px; min-height: 44px; display: flex; align-items: center; }
 .lighting-dialog { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); border: 1px solid var(--border); border-radius: 22px; padding: 0; background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .lighting-dialog::backdrop, .lighting-confirm::backdrop { background: #06090bbf; backdrop-filter: blur(5px); }
 .lighting-dialog form { display: flex; flex-direction: column; max-height: calc(100dvh - 34px); }
@@ -86,10 +86,10 @@
 .lighting-capture-list legend { font-size: calc(14px * var(--font-scale)); font-weight: 600; }
 .lighting-capture-list > p { font-size: calc(12px * var(--font-scale)); color: var(--muted); line-height: 1.6; }
 .lighting-capture-list > label { display: flex; gap: 14px; align-items: center; border-bottom: 1px solid var(--border); padding: 14px 0; min-height: 60px; }
-.lighting-capture-list input, .lighting-recapture input { width: 20px; height: 20px; accent-color: var(--accent); }
+.lighting-capture-list input { width: 18px; height: 18px; }
 .lighting-capture-list strong { display: block; font-weight: 500; font-size: calc(13px * var(--font-scale)); }
 .lighting-capture-list small { display: block; font-size: calc(11px * var(--font-scale)); color: var(--muted); margin-top: 6px; }
-.lighting-recapture { display: flex; gap: 10px; align-items: center; font-size: calc(12px * var(--font-scale)); margin-top: 24px; }
+.lighting-recapture { display: flex; gap: 10px; align-items: center; min-height: 44px; font-size: calc(12px * var(--font-scale)); margin-top: 24px; }
 .lighting-form-error { color: var(--danger); font-size: calc(13px * var(--font-scale)); line-height: 1.6; }
 .lighting-confirm { width: min(400px, calc(100vw - 32px)); padding: 24px; border-radius: 18px; background: var(--surface); color: var(--text); border: 1px solid var(--border); }
 .lighting-confirm h2 { font-size: 18px; margin: 0 0 14px; }
@@ -155,3 +155,7 @@
   .lighting-search { margin-bottom:14px; }
   .lighting-card { padding:16px; }
 }
+html[data-controller="true"] .lighting-capture,
+html[data-controller="true"] .lighting-scene-actions { display:none; }
+/* Scene artwork is selected once on the server and shared by every launcher. */
+.lighting-glyph-picker{border:1px solid var(--border);border-radius:16px;padding:12px;margin:16px 0}.lighting-glyph-picker summary{display:flex;align-items:center;gap:12px;cursor:pointer;min-height:44px}.lighting-glyph-picker summary i{font-size:28px}.lighting-glyph-picker input[type="search"]{width:100%;margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:12px;color:var(--text);background:var(--surface)}.lighting-glyph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px;max-height:260px;overflow:auto;padding:4px}.lighting-glyph-grid button{display:grid;place-items:center;min-height:44px;border:1px solid var(--border);border-radius:12px;background:transparent;color:inherit}.lighting-glyph-grid button i{font-size:26px}.lighting-glyph-grid button[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:1px}.lighting-glyph-count{font-size:12px;opacity:.75}

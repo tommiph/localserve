@@ -15,7 +15,7 @@ import android.widget.*;
 import java.net.URI;
 import java.util.*;
 
-/** Native reporting setup: server, sampling, selected sensors, Start/Stop.
+/** Native reporting setup: sampling, selected sources and explicit Start/Stop.
  * User settings remain local and reporting starts only through explicit input. */
 public final class MainActivity extends Activity {
     private final Handler ui = new Handler();
@@ -31,6 +31,7 @@ public final class MainActivity extends Activity {
     private TextView status;
     private Button start, stop;
     private boolean startAfterPermissions;
+    private ControllerStyle style;
     private final int[] samplingMs = {5, 10, 20, 50, 100, 200, 1000};
     private final int[] reportingMs = {250, 500, 1000, 2000, 5000, 10000, 30000, 60000};
     private final Runnable update = new Runnable() {
@@ -49,38 +50,43 @@ public final class MainActivity extends Activity {
     };
 
     @Override public void onCreate(Bundle saved) {
+        if(!getSharedPreferences("sender",MODE_PRIVATE).getBoolean("relayDark",true))setTheme(R.style.ControllerLight);
         super.onCreate(saved);
         preferences = getSharedPreferences("sender", MODE_PRIVATE);
+        style=new ControllerStyle(this);
         if (!preferences.contains("deviceId")) preferences.edit().putString("deviceId", "android-" + UUID.randomUUID()).apply();
         ScrollView scroll = new ScrollView(this);
         LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
+        final LinearLayout page=content;
         int padding = dp(20); content.setPadding(padding, padding, padding, padding);
-        content.setBackgroundColor(Color.rgb(16, 21, 28)); scroll.addView(content); setContentView(scroll);
+        content.setBackgroundColor(style.background);scroll.setBackgroundColor(style.background);scroll.addView(content);setContentView(scroll);
         // API 35 uses edge-to-edge windows. Keep controls clear of the status
         // and navigation bars while retaining compatibility with Android 8.
         scroll.setOnApplyWindowInsetsListener((view, insets) -> {
-            content.setPadding(padding + insets.getSystemWindowInsetLeft(), padding + insets.getSystemWindowInsetTop(),
+            page.setPadding(padding + insets.getSystemWindowInsetLeft(), padding + insets.getSystemWindowInsetTop(),
                 padding + insets.getSystemWindowInsetRight(), padding + insets.getSystemWindowInsetBottom());
             return insets.consumeSystemWindowInsets();
         });
         scroll.requestApplyInsets();
-        ImageView logo = new ImageView(this); logo.setImageResource(R.drawable.app_icon);
-        content.addView(logo, new LinearLayout.LayoutParams(dp(64), dp(64)));
-        label(content, "Sensors", 26); label(content, "Device", 17);
+        page.addView(style.button("‹  Settings",()->finish()));
+        label(content, "Phone reporting", 26);
+        label(content,"Choose what this phone shares. Reporting starts only when you tap Start.",15);
+        label(content, "Device name", 17);
         name = input(content, "Device name", preferences.getString("name", SensorCatalog.clip(Build.MODEL, 32)));
-        label(content, "Server address", 17);
-        server = input(content, "http://server-ip:port", preferences.getString("server", ""));
+        label(content, "Connection is managed in Controller Settings. Reporting uses local network first and the approved relay when away.", 14);
+        server = new EditText(this);server.setText(preferences.getString("server", ""));
         server.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
-        label(content, "Sampling interval", 17); sampling = select(content, samplingMs, preferences.getInt("samplingMs", 50));
-        label(content, "Report interval", 17); reporting = select(content, reportingMs, preferences.getInt("reportingMs", 1000));
-        label(content, "Each report contains the latest raw value of each selected sensor.", 14);
+        LinearLayout timing=section(page,"Reporting frequency",false);
+        label(timing, "Sampling interval", 17); sampling = select(timing, samplingMs, preferences.getInt("samplingMs", 50));
+        label(timing, "Report interval", 17); reporting = select(timing, reportingMs, preferences.getInt("reportingMs", 1000));
+        label(timing, "Each report contains the latest raw value of each selected sensor. Remote reports use the server's lower cloud frequency.", 14);
         keepAwake = new CheckBox(this); keepAwake.setText("Keep CPU awake while streaming");
-        keepAwake.setChecked(preferences.getBoolean("keepAwake", false)); content.addView(keepAwake);
+        keepAwake.setChecked(preferences.getBoolean("keepAwake", false)); timing.addView(keepAwake);
         LinearLayout buttons = new LinearLayout(this);
         start = new Button(this); start.setText("Start"); buttons.addView(start, new LinearLayout.LayoutParams(0, dp(52), 1));
         stop = new Button(this); stop.setText("Stop"); buttons.addView(stop, new LinearLayout.LayoutParams(0, dp(52), 1)); content.addView(buttons);
         status = label(content, "Stopped", 15);
-        label(content,"Phone events",20);
+        content=section(page,"Phone events",false);
         Set<String> enabledEvents=preferences.getStringSet("phoneEvents",Collections.emptySet());
         for(int i=0;i<PhoneEvents.IDS.length;i++){
             CheckBox choice=new CheckBox(this);choice.setText(PhoneEvents.LABELS[i]);choice.setChecked(enabledEvents.contains(PhoneEvents.IDS[i]));
@@ -96,21 +102,23 @@ public final class MainActivity extends Activity {
         label(content,"Notification/media and app usage sources require the corresponding Android access above. Restart streaming after granting access. NFC reads only while this screen is open.",14);
         Button manual=new Button(this);manual.setText("Send manual event");content.addView(manual);
         manual.setOnClickListener(view->{PhoneEvents.emit("button",PhoneEvents.fields("name","Manual button"));Toast.makeText(this,SensorService.running?"Manual event requested":"Start streaming first",Toast.LENGTH_SHORT).show();});
+        content=section(page,"Location and regions",false);
         label(content,"Location interval",17);
         locationInterval=select(content,new int[]{5000,15000,30000,60000,120000},preferences.getInt("locationMs",30000));
         label(content,"Location/regions run only while you explicitly stream, with Android location enabled. Approximate permission may leave region boundaries uncertain. Region edits require Stop. New/copied regions start disabled.",14);
         regions=new RegionSettings(this,content);
         label(content,"Activity uses Google Play services' Walking, Running, Cycling, In vehicle and Still reports. Grant Physical activity access. In vehicle does not identify the driver. No radio/room analysis is performed.",14);
-        Button licenses=new Button(this);licenses.setText("Third-party licenses");content.addView(licenses);
+        Button licenses=new Button(this);licenses.setText("Third-party licenses");page.addView(licenses);
         licenses.setOnClickListener(view->{
             try(java.io.InputStream input=getAssets().open("licenses.txt")){
                 java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int count;
                 while((count=input.read(buffer))!=-1){if(bytes.size()+count>3000000)throw new java.io.IOException("License text exceeds viewer limit");bytes.write(buffer,0,count);}
                 TextView text=new TextView(this);text.setText(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));text.setPadding(dp(16),dp(8),dp(16),dp(8));
-                ScrollView viewer=new ScrollView(this);viewer.addView(text);new android.app.AlertDialog.Builder(this).setTitle("Third-party licenses").setView(viewer).setPositiveButton("Close",null).show();
+                ScrollView viewer=new ScrollView(this);viewer.addView(text);ControllerStyle.dialog(this).setTitle("Third-party licenses").setView(viewer).setPositiveButton("Close",null).show();
             }catch(java.io.IOException error){Toast.makeText(this,"License text unavailable",Toast.LENGTH_LONG).show();}
         });
-        label(content, "Available sensors", 20);
+        content=section(page,"Hardware sensors",false);
+        label(content,"Only sensors available on this phone are listed. Turn off sources you do not need.",14);
         Set<String> selected = preferences.getStringSet("selected", null);
         for (Map.Entry<String, Sensor> entry : SensorCatalog.available(this).entrySet()) {
             Sensor sensor = entry.getValue();
@@ -122,6 +130,7 @@ public final class MainActivity extends Activity {
         if (choices.isEmpty()) label(content, "No sensors reported by Android.", 15);
         start.setOnClickListener(view -> prepareStart());
         stop.setOnClickListener(view -> { startAfterPermissions = false; stopService(new Intent(this, SensorService.class)); });
+        style.tree(page);
     }
 
     /** Numeric RFC1918 destinations only: no DNS, credentials or redirects. */
@@ -138,7 +147,9 @@ public final class MainActivity extends Activity {
 
     private void prepareStart() {
         try {
-            String origin = serverOrigin(server.getText().toString());
+            boolean manualRelay=!preferences.getBoolean("automaticConnection",false)&&preferences.getBoolean("relayMode",false);
+            String origin = manualRelay?preferences.getString("server",""):serverOrigin(server.getText().toString());
+            if(manualRelay)new local.localserve.relay.RelayClient(preferences.getString("relayProfile","")).close();
             String deviceName = SensorCatalog.clip(name.getText().toString(), 32);
             if (deviceName.isEmpty()) throw new Exception();
             Set<String> selected = new HashSet<>(); for (Map.Entry<String, CheckBox> entry : choices.entrySet()) if (entry.getValue().isChecked()) selected.add(entry.getKey());
@@ -188,16 +199,24 @@ public final class MainActivity extends Activity {
     @Override public void onPause() { ui.removeCallbacks(update);android.nfc.NfcAdapter nfc=android.nfc.NfcAdapter.getDefaultAdapter(this);if(nfc!=null)nfc.disableReaderMode(this);super.onPause(); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private TextView label(LinearLayout parent, String text, int size) {
-        TextView view = new TextView(this); view.setText(text); view.setTextSize(size); view.setTextColor(Color.rgb(221, 230, 240));
-        view.setPadding(0, dp(14), 0, dp(8)); parent.addView(view); return view;
+        TextView view=style.label(text,size);parent.addView(view);return view;
     }
     private EditText input(LinearLayout parent, String hint, String value) {
-        EditText view = new EditText(this); view.setSingleLine(true); view.setHint(hint); view.setText(value); parent.addView(view); return view;
+        EditText view = new EditText(this); view.setSingleLine(true); view.setHint(hint); view.setText(value);style.field(view);parent.addView(view);return view;
     }
     private Spinner select(LinearLayout parent, int[] values, int selected) {
         Spinner view = new Spinner(this); List<String> labels = new ArrayList<>(); int chosen = 0;
         for (int i = 0; i < values.length; i++) { labels.add(values[i] + " ms"); if (values[i] == selected) chosen = i; }
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, labels);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, labels){
+            @Override public android.view.View getView(int position,android.view.View recycled,android.view.ViewGroup container){TextView result=(TextView)super.getView(position,recycled,container);result.setTextColor(style.ink);result.setTextSize(16);return result;}
+            @Override public android.view.View getDropDownView(int position,android.view.View recycled,android.view.ViewGroup container){TextView result=(TextView)super.getDropDownView(position,recycled,container);result.setTextColor(style.ink);result.setBackgroundColor(style.surface);result.setMinHeight(dp(52));return result;}
+        };
         view.setAdapter(adapter); view.setSelection(chosen); parent.addView(view); return view;
+    }
+    private LinearLayout section(LinearLayout parent,String title,boolean expanded){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(12),dp(4),dp(12),dp(12));box.setBackground(style.shape(style.surface,20));LinearLayout.LayoutParams space=style.slot();space.topMargin=dp(14);parent.addView(box,space);
+        LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setVisibility(expanded?View.VISIBLE:View.GONE);
+        Button header=style.button(title+(expanded?"  −":"  +"),()->{});header.setContentDescription(title+(expanded?", expanded":", collapsed"));box.addView(header);box.addView(body);
+        header.setOnClickListener(view->{boolean open=body.getVisibility()!=View.VISIBLE;body.setVisibility(open?View.VISIBLE:View.GONE);header.setText(title+(open?"  −":"  +"));header.setContentDescription(title+(open?", expanded":", collapsed"));if(open&&android.animation.ValueAnimator.areAnimatorsEnabled()){body.setAlpha(0);body.animate().alpha(1).setDuration(160).start();}});return body;
     }
 }

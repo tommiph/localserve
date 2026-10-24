@@ -8,13 +8,15 @@ import {instanceBinding} from './plugin-instances.mjs';
 export class PhoneDisplayCache {
   constructor(){this.devices=new Map();}
   context(record){return {runtime:record.runtime,revision:record.config.snapshot().revision};}
-  capture(packet,receivedAt,record,previous) {
+  capture(packet,receivedAt,record,previous,report={}) {
     const config=record.config.snapshot();
     for(const id of this.devices.keys())if(!config.settings.devices.some(d=>d.id===id&&d.enabled))this.devices.delete(id);
     const identity=this.context(record),old=this.devices.get(packet.deviceId);
-    const same=old&&old.runtime===identity.runtime&&old.revision===identity.revision&&old.session===packet.sessionId
-      &&receivedAt-old.at<=config.settings['offline-seconds']*1000;
-    const entry=same?old:{...identity,session:packet.sessionId,events:{}};
+    const transport=report.transport==='relay'?'relay':'lan';
+    const maximumGap=Math.max(config.settings['offline-seconds']*1000,transport==='relay'?report.relayTimeoutMs||0:0);
+    const same=old&&old.runtime===identity.runtime&&old.revision===identity.revision&&old.session===packet.sessionId&&old.transport===transport
+      &&receivedAt-old.at<=maximumGap;
+    const entry=same?old:{...identity,session:packet.sessionId,transport,events:{}};
     for(const event of packet.phoneEvents||[]) {
       const claim=event.kind==='geofence'?'geofence:'+event.fields['region-id']:event.kind==='activity'?'activity:'+event.fields.activity:event.kind;
       if(previous?.sessionId===packet.sessionId&&previous.phoneClaims?.[claim]

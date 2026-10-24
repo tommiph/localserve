@@ -10,3 +10,4 @@ ol { padding-left:22px; }
 label { display:block; margin-bottom:8px; }
 input { box-sizing:border-box; width:100%; font:inherit; color:#eef5ff; background:#192331; border:1px solid #41566f; border-radius:8px; padding:12px; }
 .detail { font-size:14px; }
+.controller-mark { font:100px/1 system-ui,sans-serif; color:#fff; margin:12px 0; }

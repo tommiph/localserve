@@ -28,7 +28,7 @@ test('handoff caches a bounded QR with quiet zone, accessible name and original 
   for(const origin of ['http://10.1.2.3:7041','http://172.16.2.3:8080','http://192.168.1.2:65535']){
     state.server.lanAddress=origin;
     const address=phone.homeAddress(),markup=phone.connection();
-    assert.equal(address,origin+'/home');assert.match(markup,/Scan to open Phone Home/);
+    assert.equal(address,origin+'/scenes');assert.match(markup,/Scan to open Controller/);
     assert.ok(markup.includes('value="'+address+'"'));assert.match(markup,/fill="#fff"/);assert.match(markup,/fill="#000"/);
     const qr=phone.qrCache;assert.equal(phone.qr(address),qr.markup);assert.equal(phone.qrCache,qr);
     // A private URL is small enough for a bounded version-5 symbol.
@@ -37,7 +37,7 @@ test('handoff caches a bounded QR with quiet zone, accessible name and original 
   }
   const encoder=context.qrcodegen.QrCode.encodeSegments;
   context.qrcodegen.QrCode.encodeSegments=()=>{throw Error('Unavailable');};phone.qrCache=null;
-  assert.match(phone.connection(),/Phone Home address/);assert.doesNotMatch(phone.connection(),/<svg/);
+  assert.match(phone.connection(),/Controller address/);assert.doesNotMatch(phone.connection(),/<svg/);
   context.qrcodegen.QrCode.encodeSegments=encoder;
   const fallback=fixture(false);fallback.state.server.lanAddress='http://10.1.2.3:7041';
   assert.match(fallback.phone.connection(),/Copy address/);assert.doesNotMatch(fallback.phone.connection(),/<svg/);

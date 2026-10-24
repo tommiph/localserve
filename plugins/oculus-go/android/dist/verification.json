@@ -1,17 +1,17 @@
 {
   "packageName": "org.localserve.go",
-  "version": "1.0.1",
-  "versionCode": 2,
+  "version": "1.0.2",
+  "versionCode": 3,
   "label": "# Localserve #",
   "minSdk": 25,
   "targetSdk": 25,
   "abi": "armeabi-v7a",
-  "size": 1053612,
-  "sha256": "890e8a976e673be64db79e6b676cf8dd754592b7eb0ee6bf201eb72d789a9a10",
+  "size": 1057706,
+  "sha256": "253f0824f2fc828e9dff2e170304da40499381201d24d9e0da485ff85764b79c",
   "sourceReceipt": {
     "algorithm": "sha256",
     "files": 15,
-    "digest": "7e1aa97226d7070f3bda100a289dd3aed6a8842b469d4069519447f9ae018584"
+    "digest": "1804a89aae44133935b26a54ab1eb5b9dc50f4ce6c8b3669302f3edae207ddeb"
   },
   "unconfigured": true,
   "signatureVerified": true,

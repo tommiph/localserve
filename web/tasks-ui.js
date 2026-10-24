@@ -94,7 +94,7 @@ const TaskUI = {
   rows() {
     const tasks = state.tasks.filter(task => `${task.name} ${this.taskSummary(task)}`.toLowerCase().includes(this.search.toLowerCase()));
     if (!tasks.length) return '<div class="empty-state">No tasks found.</div>';
-    return tasks.map(task => `<div class="settings-item task-row" data-live-key="task:${escapeHtml(task.id)}"><span class="service-icon">${icon('list-check')}</span><div class="settings-text"><h3>${escapeHtml(task.name)}</h3><p>${escapeHtml(this.taskSummary(task))}</p>${this.runSummary(task)}</div><button class="button" data-action="task-run" data-id="${escapeHtml(task.id)}" title="Run ${escapeHtml(task.name)}" aria-label="Run ${escapeHtml(task.name)}" ${!task.enabled || state.paused ? 'disabled' : ''}>${icon('play')}Run</button>${itemActions(task, 'task')}</div>`).join('');
+    return tasks.map(task => `<div class="settings-item task-row" data-live-key="task:${escapeHtml(task.id)}"><span class="service-icon">${icon('list-check')}</span><div class="settings-text"><h3>${escapeHtml(task.name)}</h3><p>${escapeHtml(this.taskSummary(task))}</p>${this.runSummary(task)}</div><button class="button" data-action="task-run" data-id="${escapeHtml(task.id)}" title="Run ${escapeHtml(task.name)}" aria-label="Run ${escapeHtml(task.name)}" ${!task.enabled || state.paused ? 'disabled' : ''}>${icon('play')}Run</button><button class="icon-button" type="button" data-action="task-explain" data-id="${escapeHtml(task.id)}" title="Why didn’t it run?" aria-label="Explain ${escapeHtml(task.name)}">${icon('circle-info')}</button>${itemActions(task, 'task')}</div>`).join('');
   },
 
   weekdayFields(item) {
@@ -689,6 +689,11 @@ const TaskUI = {
         input.value = String(input.value !== 'true');
         control.setAttribute('aria-checked', input.value);
       }
+    } else if(action==='task-explain'){
+      const response=await fetch('api/tasks/'+encodeURIComponent(id)+'/explanation',{cache:'no-store'}),result=await response.json();
+      if(!response.ok)throw Error(result.error||'Task explanation unavailable.');
+      const e=escapeHtml;
+      showDialog(`${dialogHeader('Why didn’t it run?',result.name)}<div class="dialog-body"><p class="aside-note">Current state checked ${e(formatServerTimestamp(result.checkedAt))}. This check does not run the Task or change any rules.</p><h3>Start conditions</h3>${result.gates.length?'<ul>'+result.gates.map(text=>`<li>${e(text)}</li>`).join('')+'</ul>':'<p>No current pause, enablement or concurrency blockers.</p>'}<p>${result.ruleMode==='and'?'AND: all enabled conditions must match when an occurrence is evaluated.':'OR: any enabled rule can start this Task.'} Events are not replayed when a blocker clears.</p>${result.rules.map(rule=>`<section class="panel"><h4>${e(rule.name)}</h4><p>${e(rule.status)}${Number.isFinite(rule.nextAt)?' · '+e(formatServerTimestamp(rule.nextAt)):''}</p></section>`).join('')}${result.quietHours?'<p class="aside-note">Do not disturb is active. Automatic TV steps are skipped; other steps may still run.</p>':''}<h3>Actions</h3><ul>${result.steps.map(step=>`<li>${step.number}. ${e(step.name)} · ${e(step.status)}</li>`).join('')}</ul><h3>Recorded result</h3>${result.latestRun?`<p>${e(result.latestRun.status)} · ${e(formatServerTimestamp(result.latestRun.startedAt))}${result.latestRun.message?' · '+e(result.latestRun.message):''}</p>`:'<p>No retained run for this Task.</p>'}${result.lastWarning?`<p>${e(formatServerTimestamp(result.lastWarning.at))} · ${e(result.lastWarning.message)}</p>`:''}<p class="field-help">Comparisons describe the last evaluated report, not a live measurement. Missing history cannot prove why an earlier Event did not arrive. Event-bound action values and named targets are validated again when a real run starts.</p></div><div class="dialog-footer"><button type="button" class="button" data-action="close-dialog">Close</button></div>`,{kind:'task-explanation',id,revision:result.revision});
     } else if (action === 'task-run') {
       return this.runTask(id);
     }

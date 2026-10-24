@@ -125,30 +125,26 @@ appears within the remote only when the browser offers an install prompt.
 The current server uses HTTP. Chrome's standard standalone PWA installation
 requires trusted HTTPS; a LAN address does not satisfy that requirement. Your
 browser may add only a shortcut opening a browser tab. For a native launcher,
-install the unified Localserve Android APK described below. Its Home screen
+install the Controller APK described below. Its four-tab screen
 provides remotes, information Card favorites and published manual Tasks, with
 optional Sensors reporting. No TLS bypass is provided.
 The server must remain running/reachable; remotes
 do not cache capabilities, queue commands or work offline. Physical Android
 installation behavior depends on your Android/browser version.
 
-## Localserve Android app
+## Controller for Android
 
-Configure LAN access first, then open `/sensors` at your server's LAN address
-on Android. Download and install the APK using Android's own installation prompt.
-In Connection, enter that server address. Home works with enabled remotes, Card
-favorites and explicitly published manual Tasks; the Sensors plugin need not be
-enabled to use these controls. See [Phone Home](PHONE-HOME.md).
+1. Configure LAN access and connect the phone to the same home network.
+2. Open `/sensors` or `/scenes` on the server from Android and download Controller.
+3. Install `controller.apk` using Android’s installation prompt.
+4. Open Controller → Settings, enter the server address and Connect.
+5. Use Lights, Tasks, full Remotes and Cards in the bottom tabs.
 
-For optional native reporting, enable the Sensors plugin, open Sensors in the
-app, select the sources you need and tap Start. Devices register without pairing
-credentials. Grant only the Android access required by the sources you select.
-
-Streaming is started explicitly and has a visible foreground notification.
-Stop from the app or notification. It does not start at boot or buffer readings
-for later delivery. Optional sources start off. See
-[the Android guide](plugins/sensors/android/README.md) for location, named regions,
-activity transitions, notification filtering and rebuilding with your own key.
+The app retrieves approved relay details automatically; no profile file is
+handled on the phone. Administration stays on the server. For optional phone
+sources, use Settings → Phone reporting, select sources, grant their Android
+permissions and tap Start. No reporting starts automatically. See
+[Controller](CONTROLLER.md) and the [reporting guide](plugins/sensors/android/README.md).
 
 ## Server controls and Windows startup
 

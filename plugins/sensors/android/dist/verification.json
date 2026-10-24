@@ -1,14 +1,14 @@
 {
   "file": "plugins/sensors/android/dist/localserve-sensors.apk",
-  "bytes": 3213962,
-  "sha256": "7347fadab5bc81274927350ba50cf8f56d1fb8ca043420ac69b391bc10eb1106",
+  "bytes": 4034870,
+  "sha256": "724b6c740ab6a38fd9191ce7af7b67b9de08078474cc66419edc1fa519e60241",
   "minSdk": 26,
   "targetSdk": 35,
-  "version": "1.4.3",
+  "version": "2.2.1",
   "sourceReceipt": {
     "algorithm": "sha256",
-    "files": 21,
-    "digest": "4320dc38ecf347220b441efbd8dc754d1fe750cb53e08ad503066d355820223a"
+    "files": 35,
+    "digest": "eb5308da21954f20f8ad37e0510a4509819fdb85b030d7ae4bad39076c415eab"
   },
   "vendorArtifacts": 33,
   "javaResources": 459,

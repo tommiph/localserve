@@ -34,7 +34,7 @@ public final class HomePolicy {
                 || path.matches("/api/phone-home/cards/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}/[a-z0-9-]{1,80}")
                 || path.matches("/plugin-card-assets/[a-z0-9-]+/[a-z0-9-]+/(?:[a-z0-9-]+/)*[a-z0-9-]+\\.(?:html|css|svg|png|webp)")
                 || path.matches("/api/phone-home/receipts/[a-f0-9-]{36}") || path.equals("/api/control-view")
-                || path.matches("/api/control-view/[a-z0-9-]+/[a-z0-9-]+(?:/(?:run|cancel|scene))?")
+                || path.matches("/api/control-view/[a-z0-9-]+/[a-z0-9-]+(?:/(?:run|cancel))?")
                 || path.matches("/controls/[a-z0-9-]+/[a-z0-9-]+/app.webmanifest");
         } catch (Exception error) { return false; }
     }
@@ -43,7 +43,7 @@ public final class HomePolicy {
     public static boolean allowsFrame(String origin, String address) {
         try {
             return allows(origin, address, false) && new URI(address).getPath().matches(
-                "/plugin-card-assets/[a-z0-9-]+/[a-z0-9-]+/(?:[a-z0-9-]+/)*[a-z0-9-]+\\.html");
+                "(?:/controls/[a-z0-9-]+/[a-z0-9-]+|/plugin-card-assets/[a-z0-9-]+/[a-z0-9-]+/(?:[a-z0-9-]+/)*[a-z0-9-]+\\.html)");
         } catch (Exception error) { return false; }
     }
     /** A user-tapped download leaves the WebView for the system browser. */

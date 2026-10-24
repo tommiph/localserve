@@ -62,6 +62,9 @@
 # User APK libraries
 library/
 
+# Private Google relay configuration and phone profiles
+localserve-*-private.json
+
 /tools/oculus-build/downloads/
 /tools/oculus-build/packages/
 /tools/oculus-build/ndk/

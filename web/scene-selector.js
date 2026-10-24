@@ -7,17 +7,20 @@
   const palette = [['#ead493','#584a2c'],['#d7dfcb','#43533e'],['#d4dfe4','#3e5865'],['#e8cfbf','#6d4f3d'],['#dcd3e6','#61526e'],['#cbded7','#3c5c50']];
   let model = null, group = 'scenes', online = false, reading = false, sending = false;
   let pending = null, outcome = null, timer = null, resultTimer = null, generation = 0, readController;
+  let library = {remotes:[],cards:[]}, detailTimer, detailController, detailEpoch=0;
   const buttons = new Map();
   // The native shell intercepts this one connection link. No JavaScript bridge
   // grants device access, and the ordinary browser retains its Home link.
-  const nativeApp = /(?:^| )LocalserveScenes\/1\.0(?: |$)/.test(window.navigator?.userAgent || '');
+  const nativeApp = /(?:^| )Localserve(?:Scenes|Controller)\/1\.0(?: |$)/.test(window.navigator?.userAgent || '');
   if (nativeApp) {
     document.documentElement.dataset.nativeApp = 'scenes';
     $('app-connection').hidden = false;$('android-download').hidden = true;
-    const brand = document.querySelector('.brand');brand.href = 'scenes';brand.setAttribute('aria-label','Scenes');
+    const brand = document.querySelector('.brand');brand.href = 'scenes';brand.setAttribute('aria-label','Controller');
   }
   let dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
   try { const saved = localStorage.getItem('localserve.scenes.appearance');if (saved === 'light' || saved === 'dark') dark = saved === 'dark'; } catch {}
+  const controllerApp=/LocalserveController\/1\.0/.test(window.navigator?.userAgent||'');
+  if(controllerApp){dark=!/ControllerTheme\/light/.test(window.navigator.userAgent);$('appearance').hidden=true;}
   function appearance() {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     $('appearance').innerHTML = glyph(dark ? 'sun' : 'moon');
@@ -25,6 +28,7 @@
     document.querySelector('meta[name="theme-color"]').content = dark ? '#171c19' : '#f7f6f2';
   }
   $('appearance').onclick = () => { dark = !dark;appearance();try { localStorage.setItem('localserve.scenes.appearance',dark ? 'dark' : 'light'); } catch {} };
+  window.addEventListener('controller-appearance',event=>{if(controllerApp&&typeof event.detail==='boolean'){dark=event.detail;appearance();}});
   function uuid() {
     const b = crypto.getRandomValues(new Uint8Array(16));b[6]=(b[6]&15)|64;b[8]=(b[8]&63)|128;
     const h = [...b].map(n=>n.toString(16).padStart(2,'0')).join('');
@@ -43,21 +47,26 @@
   }
   const key = (item,type) => type === 'scenes' ? 'scene:'+item.pluginId+':'+item.slug+':'+item.id : 'task:'+item.id;
   const controlUrl = item => '/api/control-view/'+encodeURIComponent(item.pluginId)+'/'+encodeURIComponent(item.slug);
-  function entries() { return (model?.[group] || []).map(item=>({...item,key:key(item,group)})); }
+  function entries() {
+    if(group==='remotes')return library.remotes.map(item=>({...item,key:'remote:'+item.pluginId+':'+item.slug,icon:item.icon||'gamepad',available:true}));
+    if(group==='cards')return library.cards.map(item=>({...item,key:'card:'+item.pluginId+':'+item.templateId+':'+item.sourceId}));
+    return (model?.[group] || []).map(item=>({...item,key:key(item,group)}));
+  }
   function color(id) { let hash=0;for (let i=0;i<id.length;i++) hash=(hash*31+id.charCodeAt(i))>>>0;return palette[hash%palette.length]; }
   function paint() {
-    $('connection').textContent = online ? model?.paused ? 'Paused' : 'Connected' : model ? 'Disconnected' : 'Connecting';
+    document.documentElement.dataset.commandPending=String(Boolean(pending||sending));
+    $('connection').textContent = online ? model?.paused ? 'Home network · paused' : 'Home network' : model ? 'Offline' : 'Connecting';
     $('connection').dataset.online = String(online && !model?.paused);
     $('server-state').hidden = online && !model?.paused || !model;
     $('server-state').textContent = !online ? 'Connection lost. Actions are unavailable until Localserve reconnects.' : 'Server functions are paused.';
     if (!model) return;
-    $('server-name').textContent = nativeApp ? 'Scenes' : model.name;document.title = model.name+' · Scenes';
+    $('server-name').textContent = 'Controller';document.title = 'Controller';
     $('scene-count').textContent = model.scenes.length;$('task-count').textContent = model.tasks.length;
     $('heading').textContent = group === 'scenes' ? 'Lighting scenes' : 'Tasks';
     $('eyebrow').textContent = group === 'scenes' ? 'YOUR LIGHTS' : 'YOUR SHORTCUTS';
     const list = entries();$('item-count').textContent = list.length+' '+(group === 'scenes' ? list.length===1 ? 'scene' : 'scenes' : list.length===1 ? 'Task' : 'Tasks');
     document.querySelector('.heading-mark').innerHTML = glyph(group === 'scenes' ? 'lightbulb' : 'play');
-    $('choices').setAttribute('aria-label',group === 'scenes' ? 'Lighting scenes' : 'Tasks');
+    $('choices').setAttribute('aria-label',group === 'scenes' ? 'Lighting scenes' : group==='tasks'?'Tasks':group==='remotes'?'Remotes':'Cards');
     document.querySelectorAll('[data-group]').forEach(b=>{if (b.dataset.group===group)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
     const wanted = new Set(list.map(item=>item.key));
     for (const [id,b] of buttons) if (!wanted.has(id)) { b.remove();buttons.delete(id); }
@@ -72,20 +81,42 @@
         buttons.set(item.key,b);
       }
       if ($('choices').children[index]!==b) $('choices').insertBefore(b,$('choices').children[index]||null);
-      b.disabled = !online || model.paused || !item.available || sending || Boolean(pending);
+      const viewer=group==='cards'||group==='remotes';
+      b.disabled = !online || !item.available || (!viewer&&(model.paused || sending || Boolean(pending)));
       b.dataset.pending=String(pending?.key===item.key && !pending.uncertain);b.dataset.done=String(outcome?.key===item.key && outcome.status==='completed');
-      b.setAttribute('aria-label','Run '+item.name);b.querySelector('strong').textContent=item.name;
+      b.setAttribute('aria-label',(viewer?'Open ':'Run ')+item.name);b.querySelector('strong').textContent=item.name;
       b.title=item.available ? '' : item.unavailableReason || 'Unavailable';
       const icon = outcome?.key===item.key && outcome.status==='completed' ? 'check' : item.icon;
       if (b._icon!==icon) { b.querySelector('.orb').innerHTML=glyph(icon);b._icon=icon; }
-      b.querySelector('.button-state').textContent = pending?.key===item.key ? pending.uncertain ? 'Check result' : model.paused ? 'Paused' : 'Running…' : !online ? 'Disconnected' : model.paused ? 'Paused' : !item.available ? item.unavailableReason || 'Unavailable' : groups.size>1 ? item.group || '' : '';
+      b.querySelector('.button-state').textContent = viewer ? group==='cards'?item.designName||'Card':item.pluginName||'Full remote' : pending?.key===item.key ? pending.uncertain ? 'Check result' : model.paused ? 'Paused' : 'Running…' : !online ? 'Disconnected' : model.paused ? 'Paused' : !item.available ? item.unavailableReason || 'Unavailable' : groups.size>1 ? item.group || '' : '';
     });
     if (!list.length) {
       const p=document.createElement('p');p.className='empty';p.innerHTML=glyph(group==='scenes'?'lightbulb':'play');
-      p.append(document.createTextNode(group==='scenes' ? 'Your lighting scenes will appear here. Save and enable a scene on a lighting remote to get started.' : 'Choose your Task shortcuts in Administration → Phone home. Only published Tasks appear here.'));
+      p.append(document.createTextNode(group==='scenes' ? 'Your administrator’s lighting scenes will appear here.' : group==='tasks' ? 'Your administrator’s published Tasks will appear here.' : group==='remotes' ? 'Your administrator’s enabled remotes will appear here.' : 'Cards from enabled plugins will appear here.'));
       $('choices').append(p);
     }
     $('collection-help').textContent = group==='tasks' && list.length ? 'Tap to run a Task. Tasks needing captured Event values are unavailable here.' : '';
+  }
+  function closeDetail() {detailEpoch++;clearTimeout(detailTimer);detailController?.abort();$('controller-detail').replaceChildren();}
+  async function openViewer(item) {
+    const sheet=$('controller-sheet');$('controller-sheet-title').textContent=item.name;closeDetail();sheet._read=null;sheet.showModal();
+    const current=detailEpoch,host=$('controller-detail');
+    if(group==='remotes') {
+      const path='/controls/'+encodeURIComponent(item.pluginId)+'/'+encodeURIComponent(item.slug);
+      const frame=document.createElement('iframe');frame.className='controller-remote';frame.title=item.name;frame.src=path;host.append(frame);return;
+    }
+    const card=document.createElement('div');card.className='controller-card';host.append(card);
+    async function read() {
+      if(document.hidden||!sheet.open||current!==detailEpoch)return;
+      detailController=new AbortController();
+      try {
+        const value=await api('/api/phone-home/cards/'+[item.pluginId,item.templateId,item.sourceId].map(encodeURIComponent).join('/'),null,{},detailController);
+        if(current!==detailEpoch||document.hidden||!sheet.open)return;
+        CardRenderer.mount(card,CardRenderer.render(value.card,value.data,value.catalog,{...value.options,connected:online}));
+      }catch {if(current===detailEpoch)card.textContent='Card unavailable. Check the server connection.';}
+      finally {if(current===detailEpoch&&sheet.open&&!document.hidden)detailTimer=setTimeout(read,3000);}
+    }
+    void read();sheet._read=read;
   }
   function feedback(name,text,running) {
     $('receipt').hidden=false;$('receipt-name').textContent=name;$('receipt-status').textContent=text;
@@ -135,15 +166,18 @@
       if (epoch!==generation || document.hidden)return;
       if (!Array.isArray(data.scenes)||!Array.isArray(data.tasks))throw Error('Selector unavailable.');
       model=data;online=true;paint();
+      try {const value=await api('/api/phone-home',null,{},readController);if(epoch===generation){library={remotes:value.remotes||[],cards:value.cards||[]};if(group==='remotes'||group==='cards')paint();}}catch {}
       if (pending && !sending && !pending.uncertain)await checkReceipt(pending);
     } catch {
       if (epoch===generation) {online=false;paint();if (!model) $('choices').textContent='Unable to connect. Keep Localserve running and check the server address.';}
     } finally {reading=false;readController=null;if (!document.hidden)timer=setTimeout(refresh,3000);}
   }
-  $('choices').onclick = event=>{const b=event.target.closest('button[data-key]');if (b && !b.disabled)void start(b.dataset.key);};
+  $('choices').onclick = event=>{const b=event.target.closest('button[data-key]');if(b&&!b.disabled){if(group==='cards'||group==='remotes')void openViewer(entries().find(item=>item.key===b.dataset.key));else void start(b.dataset.key);}};
   document.querySelectorAll('[data-group]').forEach(b=>{b.onclick=()=>{if (group!==b.dataset.group) {group=b.dataset.group;paint();}};});
   $('dismiss').onclick=()=>{if (pending?.uncertain)pending=null;outcome=null;$('receipt').hidden=true;paint();};
-  document.addEventListener('visibilitychange',()=>{generation++;clearTimeout(timer);if (document.hidden)readController?.abort();else void refresh();});
+  $('controller-close').onclick=()=>$('controller-sheet').close();
+  $('controller-sheet').addEventListener?.('close',closeDetail);
+  document.addEventListener('visibilitychange',()=>{generation++;clearTimeout(timer);clearTimeout(detailTimer);if(document.hidden){readController?.abort();detailController?.abort();}else{void refresh();if($('controller-sheet').open)void $('controller-sheet')._read?.();}});
   window.addEventListener('pagehide',()=>{generation++;clearTimeout(timer);clearTimeout(resultTimer);readController?.abort();});
   appearance();void refresh();
 })();

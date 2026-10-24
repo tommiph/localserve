@@ -45,7 +45,7 @@ test('selector never commands on load or refresh, keeps buttons stable and compl
 test('standalone shell exposes connection settings and hides its own APK download without executing actions',async()=>{
   const f=await client(false,true);
   assert.equal(f.node('app-connection').hidden,false);assert.equal(f.node('android-download').hidden,true);
-  assert.equal(f.node('.brand').href,'scenes');assert.equal(f.node('server-name').textContent,'Scenes');
+  assert.equal(f.node('.brand').href,'scenes');assert.equal(f.node('server-name').textContent,'Controller');
   assert.equal(f.posts.length,0);await f.poll();assert.equal(f.posts.length,0);
 });
 test('unavailable shortcuts show the public reason without executing or replacing their buttons',async()=>{

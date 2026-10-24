@@ -52,3 +52,8 @@ Screenshots and device results require separate evidence. A passed DOM/unit
 check alone does not verify contrast, visual polish, Android behavior or Tizen
 firmware. Never run browser review against installed device settings or enable
 automatic Tasks to make a test convenient.
+
+Run `runtime/node.exe tests/serve-admin-refresh.mjs` for the isolated DOM checks.
+Wait for the settled-frame checks to finish: scrolling ancestors, inserted and
+removed rows, post-update hydration and zero offsets are measured after browser
+layout. Both vertical and horizontal positions must remain unchanged.

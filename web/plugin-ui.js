@@ -216,7 +216,7 @@ const PluginUI = {
   },
 
   settings(service) {
-    return this.webcamSettings(service) + this.connectionPanel(service) + (service.id === "oculus-go" && service.actions.some(action => action.id === "library-install") ? '<section class="panel"><div class="panel-body"><h2>Applications</h2><p>Browse your APK library, read installed apps and manage applications on the configured headset.</p><button class="button" data-view="vr-library">Open VR library</button></div></section>' : "") + this.settingsBody(service);
+    return (typeof CloudRelayUI!=='undefined'?CloudRelayUI.panel(service):'') + this.webcamSettings(service) + this.connectionPanel(service) + (service.id === "oculus-go" && service.actions.some(action => action.id === "library-install") ? '<section class="panel"><div class="panel-body"><h2>Applications</h2><p>Browse your APK library, read installed apps and manage applications on the configured headset.</p><button class="button" data-view="vr-library">Open VR library</button></div></section>' : "") + this.settingsBody(service);
   },
 
   webcamSettings(service) {
@@ -236,7 +236,7 @@ const PluginUI = {
   settingsBody(service) {
     if (!service.config) return '<section class="panel"><div class="empty-state">Plugin data could not be loaded.</div></section>';
     return `${service.taskBuilder?`<section class="panel plugin-task-builder"><div class="panel-body"><h2>I want… when…</h2><p>Choose an action and when it should happen, then review your Task before saving.</p><button class="button primary" data-action="plugin-task-builder" ${service.enabled?'':'disabled'}>Build a task</button>${!service.enabled?'<p class="field-help">Enable this plugin below to begin.</p>':''}</div></section>`:''}<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
-      ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Android app</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
+      ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Controller for Android</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
       <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${this.groupFields(service.settings,field=>this.field(field,service.config.settings[field.id] ?? field.default,'plugin-setting'),service.id)}</fieldset></form>
       <div class="plugin-setting-row"><span>${icon('toggle-on')}Enabled</span><button type="button" class="switch" role="switch" aria-checked="${service.enabled}" aria-label="${escapeHtml(service.name)} enabled" data-action="toggle-service" data-id="${escapeHtml(service.id)}"></button></div>
       ${service.attribution ? `<p class="field-help"><a href="${escapeHtml(service.attribution.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.label)}</a> · <a href="${escapeHtml(service.attribution.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.licenseLabel)}</a> · ${escapeHtml(service.attribution.notice)}</p>` : ''}
@@ -319,6 +319,8 @@ const PluginUI = {
     const original = items.find(item => item.id === id);
     const item = original ? structuredClone(original) : {...this.newItem(field),...prefill};
     if (operation === 'copy') Object.assign(item, { id: `loc-${crypto.randomUUID()}`, name: `${item.name.slice(0, 27)} copy`, enabled: false });
+    // A copied cloud client needs its own identity and credential grant.
+    if (operation === 'copy' && service.id === 'google-apps-script' && field.id === 'clients') Object.assign(item, {'client-id':'',key:''});
     const context = { kind: 'plugin-item', pluginId: service.id, setting: field.id, operation,
       item, items, settings: structuredClone(service.config.settings), revision: service.config.revision };
     const title = `${operation === 'add' ? 'Add' : operation === 'copy' ? 'Copy' : operation === 'delete' ? 'Delete' : 'Edit'} ${field.itemLabel}`;

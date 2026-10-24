@@ -365,6 +365,7 @@ document.addEventListener('click', async event=>{
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
     if (!action) return;
+    if(action.startsWith('cloud-')&&typeof CloudRelayUI!=='undefined')return await CloudRelayUI.handle(control);
     if(action.startsWith('device-'))return await DevicesUI.handle(action,id,control);
     if(action.startsWith('setup-'))return SetupUI.handle(action,id);
     if (action === 'overview-failed-runs') {

@@ -11,6 +11,9 @@ const parts = location.pathname.split('/').filter(Boolean),
 const endpoint = isIndex
   ? '/api/control-view'
   : `/api/control-view/${encodeURIComponent(parts[1])}/${encodeURIComponent(parts[2])}`;
+// Embedded Controller remotes activate existing capabilities. Scene authoring
+// remains on the independently opened remote/administrator surface.
+if(window.parent!==window)document.documentElement.dataset.controller='true';
 let snapshot,
   refreshing = false,
   sending = false,

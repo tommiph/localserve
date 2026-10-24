@@ -36,9 +36,11 @@ export class AndRuleGroups {
       const device=record.state.snapshot().devices?.[capability.instanceId];
       // Offline is a valid presence condition, but retained phone/sensor values
       // cannot stand in for a report from a currently connected device.
-      const offline=capability.eventId==='device-offline';
+      const offline=['device-offline','relay-offline'].includes(capability.eventId);
+      const presence=['device-online','device-offline','relay-online','relay-offline'].includes(capability.eventId);
+      if(presence&&(device?.transport||'lan')!==(capability.eventId.startsWith('relay-')?'relay':'lan'))return null;
       if(!device || (offline ? device.online!==false : device.online!==true))return null;
-      instanceEpoch=JSON.stringify([device.sessionId,device.transitionId]);
+      instanceEpoch=JSON.stringify([device.sessionId,device.transitionId,device.transport||'lan']);
     }
     return {record,runtime:record.runtime,generation:record.pollGeneration,instanceEpoch};
   }

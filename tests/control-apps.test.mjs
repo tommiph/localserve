@@ -80,7 +80,7 @@ test('manifest HTTP routes enforce page lifecycle, methods and existing private 
   assert.equal(manifest.start_url, '/controls/simulator/remote');
   const html = await fetch(app.origin + manifest.start_url);
   assert.match(await html.text(), /href="\/controls\/simulator\/remote\/app.webmanifest"/);
-  assert.match(html.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  assert.match(html.headers.get('content-security-policy'), /frame-ancestors 'self'/);
   response = await fetch(endpoint, { method: 'HEAD' });
   assert.equal(response.status, 200);
   assert.equal(await response.text(), '');

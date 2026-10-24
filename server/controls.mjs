@@ -275,13 +275,14 @@ export class ControlsStore {
   }
   itemsFor(plugin, page) { return [...page.items, ...(this.lighting(plugin, page)?.items || [])]; }
   async scene(pluginId, slug, token, values) {
-    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'enabled']);
+    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'enabled', 'icon']);
     const { plugin, page } = this.resolve(pluginId, slug);
     this.verify(pluginId, page, token);
     if (!this.lighting(plugin, page) || !['capture', 'edit', 'copy', 'enabled', 'delete'].includes(values.action)) throw new HttpError(400, 'Choose a lighting scene operation.');
-    const fields = { capture: ['action','revision','name','lightIds'], edit: ['action','revision','itemId','name','lightIds'],
-      copy: ['action','revision','itemId','name'], enabled: ['action','revision','itemId','enabled'], delete: ['action','revision','itemId'] };
+    const fields = { capture: ['action','revision','name','lightIds','icon'], edit: ['action','revision','itemId','name','lightIds','icon'],
+      copy: ['action','revision','itemId','name','icon'], enabled: ['action','revision','itemId','enabled'], delete: ['action','revision','itemId'] };
     object(values, fields[values.action]);
+    if(values.icon!==undefined&&!glyphs.includes(values.icon))throw new HttpError(400,'Choose a bundled Material Symbols glyph.');
     if (values.revision !== page.revision) throw new HttpError(409, 'These scenes changed. Close and reopen the editor.');
     if (!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Wait until lighting is ready and no Control is running.');
     const { store } = this.entry(pluginId);
@@ -299,6 +300,7 @@ export class ControlsStore {
         if (saved.items.length >= 64) throw new HttpError(400, 'This page supports at most 64 controls.');
         const copy = structuredClone(item);
         copy.id = randomUUID(); copy.label = label(values.name); copy.enabled = false;
+        if(values.icon!==undefined)copy.icon=values.icon;
         copy.steps.forEach(step => { step.id = randomUUID(); }); saved.items.push(copy);
       } else {
         const name = label(values.name);
@@ -311,9 +313,11 @@ export class ControlsStore {
         }
         if (values.action === 'capture') {
           if (saved.items.length >= 64) throw new HttpError(400, 'This page supports at most 64 controls.');
+          if(values.icon!==undefined)captured.icon=values.icon;
           saved.items.push(captured);
         } else {
           item.label = name;
+          if(values.icon!==undefined)item.icon=values.icon;
           if (captured) item.steps = captured.steps;
         }
       }
@@ -345,8 +349,8 @@ export class ControlsStore {
     });
     const recent = this.runs.snapshot().runs.filter(run => run.pluginId === pluginId && run.pageId === page.id).slice(-5).map(({ id, itemId, status, step, totalSteps, message, startedAt, finishedAt }) => ({ id, itemId, status, step, totalSteps, message, startedAt, finishedAt }));
     return { page: { id: page.id, name: page.name, slug: page.slug, revision: page.revision, pluginId, pluginName: plugin.name, columns: page.columns, presentation: page.presentation || 'mapped', icon: page.icon, items },
-      ...(lighting ? { lighting: { lights: lighting.lights, groups: lighting.groups, receivedAt: lighting.receivedAt,
-        scenes: page.items.filter(item => item.kind === 'scene').map(item => ({ id: item.id, label: item.label, enabled: item.enabled, available: this.available(plugin, item), steps: item.steps.length })) } } : {}),
+      ...(lighting ? { lighting: { lights: lighting.lights, groups: lighting.groups, receivedAt: lighting.receivedAt, glyphs,
+        scenes: page.items.filter(item => item.kind === 'scene').map(item => ({ id: item.id, label: item.label, icon:item.icon, enabled: item.enabled, available: this.available(plugin, item), steps: item.steps.length })) } } : {}),
       options: this.options(), available: this.ready(pluginId), busy: this.active.has(pluginId),
       activeRunId: this.active.get(pluginId)?.page.id === page.id ? this.active.get(pluginId).runId : null,
       token: this.token(pluginId, page), runs: recent };

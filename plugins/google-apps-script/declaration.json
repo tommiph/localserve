@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "google-apps-script",
+  "name": "Google Apps Script",
+  "version": "1.1.0",
+  "icon": "cloud-sync",
+  "description": "Authenticated cloud inbox for phone sensors, lighting scenes, published Tasks and external events",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "polling": {
+    "actionId": "sync",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "url",
+      "label": "Apps Script deployment URL",
+      "type": "string",
+      "default": "",
+      "maxLength": 350,
+      "section": "Connection"
+    },
+    {
+      "id": "collector-key",
+      "label": "Collector key",
+      "type": "string",
+      "default": "",
+      "format": "secret",
+      "maxLength": 64,
+      "section": "Connection"
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Poll interval (seconds)",
+      "type": "number",
+      "default": 1,
+      "min": 0.5,
+      "max": 1,
+      "displayScale": 60,
+      "section": "Connection"
+    },
+    {
+      "id": "report-seconds",
+      "label": "Cloud sensor interval (seconds)",
+      "type": "number",
+      "default": 120,
+      "min": 60,
+      "max": 600,
+      "section": "Connection",
+      "help": "Low-rate reports replace the previous pending report. Controller retrieves the current interval when connected at home."
+    },
+    {
+      "id": "clients",
+      "label": "Authorized clients",
+      "type": "list",
+      "default": [],
+      "maxItems": 20,
+      "itemLabel": "client",
+      "uniqueBy": [
+        "id",
+        "name",
+        "client-id"
+      ],
+      "fields": [
+        {
+          "id": "id",
+          "label": "Entry ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "client-id",
+          "label": "Client ID",
+          "type": "string",
+          "required": true,
+          "pattern": "^[a-z][a-z0-9-]{0,31}$",
+          "maxLength": 32
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true,
+          "default": false
+        },
+        {
+          "id": "key",
+          "label": "Client key",
+          "type": "string",
+          "format": "secret",
+          "default": "",
+          "maxLength": 64
+        },
+        {
+          "id": "scenes",
+          "label": "Allow lighting scenes and published Tasks",
+          "type": "boolean",
+          "default": false,
+          "required": true
+        },
+        {
+          "id": "sensors",
+          "label": "Allow selected phone sensor reports",
+          "type": "boolean",
+          "default": false,
+          "required": true
+        },
+        {
+          "id": "events",
+          "label": "Allow generic Task events",
+          "type": "boolean",
+          "default": false,
+          "required": true
+        },
+        {
+          "id": "device-id",
+          "label": "Sensor device ID",
+          "type": "string",
+          "default": "",
+          "maxLength": 64,
+          "help": "Controller approval fills this automatically. Advanced sensor clients must match one phone installation."
+        }
+      ],
+      "section": "Clients"
+    }
+  ],
+  "settingsGuide": {
+    "title": "Connect phones through Google Apps Script",
+    "sections": [
+      {
+        "title": "Prepare",
+        "steps": [
+          "Choose Generate missing keys, then download Code.gs and the private Google configuration. Credentials remain separate from the public script.",
+          "Controller phones are registered with Approve a phone after deployment. Advanced external senders can be added under Authorized clients."
+        ]
+      },
+      {
+        "title": "Deploy in Google",
+        "steps": [
+          "Create a standalone Apps Script project. Paste the downloaded Code.gs into its code editor.",
+          "In Project Settings → Script Properties, add LOCAL_SERVE_RELAY and paste the private Google configuration JSON as its value. Keep editor access private.",
+          "Deploy → New deployment → Web app. Execute as yourself and allow Anyone, including callers not signed in. The script authenticates every data request itself. Google account policies can restrict this option.",
+          "Save the deployed HTTPS URL ending /exec here. Enable this plugin only after reviewing which data and shortcuts may pass through Google."
+        ]
+      },
+      {
+        "title": "Connect phones",
+        "steps": [
+          "Install Controller from /downloads/controller.apk. On the home network, open Settings, enter the Localserve address and tap Connect.",
+          "For a new phone, choose Approve a phone here and type its six-character code in Controller. Its individual credentials are transferred automatically and synchronized to Google on the next successful poll.",
+          "Lights and published Tasks work remotely. Full Remotes and Cards require LAN. Phone reporting starts only after Start; remote presence does not imply arrival home."
+        ]
+      }
+    ]
+  },
+  "actions": [
+    {
+      "id": "sync",
+      "name": "Synchronize relay",
+      "icon": "cloud-sync",
+      "description": "Poll the configured inbox and publish the current scoped shortcut catalogue",
+      "parameters": []
+    }
+  ],
+  "events": [
+    {
+      "id": "message",
+      "name": "Message received",
+      "occurrenceKey": "message-id",
+      "payload": [
+        {
+          "id": "message-id",
+          "label": "Message ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 36
+        },
+        {
+          "id": "client-id",
+          "label": "Client ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "channel",
+          "label": "Channel",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "message",
+          "label": "Message",
+          "type": "string",
+          "required": true,
+          "maxLength": 2000
+        },
+        {
+          "id": "value",
+          "label": "Value",
+          "type": "number"
+        },
+        {
+          "id": "active",
+          "label": "Active",
+          "type": "boolean"
+        },
+        {
+          "id": "sent-at",
+          "label": "Sent at (epoch ms)",
+          "type": "number",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "cardFields": []
+}
