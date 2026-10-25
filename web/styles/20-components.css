@@ -31,12 +31,12 @@
 
 .heading-actions {
   display: flex;
-  gap: 10px;
+  gap: var(--action-gap, 10px);
   align-items: center;
 }
 
 .button {
-  min-height: 36px;
+  min-height: 40px;
   padding: 8px 13px;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -48,6 +48,7 @@
   gap: 8px;
   font-size: calc(12px * var(--font-scale));
   font-weight: 550;
+  line-height: 1.4;
   white-space: nowrap;
   text-decoration: none;
 }
@@ -56,6 +57,8 @@
   background: var(--surface-hover);
   text-decoration: none;
 }
+
+.button:is(:link, :visited, :active) { text-decoration: none; }
 
 .button.primary {
   background: var(--accent);
@@ -141,19 +144,19 @@
 }
 
 .panel-body {
-  padding: 19px 20px;
+  padding: var(--panel-padding, 20px);
 }
 
 /* Block-flow workspaces need their own rhythm; grid layouts own their gaps. */
 :where(#workspace, #plugin-panel) > :is(.panel, .plugin-list) + :is(.panel, .plugin-list) {
-  margin-block-start: 20px;
+  margin-block-start: var(--panel-gap, 20px);
 }
 
 /* Prose, actions and tables have readable separation inside ordinary panels.
  * Form fields and flex/grid children keep their dedicated layout rules. */
-#workspace .panel-body:not(.device-discovery-bar) > :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button)
-  + :is(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button) {
-  margin-block-start: 12px;
+:where(#workspace .panel-body:not(.device-discovery-bar)) > :where(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button)
+  + :where(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button) {
+  margin-block-start: var(--content-gap, 12px);
 }
 
 .text-button {
@@ -294,9 +297,10 @@
 
 .row-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 1px;
+  gap: var(--action-gap, 10px);
 }
 
 .row-actions .switch {

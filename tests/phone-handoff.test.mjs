@@ -8,7 +8,7 @@ import {createHash} from 'node:crypto';
 const read=file=>fs.readFile(new URL('../'+file,import.meta.url),'utf8');
 const vendor=await read('assets/qrcode/qrcodegen.js'),source=await read('web/phone-home-ui.js');
 function fixture(encoder=true) {
-  const state={server:{lanAddress:null}},context=vm.createContext({state,URL,escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;'),icon:()=>'',document:{addEventListener(){}}});
+  const state={services:[],server:{lanAddress:null}},context=vm.createContext({state,URL,escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;'),icon:()=>'',document:{addEventListener(){}}});
   if(encoder)vm.runInContext(vendor,context);
   vm.runInContext(source+'\nglobalThis.phone=PhoneHomeUI;',context);
   return {context,state,phone:context.phone};
@@ -29,7 +29,7 @@ test('handoff caches a bounded QR with quiet zone, accessible name and original 
     state.server.lanAddress=origin;
     const address=phone.homeAddress(),markup=phone.connection();
     assert.equal(address,origin+'/scenes');assert.match(markup,/Scan to open Controller/);
-    assert.ok(markup.includes('value="'+address+'"'));assert.match(markup,/fill="#fff"/);assert.match(markup,/fill="#000"/);
+    assert.ok(markup.includes('value="'+origin+'"'));assert.match(markup,/fill="#fff"/);assert.match(markup,/fill="#000"/);
     const qr=phone.qrCache;assert.equal(phone.qr(address),qr.markup);assert.equal(phone.qrCache,qr);
     // A private URL is small enough for a bounded version-5 symbol.
     const size=Number(/viewBox="0 0 (\d+)/.exec(qr.markup)[1]);assert.ok(size>=29&&size<=45);
@@ -37,7 +37,7 @@ test('handoff caches a bounded QR with quiet zone, accessible name and original 
   }
   const encoder=context.qrcodegen.QrCode.encodeSegments;
   context.qrcodegen.QrCode.encodeSegments=()=>{throw Error('Unavailable');};phone.qrCache=null;
-  assert.match(phone.connection(),/Controller address/);assert.doesNotMatch(phone.connection(),/<svg/);
+  assert.match(phone.connection(),/Server address/);assert.doesNotMatch(phone.connection(),/<svg/);
   context.qrcodegen.QrCode.encodeSegments=encoder;
   const fallback=fixture(false);fallback.state.server.lanAddress='http://10.1.2.3:7041';
   assert.match(fallback.phone.connection(),/Copy address/);assert.doesNotMatch(fallback.phone.connection(),/<svg/);

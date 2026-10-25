@@ -1,4 +1,4 @@
-/** Localserve gateway reads and explicit supervised TRÅDFRI lighting actions.
+/** Sormus gateway reads and explicit supervised TRÅDFRI lighting actions.
  * Every action owns and closes its gateway session; no background observers.
  */
 import { createVault, helperReady } from './vault.mjs';

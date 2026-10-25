@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://localserve.example/vista" version="1.5.1" viewmodes="maximized">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://localserve.example/vista" version="1.5.2" viewmodes="maximized">
   <tizen:application id="HwGlance01.HomeGlance" package="HwGlance01" required_version="2.3"/>
-  <name>Vista</name>
+  <name>Sormus Vistas</name>
   <content src="index.html"/>
   <icon src="icon-tv.png"/>
   <access origin="*" subdomains="true"/>
   <!-- Explicit frame sources include nonstandard LAN ports. Host-only CSP
-       wildcards can match default ports while excluding Localserve's 7041. -->
+       wildcards can match default ports while excluding Sormus's 7041. -->
   <tizen:content-security-policy>default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; frame-src http: https:; child-src http: https:; base-uri 'none'; object-src 'none'</tizen:content-security-policy>
   <tizen:allow-navigation>http://*:* https://*:*</tizen:allow-navigation>
   <tizen:privilege name="http://tizen.org/privilege/internet"/>

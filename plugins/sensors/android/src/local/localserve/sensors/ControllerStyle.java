@@ -18,12 +18,24 @@ final class ControllerStyle {
     int dp(int value){return Math.round(value*activity.getResources().getDisplayMetrics().density);}
     GradientDrawable shape(int color,int radius){GradientDrawable result=new GradientDrawable();result.setColor(color);result.setCornerRadius(dp(radius));return result;}
     LinearLayout.LayoutParams slot(){LinearLayout.LayoutParams result=new LinearLayout.LayoutParams(-1,-2);result.setMargins(0,dp(6),0,dp(6));return result;}
+    LinearLayout card(LinearLayout parent,String title){
+        LinearLayout group=new LinearLayout(activity);group.setOrientation(LinearLayout.VERTICAL);
+        group.setTag("controller-card");group.setPadding(dp(16),dp(16),dp(16),dp(16));group.setBackground(shape(surface,20));
+        LinearLayout.LayoutParams params=slot();params.bottomMargin=dp(14);parent.addView(group,params);
+        TextView heading=label(title,20);heading.setPadding(0,0,0,dp(8));group.addView(heading);return group;
+    }
+    private boolean insideCard(View view){
+        android.view.ViewParent parent=view.getParent();
+        while(parent instanceof View){if("controller-card".equals(((View)parent).getTag()))return true;parent=parent.getParent();}
+        return false;
+    }
     TextView label(String title,int size){TextView view=new TextView(activity);view.setText(title);view.setTextSize(size);view.setTextColor(size>=19?ink:muted);view.setPadding(0,dp(size>=19?18:8),0,dp(8));if(size>=19)view.setTypeface(null,Typeface.BOLD);return view;}
     Button button(String title,Runnable action){Button view=new Button(activity);view.setText(title);view.setAllCaps(false);view.setTextColor(ink);view.setTextSize(15);view.setMinHeight(dp(52));view.setPadding(dp(16),dp(10),dp(16),dp(10));view.setBackground(shape(surface,18));view.setLayoutParams(slot());view.setOnClickListener(ignored->action.run());return view;}
     void field(EditText view){view.setTextColor(ink);view.setHintTextColor(muted);view.setTextSize(16);view.setMinHeight(dp(52));view.setPadding(dp(16),dp(12),dp(16),dp(12));view.setBackground(shape(surface,16));view.setLayoutParams(slot());}
     void tree(View view){
+        if("controller-card".equals(view.getTag()))view.setBackground(shape(surface,20));
         if(view instanceof EditText){field((EditText)view);}
-        else if(view instanceof Button&&!(view instanceof CompoundButton)){Button button=(Button)view;button.setAllCaps(false);button.setTextColor(ink);button.setTextSize(15);button.setMinHeight(dp(50));button.setBackground(shape(surface,16));}
+        else if(view instanceof Button&&!(view instanceof CompoundButton)){Button button=(Button)view;button.setAllCaps(false);button.setTextColor(ink);button.setTextSize(15);button.setMinHeight(dp(50));button.setBackground(shape(insideCard(view)?background:surface,16));}
         else if(view instanceof CompoundButton){CompoundButton choice=(CompoundButton)view;choice.setTextColor(ink);choice.setTextSize(15);choice.setMinHeight(dp(52));choice.setPadding(dp(12),dp(10),dp(12),dp(10));choice.setButtonTintList(ColorStateList.valueOf(accent));choice.setBackground(shape(surface,16));if(choice instanceof Switch){((Switch)choice).setThumbTintList(ColorStateList.valueOf(accent));}}
         else if(view instanceof TextView){((TextView)view).setTextColor(ink);}
         if(view instanceof Spinner){Spinner select=(Spinner)view;select.setBackground(shape(surface,16));select.setPadding(dp(12),dp(8),dp(12),dp(8));select.setMinimumHeight(dp(52));}

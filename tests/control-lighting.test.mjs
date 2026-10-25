@@ -58,6 +58,36 @@ async function fixture(t) {
   return { store, view, scene, run, effects, record, reading, settings, gate, root };
 }
 
+test('designed scenes store supported per-light settings without executing and preserve exact values when edited',async t=>{
+  const f=await fixture(t),page=()=>f.store.pages('tradfri')[0];
+  const lights=[{id:'1',on:false,brightness:0,temperature:0},{id:'2',on:true,brightness:72,hue:232.5,saturation:43.25}];
+  await f.store.administerScene('tradfri',page().id,{action:'create',revision:page().revision,name:'Evening',lights,icon:'moon'});
+  let scene=page().items[0];
+  assert.equal(scene.enabled,false);assert.equal(scene.icon,'moon');assert.deepEqual(scene.steps.map(step=>step.parameters),lights);assert.ok(scene.steps.every(step=>step.actionId==='light-state'));
+  assert.deepEqual(f.effects,[]);
+  const details=f.store.sceneDetails('tradfri',page().id);assert.deepEqual(details.editableScenes[scene.id],lights);assert.equal(Object.hasOwn(details,'token'),false);
+  const changed=[{...lights[0],on:true,temperature:80},lights[1]];
+  await f.store.administerScene('tradfri',page().id,{action:'edit',revision:page().revision,itemId:scene.id,name:'Evening',lights:changed});
+  scene=page().items[0];assert.deepEqual(scene.steps.map(step=>step.parameters),changed);assert.equal(scene.enabled,false);assert.deepEqual(f.effects,[]);
+  // Metadata edits remain available while paused and never replace the recipe.
+  f.gate.paused=true;
+  await f.store.administerScene('tradfri',page().id,{action:'edit',revision:page().revision,itemId:scene.id,name:'Quiet evening'});
+  assert.deepEqual(page().items[0].steps.map(step=>step.parameters),changed);
+  await assert.rejects(f.store.administerScene('tradfri',page().id,{action:'edit',revision:page().revision,itemId:scene.id,name:'Quiet evening',lights}),/unavailable|ready/);
+});
+
+test('scene authoring rejects wrong targets, unsupported fields, injected actions, duplicate lights and stale readings',async t=>{
+  const f=await fixture(t),page=()=>f.store.pages('tradfri')[0],good={id:'1',on:true,brightness:50,temperature:50};
+  const create=lights=>f.store.administerScene('tradfri',page().id,{action:'create',revision:page().revision,name:'Designed',lights});
+  for(const lights of [[],[good,good],[{...good,id:'999'}],[{...good,brightness:101}],[{...good,on:1}],[{...good,temperature:NaN}],[{...good,hue:30}],[{...good,actionId:'light-power'}],[{id:'2',on:true,brightness:50,hue:361,saturation:20}]])await assert.rejects(create(lights));
+  await assert.rejects(f.scene({action:'create',name:'Remote injection',lights:[good]}),/administration/);
+  await assert.rejects(f.store.administerScene('tradfri',page().id,{action:'create',revision:page().revision,name:'Mixed',lights:[good],lightIds:['1']}),/Unknown|settings|current lighting/i);
+  const staleRevision=page().revision;await create([good]);
+  await assert.rejects(f.store.administerScene('tradfri',page().id,{action:'create',revision:staleRevision,name:'Old revision',lights:[good]}),/changed/);
+  f.settings.host='10.23.42.3';await assert.rejects(create([good]),/Refresh|available/);
+  assert.equal(page().items.length,1);assert.deepEqual(f.effects,[]);
+});
+
 test('lighting contract opt-in, bounded public targets, capabilities and private projection', async t => {
   const f = await fixture(t), view = f.view();
   assert.equal(view.lighting.lights.length, 3);

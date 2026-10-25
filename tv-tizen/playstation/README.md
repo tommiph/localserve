@@ -1,6 +1,6 @@
 # PlayStation Tizen application
 
-This separate optional TV application opens the Localserve `/playstation-mode`
+This separate optional TV application opens the Sormus `/playstation-mode`
 screen and HDMI 1 in the upper-left at 50% size with 2% outer margins, or
 full-screen behind a transparent game HUD. Info switches modes when the remote
 supports it; Channel Up → Display mode offers the same choice. It has its
@@ -10,7 +10,7 @@ preferences and version (`app/config.xml`). Vista remains a separate application
 Import `app/` into your own official Samsung/Tizen TV web development workspace,
 configure your author/distributor certificates and authorized TV target, then
 build/sign/install. The example address in `app/launch.js` must be configured for
-your own Localserve LAN server; the installed application also offers connection
+your own Sormus LAN server; the installed application also offers connection
 settings. A source distribution includes no signing material or signed widget.
 Keep all relative assets together. See [PlayStation mode](../../PLAYSTATION-MODE.md)
 for data, controls, session logging, video geometry and compatibility limits.
@@ -37,7 +37,7 @@ Full-screen HUD uses MAIN/BEHIND and transparent documents; split uses MAIN/FRON
 The layout preference persists only on this TV and applies after native success.
 
 PS5 and PlayStation are Sony Interactive Entertainment trademarks. This is an
-independent Localserve integration. See the [artwork notice](../../assets/playstation-mode/NOTICE.md).
+independent Sormus integration. See the [artwork notice](../../assets/playstation-mode/NOTICE.md).
 
 The launcher uses a landscape 16:9 icon and local static Rajdhani fonts under
 `app/fonts/`, with their SIL Open Font License. Keep the font files and license

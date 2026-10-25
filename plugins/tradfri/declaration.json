@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "tradfri",
   "name": "TRÅDFRI",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Legacy IKEA gateway lights, groups and lighting controls",
   "icon": "lightbulb",
   "runtime": {

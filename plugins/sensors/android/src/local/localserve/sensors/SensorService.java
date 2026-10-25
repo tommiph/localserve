@@ -75,7 +75,7 @@ public final class SensorService extends Service implements SensorEventListener 
             PendingIntent open = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             PendingIntent stop = PendingIntent.getService(this, 1, new Intent(this, SensorService.class).setAction(STOP), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             Notification notice = new Notification.Builder(this, "stream").setSmallIcon(android.R.drawable.ic_menu_compass)
-                .setContentTitle("Localserve Sensors").setContentText("Sending selected sources · " + deviceName)
+                .setContentTitle("Sormus Sensors").setContentText("Sending selected sources · " + deviceName)
                 .setContentIntent(open).setOngoing(true).addAction(new Notification.Action.Builder(null, "Stop", stop).build()).build();
             Set<String> phoneSources=preferences.getStringSet("phoneEvents",Collections.emptySet());
             boolean locationPermitted=checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED
@@ -88,7 +88,7 @@ public final class SensorService extends Service implements SensorEventListener 
             stopped = false; running = true; status = "Starting sensors";
             manager = (SensorManager) getSystemService(SENSOR_SERVICE); sensors = SensorCatalog.available(this);
             for (Map.Entry<String, Sensor> entry : sensors.entrySet()) identities.put(entry.getValue(), entry.getKey());
-            samplingThread = new HandlerThread("Localserve sensor sampling"); samplingThread.start();
+            samplingThread = new HandlerThread("Sormus sensor sampling"); samplingThread.start();
             Handler handler = new Handler(samplingThread.getLooper());
             for (Map.Entry<String, Sensor> entry : sensors.entrySet()) {
                 String id = entry.getKey(); Sensor sensor = entry.getValue();

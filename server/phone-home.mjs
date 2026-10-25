@@ -101,7 +101,7 @@ export class PhoneHome {
   }
   availability(task) {
     try {
-      if(this.closing)return {available:false,unavailableReason:'Localserve is stopping.'};
+      if(this.closing)return {available:false,unavailableReason:'Sormus is stopping.'};
       this.engine.assertStart(task, null, task.revision);
       return {available:true};
     } catch(error) {
@@ -158,8 +158,8 @@ export class PhoneHome {
       card,
       ...selectedCardData(card, service.cardData, service.cardCatalog),
       options: {
-        theme: 'dark',
-        fontScale: 100,
+        theme: config.displayTheme ?? config.theme,
+        fontScale: config.vistaFontScale,
         timeFormat: config.timeFormat,
         timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
         now: Date.now(),

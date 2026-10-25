@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "news",
   "name": "News",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Headlines from Google News RSS",
   "icon": "newspaper",
   "runtime": {

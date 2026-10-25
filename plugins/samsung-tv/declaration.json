@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -55,7 +55,7 @@
       "type": "string",
       "default": "Living room remote",
       "maxLength": 100,
-      "help": "Name presented to the TV by this Localserve installation.",
+      "help": "Name presented to the TV by this Sormus installation.",
       "section": "Connection",
       "advanced": true
     },

@@ -1,4 +1,4 @@
-/** Localserve API v1: shared named calendars, offline lifecycle and serialized
+/** Sormus API v1: shared named calendars, offline lifecycle and serialized
  * refreshes. A minute tick reads the cached agenda; feeds refresh less often. */
 import { createHash } from 'node:crypto';
 import { subscriptionUrl, readSubscription } from './http.mjs';

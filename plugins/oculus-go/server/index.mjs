@@ -1,4 +1,4 @@
-/** Localserve Oculus Go diagnostics and explicit manual package management.
+/** Sormus Oculus Go diagnostics and explicit manual package management.
  * Validation/start only read this plugin's own protected credential file.
  */
 import { connectAdb, targetAddress, validKey, keyFromSetting } from './adb.mjs';

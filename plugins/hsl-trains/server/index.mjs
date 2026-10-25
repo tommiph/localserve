@@ -1,4 +1,4 @@
-/** Localserve runtime API v1 with named train boards and public scalar/
+/** Sormus runtime API v1 with named train boards and public scalar/
  * table fields. Only the explicit supervised refresh action accesses Digitraffic.
  */
 import fs from 'node:fs/promises';
@@ -139,7 +139,7 @@ export function parseTrains(data, location, receivedAt = Date.now()) {
   const reading = { 'train-count': displayed.length, 'station-name': stationName(location.station),
     'route-station': location['other-station'] ? stationName(location['other-station']) : '',
     'line-filter': location.line, 'updated-at': receivedAt,
-    attribution: 'Source: Fintraffic / Digitraffic · CC BY 4.0 · Filtered and formatted by Localserve' };
+    attribution: 'Source: Fintraffic / Digitraffic · CC BY 4.0 · Filtered and formatted by Sormus' };
   for (let index = 1; index <= 10; index += 1) {
     const movement = displayed[index - 1];
     const routeCode = location['other-station'] || (movement?.direction === 'departure' ? movement?.destination : movement?.origin);

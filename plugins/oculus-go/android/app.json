@@ -1,8 +1,8 @@
 {
   "packageName": "org.localserve.go",
-  "name": "# Localserve #",
-  "version": "1.0.2",
-  "versionCode": 3,
+  "name": "# Sormus #",
+  "version": "1.0.3",
+  "versionCode": 4,
   "minSdk": 25,
   "targetSdk": 25
 }

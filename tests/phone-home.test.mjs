@@ -301,7 +301,7 @@ test('a phone shell without the Card renderer keeps Home connected and explains 
     vm.runInContext(instrumented, context);
     await context.phoneHomeTest.refresh();
     assert.equal(nodes.get('#connection').textContent, 'Connected');
-    assert.match(host.innerHTML, /Update the Localserve Android app/);
+    assert.match(host.innerHTML, /Update the Sormus Android app/);
     assert.deepEqual(requests, ['/api/phone-home']);
   }
 });
@@ -329,6 +329,9 @@ test('Home discovers installed ready-made designs without remotes or saved Cards
   assert.ok(!JSON.stringify(card).includes('private-'));
   assert.equal(card.options.theme, 'dark');
   assert.equal(card.options.fontScale, 100);
+  await f.app.config.update(config=>{config.theme='dark';config.displayTheme='light';config.fontScale=80;config.vistaFontScale=120;});
+  const independent=await fetch(f.app.origin+'/api/phone-home/cards/information/reading/phone').then(response=>response.json());
+  assert.equal(independent.options.theme,'light');assert.equal(independent.options.fontScale,120);
   assert.deepEqual(f.app.phoneHome.admin(), { revision: 1, tasks: [] });
   assert.equal(f.app.tasks.snapshot().length, 0);
 });

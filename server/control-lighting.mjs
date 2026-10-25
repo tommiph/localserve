@@ -1,5 +1,6 @@
 /** Declared lighting presentation for Controls. Only typed public Card tables
- * become targets. Browser requests never supply action names or scene values. */
+ * become targets. Scene authoring validates values against reported targets;
+ * callers never choose action names or arbitrary command arguments. */
 import { randomUUID } from 'node:crypto';
 import { HttpError } from './storage.mjs';
 
@@ -97,4 +98,29 @@ export function captureLightingScene(plugin, model, lightIds, label) {
     return { id: randomUUID(), actionId: plugin.controls.lighting.actions.lightState, parameters };
   });
   return { id: randomUUID(), label, kind: 'scene', enabled: false, icon: 'lightbulb', steps, parameter: null, binding: null };
+}
+
+/** Author one combined state per known light. Saving has no device effects. */
+export function authorLightingScene(plugin, model, lights, label) {
+  if (!Array.isArray(lights) || !lights.length || lights.length > 20) throw new HttpError(400, 'Choose 1–20 lights for the scene.');
+  const seen = new Set();
+  const steps = lights.map(value => {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || !validId(value.id) || seen.has(value.id)) throw new HttpError(400, 'Choose each light once.');
+    seen.add(value.id);
+    const light = model.lights.find(light => light.id === value.id);
+    if (!light || !['none','white','rgb'].includes(light.spectrum)) throw new HttpError(409, 'A selected light is no longer available. Reopen the editor.');
+    const fields = ['id','on','brightness', ...(light.spectrum === 'white' ? ['temperature'] : light.spectrum === 'rgb' ? ['hue','saturation'] : [])];
+    if (Object.keys(value).some(key => !fields.includes(key)) || typeof value.on !== 'boolean' || !percent(value.brightness)
+      || light.spectrum === 'white' && !percent(value.temperature)
+      || light.spectrum === 'rgb' && (!Number.isFinite(value.hue) || value.hue < 0 || value.hue > 360 || !percent(value.saturation))) throw new HttpError(400, 'Choose valid settings supported by each light.');
+    return {id: randomUUID(), actionId: plugin.controls.lighting.actions.lightState, parameters: structuredClone(value)};
+  });
+  return {id: randomUUID(), label, kind:'scene', enabled:false, icon:'lightbulb', steps, parameter:null, binding:null};
+}
+
+/** Complex ordered scenes keep their original steps instead of being flattened. */
+export function editableLightingScene(plugin, model, scene) {
+  if (!scene.steps.length || scene.steps.some(step => step.actionId !== plugin.controls.lighting.actions.lightState)) return null;
+  const values = scene.steps.map(step => structuredClone(step.parameters));
+  try {authorLightingScene(plugin, model, values, scene.label);return values;} catch {return null;}
 }

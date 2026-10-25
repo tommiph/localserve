@@ -3,7 +3,7 @@
  */
 const ControlsUI = {
   pending: false,
-  ownsView(view) { return ['controls', 'lighting', 'vr-library', 'phone-home'].includes(view); },
+  ownsView(view) { return ['controls', 'control-pages', 'lighting-scenes', 'lighting', 'vr-library', 'phone-home'].includes(view); },
   service(id) {
     const current = state.services.find(service => service.id === id);
     // Field schemas belong to the captured draft. Declaration polling must not
@@ -16,21 +16,25 @@ const ControlsUI = {
   field(label, input) { return TaskUI.field(label, 'sliders', input); },
   select(name, choices, value) { return `<select name="${name}">${choices.map(([id, label]) => `<option value="${escapeHtml(id)}" ${id === value ? 'selected' : ''}>${escapeHtml(label)}</option>`).join('')}</select>`; },
   switch(name, label, value) { return `<div class="card-option"><input type="hidden" name="${name}" value="${value}"><span>${escapeHtml(label)}</span><button type="button" class="switch" role="switch" aria-label="${escapeHtml(label)}" aria-checked="${value}" data-action="control-option"></button></div>`; },
-  render(service = null) {
-    const owners = service ? [this.owner(service.id)] : state.controls || [];
-    const rows = owners.flatMap(owner => owner.pages.map(page => ({ page, service: this.service(owner.pluginId) }))).filter(entry => entry.service);
-    // Built-in tools belong to the global list, not a plugin's saved pages.
-    const tools = service ? [] : [
-      { id: 'lighting', name: 'Lighting animations', icon: 'lightbulb', plugin: 'TRÅDFRI', url: '/lighting-animations', link: 'Open animations' },
-      ...(state.services.some(owner => owner.id === 'oculus-go' && owner.actions.some(action => action.id === 'library-install'))
-        ? [{ id: 'vr-library', name: 'VR library', icon: 'vr-cardboard', plugin: 'Oculus Go', url: '/vr-library', link: 'Open library' }] : []),
-      { id: 'phone-home', name: 'Phone home', icon: 'smartphone', plugin: 'Server', url: '/home', link: 'Open Home' },
+  hub() {
+    const entries=[
+      ['lighting-scenes','Lighting scenes','lightbulb','Save a lighting look, choose its symbol and manage your scenes.'],
+      ['lighting','Lighting animations','palette','Design moving colours, fades and lighting sequences.'],
+      ['control-pages','Remotes','settings-remote','Set up the TV, lighting and other remote controls available in Controller.'],
+      ['phone-home','Controller setup','smartphone','Connect phones and choose which Tasks they can run.'],
+      ['vr-library','VR library','vr-cardboard','Manage the headset library and install applications.'],
     ];
-    const toolRows = tools.map(tool => `<tr data-live-key="control:tool:${tool.id}"><td>${icon(tool.icon)} ${tool.name}</td><td data-label="Plugin">${tool.plugin}</td><td data-label="URL"><a class="control-open-link" href="${tool.url}" target="_blank" rel="noopener">${tool.link}</a></td><td class="control-row-actions"><button type="button" class="button" data-view="${tool.id}" aria-label="Open ${tool.name}">${icon('arrow-right')}Open</button></td></tr>`).join('');
-    const body = `<section class="panel"><div class="panel-header"><h2>Control pages <span class="panel-count">${rows.length + tools.length}</span></h2><button type="button" class="button primary" data-action="control-add" ${service ? `data-plugin-id="${escapeHtml(service.id)}"` : ''} ${owners.length ? '' : 'disabled'}>${icon('plus')}Add Controls</button></div>
-      ${owners.some(owner => owner.error) ? `<p class="form-error">${escapeHtml(owners.find(owner => owner.error).error)}</p>` : ''}
-      ${rows.length || tools.length ? `<div class="table-scroll"><table class="service-table responsive-controls"><thead><tr><th>Name</th><th>Plugin</th><th>URL</th><th>Actions</th></tr></thead><tbody>${toolRows}${rows.map(({ page, service }) => `<tr data-live-key="control:${escapeHtml(service.id)}:${escapeHtml(page.id)}"><td>${icon(page.icon)} ${escapeHtml(page.name)}</td><td data-label="Plugin">${escapeHtml(service.name)}</td><td data-label="URL">${page.enabled ? `<a class="control-open-link" href="/controls/${service.id}/${page.slug}" target="_blank" rel="noopener">Open ${escapeHtml(page.slug)}</a>` : escapeHtml(page.slug)}</td><td class="control-row-actions"><div data-control-owner="${service.id}">${itemActions(page, 'control')}</div></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-state">No Control pages yet. Map buttons or create scenes from this plugin’s exposed actions.</div>'}</section>`;
-    return service ? body : pageHeading('Controls', 'Control pages and tools', '<a class="button" href="/controls" target="_blank" rel="noopener">Open Controls</a>') + body;
+    return pageHeading('Controls','Set up what people can use from Controller and your devices')+
+      '<div class="control-hub">'+entries.map(([view,name,glyph,description])=>`<section class="panel control-hub-card" data-live-key="control-hub:${view}"><div class="panel-body"><span class="control-hub-symbol">${icon(glyph)}</span><h2>${name}</h2><p>${description}</p><button class="button" data-view="${view}" aria-label="Open ${name}">${icon('arrow-right')}Open</button></div></section>`).join('')+'</div>';
+  },
+  render(service = null) { return service ? this.pages(service) : this.hub(); },
+  pages(service = null) {
+    const owners=service?[this.owner(service.id)]:state.controls||[];
+    const rows=owners.flatMap(owner=>owner.pages.map(page=>({page,service:this.service(owner.pluginId)}))).filter(entry=>entry.service);
+    const body=`<section class="panel"><div class="panel-header"><h2>Remotes <span class="panel-count">${rows.length}</span></h2><button type="button" class="button primary" data-action="control-add" ${service?`data-plugin-id="${escapeHtml(service.id)}"`:''} ${owners.length?'':'disabled'}>${icon('plus')}Create remote</button></div><div class="panel-body"><p>Enable a remote to make it available in Controller. Edit changes its buttons and settings; Open remote lets you use it.</p></div>
+      ${owners.some(owner=>owner.error)?`<p class="form-error">${escapeHtml(owners.find(owner=>owner.error).error)}</p>`:''}
+      ${rows.length?`<div class="table-scroll"><table class="service-table responsive-controls"><thead><tr><th>Name</th><th>Plugin</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(({page,service})=>`<tr data-live-key="control:${escapeHtml(service.id)}:${escapeHtml(page.id)}"><td>${icon(page.icon)} ${escapeHtml(page.name)}</td><td data-label="Plugin">${escapeHtml(service.name)}</td><td data-label="Status">${page.enabled?'Shown in Controller':'Disabled'}</td><td class="control-row-actions"><div class="row-actions"><a class="button" ${page.enabled?`href="/controls/${service.id}/${page.slug}" target="_blank" rel="noopener"`:`aria-disabled="true" tabindex="-1"`}>${icon('arrow-up-right-from-square')}Open remote</a><span data-control-owner="${service.id}">${itemActions(page,'control')}</span></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty-state">No remotes yet. Create one from an installed plugin.</div>'}</section>`;
+    return service?body:pageHeading('Remotes','Remote controls available to Controller','<button class="button" data-view="controls">'+icon('arrow-left')+'Controls</button>')+body;
   },
   blankItem(service, kind = 'button') {
     const compatible = field => kind === 'toggle' ? field.type === 'boolean' : kind === 'range' ? field.type === 'number' && !field.enum && Number.isFinite(field.min) && Number.isFinite(field.max) : kind === 'select' ? ['string','number'].includes(field.type) && field.enum?.length : false;
@@ -40,7 +44,7 @@ const ControlsUI = {
   },
   open(pluginId, id = null, copy = false) {
     const service = this.service(pluginId), original = this.owner(pluginId).pages.find(page => page.id === id);
-    const page = original ? structuredClone(original) : { schemaVersion: 1, name: 'Controls', slug: 'controls', enabled: false, icon: service.icon, columns: 3, items: [] };
+    const page = original ? structuredClone(original) : { schemaVersion: 1, name: service.controls.lighting ? 'Lights' : service.controls.television ? 'TV remote' : 'Remote', slug: 'controls', presentation: service.controls.lighting ? 'lighting' : service.controls.television ? 'television' : 'mapped', enabled: false, icon: service.icon, columns: 3, items: [] };
     if (copy) {
       page.name += ' copy'; page.slug += '-copy'; page.enabled = false;
       page.items.forEach(item => { item.id = crypto.randomUUID(); item.steps.forEach(step => { step.id = crypto.randomUUID(); }); });

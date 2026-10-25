@@ -1,6 +1,6 @@
 # Security and private data
 
-Localserve is for a trusted local PC/private LAN. It has no account authentication
+Sormus is for a trusted local PC/private LAN. It has no account authentication
 or built-in HTTPS. Administrator/Controls tokens and Host/Origin checks protect
 requests, not user login. Do not forward its port to the internet, publish an
 unauthenticated tunnel or use an untrusted network. Maintain Windows, the browser

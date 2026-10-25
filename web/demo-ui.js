@@ -6,10 +6,10 @@ const DemoUI={
     if(!demo||!demo.available&&demo.status!=='ready'&&demo.status!=='installing')return '';
     if(demo.status==='ready'&&!demo.taskId&&!demo.vistaUrl)return '';
     const ready=demo.status==='ready';
-    return `<section class="panel demo-start" data-live-key="demo-onboarding" aria-label="Localserve demo">
+    return `<section class="panel demo-start" data-live-key="demo-onboarding" aria-label="Sormus demo">
       <div class="demo-art" aria-hidden="true"><img src="/plugin-card-assets/simulator/signal-lab/assets/motif.svg" alt=""></div>
       <div class="demo-copy"><span class="demo-eyebrow">${ready?'Simulator demo':'Start here'}</span>
-      <h2>${ready?'See your Task change a screen':'Try Localserve without a device'}</h2>
+      <h2>${ready?'See your Task change a screen':'Try Sormus without a device'}</h2>
       <p>${ready?'Open the demo screen, then run the Task. Watch the value, pulse count and message change. Everything is editable in Tasks, Cards and Vistas.':'Create a Task, a Signal lab Card and a finished Vista. Only Simulator is enabled. No devices, accounts or external services are used.'}</p>
       <div class="demo-buttons">${ready?
         `${demo.vistaUrl?`<a class="button primary" href="${escapeHtml(demo.vistaUrl)}" target="_blank" rel="noopener">${icon('display')}Open demo screen</a>`:''}

@@ -23,7 +23,7 @@ export function demoDefinitions(registry) {
     {id:'done',type:'log',enabled:true,message:'Demo completed. Open Tasks to edit Run the demo.'},
   ]},null,registry.actions(),registry.events()),id:demoIds.task};
   const card={...validateCard({schemaVersion:1,layout:'readymade',templateId:'signal-lab',sourceId:'plugin',enabled:true},record.plugin,null,record.config.snapshot().settings),id:demoIds.card};
-  const vista={...validateVista({schemaVersion:1,name:'Localserve demo',slug:'localserve-demo',enabled:true,gap:16,padding:24,
+  const vista={...validateVista({schemaVersion:1,name:'Sormus demo',slug:'localserve-demo',enabled:true,gap:16,padding:24,
     layout:{id:'canvas',type:'column',name:'Canvas',enabled:true,width:'100%',height:'100%',children:[
       {id:'signal-lab',type:'card',name:'Signal lab',enabled:true,width:'100%',height:'100%',cards:[{pluginId:'simulator',cardId:card.id}]},
     ]}}),id:demoIds.vista};

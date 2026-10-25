@@ -1,10 +1,10 @@
 # Devices
 
 Open **SERVER → Devices** (or `/devices`), choose an attached network and select **Discover
-devices**. Opening the page, restarting Localserve and ordinary administrator
+devices**. Opening the page, restarting Sormus and ordinary administrator
 refreshes never start a scan.
 
-Localserve checks at most 254 addresses in an attached private IPv4 /24 segment.
+Sormus checks at most 254 addresses in an attached private IPv4 /24 segment.
 Narrower adapter subnet masks restrict that range further. Windows performs
 bounded ICMP checks and reads that adapter's neighbor cache. Temporary UDP
 sockets query mDNS/DNS-SD and SSDP/UPnP; matching HTTP UPnP descriptions can

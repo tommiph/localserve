@@ -62,7 +62,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     float pointerX = -1, pointerY = -1;
     String tab = "Library", filter = "Installed", query = "", genre = "All genres", sort = "A–Z";
     String favoriteFilter = "All";
-    String message = "Connect to Localserve to load your collection.";
+    String message = "Connect to Sormus to load your collection.";
     String inputMode = "", menu = "", addressDraft = "", codeDraft = "";
     LibraryItem selected;
     Confirmation confirmation;
@@ -102,7 +102,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             addressDraft = session.base.replace("http://", "");
             try (FileInputStream input = new FileInputStream(new File(getFilesDir(), "catalog.json"))) {
                 loadCatalog(new JSONObject(new String(NetApi.read(input, 8 * 1024 * 1024), "UTF-8")));
-                message = "Saved collection · connecting to Localserve…";
+                message = "Saved collection · connecting to Sormus…";
             } catch (Exception ignored) { /* A missing cache leaves an empty collection. */ }
         }
         refreshInstalled();
@@ -140,7 +140,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         main.post(() -> {
             if (destroyed) return;
             TextView fallback = new TextView(this);
-            fallback.setText("Localserve\n\n" + error);
+            fallback.setText("Sormus\n\n" + error);
             fallback.setTextColor(0xffe8f6ff); fallback.setBackgroundColor(0xff070d1b);
             fallback.setTextSize(24); fallback.setPadding(60, 60, 60, 60); setContentView(fallback);
         });
@@ -310,7 +310,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         catch (Exception error) { status(shortError(error)); return; }
         if (!codeDraft.matches("[0-9]{6}")) { status("Enter the six-digit code shown in VR library."); return; }
         final String code = codeDraft; final int generation = ++connectionGeneration;
-        requestPending = true; status("Connecting to Localserve…");
+        requestPending = true; status("Connecting to Sormus…");
         network.execute(() -> {
             try {
                 JSONObject result = api.json(new NetApi.Session(base, ""), "/api/vr-client/enroll", new JSONObject().put("code", code));
@@ -362,7 +362,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
 
     void reviewInstall(LibraryItem item, LibraryItem.Version version) {
         if (busy()) { status("Wait for the current package operation."); return; }
-        if (session == null || !online) { status("Connect to Localserve before installing."); return; }
+        if (session == null || !online) { status("Connect to Sormus before installing."); return; }
         if (!version.compatible() || item.packageName.equals(getPackageName())) { status("This version cannot be installed from the headset library."); return; }
         confirmation = new Confirmation("install", item, version, session); render();
     }

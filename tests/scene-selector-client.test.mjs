@@ -42,9 +42,10 @@ test('selector never commands on load or refresh, keeps buttons stable and compl
   assert.equal(f.posts[0].body.itemId,'one');assert.equal(f.posts[0].body.value,undefined);
   await f.poll();assert.equal(f.posts.length,1);
 });
-test('standalone shell exposes connection settings and hides its own APK download without executing actions',async()=>{
+test('standalone shell exposes connection settings without an APK download or executing actions',async()=>{
   const f=await client(false,true);
-  assert.equal(f.node('app-connection').hidden,false);assert.equal(f.node('android-download').hidden,true);
+  assert.equal(f.node('app-connection').hidden,false);
+  assert.doesNotMatch(await fs.readFile(new URL('../web/scene-selector.html',import.meta.url),'utf8'),/android-download|href="[^"]*\.apk/);
   assert.equal(f.node('.brand').href,'scenes');assert.equal(f.node('server-name').textContent,'Controller');
   assert.equal(f.posts.length,0);await f.poll();assert.equal(f.posts.length,0);
 });

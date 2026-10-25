@@ -82,7 +82,7 @@ final class RelayScenes {
             try {RelayClient client=new RelayClient(preferences.getString("scenesRelayProfile",""));active=client;
                 try{client.call("run",new JSONObject().put("id",id).put("type",item.getString("type")).put("key",item.getString("key")).put("revision",item.getInt("revision")));}
                 finally{client.close();active=null;}
-                ui.post(()->{if(current!=epoch||closed)return;sending=false;status="Queued · waiting for Localserve";paint();schedule(5000);});
+                ui.post(()->{if(current!=epoch||closed)return;sending=false;status="Queued · waiting for Sormus";paint();schedule(5000);});
             }catch(Exception error){ui.post(()->{if(current!=epoch||closed)return;sending=false;status="Not confirmed · check result before running again";paint();schedule(5000);});}
         });
     }
@@ -99,7 +99,7 @@ final class RelayScenes {
                     if(current!=epoch||closed)return;reading=false;catalog=response.optJSONObject("catalog");online=true;preferences.edit().putLong("controllerRelaySuccess",System.currentTimeMillis()).apply();
                     status=catalog==null?"Server has not synchronized recently":catalog.optBoolean("paused")?"Server paused":"Connected";
                     if(!pending.isEmpty()){
-                        String outcome=result==null?"queued":result.optString("status");status=outcome.equals("queued")?"Queued · waiting for Localserve":outcome;
+                        String outcome=result==null?"queued":result.optString("status");status=outcome.equals("queued")?"Queued · waiting for Sormus":outcome;
                         if(outcome.equals("completed")){this.result=pendingName;clearPending();status="Completed";}
                         else if(!outcome.equals("accepted")&&!outcome.equals("running")&&!outcome.equals("queued")){
                             pendingAt=0;preferences.edit().putLong("relayPendingAt",0).apply();status=outcome+" · "+(result==null?"check Task or remote history":result.optString("reason","check Task or remote history").replace('-',' '));
@@ -107,7 +107,7 @@ final class RelayScenes {
                     }
                     paint();schedule(pending.isEmpty()?30000:5000);
                 });
-            }catch(Exception error){ui.post(()->{if(current!=epoch||closed)return;reading=false;online=false;status="Relay unavailable · check connection, permissions or quota";paint();schedule(30000);});}
+            }catch(Exception error){ui.post(()->{if(current!=epoch||closed)return;reading=false;online=false;status="Unable to connect · check your internet connection or your server";paint();schedule(30000);});}
         });
     }
     void resume(){if(closed||!paused)return;paused=false;epoch++;reading=false;sending=false;document.onResume();paint();refresh();}

@@ -1,4 +1,4 @@
-/** Localserve runtime API v1 for a read-only wttr.in
+/** Sormus runtime API v1 for a read-only wttr.in
  * request. Import, validation, and start never initiate network traffic.
  */
 const maximumResponseBytes = 512 * 1024;
@@ -134,7 +134,7 @@ async function fetchConditions(city, signal, fetchImpl) {
     throw error;
   } finally {
     // The network deadline uses wall time, including server pause. Host calls
-    // still wait at Localserve's pause gate before committing state/events.
+    // still wait at Sormus's pause gate before committing state/events.
     clearTimeout(timer);
   }
 }
@@ -156,7 +156,7 @@ export function createWeatherAdapter({ fetchImpl = (...args) => fetch(...args) }
     },
 
     async stop() {
-      // Localserve cancels and drains actions before calling stop/reconfigure.
+      // Sormus cancels and drains actions before calling stop/reconfigure.
       locations = null;
       allLocationIds.clear();
     },

@@ -938,6 +938,209 @@
       "from": "1.4.1",
       "version": "1.4.2",
       "summary": "Use the application circle on the headset launcher and library screen"
+    },
+    {
+      "date": "2026-10-25T00:02:57.255Z",
+      "component": "server",
+      "from": "0.42.2",
+      "version": "0.43.0",
+      "summary": "Separate administrator and display appearance while preserving existing viewer preferences"
+    },
+    {
+      "date": "2026-10-25T00:15:28.642Z",
+      "component": "server",
+      "from": "0.43.0",
+      "version": "0.44.0",
+      "summary": "Redesign Controls around lighting scenes, remotes and clear Controller Task selection"
+    },
+    {
+      "date": "2026-10-25T00:23:35.844Z",
+      "component": "server",
+      "from": "0.44.0",
+      "version": "0.45.0",
+      "summary": "Centralize application downloads with package versions, availability and setup guidance"
+    },
+    {
+      "date": "2026-10-25T00:23:35.957Z",
+      "component": "sensors",
+      "from": "1.8.1",
+      "version": "1.8.2",
+      "summary": "Remove duplicate phone download controls from Controller views"
+    },
+    {
+      "date": "2026-10-25T00:39:20.956Z",
+      "component": "server",
+      "from": "0.45.0",
+      "version": "0.46.0",
+      "summary": "Simplify Controller settings, centralize phone approval and keep lighting scene authoring in administration."
+    },
+    {
+      "date": "2026-10-25T00:39:21.059Z",
+      "component": "sensors",
+      "from": "1.8.2",
+      "version": "1.9.0",
+      "summary": "Add friendly grouped Controller settings and a notification app picker with explicit optional phone sharing."
+    },
+    {
+      "date": "2026-10-25T00:45:26.198Z",
+      "component": "server",
+      "from": "0.46.0",
+      "version": "0.47.0",
+      "summary": "Present Sormus branding across administration, displays, downloads and installation while retaining existing client identities."
+    },
+    {
+      "date": "2026-10-25T00:45:26.227Z",
+      "component": "adsb-lol",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.263Z",
+      "component": "calendar",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.297Z",
+      "component": "emby",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.333Z",
+      "component": "finavia",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.367Z",
+      "component": "fingrid",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.399Z",
+      "component": "google-apps-script",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.429Z",
+      "component": "hsl-trains",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.459Z",
+      "component": "news",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.485Z",
+      "component": "oculus-go",
+      "from": "1.4.2",
+      "version": "1.4.3",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.522Z",
+      "component": "pc-network",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.550Z",
+      "component": "playstation",
+      "from": "1.4.0",
+      "version": "1.4.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.575Z",
+      "component": "samsung-tv",
+      "from": "1.6.1",
+      "version": "1.6.2",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.613Z",
+      "component": "sensors",
+      "from": "1.9.0",
+      "version": "1.9.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.640Z",
+      "component": "simulator",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.667Z",
+      "component": "tradfri",
+      "from": "1.4.0",
+      "version": "1.4.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.694Z",
+      "component": "weather",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.718Z",
+      "component": "webcam",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.744Z",
+      "component": "webpage",
+      "from": "1.3.0",
+      "version": "1.3.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:45:26.768Z",
+      "component": "youtube",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Use Sormus product naming in current interface text, help and attribution."
+    },
+    {
+      "date": "2026-10-25T00:50:34.977Z",
+      "component": "server",
+      "from": "0.47.0",
+      "version": "0.47.1",
+      "summary": "Document current Sormus installation, Controller setup, Downloads and scene authoring workflows."
+    },
+    {
+      "date": "2026-10-25T00:52:21.897Z",
+      "component": "server",
+      "from": "0.47.1",
+      "version": "0.47.2",
+      "summary": "Standardize administrator panel spacing and button geometry while preserving component-owned layouts."
+    },
+    {
+      "date": "2026-10-25T05:43:54.493Z",
+      "component": "server",
+      "from": "0.47.2",
+      "version": "0.48.0",
+      "summary": "Add a per-light lighting scene editor and restore current-lighting capture in the Lights remote."
     }
   ]
 }

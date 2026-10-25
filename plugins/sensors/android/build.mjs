@@ -53,7 +53,7 @@ const vendor=path.join(app,'vendor'),lock=JSON.parse(await fs.readFile(path.join
 const libraries=[],resources=[],packages=[],notices=[];
 const licenseAssets=path.join(build,'assets','licenses');await fs.mkdir(licenseAssets,{recursive:true});
 for(const file of await fs.readdir(path.join(vendor,'licenses')))await fs.copyFile(path.join(vendor,'licenses',file),path.join(licenseAssets,file));
-notices.push('Localserve Sensors — Android runtime dependencies\n\n'+lock.artifacts.map(item=>item.group+':'+item.id+':'+item.version+'\n'+item.url+'\n'+item.licenses.map(license=>license.name+' — '+license.url).join('\n')).join('\n\n'));
+notices.push('Sormus Sensors — Android runtime dependencies\n\n'+lock.artifacts.map(item=>item.group+':'+item.id+':'+item.version+'\n'+item.url+'\n'+item.licenses.map(license=>license.name+' — '+license.url).join('\n')).join('\n\n'));
 for(const artifact of lock.artifacts) {
   if(!/^[\w.-]+\.(aar|jar)$/.test(artifact.file))throw new Error('Invalid locked artifact path.');
   const file=path.join(vendor,artifact.file),bytes=await fs.readFile(file);

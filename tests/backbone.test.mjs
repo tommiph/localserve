@@ -160,12 +160,14 @@ test('empty install, API boundaries, configuration persistence, and stale edits'
   delete legacyConfig.timeFormat;
   delete legacyConfig.location;
   delete legacyConfig.vistaFontScale;
+  delete legacyConfig.displayTheme;
   const app=await fixture(t, legacyConfig);
   assert.equal(app.config.snapshot().timeFormat, '24', 'Existing installations default to 24-hour');
   assert.equal(app.config.snapshot().location, null, 'Existing installations do not guess a location');
   assert.equal(Object.hasOwn(app.config.snapshot(), 'timezone'), false);
   assert.equal(app.config.snapshot().fontScale, 110);
   assert.equal(app.config.snapshot().vistaFontScale, 110, 'Migration preserves Vista appearance independently');
+  assert.equal(app.config.snapshot().displayTheme, legacyConfig.theme, 'Existing displays retain their initial theme');
   assert.equal(app.snapshot().server.timeZone, new Intl.DateTimeFormat().resolvedOptions().timeZone);
   assert.equal(app.snapshot().services.length,0);
   assert.deepEqual(app.snapshot().taskActions.map(action=>action.name),['Log activity','Delay','Show Vista']);
@@ -177,6 +179,15 @@ test('empty install, API boundaries, configuration persistence, and stale edits'
   const persisted=JSON.parse(await fs.readFile(path.join(app.root,'config.json'),'utf8'));
   assert.equal(persisted.name,'Desk server');
   assert.equal(persisted.vistaFontScale, 110, 'Administrator sizing does not change Vista sizing');
+  assert.equal((await app.call('/api/config',{theme:'light',fontScale:125})).status,200);
+  assert.equal(app.config.snapshot().displayTheme,legacyConfig.theme,'Administrator theme cannot change display appearance');
+  assert.equal((await app.call('/api/config',{displayTheme:'light',vistaFontScale:115})).status,200);
+  assert.equal((await app.call('/api/config',{theme:'dark',fontScale:90})).status,200);
+  for(const options of [app.controls.options(),app.vistas.displayViewer().options,app.universe.viewer().options]) {
+    assert.equal(options.theme,'light');assert.equal(options.fontScale,115);
+  }
+  assert.equal((await app.call('/api/config',{displayTheme:'invalid'})).status,400);
+  assert.equal(app.config.snapshot().displayTheme,'light');
   assert.equal(Object.hasOwn(persisted, 'timezone'), false);
   assert.equal((await app.call('/api/config', { timeFormat: '12' })).status, 200);
   assert.equal(JSON.parse(await fs.readFile(path.join(app.root, 'config.json'), 'utf8')).timeFormat, '12');

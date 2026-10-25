@@ -3,7 +3,7 @@
 PlayStation mode combines HDMI 1 video with a dedicated 1920×1080 information
 screen, in split view or a transparent full-screen game HUD. It is a separate
 optional Tizen application and leaves Vista installed.
-The browser screen is available at `/playstation-mode` on your Localserve server.
+The browser screen is available at `/playstation-mode` on your Sormus server.
 A regular web browser shows the information layout with a reserved video area;
 only the packaged TV application can display the native HDMI video there.
 
@@ -17,7 +17,7 @@ only the packaged TV application can display the native HDMI video there.
    using your own Samsung SDK, TV developer target and signing identity. See
    [TV application setup](tv-tizen/README.md). No signing keys, developer target
    or signed widget is part of a source distribution.
-4. Open **PlayStation** from the TV app list. Enter the Localserve protocol,
+4. Open **PlayStation** from the TV app list. Enter the Sormus protocol,
    server IP/hostname and port if Connection appears. Choose Save and connect.
 
 The fixed information path is `/playstation-mode`. The saved server address is
@@ -154,10 +154,10 @@ the number of trophies synced, without claiming an instantaneous unlock.
 Individual trophy names and artwork are not fetched. The existing polling and
 five-minute detail cache apply; there are no additional provider requests.
 
-The session clock starts when Localserve first observes a running game. It is
+The session clock starts when Sormus first observes a running game. It is
 calculated locally, survives view switches and continuous monitoring, and resets
 for another game or after monitoring continuity is lost. Time played before
-Localserve observed the game is unknown. Stale/disconnected readings freeze at
+Sormus observed the game is unknown. Stale/disconnected readings freeze at
 their last receipt and are labelled retained. The timer is separate from PSN's
 lifetime game playtime. No game reading means no active timer or old-game stats.
 
@@ -189,4 +189,4 @@ not represent in-game health, ammunition, inventory or other unavailable data.
 
 ## Automatic closing
 
-The Samsung TV Close installed app action first checks the selected application. For the Localserve PlayStation app, a connected foreground screen can accept a single cooperative exit request through the native remote Back handler. The server confirms closure through the exact app status endpoint. Open the PlayStation app again after a server interface update to load its viewer scripts. Missing acknowledgement uses one REST close request; unsupported firmware remains an explicit error. There is no Home key fallback, wake, delayed restart replay or automatic command retry.
+The Samsung TV Close installed app action first checks the selected application. For the Sormus PlayStation app, a connected foreground screen can accept a single cooperative exit request through the native remote Back handler. The server confirms closure through the exact app status endpoint. Open the PlayStation app again after a server interface update to load its viewer scripts. Missing acknowledgement uses one REST close request; unsupported firmware remains an explicit error. There is no Home key fallback, wake, delayed restart replay or automatic command retry.

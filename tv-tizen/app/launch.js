@@ -56,7 +56,7 @@
     pip.hide(); pipOpen = false; node('pip-panel').hidden = true;
     if (notice) { failure = message || ''; return; }
     clearTimeout(loadTimer); clearTimeout(healthTimer);
-    status.textContent = message || 'Enter the Localserve server address.';
+    status.textContent = message || 'Enter the Sormus server address.';
     launcher.hidden = false; launcher.className = 'settings-open';
     node('loading-panel').hidden = true; node('launcher-actions').hidden = true;
     node('connection-settings').hidden = false;

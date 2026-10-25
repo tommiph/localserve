@@ -65,7 +65,7 @@ public final class ControllerActivity extends Activity {
     private void connect(){
         if(destroyed||checking||approvalOpen)return;
         if(relay!=null&&!relay.canLeave()){scheduleProbe();return;}
-        try{origin=MainActivity.serverOrigin(preferences.getString("server",""));}catch(Exception error){landing("Connect once at home to set up Controller.");return;}
+        try{origin=MainActivity.serverOrigin(preferences.getString("server",""));}catch(Exception error){landing("Add your server in Settings to get started.");return;}
         // The local page does not depend on Google or on profile provisioning.
         // Display it immediately; refresh native grants on a separate executor.
         if(relay==null&&web==null&&!settingsOpen)showLocal();
@@ -94,16 +94,25 @@ public final class ControllerActivity extends Activity {
             connection="Connecting to Google relay";
             if(relay==null){dispose();relay=new RelayScenes(this,root,preferences,()->settings());if(foreground)relay.resume();}
             scheduleProbe();
-        }else{connection="Disconnected";dispose();landing("Server unavailable. Connect at home to retrieve your connection settings.");}
+        }else{connection="Disconnected";dispose();landing("Connect to your home Wi-Fi, then try again.");}
     }
     private void scheduleProbe(){ui.removeCallbacks(probe);if(foreground)ui.postDelayed(probe,10000);}
     private static String contact(long at){return at==0?"Not yet":android.text.format.DateFormat.format("EEE HH:mm:ss",at).toString();}
-    private void updateConnection(){
-        if(relay!=null)connection=relay.connected()?"Remote via Google":"Offline · relay unavailable";
-        if(connectionLabel!=null)connectionLabel.setText(connection+"\nHome network contact: "+contact(preferences.getLong("controllerLocalSuccess",0))+"\nGoogle relay contact: "+contact(preferences.getLong("controllerRelaySuccess",0))+"\nLast report accepted locally: "+contact(SensorService.lastLocalSuccess)+"\nLast report queued remotely: "+contact(SensorService.lastRelayQueued));
-        if(versionLabel!=null)versionLabel.setText(versionText());
+    private void updateConnection() {
+        if (relay != null) connection = relay.connected() ? "Away from home" : "Not connected";
+        if (connectionLabel != null) {
+            String title = localReachable ? "At home" : relay != null && relay.connected() ? "Away from home" : checking ? "Connecting…" : "Not connected";
+            String help = localReachable ? "Connected to your server." : relay != null && relay.connected() ? "Your scenes and Tasks are available." : "Check your home Wi-Fi or that your server is running.";
+            connectionLabel.setText(title + "\n" + help);
+        }
+        if (versionLabel != null) versionLabel.setText(versionText());
     }
-    private String versionText(){String installed="Unknown";try{installed=getPackageManager().getPackageInfo(getPackageName(),0).versionName;}catch(Exception ignored){}String available=preferences.getString("controllerAvailableVersion","");return "Installed Controller: "+installed+"\nRunning server: "+preferences.getString("controllerServerVersion","Not yet connected")+"\nAvailable Controller: "+(available.isEmpty()?"Not reported":available)+(available.equals(installed)?" · Up to date":available.isEmpty()?"":" · Install to update");}
+    private String versionText() {
+        String installed = "Unknown";
+        try { installed = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) {}
+        String available = preferences.getString("controllerAvailableVersion", "");
+        return "Controller " + installed + (available.isEmpty() ? "" : available.equals(installed) ? "\nYou have the version available from your server." : "\nAvailable from your server: " + available);
+    }
     private void showLocal(){
         dispose();final int current=generation;final String allowed=origin;
         localPageReady=false;
@@ -130,7 +139,7 @@ public final class ControllerActivity extends Activity {
     private void approval(){
         if(approvalOpen||destroyed)return;approvalOpen=true;
         LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(24),dp(12),dp(24),dp(20));form.setBackgroundColor(style.background);
-        form.addView(text("In Localserve administration, open Google Apps Script → Settings and choose Approve a phone. The code works once and expires after five minutes.",15));
+        form.addView(text("On your server, open Controls → Controller setup and choose Connect a phone. Enter its six-character code here.",15));
         EditText code=new EditText(this);code.setSingleLine();code.setHint("Six-character code");code.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS);code.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.AllCaps(),new android.text.InputFilter.LengthFilter(6)});style.field(code);form.addView(code);
         AlertDialog dialog=ControllerStyle.dialog(this).setTitle("Approve this phone").setView(form).setNegativeButton("Later",null).setPositiveButton("Approve",null).create();
         dialog.setOnShowListener(ignored->dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
@@ -138,31 +147,123 @@ public final class ControllerActivity extends Activity {
             if(checking)return;checking=true;dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);final int current=generation;final String target=origin;
             network.execute(()->{try{org.json.JSONObject result=ControllerConnection.read(target,preferences,entered);ui.post(()->{
                 if(destroyed||current!=generation)return;checking=false;if(!dialog.isShowing())return;dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
-                try{if(result.optBoolean("approvalRequired")){code.setError(result.optString("reason","Generate a new code."));return;}ControllerConnection.save(preferences,result);approvalRequired=false;connection="Connected locally";dialog.dismiss();Toast.makeText(this,"Phone approved. Connection settings received.",Toast.LENGTH_LONG).show();}
+                try{if(result.optBoolean("approvalRequired")){code.setError(result.optString("reason","Generate a new code."));return;}ControllerConnection.save(preferences,result);approvalRequired=false;connection="Connected locally";dialog.dismiss();Toast.makeText(this,"This phone is connected.",Toast.LENGTH_LONG).show();}
                 catch(Exception error){code.setError("Approval could not be saved. Try a new code.");}
             });}catch(Exception error){ui.post(()->{if(destroyed||current!=generation)return;checking=false;if(dialog.isShowing()){dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);code.setError("Server unavailable. Check the address and try again.");}});}});
         }));dialog.setOnDismissListener(ignored->{approvalOpen=false;scheduleProbe();});dialog.show();
     }
-    private void settings(){
-        if(settingsOpen)return;settingsOpen=true;style=new ControllerStyle(this);LinearLayout form=new LinearLayout(this);form.setOrientation(LinearLayout.VERTICAL);form.setPadding(dp(24),dp(12),dp(24),dp(24));form.setBackgroundColor(style.background);
-        form.addView(text("Connection",22));connectionLabel=text(connection,16);form.addView(connectionLabel);form.addView(text("Local network first. Away from home, approved Lights and Tasks use Google relay. Full remotes and Cards require the local network.",14));
-        EditText address=new EditText(this);address.setTextColor(0xffe7ece7);address.setHintTextColor(0xffadb5aa);address.setSingleLine();address.setText(preferences.getString("server",""));address.setHint("http://server-ip:7041");address.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_URI);address.setEnabled(!SensorService.running);form.addView(address);
-        form.addView(text("Remote connection: "+(preferences.getString("scenesRelayProfile","").isEmpty()?"Not configured by the server":"Ready")+"\n"+preferences.getString("connectionHelp",""),14));
-        if(approvalRequired)form.addView(button("Approve this phone",()->approval()));
-        form.addView(text(SensorService.running?"Phone reporting is running. Stop it before changing the server.":"Phone reporting is stopped.",14));form.addView(button("Phone reporting",()->startActivity(new Intent(this,MainActivity.class))));
-        form.addView(text("Scenes, Tasks, remotes and Cards are managed in the server administrator.",14));
-        Switch appearance=new Switch(this);appearance.setText("Dark appearance");appearance.setTextColor(0xffe7ece7);appearance.setChecked(preferences.getBoolean("relayDark",true));appearance.setPadding(0,dp(12),0,dp(12));form.addView(appearance);
-        appearance.setOnCheckedChangeListener((button,dark)->{preferences.edit().putBoolean("relayDark",dark).apply();style=new ControllerStyle(this);form.setBackgroundColor(style.background);style.tree(form);if(relay!=null)relay.appearance();if(web!=null)web.evaluateJavascript("window.dispatchEvent(new CustomEvent('controller-appearance',{detail:"+dark+"}))",null);});
-        versionLabel=text(versionText(),12);form.addView(versionLabel);form.addView(button("Download Controller update",()->{if(!localReachable){Toast.makeText(this,"Connect to your home network to download the APK.",Toast.LENGTH_LONG).show();return;}try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(origin+"/downloads/controller.apk")));}catch(Exception error){Toast.makeText(this,"No browser is available to download the APK.",Toast.LENGTH_LONG).show();}}));
-        ScrollView scroll=new ScrollView(this);scroll.addView(form);AlertDialog dialog=ControllerStyle.dialog(this).setTitle("Settings").setView(scroll).setNegativeButton("Done",null).setPositiveButton("Connect",null).create();
-        dialog.setOnShowListener(ignored->{boolean permitted=!SensorService.running&&(relay==null||relay.canLeave());dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(permitted&&web==null);
-            if(web!=null&&permitted)web.evaluateJavascript("document.documentElement.dataset.commandPending === 'true' || document.querySelector('iframe.controller-remote') !== null",pending->{if(dialog.isShowing())dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(!"true".equals(pending));});
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view->{
-            if(SensorService.running)return;
-            try{String next=MainActivity.serverOrigin(address.getText().toString());boolean changed=!next.equals(preferences.getString("server",""));SharedPreferences.Editor edit=preferences.edit().putString("server",next);if(changed){edit.remove("scenesRelayProfile").remove("relayProfile").remove("approvalToken");approvalOffered=false;approvalRequired=false;}edit.apply();dispose();dialog.dismiss();connect();}
-            catch(Exception error){address.setError("Enter the server’s private LAN address and port.");}
-        });});style.tree(form);dialog.setOnDismissListener(ignored->{settingsOpen=false;connectionLabel=null;versionLabel=null;if(!localReachable)unavailable();connect();});dialog.show();updateConnection();
+    private void settings() {
+        if (settingsOpen) return;
+        settingsOpen = true;
+        style = new ControllerStyle(this);
+        LinearLayout form = new LinearLayout(this);
+        form.setOrientation(LinearLayout.VERTICAL);
+        form.setPadding(dp(20), dp(12), dp(20), dp(20));
+        form.setBackgroundColor(style.background);
+        form.setFocusableInTouchMode(true);
+
+        LinearLayout connectionCard = style.card(form, "Your connection");
+        connectionLabel = text("", 16);
+        connectionCard.addView(connectionLabel);
+        connectionCard.addView(text("Scenes and Tasks work at home and away. Full remotes and Cards are available at home.", 14));
+        if (approvalRequired) connectionCard.addView(button("Connect this phone", () -> approval()));
+
+        LinearLayout serverCard = style.card(form, "Your server");
+        serverCard.addView(text("Use the address shown in Controller setup on your server.", 14));
+        EditText address = new EditText(this);
+        address.setSingleLine();
+        address.setText(preferences.getString("server", ""));
+        address.setHint("Server address");
+        address.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        address.setEnabled(!SensorService.running);
+        serverCard.addView(address);
+        if (SensorService.running) serverCard.addView(text("Pause phone sharing before changing the server.", 14));
+
+        LinearLayout appearanceCard = style.card(form, "Appearance");
+        Switch appearance = new Switch(this);
+        appearance.setText("Dark appearance");
+        appearance.setChecked(preferences.getBoolean("relayDark", true));
+        appearanceCard.addView(appearance);
+
+        LinearLayout sharingCard = style.card(form, "Phone information");
+        sharingCard.addView(text(SensorService.running ? "Sharing is on." : "Sharing is off. This is optional.", 15));
+        sharingCard.addView(text("Choose which information this phone shares. Nothing starts until you choose Start sharing.", 14));
+        sharingCard.addView(button("Choose what to share", () -> startActivity(new Intent(this, MainActivity.class))));
+
+        LinearLayout updatesCard = style.card(form, "App updates");
+        versionLabel = text(versionText(), 14);
+        updatesCard.addView(versionLabel);
+        updatesCard.addView(button("Get app update", () -> {
+            if (!localReachable) {
+                Toast.makeText(this, "Connect to your home Wi-Fi to download the update.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(origin + "/downloads/controller.apk")));
+            } catch (Exception error) {
+                Toast.makeText(this, "Open Downloads on your server to get the update.", Toast.LENGTH_LONG).show();
+            }
+        }));
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(form);
+        AlertDialog dialog = ControllerStyle.dialog(this).setTitle("Settings").setView(scroll)
+            .setNegativeButton("Done", null).setPositiveButton("Save server", null).create();
+        appearance.setOnCheckedChangeListener((button, dark) -> {
+            preferences.edit().putBoolean("relayDark", dark).apply();
+            style = new ControllerStyle(this);
+            form.setBackgroundColor(style.background);
+            style.tree(form);
+            if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawable(style.shape(style.background, 24));
+            for (int which : new int[]{AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE}) {
+                Button footer = dialog.getButton(which);
+                if (footer != null) footer.setTextColor(style.ink);
+            }
+            if (relay != null) relay.appearance();
+            if (web != null) web.evaluateJavascript("window.dispatchEvent(new CustomEvent('controller-appearance',{detail:" + dark + "}))", null);
+        });
+        dialog.setOnShowListener(ignored -> {
+            form.requestFocus();
+            dialog.getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+            boolean permitted = !SensorService.running && (relay == null || relay.canLeave());
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(permitted && web == null);
+            if (web != null && permitted) {
+                web.evaluateJavascript("document.documentElement.dataset.commandPending === 'true' || document.querySelector('iframe.controller-remote') !== null", pending -> {
+                    if (dialog.isShowing()) dialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(!"true".equals(pending));
+                });
+            }
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(view -> {
+                if (SensorService.running) return;
+                try {
+                    String next = MainActivity.serverOrigin(address.getText().toString());
+                    boolean changed = !next.equals(preferences.getString("server", ""));
+                    SharedPreferences.Editor edit = preferences.edit().putString("server", next);
+                    if (changed) {
+                        edit.remove("scenesRelayProfile").remove("relayProfile").remove("approvalToken");
+                        approvalOffered = false;
+                        approvalRequired = false;
+                    }
+                    edit.apply();
+                    dispose();
+                    dialog.dismiss();
+                    connect();
+                } catch (Exception error) {
+                    address.setError("Use the server address shown in Controller setup.");
+                }
+            });
+        });
+        style.tree(form);
+        dialog.setOnDismissListener(ignored -> {
+            settingsOpen = false;
+            connectionLabel = null;
+            versionLabel = null;
+            if (!localReachable) unavailable();
+            connect();
+        });
+        dialog.show();
+        updateConnection();
     }
+
     @Override protected void onResume(){super.onResume();foreground=true;style=new ControllerStyle(this);ui.removeCallbacks(statusTick);ui.post(statusTick);if(relay!=null)relay.resume();if(web!=null)web.onResume();connect();}
     /** Reflow the current document instead of discarding an outstanding receipt. */
     @Override public void onConfigurationChanged(android.content.res.Configuration value){super.onConfigurationChanged(value);if(relay!=null)relay.appearance();}

@@ -21,7 +21,7 @@ final class NetApi {
     private final Set<HttpURLConnection> connections = Collections.synchronizedSet(new HashSet<>());
 
     private HttpURLConnection open(Session session, String route) throws Exception {
-        if (session == null) throw new IOException("Connect to Localserve first.");
+        if (session == null) throw new IOException("Connect to Sormus first.");
         if (!route.matches("/api/(catalog|device/install(/cancel)?|device/uninstall(/prepare)?|vr-client/enroll|art/[A-Za-z][A-Za-z0-9_.]{1,199})")) throw new IOException("Unsupported server route.");
         HttpURLConnection connection = (HttpURLConnection) new URL(session.base + route).openConnection();
         connection.setConnectTimeout(8000);

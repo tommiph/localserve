@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "webcam",
   "name": "Webcam",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "icon": "videocam",
   "description": "Local Windows webcam preview, movement detection and relative lighting measurements",
   "runtime": {
@@ -171,7 +171,7 @@
         "steps": [
           "Connect a Windows-compatible USB or built-in camera. Allow desktop apps to use the camera in Windows privacy settings.",
           "Use List cameras in Settings while the plugin is disabled, select the intended camera and choose Use selected camera. Enable Webcam when ready; capture starts on its next refresh.",
-          "Disable the plugin or pause Localserve to stop capture. No audio, recordings, snapshots or image history are stored."
+          "Disable the plugin or pause Sormus to stop capture. No audio, recordings, snapshots or image history are stored."
         ]
       },
       {

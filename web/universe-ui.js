@@ -11,7 +11,7 @@ const UniverseUI = {
   },
   render() {
     const value = state.universe;
-    if (!value) return pageHeading('Universe', '3D Card display') + '<section class="panel"><div class="universe-summary">Restart Localserve to enable Universe.</div></section>';
+    if (!value) return pageHeading('Universe', '3D Card display') + '<section class="panel"><div class="universe-summary">Restart Sormus to enable Universe.</div></section>';
     return pageHeading('Universe', '3D Card display') + `<section class="panel"><div class="panel-header"><h2>${icon('meteor')}Universe</h2><div class="row-actions"><button class="button" data-action="universe-edit">${icon('pen')}Edit</button><a class="button primary" href="/universe" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open display</a></div></div><div class="universe-summary"><span>${value.enabled ? 'Enabled' : 'Disabled'}</span><span>${escapeHtml(this.worlds.find(([id]) => id === (value.world || 'space'))?.[1] || 'Space')}</span><span>${value.cards.length} Cards</span><span>Stop ${value.holdSeconds}s</span><span>Flight ${value.flightMinSeconds}–${value.flightMaxSeconds}s</span><span>${escapeHtml(value.detail)} detail</span></div><p class="field-help universe-help">Select ready-made Cards and configure the journey. Display URL: <a href="/universe" target="_blank" rel="noopener">/universe</a></p><div class="universe-world-library">${this.worlds.map(([id,label]) => `<a class="button" href="/universe?world=${id}" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}${label}</a>`).join('')}</div><p class="field-help universe-help">World links share the selected Cards and journey settings.</p></section>`;
   },
   number(label, key, min, max, help = '') {

@@ -66,7 +66,7 @@
       ? '../assets/logo.svg' : '../assets/logo-dark.svg';
     logo.alt = '';
     masthead.appendChild(logo);
-    masthead.appendChild(element('span', 'legacy-empty-brand', (payload && payload.options && payload.options.name) || 'Localserve'));
+    masthead.appendChild(element('span', 'legacy-empty-brand', (payload && payload.options && payload.options.name) || 'Sormus'));
     screen.appendChild(masthead);
 
     var content = element('div', 'legacy-empty-content');
@@ -704,7 +704,7 @@
     applyVistaFontSize(document);
     document.title = (payload.vista ? payload.vista.name : 'Display') + ' · ' + payload.options.name;
     var emptyMessage = !payload.vista ? 'No enabled Vista selected.' : !payload.cards.length
-      ? 'No cards in this Vista yet. Add cards in Localserve when you are ready.'
+      ? 'No cards in this Vista yet. Add cards in Sormus when you are ready.'
       : !payload.vista.layout.enabled ? 'Vista layout disabled.' : '';
     if (emptyMessage) {
       if (layoutSignature !== 'empty:' + emptyMessage) {

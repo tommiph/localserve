@@ -1,4 +1,40 @@
 /* Lighting gallery artwork previews palettes without sending light commands. */
+.control-hub { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr)); gap:20px; }
+.control-hub-card .panel-body { display:flex; flex-direction:column; align-items:flex-start; height:100%; gap:12px; }
+.control-hub-card h2 { margin:0; font-size:calc(18px * var(--font-scale)); }
+.control-hub-card p { color:var(--muted); margin:0 0 8px; line-height:1.6; }
+.control-hub-card .button { margin-top:auto; }
+.control-hub-symbol { display:grid; place-items:center; width:48px; height:48px; border-radius:50%; background:var(--accent-soft); color:var(--accent-ink); font-size:24px; }
+.controller-contents { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:20px; margin:0 0 16px; }
+.controller-contents dt { font-weight:650; margin-bottom:8px; }
+.controller-contents dd { color:var(--muted); margin:0; line-height:1.6; }
+.setup-steps { padding-left:22px; margin:20px 0; }
+.setup-steps li + li { margin-top:12px; }
+.controller-enrollment { margin-block:var(--panel-gap,20px); padding:var(--panel-padding,20px); border:1px solid var(--border); border-radius:8px; }
+.controller-enrollment > * + * { margin-block-start:var(--content-gap,12px); }
+.scene-glyph-choices { max-height:240px; overflow:auto; }
+.scene-light-editor { padding:16px; margin-block:16px; border:1px solid var(--border); border-radius:8px; }
+.scene-light-editor legend { padding:0 8px; font-weight:600; }
+.scene-light-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:16px; margin-top:16px; }
+.scene-light-row { min-width:0; padding:16px; border:1px solid var(--border); border-radius:8px; background:var(--surface-muted); }
+.scene-light-row > .check-field { margin-bottom:12px; }
+.scene-light-row [data-light-settings] > * + * { margin-top:12px; }
+.scene-light-row .field-label { display:flex; justify-content:space-between; gap:12px; }
+.scene-light-row output { color:var(--muted); font-weight:400; }
+.scene-light-row input[type="range"] { width:100%; }
+.scene-light-row .check-field { display:flex; align-items:center; gap:10px; min-height:32px; }
+.scene-light-row strong { overflow-wrap:anywhere; }
+.download-description { display:block; max-width:44ch; margin-top:6px; color:var(--muted); white-space:normal; line-height:1.5; }
+@media (max-width:700px) {
+  .responsive-downloads { min-width:0; }
+  .responsive-downloads thead { display:none; }
+  .responsive-downloads,.responsive-downloads tbody,.responsive-downloads tr,.responsive-downloads td { display:block; width:100%; }
+  .responsive-downloads tr { padding:16px 0; border-bottom:1px solid var(--border); }
+  .responsive-downloads td { padding:6px 18px; border:0; white-space:normal; }
+  .responsive-downloads td[data-label]::before { content:attr(data-label) ': '; font-weight:600; margin-right:8px; }
+}
+.scene-library-group { margin-bottom:24px; }
+.scene-library-group > .panel-header { padding-left:0; padding-right:0; }
 .lighting-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,290px),1fr)); gap:20px; }
 .lighting-preset { overflow:hidden; min-width:0; }
 .lighting-art { position:relative; height:150px; overflow:hidden; background:#111823; isolation:isolate; }

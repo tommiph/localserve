@@ -13,7 +13,7 @@ Starts disabled with fresh default settings, no cached readings, saved Cards or 
 - **TV address**: This TV’s private IPv4 address. No network discovery or fallback target..
 - **Remote port**: number. Choices: 8002 · TLS, 8001 · plain local WebSocket.
 - **TV certificate fingerprint (SHA-256)**: Port 8002 remote actions verify this exact self-signed certificate before sending the token. Changing it never happens automatically..
-- **Remote name**: Name presented to the TV by this Localserve installation..
+- **Remote name**: Name presented to the TV by this Sormus installation..
 - **Remote command interval (ms)**: Minimum spacing between remote commands, in milliseconds. Use 0 for no extra spacing. Connection and delivery time still apply. Applies to remote pages and Task actions; status reads are unaffected..
 - **Saved TV pairing token** (private secret): Optional replacement: an already authorized TV token. After a successful remote read/action, clear this setting; the Windows-protected copy remains. Nonempty settings are private plaintext. Status polls do not pair..
 - **Wired MAC address**: Used only by the explicit Wake TV action. A wake packet does not confirm power-on..

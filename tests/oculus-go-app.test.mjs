@@ -11,7 +11,7 @@ const root=path.resolve(import.meta.dirname,'..'),app=path.join(root,'plugins/oc
 test('native APK identity, signature receipt and generic configuration agree',async()=>{
   const receipt=JSON.parse(await fs.readFile(path.join(app,'dist/verification.json'))),bytes=await fs.readFile(path.join(app,'dist/localserve-go.apk'));
   assert.equal(createHash('sha256').update(bytes).digest('hex'),receipt.sha256);
-  assert.equal(receipt.unconfigured,true);assert.equal(receipt.signatureVerified,true);assert.equal(receipt.label,'# Localserve #');
+  assert.equal(receipt.unconfigured,true);assert.equal(receipt.signatureVerified,true);assert.equal(receipt.label,'# Sormus #');
   const handle=await fs.open(path.join(app,'dist/localserve-go.apk'),'r');
   try{const parsed=await inspectApk(handle,bytes.length);assert.equal(parsed.packageName,'org.localserve.go');assert.equal(parsed.versionName,receipt.version);assert.equal(parsed.nativeCode,'armeabi-v7a');}finally{await handle.close();}
   const manifest=await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8');assert.ok(manifest.includes('android:allowBackup="false"'));assert.ok(!manifest.includes('REQUEST_INSTALL_PACKAGES'));assert.ok(protectedPackage('org.localserve.go'));

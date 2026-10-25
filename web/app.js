@@ -1,4 +1,4 @@
-/** Localserve administrator. Server data is authoritative; no sample actions,
+/** Sormus administrator. Server data is authoritative; no sample actions,
  * devices, resource figures, or browser-only Tasks are used by this client.
  */
 'use strict';
@@ -7,7 +7,7 @@ const dialog = document.querySelector('#editor-dialog');
 const confirmationDialog = document.querySelector('#confirmation-dialog');
 let confirmationReturnFocus = null;
 let state, config, actionCatalog;
-let currentView = location.pathname === '/devices' ? 'devices' : location.pathname === '/vr-library' ? 'vr-library' : location.pathname === '/lighting-animations' ? 'lighting' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
+let currentView = location.pathname === '/downloads' ? 'downloads' : location.pathname === '/controller-setup' ? 'phone-home' : location.pathname === '/lighting-scenes' ? 'lighting-scenes' : location.pathname === '/remotes' ? 'control-pages' : location.pathname === '/devices' ? 'devices' : location.pathname === '/vr-library' ? 'vr-library' : location.pathname === '/lighting-animations' ? 'lighting' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
 let returnFocus = null, toastTimer, preferencesPending = 0, settingsQueue = Promise.resolve();
 let pluginSearch = '';
 const fontTimers = new Map();
@@ -259,9 +259,10 @@ function renderSettings() {
       <div class="settings-item">${icon('clock')}<div class="settings-text"><h3 id="time-format-label">Use 24-hour format</h3></div><button id="time-format" class="switch" type="button" role="switch" aria-labelledby="time-format-label" aria-checked="${config.timeFormat === '24'}" data-action="toggle-time-format"></button></div>
     </section>
     <section class="panel settings-group" aria-label="Appearance"><div class="panel-header"><h2>Appearance</h2></div>
-      <div class="settings-item">${icon('circle-half-stroke')}<div class="settings-text"><h3>Theme</h3><p>${config.theme === 'dark' ? 'Dark' : 'Light'}</p></div><button class="button" data-action="theme">${icon('circle-half-stroke')}Switch to ${config.theme === 'dark' ? 'light' : 'dark'}</button></div>
+      <div class="settings-item">${icon('circle-half-stroke')}<div class="settings-text"><h3>Administrator theme</h3><p>${config.theme === 'dark' ? 'Dark' : 'Light'} · Administrator interface only</p></div><button class="button" data-action="theme">${icon('circle-half-stroke')}Switch to ${config.theme === 'dark' ? 'light' : 'dark'}</button></div>
+      <div class="settings-item">${icon('display')}<div class="settings-text"><h3>Display theme</h3><p>${config.displayTheme === 'dark' ? 'Dark' : 'Light'} · Vistas, Cards and browser controls. Controller has its own appearance setting.</p></div><button class="button" data-action="display-theme">${icon('circle-half-stroke')}Switch to ${config.displayTheme === 'dark' ? 'light' : 'dark'}</button></div>
       ${fontSizeSetting('Administrator font size', 'font-scale', config.fontScale, 'Administrator interface')}
-      ${fontSizeSetting('Vista font size', 'vista-font-scale', config.vistaFontScale, 'All Vista views and Card previews')}
+      ${fontSizeSetting('Display font size', 'vista-font-scale', config.vistaFontScale, 'Vistas, Cards and browser controls')}
     </section>
     <section class="panel settings-group" aria-label="Automation"><div class="panel-header"><h2>Automation</h2></div>
       <div class="settings-item">${icon('moon')}<div class="settings-text"><h3 id="do-not-disturb-label">Do not disturb · Enable now</h3><p>${state.doNotDisturb?.active ? 'Active' : 'Inactive'}${state.doNotDisturb?.scheduled ? ' · Weekly schedule' : ''}${state.doNotDisturb?.manual ? ' · Enabled manually' : ''}. Skips automatic TV actions. Manual controls and Run / Rerun remain available.</p></div><button id="do-not-disturb" class="switch" type="button" role="switch" aria-labelledby="do-not-disturb-label" aria-checked="${config.doNotDisturb.enabled}" data-action="toggle-do-not-disturb"></button></div>
@@ -291,16 +292,19 @@ function renderView() {
   const focusRegion = focused?.closest('#admin-navigation') ? document.querySelector('#admin-navigation') : workspace;
   const signature = node => JSON.stringify([node.tagName, node.dataset, node.getAttribute('aria-label'), node.getAttribute('href'), node.getAttribute('name'), node.closest('[data-activity-details]')?.dataset.activityDetails, node.closest('[data-variable-details]')?.dataset.variableDetails]);
   const focusSignature = focused?.matches('button,a,summary,input,select') ? signature(focused) : null;
-  if (!['overview','tasks','vistas','universe','controls','devices','phone-home','activity','settings','variables','games','vr-library','lighting'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
+  if (!['overview','tasks','vistas','universe','downloads','controls','control-pages','lighting-scenes','devices','phone-home','activity','settings','variables','games','vr-library','lighting'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
   renderNavigation();
   const plugin = state.services.find(service=>service.id===currentView);
-  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',controls:'Controls',devices:'Devices','phone-home':'Phone home',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library',lighting:'Lighting animations'})[currentView] || 'Overview';
+  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',downloads:'Downloads',controls:'Controls','control-pages':'Remotes','lighting-scenes':'Lighting scenes',devices:'Devices','phone-home':'Controller setup',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library',lighting:'Lighting animations'})[currentView] || 'Overview';
   AdminDOM.text(document.querySelector('#breadcrumb-page'),currentView !== 'controls' && ControlsUI.ownsView(currentView) ? 'Controls / ' + title : title);
   if (plugin) renderPlugin(plugin);
   else if (currentView==='tasks') renderWorkspace(TaskUI.renderTasks() + runsPanel());
   else if (currentView==='vistas') renderWorkspace(VistaUI.render());
   else if (currentView==='universe') renderWorkspace(UniverseUI.render());
+  else if (currentView==='downloads') renderWorkspace(DownloadsUI.render());
   else if (currentView==='controls') renderWorkspace(ControlsUI.render());
+  else if (currentView==='control-pages') renderWorkspace(ControlsUI.pages());
+  else if (currentView==='lighting-scenes') renderWorkspace(LightingScenesUI.render());
   else if (currentView==='devices') renderWorkspace(DevicesUI.render());
   else if (currentView==='phone-home') renderWorkspace(PhoneHomeUI.render());
   else if (currentView==='activity') renderWorkspace(pageHeading('Activity','Server and Task activity') + activityPanel(state.activity,true));
@@ -364,7 +368,10 @@ document.addEventListener('click', async event=>{
   const {action,id}=control.dataset;
   try {
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
+    if (action==='display-theme') { await changeSettings({displayTheme:config.displayTheme==='dark'?'light':'dark'}); return; }
     if (!action) return;
+    if(action==='downloads-refresh')return await DownloadsUI.load();
+    if(action.startsWith('scene-'))return await LightingScenesUI.handle(action,control);
     if(action.startsWith('cloud-')&&typeof CloudRelayUI!=='undefined')return await CloudRelayUI.handle(control);
     if(action.startsWith('device-'))return await DevicesUI.handle(action,id,control);
     if(action.startsWith('setup-'))return SetupUI.handle(action,id);
@@ -719,7 +726,7 @@ function updateDraftStatus() {
   // state. The same comparison drives both this hint and discard confirmation.
   try {
     const dirty = serializeForm(form) !== initialFormValues;
-    AdminDOM.text(status,dirty ? 'Unsaved changes' : 'Changes apply when saved');
+    AdminDOM.text(status,dirty ? 'Unsaved changes' : dialogContext?.kind==='lighting-scene' ? 'Saving won’t change lights' : 'Changes apply when saved');
     status.dataset.dirty = String(dirty);
   } catch { AdminDOM.text(status,'Unsaved changes'); status.dataset.dirty = 'true'; }
 }
@@ -743,6 +750,7 @@ function serializeForm(form) {
   if (id === 'universe-editor-form') return JSON.stringify(UniverseUI.readDraft());
   if (id === 'vista-editor-form') return JSON.stringify(VistaUI.readDraft());
   if (id === 'lighting-animation-form') return JSON.stringify(LightingUI.readDraft());
+  if (id === 'lighting-scene-form') return JSON.stringify(LightingScenesUI.draft(form));
   if (id === 'card-editor-form') return JSON.stringify(CardDesigner.readDraft());
   if (id === 'controls-editor-form') return JSON.stringify(ControlsUI.readDraft());
   // timeText is presentation only; its hidden HH:mm value determines changes.

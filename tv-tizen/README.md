@@ -17,7 +17,7 @@ administrator token or device credentials.
 
 Before building for your own TV:
 
-1. Choose a fixed private LAN address/port for your Localserve server and enable
+1. Choose a fixed private LAN address/port for your Sormus server and enable
    the intended Vista or use `/display`.
 2. Replace the example default URL in `app/launch.js` with your own complete LAN
    display URL. The distribution uses the documentation-only address
@@ -34,7 +34,7 @@ The source keeps application ID `HwGlance01.HomeGlance`. Updating a package that
 was already installed under another author requires that author's signing
 identity; this ZIP deliberately provides none. Use your own appropriate package
 identity for an independent install if required by your development workflow,
-and use its reported ID in Localserve's Samsung TV Launch installed app action.
+and use its reported ID in Sormus's Samsung TV Launch installed app action.
 
 The example default is deliberately inert until configured. Task launch arguments
 may choose a saved Vista URL. TV notices require a working compatible launcher

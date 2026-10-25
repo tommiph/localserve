@@ -161,7 +161,7 @@
     document.querySelectorAll('[data-open]').forEach((button) => {
       const item = all().find((item) => item.key === button.dataset.open);
       button.disabled = !online || !item?.value.available;
-      button.title = !online ? 'Connect to Localserve to use this shortcut.' : item?.value.available ? '' : item?.value.unavailableReason || 'Unavailable';
+      button.title = !online ? 'Connect to Sormus to use this shortcut.' : item?.value.available ? '' : item?.value.unavailableReason || 'Unavailable';
     });
     document.querySelectorAll('[data-status]').forEach((label) => {
       const item = all().find((item) => item.key === label.dataset.status);
@@ -242,7 +242,7 @@
       // Older installed shells can still use remotes and Tasks while their
       // route policy excludes Card assets. Keep that failure local to Cards.
       if (typeof CardRenderer === 'undefined') {
-        host.innerHTML = '<p class="subtle">Update the Localserve Android app to display Cards.</p>';
+        host.innerHTML = '<p class="subtle">Update the Sormus Android app to display Cards.</p>';
         continue;
       }
       const reading = cardReadings.get(host.dataset.cardHost);

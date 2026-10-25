@@ -1,12 +1,12 @@
 # Windows setup executable
 
-Localserve Setup installs for the current Windows user into a writable folder.
+Sormus Setup installs for the current Windows user into a writable folder.
 It includes the Windows runtime and application dependencies, creates Start menu
 shortcuts and initializes only missing settings. No Node/npm installation or
 administrator elevation is required for the core app. Microsoft .NET Framework
 4.8 or later and x64 Windows 10/11 are required; Setup checks these prerequisites.
 
-Choose **Open Localserve** at the end to start the tray/server and open the
+Choose **Open Sormus** at the end to start the tray/server and open the
 administrator at its actual ready address. Windows sign-in startup is an
 unchecked option. LAN/firewall access, plugin credentials and Android/TV apps
 are separate choices; Setup never configures devices or enables plugins.
@@ -25,7 +25,7 @@ Custom files outside the listed private stores are retained. Keep backups of
 your own credentials and content before removing them.
 
 Unsigned preview builds may produce Windows security prompts. No signing
-identity is bundled. A compiler signature does not sign Localserve; inspect the
+identity is bundled. A compiler signature does not sign Sormus; inspect the
 setup's signature and checksum yourself. A clean Windows VM/download-reputation
 test remains a separate release qualification, not a property inferred from
 successful local tests.

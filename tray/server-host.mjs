@@ -1,5 +1,5 @@
 /** Detached tray-owned host with bounded persistent server diagnostics.
- * All application paths are derived from this file's Localserve root.
+ * All application paths are derived from this file's Sormus root.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,7 +27,7 @@ async function stop() {
 }
 
 try {
-  console.log(`[${new Date().toISOString()}] Starting Localserve`);
+  console.log(`[${new Date().toISOString()}] Starting Sormus`);
   application = await createLocalserve(root);
   desktop = await attachTrayControl(application, root, { onStopped: () => output.end(), onError: error => {
     console.error(error);

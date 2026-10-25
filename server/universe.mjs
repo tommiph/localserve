@@ -78,7 +78,7 @@ export class UniverseStore {
         ...selectedCardData(card, service.cardData, service.cardCatalog) };
     }) : [];
     // No token, capabilities, plugin configuration or administrator state.
-    return { universe: settings, cards, options: { name: config.name, theme: config.theme,
+    return { universe: settings, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme,
       fontScale: config.vistaFontScale, timeFormat: config.timeFormat,
       timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now() } };
   }

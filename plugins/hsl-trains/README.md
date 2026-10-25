@@ -40,6 +40,6 @@ Fintraffic / Digitraffic: https://www.digitraffic.fi/en/railway-traffic/
 
 CC BY 4.0 https://creativecommons.org/licenses/by/4.0/
 
-Filtered and formatted by Localserve
+Filtered and formatted by Sormus
 
 See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin's data folder.

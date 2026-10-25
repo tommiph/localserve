@@ -1,4 +1,4 @@
-/** Localserve public-channel upload monitoring through YouTube Data API v3.
+/** Sormus public-channel upload monitoring through YouTube Data API v3.
  * Import/validation/start are offline. Shared named-source polling owns timers. */
 import { createClient, channelFilter, validKey, validVideoId, validChannelId, mapChannel, mapVideos, cleanText } from './client.mjs';
 import { createHash } from 'node:crypto';
@@ -82,7 +82,7 @@ export function createYouTubeAdapter({client=createClient(),now=Date.now}={}) {
         signal.throwIfAborted();
         if(state.budget?.day!==quotaDay(now())) state.budget={day:quotaDay(now()),reads:0,searches:0};
         const kind=method==='search'?'searches':'reads',limit=kind==='searches'?20:2000;
-        if(!Number.isInteger(state.budget[kind])||state.budget[kind]<0||state.budget[kind]>=limit) throw new Error('Localserve daily YouTube request budget is used. Wait for the next Pacific quota day.');
+        if(!Number.isInteger(state.budget[kind])||state.budget[kind]<0||state.budget[kind]>=limit) throw new Error('Sormus daily YouTube request budget is used. Wait for the next Pacific quota day.');
         // Reserve before transmitting, including failures. Worker restart cannot
         // reclaim uncertain requests or repeat them using the old budget.
         state.budget[kind]++;

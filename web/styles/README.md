@@ -17,7 +17,7 @@ stylesheet. An ordered filename describes a section's dominant responsibility,
 not a separate cascade scope. Moving rules between files can change precedence.
 
 Literal legacy TV styles under `assets/vista-legacy*.css`, plugin ready-made
-Card designs and the standalone Phone Home stylesheet have their own owners.
+Card designs and the standalone Controller stylesheet have their own owners.
 They are not inputs to this bundle.
 
 `05-form-controls.css` supplies low-specificity themed defaults for administrator

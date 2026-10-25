@@ -22,7 +22,9 @@ try {
   assert.equal(snapshot.config.listen.host,'127.0.0.1');
   assert.equal(snapshot.config.listen.port,0);
   assert.equal(snapshot.config.location,null);
-  assert.equal(snapshot.config.name,'Localserve');
+  assert.equal(snapshot.config.name,'Sormus');
+  assert.equal(snapshot.config.theme,'dark');
+  assert.equal(snapshot.config.displayTheme,'dark');
   assert.equal(snapshot.config.fontScale,100);
   assert.equal(snapshot.config.vistaFontScale,100);
   assert.equal(snapshot.config.timeFormat,'24');
@@ -141,7 +143,7 @@ assert.equal((await tray('--startup-status')).enabled,false);
 try {
   const started = await tray('--start');
   assert.ok(started.pid > 0);
-  assert.equal(started.name,'Localserve');
+  assert.equal(started.name,'Sormus');
   const state = await (await fetch(started.origin+'/api/state')).json();
   assert.equal(state.services.filter(plugin => plugin.enabled).length,0);
   assert.equal(state.tasks.length,0);

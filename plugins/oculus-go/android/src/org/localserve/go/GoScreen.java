@@ -114,7 +114,7 @@ final class GoScreen {
         for (int y = 120; y < HEIGHT; y += 96) canvas.drawLine(24, y, WIDTH - 24, y, paint);
         box(24, 20, 1488, 104, 0xff101b2c, 20); border(24, 20, 1488, 104, BORDER, 20);
         if (logo != null) canvas.drawBitmap(logo, null, new RectF(42, 35, 120, 113), paint);
-        text("Localserve", 134, 73, 34, INK, true);
+        text("Sormus", 134, 73, 34, INK, true);
         text("OCULUS GO", 136, 100, 14, CYAN, true);
         String[] tabs = {"Library", "Favorites", "Activity", "Settings"};
         for (int i = 0; i < tabs.length; i++) {
@@ -220,7 +220,7 @@ final class GoScreen {
 
     void settings() {
         text("Connection", 48, 195, 40, INK, true);
-        text("Use the same trusted LAN as your Localserve server.", 48, 237, 24, MUTED, false);
+        text("Use the same trusted LAN as your Sormus server.", 48, 237, 24, MUTED, false);
         box(48, 270, 1440, 424, PANEL, 20); border(48, 270, 1440, 424, BORDER, 20);
         text("SERVER ADDRESS", 80, 314, 18, VIOLET, true);
         button(app.addressDraft.isEmpty() ? "Enter IP:port" : app.addressDraft, 80, 336, 850, 70, false, !app.busy(), () -> app.inputMode = "address");
@@ -234,7 +234,7 @@ final class GoScreen {
         text("Point the controller at a button and press the trigger.", 48, 871, 24, MUTED, false);
         String version = "";
         try { version = app.getPackageManager().getPackageInfo(app.getPackageName(), 0).versionName; } catch (Exception ignored) { }
-        text("Localserve Go " + version, 1150, 871, 22, VIOLET, false);
+        text("Sormus Go " + version, 1150, 871, 22, VIOLET, false);
     }
 
     void activity() {
@@ -288,7 +288,7 @@ final class GoScreen {
         text(uninstall ? "Uninstall application?" : "Install application?", 190, 250, 40, INK, true);
         text(fit(review.title, 1310, 38), 100, 342, 38, uninstall ? RED : CYAN, true);
         wrap(uninstall ? "This removes the application and its saved data from your Go. Your original APK stays on the PC. This cannot be undone."
-            : "Send this APK from Localserve to your Go. An installed version may be replaced. Android signature checks remain enabled; no downgrade is requested.", 100, 423, 1300, 30, 4, INK);
+            : "Send this APK from Sormus to your Go. An installed version may be replaced. Android signature checks remain enabled; no downgrade is requested.", 100, 423, 1300, 30, 4, INK);
         if (!uninstall) text((review.version.name.isEmpty() ? "Build " + review.version.code : review.version.name) + " · " + size(review.version.size), 100, 625, 27, VIOLET, true);
         text(review.checking ? "Checking the configured headset…" : review.submitted ? "Request sent. Do not submit again." : "Keep the server and headset connected until the operation finishes.", 100, 697, 24, MUTED, false);
         button(review.submitted ? "View activity" : uninstall ? "Keep application" : "Cancel", 100, 778, 570, 84, false, () -> { app.confirmation = null; if (review.submitted) app.tab = "Activity"; });

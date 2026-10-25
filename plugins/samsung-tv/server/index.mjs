@@ -1,4 +1,4 @@
-/** Localserve Samsung TV polling and explicit supervised remote actions.
+/** Sormus Samsung TV polling and explicit supervised remote actions.
  * Polling reads device/UPnP data; it never pairs, wakes or sends remote keys.
  */
 import { createVault, helperReady } from './vault.mjs';
@@ -194,7 +194,7 @@ export function createSamsungAdapter({ vault = createVault(), credentialReady = 
                 await context.wait(.5);signal.throwIfAborted();
                 if(!(await http.app(settings.host,id,'GET',signal)).running)return {commandSent:true,closed:true,cooperative:true};
               }
-              throw Error('The TV accepted the Localserve close request but still reports the app running.');
+              throw Error('The TV accepted the Sormus close request but still reports the app running.');
             }
           }
           await paceCommand(context, signal); signal.throwIfAborted();

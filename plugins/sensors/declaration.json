@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "sensors",
   "name": "Sensors",
-  "version": "1.8.1",
+  "version": "1.9.1",
   "description": "Selected Android sensor and phone reports through LAN or an explicitly configured cloud relay",
   "icon": "sensors",
   "defaultCardLayout": "table",
@@ -27,9 +27,10 @@
       {
         "title": "Android app",
         "steps": [
-          "Open /sensors on this server in the Android browser to download the Localserve APK. Install it over Localserve Sensors to retain its settings. Use Connection to enter this server’s private LAN address and port; Home opens your remotes and published Task shortcuts.",
-          "Open Sensors in the Android app, select sensors or phone sources and reporting intervals, then tap Start. Remote use does not start reporting. The reporting notification has a Stop control. Localserve uses no pairing key, account or cloud relay. Optional activity detection uses the phone’s Google Play services.",
-          "Devices appear automatically after their first accepted report. Edit their names or disable them below. Stop the sender before deleting a device; a still-streaming trusted device will appear again."
+          "On the phone, open Downloads on this server and install Controller. In Controller Settings, save the server address from Controls → Controller setup.",
+          "Open Settings → Phone information → Choose what to share. Select phone sources or sensors, choose update frequency and tap Start sharing. Allow the relevant Android permissions. Stop sharing in the app or its notification.",
+          "For access away from home, configure Google Apps Script and use Controls → Controller setup → Connect a phone. Enter its code in Controller. Connection details arrive automatically. Remote reports do not prove arrival at home.",
+          "Devices appear after their first accepted report. Edit names or disable devices here. Stop sharing before deleting a device; a phone still sending updates can appear again."
         ]
       },
       {

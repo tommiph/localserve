@@ -1,10 +1,10 @@
-# Localserve
+# Sormus
 
 <!-- demo:start -->
 <!-- The demo link is generated from project-info.json. -->
 <!-- demo:end -->
 
-Localserve is a Windows automation server with a browser administrator, plugins,
+Sormus is a Windows automation server with a browser administrator, plugins,
 step-by-step Tasks, mobile device remotes and read-only information displays.
 
 ## Install and start
@@ -14,7 +14,7 @@ Choose the newest preview and read its release notes. Windows 10/11 x64 and
 Microsoft .NET Framework 4.8 or later are required. Preview builds are unsigned.
 
 For Setup, run the downloaded executable as your normal Windows user and select
-**Open Localserve** at the end. It adds Start menu shortcuts and opens the
+**Open Sormus** at the end. It adds Start menu shortcuts and opens the
 administrator. Sign-in startup is optional. See [setup details](tools/installer/README.md)
 for upgrades and data retention.
 
@@ -23,7 +23,7 @@ For a portable/source installation:
 1. Clone or download the complete repository into a writable folder on a Windows
    10/11 x64 PC. Extract a downloaded ZIP before running anything.
 2. Double-click **Start Localserve.cmd**. Keep the supplied folders together.
-3. Open **Open administrator** from the Localserve notification-area icon.
+3. Open **Open administrator** from the Sormus notification-area icon.
 4. Configure a plugin in its Settings, enable it, then create your own Tasks,
    Cards, Vistas or Controls.
 
@@ -82,17 +82,16 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   controls, gems, speed scoring and optional local looping music. See [Games](GAMES.md).
 - **Controls:** mobile TV and lighting remotes; local lighting scenes and supported
   transitions. Remote web app installation depends on browser/HTTPS support.
-- **Android Sensors:** included sideload APK sends selected raw sensors and
-  optional phone, location, region and activity events over your trusted LAN.
-- **Phone Home:** personal Favorites, quick lighting/TV controls and explicitly
-  published manual Task shortcuts. The included Android app combines the remote
-  with optional native Sensors reporting. See [Phone Home](PHONE-HOME.md).
-  For lighting scenes, Tasks, full Remotes and Cards, install **Controller** from
-  `/downloads/controller.apk`. Phone reporting is under Settings. See
-  [Controller setup](CONTROLLER.md).
+- **Controller:** the Android phone app for Lights, Tasks, full Remotes and
+  ready-made Cards, with optional phone sharing in Settings. Choose phone Tasks
+  in **Controls → Controller setup** and edit lighting scenes on the server.
+  See [Controller](CONTROLLER.md).
+- **Downloads:** one administrator page for Controller, TV widgets and source,
+  the Oculus Go app and Google Apps Script. Versions and readiness are listed.
+  See [Downloads](DOWNLOADS.md).
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
-- **Oculus Go:** manual APK library and a separate **# Localserve #** VR client
+- **Oculus Go:** manual APK library and a separate **# Sormus #** VR client
   with search, favorites, local launch and confirmed package management. Supply
   your own compatible APKs; no application collection is included. See
   [headset setup](plugins/oculus-go/android/README.md).
@@ -109,7 +108,7 @@ No server location or provider/device target is preconfigured.
 
 First start listens on localhost and chooses an available port; the tray opens
 the actual address. LAN access requires your explicit private address and an
-appropriate firewall rule. Localserve has no account login or HTTPS and is
+appropriate firewall rule. Sormus has no account login or HTTPS and is
 intended for trusted local networks. Do not expose it directly to the internet.
 See [SECURITY.md](SECURITY.md).
 
@@ -126,6 +125,6 @@ Go client, generic APK and VrApi license are under plugins/oculus-go/android/.
 Optional SDK/JDK preparation is separate from running the server. Tizen source requires your
 own SDK, signing identity and compatible TV.
 
-Localserve-authored code is available under the [MIT License](LICENSE).
+Sormus-authored code is available under the [MIT License](LICENSE).
 Bundled dependencies and third-party assets retain their own licenses and
 attribution. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

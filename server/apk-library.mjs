@@ -109,7 +109,7 @@ export class ApkLibrary {
   async createClientCode(revision) {
     const {config} = this.current(revision);
     if (!config.settings['home-vr-enabled']) throw new HttpError(409,'Enable Home VR headset access in Oculus Go Settings first.');
-    if (!this.clientApp) throw new HttpError(409,'Build the Localserve Go app before connecting a headset.');
+    if (!this.clientApp) throw new HttpError(409,'Build the Sormus Go app before connecting a headset.');
     let token = config.settings['home-vr-token'] || (await this.vault.load())?.token;
     this.current(revision);
     if (!token) { token=randomBytes(32).toString('hex'); await this.vault.save({token}); this.authRevision=null; }
@@ -124,7 +124,7 @@ export class ApkLibrary {
   async enroll(request, values) {
     checkKeys(values,['code']);const {config}=this.record();
     const remote=(request.socket.remoteAddress||'').replace(/^::ffff:/,'');
-    if(request.headers.origin || !isPrivateIPv4(remote) || !config.settings['home-vr-enabled']) throw new HttpError(403,'Use the Localserve app on your private LAN.');
+    if(request.headers.origin || !isPrivateIPv4(remote) || !config.settings['home-vr-enabled']) throw new HttpError(403,'Use the Sormus app on your private LAN.');
     const enrollment=this.enrollment;
     if(!enrollment || enrollment.revision!==config.revision || enrollment.expiresAt<=this.now()) {this.enrollment=null;throw new HttpError(409,'Create a new connection code in VR library.');}
     enrollment.attempts++;
@@ -135,7 +135,7 @@ export class ApkLibrary {
   }
   async clientDownload() {
     this.record();
-    if(!this.clientApp)throw new HttpError(404,'Localserve Go APK is unavailable.');
+    if(!this.clientApp)throw new HttpError(404,'Sormus Go APK is unavailable.');
     const file=path.join(this.root,'plugins/oculus-go/android/dist/localserve-go.apk'),stat=await fs.lstat(file),real=await fs.realpath(file);
     if(!stat.isFile()||stat.isSymbolicLink()||stat.size!==this.clientApp.size||real!==path.resolve(file))throw new HttpError(409,'Client APK changed. Restart after rebuilding.');
     const data=await fs.readFile(file);
@@ -244,10 +244,10 @@ export async function serveNativeLibrary(library, request, response, url, {json,
   try {
     if (request.method === 'GET' && ['/api/catalog','/api/status','/api/scenes','/api/device/install'].includes(route)) {
       if (route === '/api/device/install') return json(response, 200, {job: library.store.snapshot().job});
-      if (route === '/api/scenes') return json(response, 200, {source: 'Localserve', lightsOnline: false, tvOnline: false, scenes: [], errors: []});
+      if (route === '/api/scenes') return json(response, 200, {source: 'Sormus', lightsOnline: false, tvOnline: false, scenes: [], errors: []});
       const index = library.catalog(); if (!index.lastScan && !index.scanning) library.scan(revision);
       const catalog = index.snapshot();
-      return json(response, 200, route === '/api/catalog' ? catalog : {name: 'Localserve', apps: catalog.apps.length, files: index.files.size, scanning: catalog.scanning, lastScan: catalog.lastScan, errors: catalog.errors});
+      return json(response, 200, route === '/api/catalog' ? catalog : {name: 'Sormus', apps: catalog.apps.length, files: index.files.size, scanning: catalog.scanning, lastScan: catalog.lastScan, errors: catalog.errors});
     }
     const file = /^\/api\/(file|download)\/([a-f0-9]{24})$/.exec(route), art = /^\/api\/art\/(.+)$/.exec(route);
     if (['GET','HEAD'].includes(request.method) && art) {

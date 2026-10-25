@@ -3,10 +3,10 @@
 Open **SERVER → Games**. **Neon Labyrinth** is an endless first-person maze game
 with pastel walls, a neon grid, floating gems and a glowing EXIT portal. Select
 **Play locally** for a separate browser tab, or visit `/games/maze` on your
-Localserve address. **Fullscreen** fills the local display where supported.
+Sormus address. **Fullscreen** fills the local display where supported.
 
 **Start on TV** opens the page in the installed Vista Tizen app. Configure and
-enable Samsung TV first, keep the TV on, and enable server functions. Localserve
+enable Samsung TV first, keep the TV on, and enable server functions. Sormus
 needs a private LAN listening address reachable by the TV. The button sends one
 launch command; check the television to confirm display. It does not wake the
 TV or retry a failed launch. This explicit manual action is not blocked by the
@@ -70,7 +70,7 @@ are `.mp3`, `.ogg`, `.wav` and `.m4a`. Keep the file under 12 MiB. Actual decodi
 depends on browser codec support. No track is bundled.
 
 Players explicitly enable **Music** in the game menu. It loops through Web Audio,
-obeys the configured volume and stops while paused or hidden. Localserve does
+obeys the configured volume and stops while paused or hidden. Sormus does
 not change the TV's volume or mute setting. Unsupported or failed audio displays
 a message; toggle Music explicitly to try again. User tracks are public server
 assets, but are excluded from clean distributions.

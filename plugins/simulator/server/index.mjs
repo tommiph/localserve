@@ -1,4 +1,4 @@
-/** Simulator implements Localserve's supervised plugin runtime contract.
+/** Simulator implements Sormus's supervised plugin runtime contract.
  * Its effects are local file writes and explicit events; it never accesses devices.
  */
 export default {

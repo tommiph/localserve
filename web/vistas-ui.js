@@ -281,7 +281,7 @@ const VistaUI = {
       (node.children || []).forEach(safe);
     }
     safe(draft.layout);
-    this.preview.update({ vista: draft, cards, options: { theme: config.theme, fontScale: config.vistaFontScale, timeZone: state.server.timeZone, timeFormat: config.timeFormat, now: state.server.now, connected: serverClockConnected } });
+    this.preview.update({ vista: draft, cards, options: { theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale, timeZone: state.server.timeZone, timeFormat: config.timeFormat, now: state.server.now, connected: serverClockConnected } });
     dialog.querySelectorAll('#vista-preview [data-node-id]').forEach(element => element.classList.toggle('vista-preview-selected', element.dataset.nodeId === this.selectedNodeId));
     dialog.querySelectorAll('[data-vista-node]').forEach(element => element.classList.toggle('vista-selected-node', element.dataset.vistaNode === this.selectedNodeId));
     cancelAnimationFrame(this.fitFrame);

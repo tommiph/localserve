@@ -25,7 +25,7 @@ const CardDesigner = {
   renderCard(card, service) {
     return CardRenderer.render(card, service.cardData, service.cardCatalog, {
       timeZone: state.server.timeZone, timeFormat: config.timeFormat,
-      theme: config.theme, fontScale: config.vistaFontScale,
+      theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale,
       now: state.server.now, connected: serverClockConnected,
     });
   },

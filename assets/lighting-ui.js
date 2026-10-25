@@ -7,7 +7,7 @@ const LightingUI = {
   item(id) {return this.model()?.animations.find(item=>item.id===id);},
   render() {
     const model=this.model();
-    if(!model)return pageHeading('Lighting animations','TRÅDFRI light sequences')+'<div class="empty-state">Lighting animations are unavailable until Localserve has restarted.</div>';
+    if(!model)return pageHeading('Lighting animations','TRÅDFRI light sequences')+'<div class="empty-state">Lighting animations are unavailable until Sormus has restarted.</div>';
     const active=model.active;
     const banner=active?`<section class="panel lighting-live" aria-label="Active lighting animation"><span class="lighting-live-dot" aria-hidden="true"></span><div><h2>${escapeHtml(active.name)}</h2><p>${active.paused?'Paused with server':active.status==='running'?'Running':'Stopping'} · Step ${active.step || 1} · ${active.targets.length} lights · ${active.durationMinutes?escapeHtml(active.durationMinutes)+' min':'Until stopped'}</p></div><button class="button danger" data-action="lighting-stop" data-id="${active.id}" ${this.pending?'disabled':''}>${icon('stop')}Stop</button></section>`:'';
     return pageHeading('Lighting animations','Colour, brightness and atmosphere',`<button class="button" data-view="controls">${icon('arrow-left')}Controls</button><button class="button primary" data-action="lighting-add">${icon('plus')}New animation</button><a class="button" href="lighting-animations" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open page</a>`)+

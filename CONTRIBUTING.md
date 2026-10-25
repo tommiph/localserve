@@ -1,4 +1,4 @@
-# Developing Localserve
+# Developing Sormus
 
 Write documentation, source comments and change descriptions for users and
 contributors. Describe current behavior, requirements and technical contracts.
@@ -9,7 +9,7 @@ summaries out of repository content and publication messages.
 
 Clone the complete repository into a writable folder. Read AGENTS.md before
 asking an AI tool to modify it. No cloud account or AI product is needed to run
-Localserve. The bundled runtime runs source directly; normal server development
+Sormus. The bundled runtime runs source directly; normal server development
 requires no frontend build step or npm dependency install.
 
 ```powershell
@@ -131,3 +131,25 @@ only checks actually run. Provider/device tests are separate explicit actions.
 ## Client and regression verification
 
 The shared tools/testing/public-tests.mjs catalogue includes all isolated test files and runs serially in local, clean-source and hosted checks. Git is required for the temporary-repository release tests. Never copy installed settings into fixtures. Android build receipts bind prebuilt APK bytes to their first-party inputs; rebuild affected clients before release preparation. These checks do not require a physical phone, headset or TV and do not prove physical-device compatibility.
+
+## Plugin field contracts
+
+## Field presentation
+
+Settings and action parameters may declare a bounded `section` label and an
+`advanced` boolean. The administrator groups these fields into sections and
+disclosures; all values and validation still use the same schema. A numeric
+field without choices may declare `displayScale` (0.001–3600000): display values
+and bounds multiply by this factor, while saves convert back to stored units.
+These properties do not change Task payload units, defaults or permissions.
+
+## Read-only camera setup
+
+A runtime may opt into `inspection: "camera-list-v1"` with a numeric `device-index`
+setting and `inspect("cameras", {signal})` hook returning `{devices:[{index,name}]}`.
+The host accepts at most 32 unique indexes (0–31) and names of 1–128 characters.
+The adapter is loaded but not started for this operation. Inspection receives
+only cancellation, not host logging, state writes or Events; implement it without
+opening capture. It uses the plugin queue and is cancelled on configuration,
+removal or shutdown. The authenticated administrator POST inspection route
+requires the current settings revision. This is not a Task capability.

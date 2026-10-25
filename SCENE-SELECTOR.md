@@ -19,9 +19,9 @@ to the current browser and server address. Large circles, visible keyboard focus
 responsive columns and reduced-motion support are included. Theme animations
 provide touch feedback; they do not indicate that a scene is currently active.
 
-To add lighting scenes, save the current lighting state in the lighting remote
-and enable the saved scene. To add Tasks, publish them in Administration → Phone
-home. The selector uses those existing definitions and permissions.
+Manage scenes in **Controls → Lighting scenes**. Select phone Tasks in
+**Controls → Controller setup → Choose Tasks**. The selector activates those
+existing definitions and uses their current permissions.
 
 ## Android app
 
@@ -35,7 +35,7 @@ The browser uses scoped Scene, Phone home and Card APIs. It receives no
 administrator token or relay credentials. One action UUID is committed before
 dispatch and uncertain commands are never resubmitted. Preserve stable buttons,
 keyboard focus, reduced motion, local themes and cancelled/hidden reads.
-Embedded full remotes expose activation controls; scene authoring stays outside
-the Controller shell. Native policies allow only the configured private origin
+The full Lights remote can capture current lighting as a scene. Detailed scene
+design and editing stay in administration. Native policies allow only the configured private origin
 and fixed viewer resources. Private provisioning is deliberately excluded from
 WebView resources. Android source lives under `plugins/sensors/android`.

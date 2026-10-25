@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "google-apps-script",
   "name": "Google Apps Script",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "icon": "cloud-sync",
   "description": "Authenticated cloud inbox for phone sensors, lighting scenes, published Tasks and external events",
   "runtime": {
@@ -157,9 +157,9 @@
       {
         "title": "Connect phones",
         "steps": [
-          "Install Controller from /downloads/controller.apk. On the home network, open Settings, enter the Localserve address and tap Connect.",
-          "For a new phone, choose Approve a phone here and type its six-character code in Controller. Its individual credentials are transferred automatically and synchronized to Google on the next successful poll.",
-          "Lights and published Tasks work remotely. Full Remotes and Cards require LAN. Phone reporting starts only after Start; remote presence does not imply arrival home."
+          "Install Controller from the server Downloads page. On the home network, open Settings, enter the server address and tap Save server.",
+          "In Controls → Controller setup, choose Connect a phone and enter the six-character code in Controller. Connection details transfer automatically and synchronize to Google on the next successful poll.",
+          "Lights and selected Tasks work away from home. Full Remotes and Cards need the home network. Phone sharing starts only after Start sharing; remote presence does not imply arrival home."
         ]
       }
     ]

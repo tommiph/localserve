@@ -70,7 +70,7 @@
     document.body.setAttribute('data-template', value.template.toLowerCase());
     document.title = value.template + ' · ' + value.title;
     text('notice-type', value.template); text('notice-title', value.title);
-    text('notice-message', value.message); text('server-name', value.serverName || 'Localserve');
+    text('notice-message', value.message); text('server-name', value.serverName || 'Sormus');
     var factor = Math.max(.8, Math.min(1.3, (Number(value.fontScale) || 100) / 100));
     document.getElementById('notice-title').style.fontSize = 64 * factor + 'px';
     document.getElementById('notice-message').style.fontSize = 30 * factor + 'px';

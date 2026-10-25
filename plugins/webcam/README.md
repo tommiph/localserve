@@ -67,7 +67,7 @@ without inventing movement or lighting transitions.
   movement state and classification for comparisons.
 
 For example, choose **Camera readings → Brightness (%) → Less than → 20**,
-then add the desired lighting action. Reading comparisons use Localserve's
+then add the desired lighting action. Reading comparisons use Sormus's
 normal false-to-true condition behavior. Transition Events have distinct
 occurrence IDs so separate detections can trigger the same condition again.
 Event text such as `{{event.brightness}}`, `{{event.motion-percent}}` and
@@ -78,7 +78,7 @@ Event text such as `{{event.brightness}}`, `{{event.motion-percent}}` and
 
 Webcam starts disabled. Enabling it permits local capture, including when no
 viewer is open; Tasks need the measurements independently of Cards. Disable
-Webcam or pause Localserve to stop capture and clear its in-memory image.
+Webcam or pause Sormus to stop capture and clear its in-memory image.
 Resuming permits the next normal refresh to start a fresh capture.
 
 No microphone, recording, snapshot file, image history or cloud service is used.
@@ -88,7 +88,7 @@ record receipt by the capture worker, not a hardware camera clock. A stale or fa
 capture is hidden instead of presenting an old image as live. Failed capture
 attempts wait at least 15 seconds before another supervised attempt.
 
-The read-only image route is available to browsers that can reach Localserve,
+The read-only image route is available to browsers that can reach Sormus,
 like other public Vista data. Use it on your trusted local network. Windows
 camera privacy restrictions and camera-driver availability still apply.
 

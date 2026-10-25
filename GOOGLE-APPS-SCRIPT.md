@@ -2,20 +2,21 @@
 
 Use your own Google Apps Script project to receive selected phone reports,
 lighting-scene requests, published Task shortcuts and external messages while
-away from home. Localserve polls that inbox using outbound HTTPS. Your PC
+away from home. Sormus polls that inbox using outbound HTTPS. Your PC
 does not need a public address, forwarded port or externally accessible admin.
-This is a low-rate message relay, not a VPN or remote browser for Localserve.
+This is a low-rate message relay, not a VPN or remote browser for Sormus.
 
 The plugin starts disabled. LAN operation remains available without Google.
-Remote use requires Localserve 0.41.0, Controller for Android 2.1.0,
+Remote use requires the current Controller app,
 a running home server and internet access at both ends.
 
-## 1. Prepare the relay in Localserve
+## 1. Prepare the relay in Sormus
 
 1. Open **Google Apps Script → Settings** in administration.
 2. Choose **Generate missing keys**. The collector key lets your home server
    synchronize its private relay. Existing valid keys are retained.
-3. Download **Code.gs** and **private Google configuration**. The script contains
+3. Open **Downloads** and download **Google Apps Script relay** and
+   **Private Google configuration**. The script contains
    no credentials. The private configuration does: never share or publish it.
 4. New Controller phones use the approval flow below. For an external sender,
    add an Authorized client with a unique lowercase ID, descriptive name and
@@ -34,7 +35,7 @@ a running home server and internet access at both ends.
    accounts disallow anonymous deployments; the plugin cannot bypass that policy.
 5. Complete Google's deployment prompts and copy the deployed HTTPS URL ending
    in `/exec`, not the editor URL or a `/dev` testing URL.
-6. Save that URL in Localserve's **Apps Script deployment URL** and enable the
+6. Save that URL in Sormus's **Apps Script deployment URL** and enable the
    plugin. A successful poll updates **Last successful sync** and the plugin Log.
 
 The web-app settings and response redirect follow Google's
@@ -46,17 +47,17 @@ so the saved `/exec` deployment serves it. Editing code alone is insufficient.
 ## 3. Connect Controller
 
 1. Install `/downloads/controller.apk` on the phone.
-2. At home, open Controller → Settings, enter the Localserve LAN address and Connect.
+2. At home, open Controller → Settings, enter the server address and tap Save server.
 3. On a new phone, Controller asks for approval. In administration, choose
-   **Google Apps Script → Settings → Approve a phone**. Enter its six-character
+   **Controls → Controller setup → Connect a phone**. Enter its six-character
    code in Controller. The code works once, expires after five minutes and is
    invalidated after eight failed attempts. Generating another cancels the old one.
-4. Localserve creates this phone's individual relay client and transfers its
+4. Sormus creates this phone's individual relay client and transfers its
    connection details automatically. Its next successful Google sync registers
    the client remotely. No JSON, keys or device IDs are handled on the phone.
 5. Lights and published Tasks are available locally and through the relay. Full
    Remotes and Cards require LAN. The app prefers LAN and checks for its return.
-6. Open Settings → Phone reporting, select sources, grant Android access and tap
+6. Open Settings → Phone information → Choose what to share, select sources, grant Android access and tap
    Start if reporting is wanted. Connection never starts reporting automatically.
 
 Phone approval grants Lights, published Tasks and optional sensor reports,
@@ -89,16 +90,16 @@ be any Wi-Fi network; do not use `wifi=true` alone to identify your home network
 
 Selected location, notification, media and other phone sources can contain
 personal information. Opting them into relay reporting sends their selected
-contents through Google as well as Localserve. Android permissions, notification
+contents through Google as well as Sormus. Android permissions, notification
 allowlists and source switches still apply. Unselected sources are not enabled
 by the relay. Task runs may retain captured public Event fields according to
-normal Localserve logging/history rules.
+normal Sormus logging/history rules.
 
 ## 5. Receive an external message as a Task Event
 
 Create an enabled client with **Allow generic Task events**. Export its private
 profile and keep it on the sending machine outside version control. From a
-Localserve source folder, send one explicit message:
+Sormus source folder, send one explicit message:
 
 ```powershell
 .\runtime\node.exe plugins/google-apps-script/server/apps-script/send-example.mjs localserve-my-phone-private.json arrival "I am on my way"
@@ -147,7 +148,7 @@ expire after five minutes. No text is evaluated as code or an action name.
   fresh private configuration export and update that phone's private profile.
   Old-key queued messages cannot acquire the new key's local authority. To stop
   cloud collection immediately, revoke the Google deployment or its client too;
-  disabling Localserve alone cannot remove data already submitted to Google.
+  disabling Sormus alone cannot remove data already submitted to Google.
 
 ## Contributor contract
 

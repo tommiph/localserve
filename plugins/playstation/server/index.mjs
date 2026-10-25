@@ -1,4 +1,4 @@
-/** Localserve supervised lifecycle for read-only Sony PSN polling.
+/** Sormus supervised lifecycle for read-only Sony PSN polling.
  * Offline validation/start only unlock this plugin's local session. No local
  * console probing or independent background producers are used.
  */

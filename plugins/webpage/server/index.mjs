@@ -1,4 +1,4 @@
-/** Localserve API v1 lifecycle with named, read-only public webpages.
+/** Sormus API v1 lifecycle with named, read-only public webpages.
  * Browser embedding is direct; server polling never runs downloaded scripts.
  */
 import http from 'node:http';

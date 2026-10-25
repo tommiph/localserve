@@ -1,4 +1,4 @@
-/** Localserve backbone: local/LAN HTTP, persistent settings/Tasks, plugin
+/** Sormus backbone: local/LAN HTTP, persistent settings/Tasks, plugin
  * declarations, supervised runtimes and cooperative Task/Control execution.
  * Device capabilities are scoped by their installed trusted declarations.
  */
@@ -29,6 +29,7 @@ import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
 import {readClientPackages} from './server/client-packages.mjs';
+import {downloadCatalogue,serveProductDownload} from './server/downloads.mjs';
 import { readCardAsset } from './server/card-templates.mjs';
 import { attachTrayControl } from './server/tray-control.mjs';
 import { validateListen, requestOrigin, isPrivateIPv4, listenBrowserHttp } from './server/network.mjs';
@@ -40,7 +41,7 @@ import packageMetadata from './package.json' with { type: 'json' };
 
 // Software identity comes from the installed package, never an old preference.
 export const serverVersion = packageMetadata.version;
-export const defaultConfig = { name: 'Localserve', version: serverVersion, theme: 'dark', fontScale: 100, vistaFontScale: 100, timeFormat: '24', location: null, activityRetentionDays: 30,
+export const defaultConfig = { name: 'Sormus', version: serverVersion, theme: 'dark', displayTheme: 'dark', fontScale: 100, vistaFontScale: 100, timeFormat: '24', location: null, activityRetentionDays: 30,
   doNotDisturb: defaultDoNotDisturb, listen: { host: '127.0.0.1', port: 0 }, maxConcurrentRuns: 8 };
 const contentTypes = { '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.m4a':'audio/mp4', '.wav': 'audio/wav', '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.png': 'image/png', '.webp': 'image/webp' };
@@ -61,6 +62,7 @@ function validateConfig(value) {
     throw new HttpError(400, 'Enter latitude from −90 to 90 and longitude from −180 to 180, or clear both coordinates.');
   }
   if (!['light', 'dark'].includes(value.theme) || !Number.isInteger(value.fontScale) || value.fontScale < 80 || value.fontScale > 130 || value.fontScale % 5) throw new HttpError(400, 'Choose a valid theme and font size.');
+  if (!['light', 'dark'].includes(value.displayTheme)) throw new HttpError(400, 'Choose a light or dark display theme.');
   if (!Number.isInteger(value.vistaFontScale) || value.vistaFontScale < 80 || value.vistaFontScale > 130 || value.vistaFontScale % 5) throw new HttpError(400, 'Choose a Vista font size from 80% to 130% in 5% steps.');
   validateListen(value.listen);
   if (!Number.isInteger(value.maxConcurrentRuns) || value.maxConcurrentRuns < 1 || value.maxConcurrentRuns > 100) throw new HttpError(400, 'Concurrent runs must be between 1 and 100.');
@@ -91,14 +93,14 @@ export async function createLocalserve(root, options = {}) {
   await fs.mkdir(dataDirectory, { recursive: true });
   const realRoot = await fs.realpath(root), realData = await fs.realpath(dataDirectory);
   const clientPackages=await readClientPackages(root);
-  if (!realData.startsWith(realRoot + path.sep)) throw new Error('data/ must remain inside Localserve.');
+  if (!realData.startsWith(realRoot + path.sep)) throw new Error('data/ must remain inside Sormus.');
   const lockFile = path.join(dataDirectory, 'server.lock');
   let lock;
   // Exclusive creation reserves this data folder before any stores are loaded.
   // Never inspect or terminate another process to resolve a lock conflict.
   try { lock = await fs.open(lockFile, 'wx'); }
   catch (error) {
-    if (error.code === 'EEXIST') throw new Error('Localserve is already running, or its last stop was interrupted. See README: server.lock recovery.');
+    if (error.code === 'EEXIST') throw new Error('Sormus is already running, or its last stop was interrupted. See README: server.lock recovery.');
     throw error;
   }
   async function releaseLock() { await lock.close(); await fs.rm(lockFile, { force: true }); }
@@ -124,6 +126,10 @@ export async function createLocalserve(root, options = {}) {
     if (!Object.hasOwn(config.snapshot(), 'vistaFontScale')) {
       // Seed a missing Vista scale from the administrator scale, then save it independently.
       await config.update(current => { current.vistaFontScale = current.fontScale; });
+    }
+    // Preserve the existing viewer appearance once, then keep both themes independent.
+    if (!Object.hasOwn(config.snapshot(), 'displayTheme')) {
+      await config.update(current => { current.displayTheme = current.theme; });
     }
     if (!Object.hasOwn(config.snapshot(), 'doNotDisturb')) {
       // Missing quiet-hour preferences default off to avoid suppressing Tasks.
@@ -241,7 +247,7 @@ export async function createLocalserve(root, options = {}) {
         }
 
         if(url.pathname==='/api/vr-client/enroll'){
-          if(request.method!=='POST'||url.search)throw new HttpError(405,'Use the Localserve Go connection screen.');
+          if(request.method!=='POST'||url.search)throw new HttpError(405,'Use the Sormus Go connection screen.');
           const values=await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
           return json(response,200,await apkLibrary.enroll(request,values));
@@ -351,6 +357,13 @@ export async function createLocalserve(root, options = {}) {
         const viewerApi = /^\/api\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
         if (request.method === 'GET' && viewerApi) return json(response, 200, vistas.viewer(viewerApi[1]));
         if (url.pathname.startsWith('/api/')) {
+          if(url.pathname==='/api/downloads'){
+            if(request.method!=='GET'||url.search)throw new HttpError(405,'Use Downloads.');
+            return json(response,200,{items:await downloadCatalogue(root)});
+          }
+          const sceneAdmin=/^\/api\/lighting-scenes\/([a-z0-9-]+)\/([a-zA-Z0-9-]+)(\/run)?$/.exec(url.pathname);
+          if(sceneAdmin&&url.search)throw new HttpError(400,'Unexpected scene parameters.');
+          if(sceneAdmin&&request.method==='GET'&&!sceneAdmin[3])return json(response,200,controls.sceneDetails(sceneAdmin[1],sceneAdmin[2]));
           const explanation=/^\/api\/tasks\/([a-zA-Z0-9-]{1,80})\/explanation$/.exec(url.pathname);
           if(request.method==='GET'&&explanation&&!url.search)return json(response,200,explainTask(engine,explanation[1]));
           if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin));
@@ -367,7 +380,9 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(url.pathname==='/api/cloud-relay/setup'){
+          if(sceneAdmin){
+            return json(response,sceneAdmin[3]?202:200,await controls.administerScene(sceneAdmin[1],sceneAdmin[2],values,Boolean(sceneAdmin[3])));
+          } else if(url.pathname==='/api/cloud-relay/setup'){
             if(url.search)throw new HttpError(400,'Unexpected relay parameters.');
             return json(response,200,await cloudRelay.setup(values));
           } else if(/^\/api\/devices\/(scan|lookup|cancel|edit|use)$/.test(url.pathname)){
@@ -408,7 +423,7 @@ export async function createLocalserve(root, options = {}) {
           } else if (url.pathname === '/api/universe') {
             await universe.save(values);
           } else if (url.pathname === '/api/config') {
-            const permitted = ['name', 'theme', 'fontScale', 'vistaFontScale', 'timeFormat', 'location', 'listen', 'maxConcurrentRuns', 'activityRetentionDays', 'doNotDisturb'];
+            const permitted = ['name', 'theme', 'displayTheme', 'fontScale', 'vistaFontScale', 'timeFormat', 'location', 'listen', 'maxConcurrentRuns', 'activityRetentionDays', 'doNotDisturb'];
             if (!values || Object.keys(values).some(key => !permitted.includes(key))) throw new HttpError(400, 'Unknown setting.');
             await config.update(current => Object.assign(current, validateConfig({ ...current, ...values })));
             if (Object.hasOwn(values, 'activityRetentionDays')) await cleanupActivity(true);
@@ -538,27 +553,19 @@ export async function createLocalserve(root, options = {}) {
           return response.end(request.method === 'HEAD' ? undefined : asset.content);
         }
         const controlManifest = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)\/app\.webmanifest$/.exec(url.pathname);
+        if(url.pathname==='/sensors'){
+          if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use Downloads.');
+          response.writeHead(307,{Location:'/downloads'});return response.end();
+        }
+        if(url.pathname.startsWith('/downloads/')&&url.search)throw new HttpError(['/downloads/localserve.apk','/downloads/localserve-sensors.apk','/downloads/scenes.apk'].includes(url.pathname)?405:400,'Unexpected download parameters.');
+        if(await serveProductDownload(root,request,response,url.pathname))return;
         if (url.pathname === '/downloads/scenes.apk') {
           if (!['GET','HEAD'].includes(request.method)||url.search) throw new HttpError(405,'Use the Controller download link.');
           response.writeHead(307,{Location:'/downloads/controller.apk'});return response.end();
         }
-        if (['/downloads/controller.apk','/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
-          if (!['GET','HEAD'].includes(request.method) || url.search) throw new HttpError(405,'Use the Android download link.');
-          if (registry.get('sensors').plugin.runtime?.ingest !== 'sensors-v1') throw new HttpError(404,'Sensors app unavailable.');
-          const realRoot=await fs.realpath(root);
-          let apk,stat,realPlugin,realDist;
-          try {
-            realPlugin=await fs.realpath(path.join(root,'plugins/sensors'));
-            realDist=await fs.realpath(path.join(realPlugin,'android/dist'));
-            apk=await fs.realpath(path.join(realDist,'localserve-sensors.apk'));stat=await fs.stat(apk);
-          }
-          catch {throw new HttpError(404,'Sensors app unavailable. Build the Android APK first.');}
-          if (!realPlugin.startsWith(realRoot+path.sep) || !realDist.startsWith(realPlugin+path.sep) || !apk.startsWith(realDist+path.sep)
-            || !stat.isFile() || stat.size>16*1024*1024) throw new HttpError(404,'Sensors app unavailable.');
-          const bytes=await fs.readFile(apk),meta=JSON.parse(await fs.readFile(path.join(realDist,'verification.json'),'utf8'));
-          if(meta.bytes!==bytes.length||meta.sha256!==createHash('sha256').update(bytes).digest('hex'))throw new HttpError(404,'Controller package verification failed.');
-          response.writeHead(200,{'Content-Type':'application/vnd.android.package-archive','Content-Length':bytes.length,'Content-Disposition':'attachment; filename="controller.apk"'});
-          return response.end(request.method==='HEAD'?undefined:bytes);
+        if (['/downloads/localserve.apk','/downloads/localserve-sensors.apk'].includes(url.pathname)) {
+          if (!['GET','HEAD'].includes(request.method)) throw new HttpError(405,'Use Downloads.');
+          response.writeHead(307,{Location:'/downloads/controller.apk'});return response.end();
         }
         if (controlManifest) {
           if (!['GET', 'HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
@@ -577,7 +584,7 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations','/controller-setup','/lighting-scenes','/remotes','/downloads'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
@@ -585,6 +592,8 @@ export async function createLocalserve(root, options = {}) {
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
         for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
+        webFiles.add('lighting-scenes-ui.js');
+        webFiles.add('downloads-ui.js');
         webFiles.add('vr-library-ui.js');
         webFiles.add('devices-ui.js');webFiles.add('cloud-relay-ui.js');
         webFiles.add('phone-information.html');
@@ -652,7 +661,7 @@ export async function createLocalserve(root, options = {}) {
         // that response instead of attempting a second JSON response.
         if (response.headersSent || response.destroyed) { response.destroy(); return; }
         const status = error.status || (error.code === 'ENOENT' ? 404 : 500);
-        if (status === 500) console.error('Localserve request failed:', error.message);
+        if (status === 500) console.error('Sormus request failed:', error.message);
         json(response, status, { error: status === 500 ? 'Unable to save or read server data. Original data was retained.' : error.message });
       }
     });
@@ -661,7 +670,7 @@ export async function createLocalserve(root, options = {}) {
       ? `http://${listen.host}:${server.address().port}` : null;
     validateListen(listen);
     // Port 0 asks the OS for an unused port. A busy explicit port fails startup;
-    // Localserve does not replace listeners or change unrelated services.
+    // Sormus does not replace listeners or change unrelated services.
     // LAN mode binds one explicit private interface plus localhost; there is
     // no wildcard/public-interface listener. Both share the same guarded handler.
     const browserHost = isPrivateIPv4(listen.host) ? '127.0.0.1' : listen.host;
@@ -734,8 +743,8 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const application = await createLocalserve(projectRoot);
   const desktop = await attachTrayControl(application, projectRoot);
-  console.log(`Localserve: ${application.origin}`);
-  console.log('Press Ctrl+C to stop this Localserve process.');
+  console.log(`Sormus: ${application.origin}`);
+  console.log('Press Ctrl+C to stop this Sormus process.');
   if (process.argv.includes('--open')) execFile('cmd.exe', ['/c', 'start', '', application.origin], { windowsHide: true });
   let stopping = false;
   async function stop() { if (stopping) return; stopping = true; await desktop.shutdown(); }

@@ -10,7 +10,7 @@ Starts disabled with fresh default settings, no cached readings, saved Cards or 
 
 ## Settings
 
-- **Polling interval**: Applies to public webpages. Localserve display pages are display-only and are not polled. Successful public refreshes reload embedded Cards; page-change events compare downloaded HTML.. Choices: 5 minutes, 10 minutes, 15 minutes, 30 minutes, 1 hour, 2 hours, 3 hours, 6 hours, 12 hours, 24 hours.
+- **Polling interval**: Applies to public webpages. Sormus display pages are display-only and are not polled. Successful public refreshes reload embedded Cards; page-change events compare downloaded HTML.. Choices: 5 minutes, 10 minutes, 15 minutes, 30 minutes, 1 hour, 2 hours, 3 hours, 6 hours, 12 hours, 24 hours.
 - **Pages**: Use public HTTP/HTTPS URLs, /assets/pages/name.html for a local display, /universe for Universe, or /phone-information for phone readings. Local displays support Open on TV without polling or parsed readings. Copies start disabled..
   - **Page ID**: string
   - **Name**: string

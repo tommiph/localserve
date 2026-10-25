@@ -5,7 +5,7 @@ const DevicesUI = {
   row(id){return state.devices?.devices.find(item=>item.id===id);},
   render(){
     const model=state.devices;
-    if(!model)return pageHeading('Devices','Local network inventory')+'<div class="empty-state">Reload the administrator after restarting Localserve to use device discovery.</div>';
+    if(!model)return pageHeading('Devices','Local network inventory')+'<div class="empty-state">Reload the administrator after restarting Sormus to use device discovery.</div>';
     if(!model.networks.some(item=>item.id===this.networkId)){
       let address;try{address=new URL(state.server.lanAddress).hostname;}catch{}
       this.networkId=(model.networks.find(item=>item.address===address)||model.networks[0])?.id||'';

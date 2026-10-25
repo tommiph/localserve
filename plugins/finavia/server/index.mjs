@@ -1,4 +1,4 @@
-/** Localserve supervised board lifecycle for Finavia Public Flights.
+/** Sormus supervised board lifecycle for Finavia Public Flights.
  * Import, validation and start remain offline; only refresh reads the provider.
  */
 import { createHash } from 'node:crypto';
@@ -164,7 +164,7 @@ export function parseFlights(xml, location, receivedAt = Date.now()) {
   const reading = {
     'flight-count': displayed.length, airport: location.airport,
     'route-filter': location['other-airport'] || '', 'flight-filter': location.flight || '',
-    'updated-at': receivedAt, attribution: 'Flight data: Finavia · Filtered and formatted by Localserve',
+    'updated-at': receivedAt, attribution: 'Flight data: Finavia · Filtered and formatted by Sormus',
   };
   for (let index = 1; index <= 10; index += 1) {
     const movement = displayed[index - 1];

@@ -6,7 +6,7 @@ import {validateDeclaration} from '../server/plugins.mjs';
 import {validateControlPage} from '../server/controls.mjs';
 import {JsonStore} from '../server/storage.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url));
-if(await fs.stat(path.join(root,'data/server.lock')).catch(()=>null))throw Error('Stop this Localserve server before installing examples.');
+if(await fs.stat(path.join(root,'data/server.lock')).catch(()=>null))throw Error('Stop this Sormus server before installing examples.');
 for(const id of ['samsung-tv','tradfri']){
   const declaration=validateDeclaration(JSON.parse(await fs.readFile(path.join(root,'plugins',id,'declaration.json'))));
   const example=JSON.parse(await fs.readFile(path.join(root,'examples/controls',id+'.json')));

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
-    <title>Localserve · Administration</title>
+    <title>Sormus · Administration</title>
     <link rel="icon" href="assets/controls/app-icon.svg" type="image/svg+xml">
     <link rel="icon" href="assets/controls/app-icon-192.png" type="image/png" sizes="192x192">
     <!-- All styles and glyphs are served from this project. -->
@@ -30,6 +30,8 @@
     <script src="vr-library-ui.js" defer></script>
     <script src="controls-renderer.js" defer></script>
     <script src="controls-ui.js" defer></script>
+    <script src="lighting-scenes-ui.js" defer></script>
+    <script src="downloads-ui.js" defer></script>
     <script src="devices-ui.js" defer></script>
     <script src="assets/qrcode/qrcodegen.js" defer></script>
     <script src="phone-home-ui.js" defer></script>
@@ -45,7 +47,7 @@
         <button class="button mobile-navigation-close" type="button" data-action="navigation-close">Close menu</button>
         <a class="brand" href="#overview" aria-label="Server overview">
           <span class="brand-mark"><img class="application-logo" src="assets/logo-dark.svg" width="36" height="36" alt=""></span>
-          <span id="brand-name">Localserve</span>
+          <span id="brand-name">Sormus</span>
         </a>
         <div class="sidebar-body">
           <div class="nav-label">SERVER</div>
@@ -60,7 +62,7 @@
             <button class="nav-item" data-view="activity" aria-label="Activity"><i class="material-symbol ms-clock-rotate-left" aria-hidden="true"></i><span>Activity</span></button>
           </nav>
           <div class="nav-label settings-label">ADMINISTRATION</div>
-          <nav><button class="nav-item" data-view="settings" aria-label="Settings"><i class="material-symbol ms-sliders" aria-hidden="true"></i><span>Settings</span></button><button class="nav-item" data-view="variables" aria-label="Variables"><i class="material-symbol ms-data-object" aria-hidden="true"></i><span>Variables</span></button></nav>
+          <nav><button class="nav-item" data-view="settings" aria-label="Settings"><i class="material-symbol ms-sliders" aria-hidden="true"></i><span>Settings</span></button><button class="nav-item" data-view="downloads" aria-label="Downloads"><i class="material-symbol ms-download" aria-hidden="true"></i><span>Downloads</span></button><button class="nav-item" data-view="variables" aria-label="Variables"><i class="material-symbol ms-data-object" aria-hidden="true"></i><span>Variables</span></button></nav>
           <div class="nav-label plugins-label">PLUGINS</div>
           <label class="plugin-navigation-search" for="plugin-search"><span class="visually-hidden">Find a plugin</span><input id="plugin-search" type="search" placeholder="Find a plugin" aria-label="Find a plugin"></label>
           <nav id="plugin-navigation" aria-label="Plugins"></nav>
@@ -74,7 +76,7 @@
       <div class="main-shell">
         <header class="topbar">
           <button id="mobile-navigation-toggle" class="button mobile-navigation-toggle" type="button" data-action="navigation-toggle" aria-expanded="false" aria-controls="admin-navigation"><i class="material-symbol ms-bars" aria-hidden="true"></i>Menu</button>
-          <div class="breadcrumbs"><span id="breadcrumb-name">Localserve</span><span class="breadcrumb-divider">/</span><span id="breadcrumb-page">Overview</span></div>
+          <div class="breadcrumbs"><span id="breadcrumb-name">Sormus</span><span class="breadcrumb-divider">/</span><span id="breadcrumb-page">Overview</span></div>
           <span class="mobile-server-version" data-server-version aria-label="Server version">—</span>
           <time id="server-clock" class="server-clock" aria-label="Server date and time"></time>
         </header>

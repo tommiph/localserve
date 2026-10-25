@@ -1,4 +1,4 @@
-/** Localserve runtime API v1 for read-only Windows metrics.
+/** Sormus runtime API v1 for read-only Windows metrics.
  * Only supervised actions sample counters or resolve names; no background scan,
  * process listing, service management or arbitrary command interface exists.
  */

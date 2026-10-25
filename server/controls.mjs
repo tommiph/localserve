@@ -8,7 +8,7 @@ import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypt
 import { JsonStore, HttpError } from './storage.mjs';
 import { isIdentifier, validateValues, validateValue, glyphs } from './plugin-schema.mjs';
 import { projectCardData } from './cards.mjs';
-import { validateLighting, lightingModel, captureLightingScene } from './control-lighting.mjs';
+import { validateLighting, lightingModel, captureLightingScene, authorLightingScene, editableLightingScene } from './control-lighting.mjs';
 import { televisionRole } from './control-television.mjs';
 
 function object(value, keys) {
@@ -250,7 +250,7 @@ export class ControlsStore {
   ready(pluginId) {
     try { this.registry.assertReady(this.registry.get(pluginId)); return !this.registry.engine.gate.paused && !this.closing; } catch { return false; }
   }
-  options() { const config = this.config.snapshot(); return { name: config.name, theme: config.theme, fontScale: config.fontScale, timeFormat: config.timeFormat }; }
+  options() { const config = this.config.snapshot(); return { name: config.name, theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale ?? config.fontScale, timeFormat: config.timeFormat }; }
   index() {
     return { options: this.options(), pages: this.registry.plugins.filter(plugin => plugin.controls).flatMap(plugin => this.pages(plugin.id).filter(page => page.enabled).map(page => ({
       pluginId: plugin.id, pluginName: plugin.name, name: page.name, slug: page.slug, icon: page.icon, available: this.ready(plugin.id), url: `/controls/${plugin.id}/${page.slug}`,
@@ -274,24 +274,45 @@ export class ControlsStore {
     return lightingModel(plugin, page, data || projectCardData(plugin, record, this.registry.engine.gate.paused), identityMatches);
   }
   itemsFor(plugin, page) { return [...page.items, ...(this.lighting(plugin, page)?.items || [])]; }
-  async scene(pluginId, slug, token, values) {
-    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'enabled', 'icon']);
-    const { plugin, page } = this.resolve(pluginId, slug);
-    this.verify(pluginId, page, token);
-    if (!this.lighting(plugin, page) || !['capture', 'edit', 'copy', 'enabled', 'delete'].includes(values.action)) throw new HttpError(400, 'Choose a lighting scene operation.');
-    const fields = { capture: ['action','revision','name','lightIds','icon'], edit: ['action','revision','itemId','name','lightIds','icon'],
+  sceneDetails(pluginId, pageId) {
+    const plugin=this.plugin(pluginId),page=this.pages(pluginId).find(item=>item.id===pageId);
+    if(!page||!this.lighting(plugin,page))throw new HttpError(404,'Lighting remote unavailable.');
+    const lighting=this.lighting(plugin,page);
+    return {pageId:page.id,name:page.name,revision:page.revision,enabled:page.enabled,available:this.ready(pluginId)&&page.enabled,busy:this.active.has(pluginId),lighting,
+      scenes:page.items.filter(item=>item.kind==='scene'),
+      editableScenes:Object.fromEntries(page.items.filter(item=>item.kind==='scene').map(scene=>[scene.id,editableLightingScene(plugin,lighting,scene)]))};
+  }
+  async administerScene(pluginId, pageId, values, run=false) {
+    this.sceneDetails(pluginId,pageId);
+    const page=this.pages(pluginId).find(item=>item.id===pageId);
+    if(run){
+      if(!page.items.some(item=>item.id===values.itemId&&item.kind==='scene'))throw new HttpError(404,'Scene unavailable.');
+      return this.invoke(pluginId,page.slug,this.token(pluginId,page),values);
+    }
+    return this.scene(pluginId,page.slug,null,values,true);
+  }
+  async scene(pluginId, slug, token, values, administrator=false) {
+    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'lights', 'enabled', 'icon']);
+    const plugin=this.plugin(pluginId),page=this.pages(pluginId).find(item=>item.slug===slug&&(administrator||item.enabled));
+    if(!page)throw new HttpError(404,'Lighting remote unavailable.');
+    if(!administrator)this.verify(pluginId,page,token);
+    if (!administrator && (values.action==='create' || values.lights!==undefined)) throw new HttpError(403,'Use administration to design lighting settings.');
+    if (!this.lighting(plugin, page) || !['create', 'capture', 'edit', 'copy', 'enabled', 'delete'].includes(values.action)) throw new HttpError(400, 'Choose a lighting scene operation.');
+    const fields = {create:['action','revision','name','lights','icon'], capture: ['action','revision','name','lightIds','icon'], edit: ['action','revision','itemId','name','lightIds','lights','icon'],
       copy: ['action','revision','itemId','name','icon'], enabled: ['action','revision','itemId','enabled'], delete: ['action','revision','itemId'] };
     object(values, fields[values.action]);
+    if(values.lights!==undefined&&values.lightIds!==undefined)throw new HttpError(400,'Choose designed settings or current lighting.');
     if(values.icon!==undefined&&!glyphs.includes(values.icon))throw new HttpError(400,'Choose a bundled Material Symbols glyph.');
     if (values.revision !== page.revision) throw new HttpError(409, 'These scenes changed. Close and reopen the editor.');
-    if (!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Wait until lighting is ready and no Control is running.');
+    const needsReading=!administrator||['create','capture'].includes(values.action)||values.lightIds!==undefined||values.lights!==undefined;
+    if (needsReading&&!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Wait until lighting is ready and no Control is running.');
     const { store } = this.entry(pluginId);
     await store.update(current => {
-      if (this.closing || !this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Lighting is unavailable or busy.');
-      const saved = current.pages.find(entry => entry.id === page.id && entry.enabled);
+      if (this.closing || needsReading&&!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Lighting is unavailable or busy.');
+      const saved = current.pages.find(entry => entry.id === page.id && (administrator||entry.enabled));
       if (!saved || saved.revision !== values.revision) throw new HttpError(409, 'These scenes changed. Close and reopen the editor.');
       const item = saved.items.find(entry => entry.id === values.itemId && entry.kind === 'scene');
-      if (values.action !== 'capture' && !item) throw new HttpError(404, 'Scene unavailable.');
+      if (!['create','capture'].includes(values.action) && !item) throw new HttpError(404, 'Scene unavailable.');
       if (values.action === 'delete') saved.items = saved.items.filter(entry => entry.id !== item.id);
       else if (values.action === 'enabled') {
         if (typeof values.enabled !== 'boolean') throw new HttpError(400, 'Choose scene Enabled on or off.');
@@ -305,13 +326,13 @@ export class ControlsStore {
       } else {
         const name = label(values.name);
         let captured;
-        if (values.action === 'capture' || values.lightIds !== undefined) {
+        if (['create','capture'].includes(values.action) || values.lightIds !== undefined || values.lights !== undefined) {
           const model = this.lighting(plugin, saved), record = this.registry.get(pluginId);
           const maxAge = Math.max(120000, this.registry.pollMilliseconds(record) * 2 + 30000);
           if (!model.receivedAt || Date.now() - model.receivedAt > maxAge || record.pending) throw new HttpError(409, 'Refresh lighting and wait for commands to finish before capturing.');
-          captured = captureLightingScene(plugin, model, values.lightIds, name);
+          captured = values.action==='create'||values.lights!==undefined ? authorLightingScene(plugin,model,values.lights,name) : captureLightingScene(plugin, model, values.lightIds, name);
         }
-        if (values.action === 'capture') {
+        if (['create','capture'].includes(values.action)) {
           if (saved.items.length >= 64) throw new HttpError(400, 'This page supports at most 64 controls.');
           if(values.icon!==undefined)captured.icon=values.icon;
           saved.items.push(captured);

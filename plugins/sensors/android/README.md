@@ -1,7 +1,7 @@
 # Controller phone reporting
 
 Use [Controller](../../../CONTROLLER.md) for Lights, Tasks, full Remotes and Cards.
-Open **Settings → Phone reporting** for the native sources below. The server address
+Open **Settings → Phone information → Choose what to share** for the native sources below. The server address
 and approved relay details come from Controller’s single connection screen; no
 profile import or separate transport selector is required. Reporting remains
 explicitly started and stopped, with Android permissions for each selected source.
@@ -20,14 +20,14 @@ Notification/media require Android Notification access; foreground app requires
 Usage access and checks every five seconds. Missing access prevents that source
 from reporting; it does not grant itself access. Restart after access changes.
 
-Notifications forward only the up-to-twenty explicitly entered package names;
-blank sends none. Titles/text are bounded to 500 characters, with no artwork,
+Notifications forward only the apps selected with **Choose notification apps**
+(up to twenty). No selected apps means no notifications are shared. Titles/text are bounded to 500 characters, with no artwork,
 actions or initial notification dump. Android may redact protected content.
 Media is limited to eight published sessions; each report holds only the latest
 callback per kind. Foreground app uses usage events, not Accessibility.
 
-Manual events can come from the app button, a user-added Localserve Quick Settings
-tile, or the Localserve home-screen widget. Select Manual button and keep streaming
+Manual events can come from the app button, a user-added Sormus Quick Settings
+tile, or the Sormus home-screen widget. Select Manual button and keep streaming
 running first; these controls never start the streamer or queue a later command.
 The name field distinguishes Manual button / Quick Settings / Home screen.
 NFC reads tag IDs/technology only while the setup activity is visible and NFC
@@ -73,7 +73,7 @@ These sources are opt-in under Phone events. Stop streaming before editing them.
 - **Activity transitions:** select the activity source and grant Physical activity
   permission. Google Play services reports Walking, Running, Cycling, In vehicle
   or Still with Enter/Exit. In vehicle does not identify a driver, and these are
-  provider classifications, not facts inferred by Localserve from raw sensors.
+  provider classifications, not facts inferred by Sormus from raw sensors.
   Unsupported/missing/outdated services or denied access show an unavailable
   status. The app does not install/update services, resolve failures, request an
   account, infer a replacement classification or retry registration automatically.
@@ -96,7 +96,7 @@ rapid opposite transitions before a report can still merge. Old/duplicate
 timestamps, expired fixes, callbacks from a stopped stream and old registration
 generations are rejected. Stop removes owned listeners/registrations and revokes
 the callback PendingIntent; nothing starts from boot, a callback, tile or widget.
-Losing LAN access can prevent an arrival/departure report from reaching Localserve;
+Losing LAN access can prevent an arrival/departure report from reaching Sormus;
 there is no offline replay. Optional relay reporting requires its own configured
 internet connection. Android/Google providers follow device
 settings and may have their own network behavior. No radio/room analysis exists.
@@ -108,7 +108,7 @@ APK on the phone; these are not confirmed by host tests. Official references:
 
 ## Rebuild on Windows
 
-From the Localserve root:
+From the Sormus root:
 
 ```powershell
 & tools/android-build/prepare.ps1

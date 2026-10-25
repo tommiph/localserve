@@ -14,7 +14,7 @@
   const nativeApp = /(?:^| )Localserve(?:Scenes|Controller)\/1\.0(?: |$)/.test(window.navigator?.userAgent || '');
   if (nativeApp) {
     document.documentElement.dataset.nativeApp = 'scenes';
-    $('app-connection').hidden = false;$('android-download').hidden = true;
+    $('app-connection').hidden = false;
     const brand = document.querySelector('.brand');brand.href = 'scenes';brand.setAttribute('aria-label','Controller');
   }
   let dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -58,7 +58,7 @@
     $('connection').textContent = online ? model?.paused ? 'Home network · paused' : 'Home network' : model ? 'Offline' : 'Connecting';
     $('connection').dataset.online = String(online && !model?.paused);
     $('server-state').hidden = online && !model?.paused || !model;
-    $('server-state').textContent = !online ? 'Connection lost. Actions are unavailable until Localserve reconnects.' : 'Server functions are paused.';
+    $('server-state').textContent = !online ? 'Connection lost. Actions are unavailable until Sormus reconnects.' : 'Server functions are paused.';
     if (!model) return;
     $('server-name').textContent = 'Controller';document.title = 'Controller';
     $('scene-count').textContent = model.scenes.length;$('task-count').textContent = model.tasks.length;
@@ -169,7 +169,7 @@
       try {const value=await api('/api/phone-home',null,{},readController);if(epoch===generation){library={remotes:value.remotes||[],cards:value.cards||[]};if(group==='remotes'||group==='cards')paint();}}catch {}
       if (pending && !sending && !pending.uncertain)await checkReceipt(pending);
     } catch {
-      if (epoch===generation) {online=false;paint();if (!model) $('choices').textContent='Unable to connect. Keep Localserve running and check the server address.';}
+      if (epoch===generation) {online=false;paint();if (!model) $('choices').textContent='Unable to connect. Keep Sormus running and check the server address.';}
     } finally {reading=false;readController=null;if (!document.hidden)timer=setTimeout(refresh,3000);}
   }
   $('choices').onclick = event=>{const b=event.target.closest('button[data-key]');if(b&&!b.disabled){if(group==='cards'||group==='remotes')void openViewer(entries().find(item=>item.key===b.dataset.key));else void start(b.dataset.key);}};

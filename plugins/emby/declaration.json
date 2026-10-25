@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "emby",
   "name": "Emby",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Reported playback sessions from your Emby server",
   "icon": "movie",
   "defaultCardLayout": "table",

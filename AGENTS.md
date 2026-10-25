@@ -53,7 +53,7 @@ apply to this repository, including plugins, Android and optional TV source.
 - Preserve exact Host/Origin, administrator token, scoped Controls claims, private
   file restrictions and public-display projection. Workers execute trusted code,
   not sandboxed plugins. LAN write tokens are not account authentication. Do not
-  expose Localserve to the internet as an implementation shortcut.
+  expose Sormus to the internet as an implementation shortcut.
 - Cards/Vistas/Universe remain read-only. Never expose settings, secrets, arbitrary
   URLs/RPC or private data in display APIs. Keep iframe/CSP isolation.
 - Older-TV paths use local Three.js r97, ES5/XHR/WebGL1 and literal/prefixed CSS.

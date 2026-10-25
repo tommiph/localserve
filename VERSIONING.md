@@ -1,10 +1,10 @@
 # Software versions
 
-Localserve shows the server version in the administrator sidebar and Overview.
+Sormus shows the server version in the administrator sidebar and Overview.
 Each plugin shows its independent version beside its name and in Settings.
 The server reads its version from `package.json`; plugins read theirs from their
 own `declaration.json`. An old version in saved preferences cannot override the
-installed server version. Restart Localserve after installing changed source,
+installed server version. Restart Sormus after installing changed source,
 then reload the administrator.
 
 Versions use **major.minor.patch**:
@@ -51,4 +51,4 @@ For a new plugin with its declaration version already set:
 Keep metadata and history in the same source update. `--check` detects missing
 registrations and mismatches; it does not infer whether changed code deserves a
 version increment. Contributors and AI coding tools must make that decision for
-every source change. Never edit upstream dependency versions to version Localserve.
+every source change. Never edit upstream dependency versions to version Sormus.

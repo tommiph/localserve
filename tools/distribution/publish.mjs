@@ -88,13 +88,15 @@ try {
     assert.equal(await head(),session.commit,'Main differs from this publication.');await verifyTree();
     session.mainCI=await windows('main');await save();
     const tag='v'+version+'-preview',identity={tag,commit:session.commit};
-    async function findRelease(){for(let page=1;page<=10;page++){const releases=await api('repos/'+repository+'/releases?per_page=100&page='+page),found=releases.find(item=>item.tag_name===tag);if(found)return found;if(releases.length<100)return null;}throw Error('Release lookup exceeds its bounded catalogue.');}
+    // A catalogue read after draft creation must not reuse an earlier cached response.
+    let releaseRead=0;
+    async function findRelease(){const refresh=Date.now()+'-'+(++releaseRead);for(let page=1;page<=10;page++){const releases=await api('repos/'+repository+'/releases?per_page=100&page='+page+'&refresh='+refresh),found=releases.find(item=>item.tag_name===tag);if(found)return found;if(releases.length<100)return null;}throw Error('Release lookup exceeds its bounded catalogue.');}
     let release=await findRelease();
     if(release?.draft)assert.equal(session.releaseId,release.id,'Existing draft is not owned by this publication.');
     if(!release){
       // Record an owned empty draft before uploading. Interrupted uploads may
       // resume without adopting another publisher's draft or replacing assets.
-      await github('release','create',tag,'--repo',repository,'--target',session.commit,'--draft','--prerelease','--title','Localserve '+version+' Preview','--notes-file',notesFile);
+      await github('release','create',tag,'--repo',repository,'--target',session.commit,'--draft','--prerelease','--title','Sormus '+version+' Preview','--notes-file',notesFile);
       release=await findRelease();assert.ok(release);session.releaseId=release.id;await save();
     }
     if(release.draft){for(const file of files){const existing=release.assets.find(item=>item.name===file.name);if(existing){assert.equal(existing.digest,'sha256:'+file.sha256);assert.equal(existing.size,file.bytes);}else await github('release','upload',tag,file.path,'--repo',repository);}}

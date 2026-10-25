@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "finavia",
   "name": "Finavia",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Finnish airport flight boards · Source: Finavia Public Flights",
   "icon": "flight-takeoff",
   "runtime": {
@@ -16,7 +16,7 @@
     "url": "https://apiportal.finavia.fi/",
     "licenseUrl": "https://apiportal.finavia.fi/signup",
     "licenseLabel": "API terms",
-    "notice": "Filtered and formatted by Localserve"
+    "notice": "Filtered and formatted by Sormus"
   },
   "polling": {
     "actionId": "refresh",

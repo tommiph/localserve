@@ -278,7 +278,7 @@ export class PluginRegistry {
         if (contract(existing.plugin) !== contract(plugin)) {
           this.cancelOperations(existing);
           existing.health = 'restart-required';
-          existing.error = 'Plugin declaration changed. Restart Localserve to load the new contract.';
+          existing.error = 'Plugin declaration changed. Restart Sormus to load the new contract.';
         } else existing.plugin = plugin;
         continue;
       }

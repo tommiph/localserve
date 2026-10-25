@@ -5,7 +5,7 @@ export class TvCloseRequests {
   constructor({timeout=8000}={}){this.timeout=timeout;this.pending=null;}
   request(host,check,signal){
     check();signal.throwIfAborted();
-    if(this.pending)throw Error('A Localserve TV close request is already pending.');
+    if(this.pending)throw Error('A Sormus TV close request is already pending.');
     return new Promise((resolve,reject)=>{
       const ticket={id:randomBytes(16).toString('hex'),token:randomBytes(24).toString('hex')};
       const finish=(value,error)=>{
@@ -31,5 +31,5 @@ export class TvCloseRequests {
       ||values.id!==pending.ticket.id||values.token!==pending.ticket.token)return false;
     pending.finish(true);return true;
   }
-  close(){this.pending?.finish(false,Error('Localserve is stopping.'));}
+  close(){this.pending?.finish(false,Error('Sormus is stopping.'));}
 }

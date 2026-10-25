@@ -40,6 +40,6 @@ Finavia: https://apiportal.finavia.fi/
 
 API terms https://apiportal.finavia.fi/signup
 
-Filtered and formatted by Localserve
+Filtered and formatted by Sormus
 
 See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin's data folder.

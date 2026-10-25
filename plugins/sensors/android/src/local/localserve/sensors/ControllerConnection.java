@@ -14,7 +14,7 @@ final class ControllerConnection {
         MainActivity.serverOrigin(origin);
         HttpURLConnection connection=(HttpURLConnection)new URL(origin+"/api/controller/status").openConnection(Proxy.NO_PROXY);
         try{connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(1500);connection.setReadTimeout(2000);connection.setRequestProperty("X-Localserve-Controller","1");connection.setRequestProperty("Connection","close");
-            if(connection.getResponseCode()!=200)throw new IOException("Localserve unavailable.");
+            if(connection.getResponseCode()!=200)throw new IOException("Sormus unavailable.");
             try(InputStream input=connection.getInputStream();ByteArrayOutputStream output=new ByteArrayOutputStream()){byte[] block=new byte[512];int count;while((count=input.read(block))!=-1){if(output.size()+count>2048)throw new IOException("Invalid server status.");output.write(block,0,count);}JSONObject result=new JSONObject(new String(output.toByteArray(),StandardCharsets.UTF_8));if(!result.optString("serverVersion").matches("[0-9]+[.][0-9]+[.][0-9]+"))throw new IOException("Invalid server status.");return result;}
         }finally{connection.disconnect();}
     }
@@ -29,7 +29,7 @@ final class ControllerConnection {
             String token=preferences.getString("approvalToken","");if(!token.isEmpty())request.put("approvalToken",token);if(code!=null)request.put("code",code);
             byte[] body=request.toString().getBytes(StandardCharsets.UTF_8);connection.setFixedLengthStreamingMode(body.length);
             try(OutputStream out=connection.getOutputStream()){out.write(body);}
-            if(connection.getResponseCode()!=200)throw new IOException("Connection approval unavailable. Check Localserve administration.");
+            if(connection.getResponseCode()!=200)throw new IOException("Connection approval unavailable. Check Sormus administration.");
             try(InputStream input=connection.getInputStream();ByteArrayOutputStream output=new ByteArrayOutputStream()) {
                 byte[] block=new byte[1024];int count;while((count=input.read(block))!=-1){if(output.size()+count>12288)throw new IOException("Invalid connection response.");output.write(block,0,count);}
                 return new JSONObject(new String(output.toByteArray(),StandardCharsets.UTF_8));

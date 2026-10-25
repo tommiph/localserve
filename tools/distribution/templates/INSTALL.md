@@ -1,8 +1,8 @@
-# Installing Localserve on Windows
+# Installing Sormus on Windows
 
 ## Requirements
 
-Localserve targets Windows 10/11 x64. The bundled runtime is Node 24.19.0 x64.
+Sormus targets Windows 10/11 x64. The bundled runtime is Node 24.19.0 x64.
 The tray and Windows credential/PC helpers use Windows' .NET Framework 4.x and
 Windows Forms. Their readable source and build scripts are included. A modern
 Edge, Chrome or Firefox browser is recommended for administration.
@@ -17,9 +17,9 @@ no package guarantees compatibility with every device.
 
 ### Setup executable
 
-When using a Localserve Setup executable, run it as your normal Windows user.
+When using a Sormus Setup executable, run it as your normal Windows user.
 It installs into a writable per-user folder, adds Start menu/uninstall entries
-and initializes missing private settings. **Open Localserve** starts the tray
+and initializes missing private settings. **Open Sormus** starts the tray
 and opens the administrator after the server is ready. **Start when I sign in**
 is optional and starts unchecked. Existing installation settings survive upgrades.
 
@@ -34,7 +34,7 @@ access remain separate from installing the application.
 1. Clone the repository or extract its ZIP using **Extract all**. Keep the complete folder
    together in a writable location. Do not run directly inside the ZIP, overwrite
    an existing installation, or place it in a read-only system folder.
-2. Double-click **Start Localserve.cmd**. A Localserve icon appears in the Windows
+2. Double-click **Start Localserve.cmd**. A Sormus icon appears in the Windows
    notification area, possibly under the hidden-icons arrow. The server starts
    in the background. Normal use does not require administrator elevation.
 3. Double-click the tray icon, or right-click it and choose **Open administrator**.
@@ -55,7 +55,7 @@ Ready-made **designs** are installed, not preconfigured Card instances.
 
 On an empty installation, Overview offers **Create demo**. This is optional and
 does not run during installation or startup. It enables Simulator and creates
-**Run the demo**, a ready-made **Signal lab** Card and the **Localserve demo**
+**Run the demo**, a ready-made **Signal lab** Card and the **Sormus demo**
 Vista at `/vistas/localserve-demo`. Open that screen and press **Run demo Task**
 in Overview. Its values update through the real Task engine.
 
@@ -100,8 +100,8 @@ weekly days/start/end schedule are separate switches; both default off. Overnigh
 windows belong to the selected starting day. Skipped effects are logged, never
 replayed later. Manual remote actions and Task Run/Rerun remain available.
 
-Create your own TRÅDFRI Lighting remote under its Controls tab. Devices/Groups
-use reported readings; Save as scene captures selected complete recent readings
+Create a lighting remote in **Controls → Remotes**. Devices/Groups use reported
+readings. In **Controls → Lighting scenes**, Capture lighting saves recent readings
 without issuing a device command. New/copy scenes start disabled. Enable a scene
 before applying it or selecting Run lighting scene in a Task. Plugin Settings →
 Fade duration (seconds) applies to supported brightness/white/colour transitions
@@ -135,14 +135,17 @@ installation behavior depends on your Android/browser version.
 ## Controller for Android
 
 1. Configure LAN access and connect the phone to the same home network.
-2. Open `/sensors` or `/scenes` on the server from Android and download Controller.
+2. Open the server **Downloads** page on Android and choose Controller.
 3. Install `controller.apk` using Android’s installation prompt.
-4. Open Controller → Settings, enter the server address and Connect.
-5. Use Lights, Tasks, full Remotes and Cards in the bottom tabs.
+4. Open Controller → Settings, enter the server address and tap Save server.
+5. For access away from home, configure Google Apps Script in administration.
+   Choose **Controls → Controller setup → Connect a phone** and enter its code
+   in Controller.
+6. Use Lights, Tasks, full Remotes and Cards in the bottom tabs.
 
 The app retrieves approved relay details automatically; no profile file is
 handled on the phone. Administration stays on the server. For optional phone
-sources, use Settings → Phone reporting, select sources, grant their Android
+sources, use Settings → Phone information → Choose what to share, select sources, grant their Android
 permissions and tap Start. No reporting starts automatically. See
 [Controller](CONTROLLER.md) and the [reporting guide](plugins/sensors/android/README.md).
 
@@ -174,7 +177,7 @@ against the same folder simultaneously. The exclusive server lock prevents this.
 ## Local network access (optional)
 
 The default is localhost only. In Settings, choose this PC's explicit private
-IPv4 address and a fixed unused port, then restart Localserve. Use the new LAN URL
+IPv4 address and a fixed unused port, then restart Sormus. Use the new LAN URL
 shown by the administrator. Do not use a wildcard or public bind address.
 
 LAN mode exposes administration and enabled Controls to trusted network users;
@@ -227,10 +230,10 @@ releases separately; do not erase your private data to update the application.
 - **No Cards in a Vista:** create and enable Cards, then add them to an enabled
   Vista. There are no preinstalled saved Cards or Vistas in a clean release.
 - **Port already in use:** choose another unused port or automatic port 0;
-  Localserve does not stop another application's listener.
+  Sormus does not stop another application's listener.
 - **Lock after a crash:** the tray may recover only a lock whose recorded PID
   no longer exists. A live or ambiguous lock is retained. Never delete the lock
-  or kill unrelated processes while another Localserve instance may be active.
+  or kill unrelated processes while another Sormus instance may be active.
 
 ## Removal
 

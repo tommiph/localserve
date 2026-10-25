@@ -88,7 +88,7 @@ const setup = {
   fingrid: 'Enter your own Fingrid Open Data API key and add named numeric dataset IDs. No key or sample dataset entries are installed. Queries are rate-limited; enabling many sources can slow background refreshes.',
   'hsl-trains': 'Add a Finnish station board using the bundled public station catalogue, then choose arrival/departure, route and line filters. Uses Fintraffic Digitraffic; no API key is required. Upcoming times are provider reports, not guaranteed movements.',
   news: 'Add a Search using its complete HTTPS Google News RSS Feed URL. Each feed URL supplies its own query/language/edition parameters. No personal searches or subscriptions are included; article pages/images are not downloaded.',
-  'oculus-go': 'Requires wireless ADB already enabled, the exact headset serial, a private IPv4:port and an already authorized RSA key. Enter Base64 of that authorized key in the masked replacement setting; clear it after a successful authenticated refresh. Localserve does not enable debugging, authorize a new key, scan devices, use USB or control the headset.',
+  'oculus-go': 'Requires wireless ADB already enabled, the exact headset serial, a private IPv4:port and an already authorized RSA key. Enter Base64 of that authorized key in the masked replacement setting; clear it after a successful authenticated refresh. Sormus does not enable debugging, authorize a new key, scan devices, use USB or control the headset.',
   'pc-network': 'Enable to read this Windows PC\'s CPU, memory, fixed drives, network counters and supported GPU readings. Unsupported values remain unavailable. Neighbor names come from the existing cache and bounded lookups, not a network scan. No separate monitoring service or credentials are needed.',
   playstation: 'Sign in to PlayStation in your own browser, then open https://ca.account.sony.com/api/v1/ssocookie in that browser. Enter only your own npsso value, enable and refresh. After success clear the NPSSO input; the Windows-protected session remains. This reads PSN account presence and history, not physical console power, and sends no console/account controls.',
   'samsung-tv': 'Enter the TV\'s private IPv4 and explicitly choose port 8002 (TLS) or 8001 (plain). Port 8002 remote actions require the verified exact SHA-256 certificate fingerprint. Remote actions need an already authorized TV token obtained separately through an approved pairing workflow; this plugin does not perform tokenless pairing. Clear the replacement token input after a successful remote action/read. The optional wired MAC is used only by explicit Wake TV. A clean install has no saved remote page or button mappings; create your own Controls page.',
@@ -201,6 +201,7 @@ try {
   await copyFile('tools/android-build/source-receipt.mjs');
   await copyFile('SCENE-SELECTOR.md');
   await copyFile('CONTROLLER.md');
+  await copyFile('DOWNLOADS.md');
   await copyFile('GOOGLE-APPS-SCRIPT.md');
   await copyFile('tools/build-sensors-declaration.mjs');
   // Music belongs to the installation. Ship game code and instructions only.
@@ -266,7 +267,7 @@ try {
     }
     // These are declaration defaults, never the installation's saved values.
     validateValues(validateDeclaration(declaration).settings, {}, true);
-    if (declaration.id === 'samsung-tv') declaration.settings.find(field => field.id === 'remote-name').help = 'Name presented to the TV by this Localserve installation.';
+    if (declaration.id === 'samsung-tv') declaration.settings.find(field => field.id === 'remote-name').help = 'Name presented to the TV by this Sormus installation.';
     await write(folder+'/declaration.json',JSON.stringify(declaration,null,2)+'\n');
     await pluginGuide(declaration);
     if(declaration.id==='playstation')await fs.appendFile(path.join(stage,folder,'README.md'),
@@ -299,7 +300,7 @@ try {
   await write('plugins/sensors/android/README.md',await fs.readFile(path.join(tooling,'templates/ANDROID-README.md')));
   await write('PLUGINS.md','# Bundled plugins\n\nAll start disabled with fresh defaults. No live settings or saved Cards are included.\n\n| Plugin | Setup | Ready-made design |\n| --- | --- | --- |\n'+declarations.map(d => `| [${d.name}](plugins/${d.id}/README.md) | ${d.description} | ${d.cardTemplates?.map(t=>t.name).join(', ') || 'Ordinary Cards'} |`).join('\n')+'\n\nProvider access, devices and your own credentials are separate from installing this server.\n');
   await write('tray/README.md','# Windows tray\n\nSee [installation instructions](../INSTALL.md) for portable startup, menu controls, current-user Windows startup, LAN access and removal. Source and executable are included; build.ps1 uses Windows\' .NET Framework compiler and local logo assets.\n');
-  await write('config.json',JSON.stringify({name:'Localserve',version,theme:'dark',fontScale:100,vistaFontScale:100,timeFormat:'24',location:null,activityRetentionDays:30,
+  await write('config.json',JSON.stringify({name:'Sormus',version,theme:'dark',displayTheme:'dark',fontScale:100,vistaFontScale:100,timeFormat:'24',location:null,activityRetentionDays:30,
     doNotDisturb:{enabled:false,scheduleEnabled:false,days:[1,2,3,4,5,6,0],start:'22:00',end:'07:00'},
     listen:{host:'127.0.0.1',port:0},maxConcurrentRuns:8},null,2)+'\n');
   await write('tray/settings.json',JSON.stringify({autoStartServer:true},null,2)+'\n');
@@ -307,7 +308,7 @@ try {
 
   await write('.gitignore',await fs.readFile(path.join(tooling,'gitignore.txt')));
   await copyFile('.gitattributes');
-  const notices = ['# Third-party notices','', 'Localserve-authored code is licensed under the MIT License in LICENSE. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.','', '- Node.js and bundled components: runtime/LICENSE.txt.', '- Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.', '- SunCalc: vendor/suncalc/LICENSE.', '- Three.js r97 (MIT): assets/universe/vendor/three-r97/LICENSE.txt.', '- Timezone catalogue: assets/timezones/LICENSE.txt.', '- Public station catalogue and provider attribution: plugins/hsl-trains/LICENSE.txt.',''];
+  const notices = ['# Third-party notices','', 'Sormus-authored code is licensed under the MIT License in LICENSE. Bundled upstream code/data retains its own terms and notices. Do not remove these when redistributing.','', '- Node.js and bundled components: runtime/LICENSE.txt.', '- Google Material Symbols (Apache-2.0): assets/material-symbols/LICENSE.txt.', '- SunCalc: vendor/suncalc/LICENSE.', '- Three.js r97 (MIT): assets/universe/vendor/three-r97/LICENSE.txt.', '- Timezone catalogue: assets/timezones/LICENSE.txt.', '- Public station catalogue and provider attribution: plugins/hsl-trains/LICENSE.txt.',''];
   async function packages(directory) {
     for (const entry of await fs.readdir(directory,{withFileTypes:true})) {
       const file = path.join(directory,entry.name);

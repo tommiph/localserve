@@ -1,4 +1,4 @@
-/** Localserve runtime API v1 with shared named-area scheduling. Import,
+/** Sormus runtime API v1 with shared named-area scheduling. Import,
  * validation/start are offline; only an explicit/scheduled refresh reads data. */
 import { configuration, areaIdentity, areaUrl, parseAircraft } from './aircraft.mjs';
 import { readAircraft } from './http.mjs';

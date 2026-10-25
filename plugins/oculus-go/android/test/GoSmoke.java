@@ -29,7 +29,7 @@ public final class GoSmoke extends Instrumentation {
                 try {
                     activity = (MainActivity) newActivity(MainActivity.class, getTargetContext(), null,
                         new Application(), intent, getTargetContext().getPackageManager().getActivityInfo(
-                            new ComponentName(name, name + ".MainActivity"), 0), "# Localserve #", null, "check", null);
+                            new ComponentName(name, name + ".MainActivity"), 0), "# Sormus #", null, "check", null);
                     callActivityOnCreate(activity, null);
                     activity.addressDraft = arguments.getString("server", "");
                     activity.codeDraft = arguments.getString("code", "");
@@ -74,12 +74,12 @@ public final class GoSmoke extends Instrumentation {
                 frames = activity.nativeFrames();
             } finally { activity.nativeStop(); surface.release(); texture.release(); }
             if (frames < 10) throw new Exception("VR frame submission failed: " + frames);
-            result.putString("stream", "Localserve Go passed: " + activity.apps.size() + " titles, "
+            result.putString("stream", "Sormus Go passed: " + activity.apps.size() + " titles, "
                 + activity.art.snapshot().size() + " artworks, encrypted connection, favorites, review and menus; "
                 + frames + " stereo frames. No library package effects.\n");
             finish(Activity.RESULT_OK, result);
         } catch (Exception error) {
-            result.putString("stream", "Localserve Go check failed: " + error + "\n");
+            result.putString("stream", "Sormus Go check failed: " + error + "\n");
             finish(Activity.RESULT_CANCELED, result);
         } finally {
             if (activity != null) runOnMainSync(() -> callActivityOnDestroy(activity));

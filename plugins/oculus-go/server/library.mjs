@@ -60,7 +60,7 @@ export class ApkCatalog {
     this.files = files; this.cache = nextCache; this.apps = [...apps.values()].sort((a,b) => a.title.localeCompare(b.title)); this.errors = errors; this.lastScan = Date.now();
     return this.snapshot();
   }
-  snapshot() { return {name: 'Localserve', version: 1, apps: structuredClone(this.apps), scanning: Boolean(this.scanning), lastScan: this.lastScan, errors: [...this.errors]}; }
+  snapshot() { return {name: 'Sormus', version: 1, apps: structuredClone(this.apps), scanning: Boolean(this.scanning), lastScan: this.lastScan, errors: [...this.errors]}; }
   async open(id) {
     if (!/^[a-f0-9]{24}$/.test(id || '') || !this.files.has(id)) throw Error('Select an APK from the current library.');
     const item = this.files.get(id), real = await fs.realpath(item.file), stat = await fs.lstat(item.file);

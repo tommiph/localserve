@@ -90,7 +90,8 @@ test('declaration presentation metadata round-trips numeric storage units and pr
 test('phone handoff uses the bound LAN origin and otherwise explains localhost', () => {
   state.server={lanAddress:null}; assert.match(context.phone.connection(),/localhost address reaches this PC only/);
   state.server.lanAddress='http://192.168.1.2:7041';
-  assert.match(context.phone.connection(),/http:\/\/192\.168\.1\.2:7041\/scenes/);
+  assert.equal(context.phone.homeAddress(),'http://192.168.1.2:7041/scenes');
+  assert.match(context.phone.connection(),/value="http:\/\/192\.168\.1\.2:7041"/);
   assert.match(context.phone.connection(),/Sensors can stay disabled/);
 });
 

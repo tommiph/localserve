@@ -191,7 +191,7 @@
       markup:'<div class="telemetry">' + fields.slice(index,index + 10).map(function (field) {
         return '<div class="telemetry-item"><span>' + esc(field.label) + '</span><strong>' + esc(formatted(value(field.id),field.type)) + '</strong></div>';
       }).join('') + '</div>'});
-    pages = result.length ? result : [{id:'empty',title:'PlayStation readings',markup:'<p class="empty">Enable and configure the PlayStation plugin in Localserve.</p>'}];
+    pages = result.length ? result : [{id:'empty',title:'PlayStation readings',markup:'<p class="empty">Enable and configure the PlayStation plugin in Sormus.</p>'}];
     if (!pages.some(function (page) { return page.id === pageId; })) pageId = pages[0].id;
   }
   function renderPage() {
@@ -216,7 +216,7 @@
     if (pages.length > 1 && !document.hidden && !paused && connected) rotationTimer = setTimeout(function () { rotationTimer = null;step(1); },20000);
   }
   function render() {
-    text('server-brand',snapshot.options.serverName || 'Localserve');
+    text('server-brand',snapshot.options.serverName || 'Sormus');
     document.documentElement.setAttribute('data-online',String(value('online') === true));
     text('account',value('online-id') || (snapshot.enabled ? 'Account unavailable' : 'PlayStation disabled'));
     text('presence',snapshot.enabled ? value('online-status') || snapshot.status : 'Disabled');
@@ -255,7 +255,7 @@
     text('hud-clock',date(now,true));
     var gameTime = running && typeof gameStart === 'number' ? duration(((fresh ? now : value('received-at')) - gameStart) / 1000) : '—';
     text('hud-timer',gameTime);text('hud-line-time',gameTime);text('hud-line-time-copy',gameTime);
-    text('hud-session-note',running && typeof gameStart === 'number' ? (fresh ? 'First observed ' : 'Retained · first observed ') + date(gameStart,true) : 'Starts when Localserve first sees the game');
+    text('hud-session-note',running && typeof gameStart === 'number' ? (fresh ? 'First observed ' : 'Retained · first observed ') + date(gameStart,true) : 'Starts when Sormus first sees the game');
     text('hud-signal',!connected ? 'Server disconnected · retained readings' : fresh ? 'PSN received ' + date(value('received-at'),true) + ' · ' + snapshot.options.pollSeconds + 's polling' : 'Waiting for a fresh PSN reading');
     node('hud-toast').hidden = !fresh || document.hidden || Date.now() >= toastUntil;
   }

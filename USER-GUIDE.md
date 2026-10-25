@@ -1,10 +1,10 @@
-# Using Localserve
+# Using Sormus
 
 ## Away from home
 
 The optional Google Apps Script plugin accepts selected phone reports, lighting
 scenes, published Task shortcuts and external Events through your own Google
-project. Localserve polls outbound HTTPS; no server port needs to be exposed.
+project. Sormus polls outbound HTTPS; no server port needs to be exposed.
 Controller retrieves approved connection details automatically when connected at home.
 Use [Controller](CONTROLLER.md) for setup, the four tabs and phone reporting.
 Remote use is polled, with bounded expiry and queue/completion receipts; LAN
@@ -52,8 +52,8 @@ not that the Task has never run. Completed describes execution, not confirmed
 device state.
 
 In the Task editor, search Events by phone, sensor or Event name. The selector
-groups results by plugin and retains the chosen Event while you search. Separate
-enabled rules are joined by OR: any one can start the Task. A reading comparison
+groups results by plugin and retains the chosen Event while you search. Enabled rules use the Task’s **Combine rules** choice: OR accepts any matching
+rule; AND combines current matching comparisons. See AND / OR rules below. A reading comparison
 runs when it becomes true; a nonmatching reading rearms it. Occurrence Events
 can run for each distinct matching occurrence instead.
 
@@ -73,7 +73,7 @@ theme. On phones, Services has expandable Details and Controls uses stacked rows
 Task activation help and Vista URL/spacing remain available in disclosures so the
 working editor is visible sooner. Invalid fields reveal their containing section.
 
-Settings controls your server name, theme, separate administrator/Vista font
+Settings controls your server name, separate administrator/display themes and font
 sizes, time format, server location, LAN address, Activity retention and Do not
 disturb. Schedules use the server PC's system timezone. Activity retention applies
 to server/plugin activity logs, not all runtime records.
@@ -83,7 +83,7 @@ you want to run. Configure named sources in Settings before selecting them in
 Events, Cards or Tasks. See [PLUGINS.md](PLUGINS.md).
 Plugin appearance offers a searchable local Material Symbols glyph catalogue.
 Existing glyph choices remain supported. All icons/fonts are bundled locally;
-no Google Fonts connection is needed while using Localserve.
+no Google Fonts connection is needed while using Sormus.
 
 ## Build a Task
 
@@ -104,7 +104,7 @@ when needed. See [Recipes](plugins/recipes/README.md).
 Administration → Variables lists supported Event tags, Card bindings, List
 columns, ready-made slots, action parameters and start rules. Filter by owner or
 context, search and copy code. File references are relative to the installation
-root; examples are fragments. Stop Localserve before editing saved JSON directly.
+root; examples are fragments. Stop Sormus before editing saved JSON directly.
 The catalogue updates from declarations and configured sources without listing
 live values or credentials. `{{event.field-id}}` uses a captured Event, not a
 global/latest-state lookup or general expression language.
@@ -229,14 +229,14 @@ Only visible tiles load; no prefetch or location history is kept. Map data:
 
 Create an enabled Controls page in a supported plugin and map its declared
 actions. TV Remote uses Remote/Apps/More. Lighting uses Devices/Groups/Scenes.
-Choose **Controls → Lighting animations → Open** to manage lighting sequences.
+Choose **Controls → Lighting animations** to manage lighting sequences.
 For a starting point, see [TV and lighting examples](examples/controls/README.md).
 The optional installer adds disabled examples only to empty Controls stores;
 it never imports another user's devices or overwrites existing remotes.
 A sent command is not proof of the final physical state. Never assume an
 unavailable reading means Off.
 
-Lighting Save as scene captures selected complete recent readings. Enable the
+Controls → Lighting scenes → Save current lighting saves selected recent readings. Enable the
 scene before using it or selecting Run lighting scene in a Task. Fade duration
 controls supported brightness/white/colour transitions, not simple on/off. Add
 an explicit Delay if a later step must wait for a gateway-controlled fade.
@@ -285,44 +285,60 @@ Port 8001 requires an authorized replacement token after address changes.
 
 For Oculus Go, update Wi-Fi address and select Test connection. The saved key is
 reused and the configured headset serial must match. Wireless ADB must already
-be enabled and the key authorized on the headset. Localserve does not enable
+be enabled and the key authorized on the headset. Sormus does not enable
 wireless ADB or restart the PC’s shared ADB service. Expand Connection setup and
 recovery for detailed steps. Clear replacement credential fields after a
 successful test; protected credentials remain available on this Windows account.
 
 ## Oculus Go application library
 
-Enable Oculus Go and its APK library, select your own APK folder, then open Controls → VR library → Open. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
+Enable Oculus Go and its APK library, select your own APK folder, then open Controls → VR library. Scan lists standalone APK versions. Read installed apps captures user applications from the configured headset. Install is an explicit replacement action; Uninstall requires confirmation and deletes saved app data. Operations are cancellable and never replayed automatically. No VR application collection or personal library content is included.
 
-For the native VR interface, download the generic Go app from VR library and install it with your authorized headset tools. It appears as **# Localserve #**. Select Connect headset in the administrator, then enter the LAN address and one-use code in the app's Settings. Browse Library, filter Installed or Updates, search, favorite titles and play locally installed apps. Codes expire after five minutes. See [Localserve Go](plugins/oculus-go/android/README.md) for controls, compatibility and build instructions. Existing Home VR clients can also connect with their matching token; see [Oculus Go](plugins/oculus-go/README.md).
+For the native VR interface, download the Oculus Go app from Downloads and install it with your authorized headset tools. It appears as **# Sormus #**. Select Connect headset in the administrator, then enter the LAN address and one-use code in the app's Settings. Browse Library, filter Installed or Updates, search, favorite titles and play locally installed apps. Codes expire after five minutes. See [Sormus Go](plugins/oculus-go/android/README.md) for controls, compatibility and build instructions. 
 
-## Phone connection and detailed settings
+## Controls and Controller setup
 
-Controls → Phone home → Open shows the actual bound LAN address, separate Remotes and Card/favorites
-sections, and published Tasks. Copy its address to a phone on the same LAN.
-You can also scan its locally generated QR code to open Home. The code contains
-only the bound LAN address; scanning does not install an APK or enable Sensors.
+Open **Controls** for Lighting scenes, Lighting animations, Remotes, Controller
+setup and VR library. Each tool has one destination. Use Lighting scenes to
+design, capture, name, copy, enable and apply saved lighting. New scene opens
+a per-light editor for power, brightness and supported colour or warmth. The
+Lights remote also offers Save as scene to capture current reported settings.
 
-Settings → Versions and updates distinguishes the running server, the server
-version when this administrator page connected, the verified Android download
-build and the bundled TV launcher source. Installed phone/TV versions are
-separate. The phone app reports its installed APK version in Connection; the
-server cannot confirm the installed TV launcher version. Reload administrator
-updates this browser page only. Finish or dismiss an active notice or game before
-closing and reopening Vista on the TV to load new viewer scripts.
-If LAN is not enabled, Settings → Network is the next step; localhost cannot
-connect another device. Favorites belong to each browser and server origin.
+In **Controls → Controller setup → Choose Tasks**, select which saved Tasks
+appear on Controller. Select **Show in Controller**, optionally change the label
+or glyph, and Save. This adds a shortcut; it does not enable a Task or change its
+rules. Tasks requiring captured Event values can be unavailable for manual use.
+The page lists exactly which shortcuts are visible or hidden.
 
-Plugin settings can group common fields and hide detailed tuning in Advanced
-sections. Actions use the same declaration-owned grouping. Webcam reading
-interval uses seconds in the interface, while stored plugin units remain stable.
-Connection check results belong to this browser session and settings revision.
+Install Controller from **Downloads**. Connect at home using the server address
+shown in Controller setup. For remote access, configure Google Apps Script once,
+then select **Connect a phone** and enter its six-character code in Controller.
+Connection details arrive automatically. See [the complete steps](CONTROLLER.md).
 
-The Android app Connection dialog shows the installed APK version; Home preferences
-show the server version. Use Home to reload the interface after an update. A
-server update does not update the APK or an already-open TV document. Close and
-reopen the TV display to load updated viewer scripts; no automatic interruption
-of a notice, game or active display occurs.
+Controller has Lights, Tasks, Remotes and Cards. Settings shows the connection,
+server address, appearance, optional phone sharing and app updates. Full remotes
+and Cards work at home; approved scenes and Tasks can work away from home.
+
+## Appearance
+
+**Settings → Appearance** separates Administrator theme/font size from Display
+theme/font size. Display settings apply to Vistas, Cards, previews and browser
+controls. Controller has its own Dark appearance preference. Themes never
+change saved lighting or device state.
+
+## Downloads and updates
+
+**Administration → Downloads** lists the available Controller phone APK,
+Sormus Vistas and PlayStation TV apps/source, Oculus Go app and relay script.
+Each entry shows its version, type, size and readiness. Only Controller is a phone
+APK. Not built or unavailable means the server cannot supply a verified file.
+See [Downloads](DOWNLOADS.md) for installation and private configuration exports.
+
+The available package version does not prove it is installed on a device.
+Controller → Settings → App updates shows installed and server-available versions.
+Install over the same signed package to retain preferences. Server updates do
+not silently replace native apps. Close and reopen TV content after updating
+viewer scripts; an active notice or game is not interrupted automatically.
 
 ## Setup guide and display fit
 
@@ -366,5 +382,5 @@ Time-based starts provide no Event variables. The Variables page documents the
 
 ## Phone shortcut availability
 
-Phone Home and Scenes explain why a Task cannot run, including disabled Tasks, missing Event values, unavailable plugins or scenes, and concurrent-run limits. Fix the indicated setup in the administrator. AND conditions from a phone require its current reporting session; retained sensor values from an offline phone do not satisfy a condition. Offline presence can be selected as its own condition.
+Controller explains why a Task cannot run, including disabled Tasks, missing Event values, unavailable plugins or scenes, and concurrent-run limits. Fix the indicated setup in the administrator. AND conditions from a phone require its current reporting session; retained sensor values from an offline phone do not satisfy a condition. Offline presence can be selected as its own condition.
 

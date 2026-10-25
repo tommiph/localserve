@@ -1,4 +1,4 @@
-// Localserve's Windows notification-area application. Server commands use only
+// Sormus's Windows notification-area application. Server commands use only
 // this installation's private pipe; no service or process-name discovery occurs.
 using System;
 using System.Collections.Generic;
@@ -60,7 +60,7 @@ namespace LocalserveDesktop
 
         private bool ProcessExists(int pid)
         {
-            if (pid <= 0) throw new InvalidDataException("Invalid Localserve lock PID.");
+            if (pid <= 0) throw new InvalidDataException("Invalid Sormus lock PID.");
             try { using (Process process = Process.GetProcessById(pid)) return !process.HasExited; }
             catch (ArgumentException) { return false; }
         }
@@ -71,7 +71,7 @@ namespace LocalserveDesktop
             if (Text(descriptor, "pipeName") != "localserve-" + Identity)
                 throw new InvalidDataException("Desktop control belongs to another installation.");
             int pid = Convert.ToInt32(descriptor["pid"]);
-            if (!ProcessExists(pid)) throw new IOException("Localserve process is no longer running.");
+            if (!ProcessExists(pid)) throw new IOException("Sormus process is no longer running.");
             using (NamedPipeClientStream pipe = new NamedPipeClientStream(".", Text(descriptor, "pipeName"), PipeDirection.InOut, PipeOptions.Asynchronous))
             {
                 pipe.Connect(1500);
@@ -81,11 +81,11 @@ namespace LocalserveDesktop
                     writer.WriteLine(json.Serialize(new { token = Text(descriptor, "token"), command = command }));
                     writer.Flush();
                     Task<string> line = reader.ReadLineAsync();
-                    if (!line.Wait(4000)) throw new TimeoutException("Localserve did not respond to desktop control.");
+                    if (!line.Wait(4000)) throw new TimeoutException("Sormus did not respond to desktop control.");
                     if (line.Result == null || line.Result.Length > 8192) throw new IOException("Invalid desktop response.");
                     Dictionary<string, object> response = json.Deserialize<Dictionary<string, object>>(line.Result);
                     if (Text(response, "ok") != "True") throw new IOException(Text(response, "error", "Desktop command failed."));
-                    if (Convert.ToInt32(response["pid"]) != pid) throw new IOException("Localserve instance changed.");
+                    if (Convert.ToInt32(response["pid"]) != pid) throw new IOException("Sormus instance changed.");
                     return response;
                 }
             }
@@ -101,7 +101,7 @@ namespace LocalserveDesktop
                 if (File.Exists(lockFile)) activeLock = ProcessExists(Convert.ToInt32(Read("data/server.lock")["pid"]));
                 return new Dictionary<string, object> {
                     { "ok", true }, { "running", false }, { "unmanaged", activeLock },
-                    { "error", activeLock ? error.Message : "" }, { "name", Text(Read("config.json"), "name", "Localserve") }
+                    { "error", activeLock ? error.Message : "" }, { "name", Text(Read("config.json"), "name", "Sormus") }
                 };
             }
         }
@@ -117,20 +117,20 @@ namespace LocalserveDesktop
                 try
                 {
                     try { acquired = gate.WaitOne(3000); } catch (AbandonedMutexException) { acquired = true; }
-                    if (!acquired) throw new IOException("Another Localserve start is in progress.");
+                    if (!acquired) throw new IOException("Another Sormus start is in progress.");
                     RequireNoMaintenance();
                     Dictionary<string, object> current = Status();
                     if (current.ContainsKey("pid")) return current;
-                    if (Text(current, "unmanaged") == "True") throw new IOException("A Localserve lock is active. Stop its console instance before starting from the tray.");
+                    if (Text(current, "unmanaged") == "True") throw new IOException("A Sormus lock is active. Stop its console instance before starting from the tray.");
                     string lockFile = FileAt("data/server.lock");
                     if (File.Exists(lockFile))
                     {
                         string previous = File.ReadAllText(lockFile);
                         int pid = Convert.ToInt32(json.Deserialize<Dictionary<string, object>>(previous)["pid"]);
-                        if (ProcessExists(pid)) throw new IOException("Localserve lock is in use.");
-                        if (File.ReadAllText(lockFile) != previous) throw new IOException("Localserve lock changed; try again.");
+                        if (ProcessExists(pid)) throw new IOException("Sormus lock is in use.");
+                        if (File.ReadAllText(lockFile) != previous) throw new IOException("Sormus lock changed; try again.");
                         File.Delete(lockFile);
-                        Log("Recovered stale Localserve lock for absent PID " + pid + ".");
+                        Log("Recovered stale Sormus lock for absent PID " + pid + ".");
                     }
                     ProcessStartInfo start = new ProcessStartInfo(FileAt("runtime/node.exe"), "\"" + FileAt("tray/server-host.mjs") + "\"");
                     start.WorkingDirectory = Root;
@@ -140,11 +140,11 @@ namespace LocalserveDesktop
                     start.WindowStyle = ProcessWindowStyle.Hidden;
                     using (Process child = Process.Start(start))
                     {
-                        Log("Started bundled Localserve host PID " + child.Id + ".");
+                        Log("Started bundled Sormus host PID " + child.Id + ".");
                         DateTime deadline = DateTime.UtcNow.AddSeconds(25);
                         while (DateTime.UtcNow < deadline)
                         {
-                            if (child.HasExited) throw new IOException("Localserve could not start. See data/tray/server.log.");
+                            if (child.HasExited) throw new IOException("Sormus could not start. See data/tray/server.log.");
                             try
                             {
                                 Dictionary<string, object> ready = Command("status");
@@ -154,7 +154,7 @@ namespace LocalserveDesktop
                             catch (TimeoutException) { }
                             Thread.Sleep(200);
                         }
-                        throw new TimeoutException("Localserve is still starting. Check status and server.log; the process was not terminated.");
+                        throw new TimeoutException("Sormus is still starting. Check status and server.log; the process was not terminated.");
                     }
                 }
                 finally { if (acquired) gate.ReleaseMutex(); }
@@ -173,8 +173,8 @@ namespace LocalserveDesktop
             Command("stop");
             DateTime deadline = DateTime.UtcNow.AddSeconds(35);
             while (ProcessExists(pid) && DateTime.UtcNow < deadline) Thread.Sleep(150);
-            if (ProcessExists(pid)) throw new TimeoutException("Localserve is still draining. It has not been force-stopped.");
-            Log("Localserve completed graceful shutdown.");
+            if (ProcessExists(pid)) throw new TimeoutException("Sormus is still draining. It has not been force-stopped.");
+            Log("Sormus completed graceful shutdown.");
         }
 
         public bool AutoStartServer
@@ -192,7 +192,7 @@ namespace LocalserveDesktop
         {
             try { using (Mutex gate = Mutex.OpenExisting("Local\\LocalserveMaintenance-" + Identity)) { } }
             catch (WaitHandleCannotBeOpenedException) { return; }
-            throw new IOException("Localserve installation maintenance is in progress. Try again after Setup finishes.");
+            throw new IOException("Sormus installation maintenance is in progress. Try again after Setup finishes.");
         }
 
         public void StopAndExit()
@@ -233,7 +233,7 @@ namespace LocalserveDesktop
             {
                 // Windows startup needs a resolved executable path. Only this
                 // application's per-user entry is touched; source paths stay portable.
-                if (StartupCommand.Length > 260) throw new IOException("Installation path is too long for Windows startup. Move Localserve to a shorter path.");
+                if (StartupCommand.Length > 260) throw new IOException("Installation path is too long for Windows startup. Move Sormus to a shorter path.");
                 using (RegistryKey run = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Run"))
                 {
                     if (value) run.SetValue(StartupName, StartupCommand, RegistryValueKind.String);
@@ -247,7 +247,7 @@ namespace LocalserveDesktop
         {
             Dictionary<string, object> status = Command("status");
             Uri address = new Uri(Text(status, "origin"));
-            if (!address.IsLoopback || address.Scheme != "http") throw new IOException("Invalid Localserve administrator address.");
+            if (!address.IsLoopback || address.Scheme != "http") throw new IOException("Invalid Sormus administrator address.");
             Process.Start(new ProcessStartInfo(address.AbsoluteUri) { UseShellExecute = true });
         }
         public string Json(object value) { return json.Serialize(value); }
@@ -269,7 +269,7 @@ namespace LocalserveDesktop
             host = server;
             exitSignal = new EventWaitHandle(false, EventResetMode.ManualReset, "Local\\LocalserveTrayExit-" + host.Identity);
             ContextMenuStrip menu = new ContextMenuStrip();
-            status = new ToolStripMenuItem("Localserve — Checking") { Enabled = false };
+            status = new ToolStripMenuItem("Sormus — Checking") { Enabled = false };
             start = new ToolStripMenuItem("Start server", null, async (s, e) => await RunCommand(() => host.Start()));
             stop = new ToolStripMenuItem("Stop server", null, async (s, e) => await RunCommand(() => host.Stop()));
             restart = new ToolStripMenuItem("Restart server", null, async (s, e) => await RunCommand(() => { host.Stop(); host.Start(); }));
@@ -284,7 +284,7 @@ namespace LocalserveDesktop
                 new ToolStripMenuItem("Exit tray (keep server running)", null, (s, e) => ExitThread()),
                 new ToolStripMenuItem("Stop server and exit", null, async (s, e) => { if (await RunCommand(() => host.Stop())) ExitThread(); }) });
             logo = new Icon(host.FileAt("tray/assets/logo-dark.ico"));
-            tray = new NotifyIcon { Icon = logo, ContextMenuStrip = menu, Text = "Localserve", Visible = true };
+            tray = new NotifyIcon { Icon = logo, ContextMenuStrip = menu, Text = "Sormus", Visible = true };
             tray.DoubleClick += async (s, e) => await RunCommand(() => host.OpenAdministrator());
             timer = new System.Windows.Forms.Timer { Interval = 500 };
             timer.Tick += async (s, e) => {
@@ -311,7 +311,7 @@ namespace LocalserveDesktop
             catch (Exception error)
             {
                 host.Log(error.ToString());
-                tray.ShowBalloonTip(5000, "Localserve", error.Message, ToolTipIcon.Error);
+                tray.ShowBalloonTip(5000, "Sormus", error.Message, ToolTipIcon.Error);
             }
             finally { busy = false; }
             await Refresh();
@@ -328,7 +328,7 @@ namespace LocalserveDesktop
                 if (busy) return;
                 bool running = current.ContainsKey("pid"), unmanaged = ServerHost.Text(current, "unmanaged") == "True";
                 bool paused = ServerHost.Text(current, "paused") == "True", stopping = ServerHost.Text(current, "stopping") == "True";
-                string name = ServerHost.Text(current, "name", "Localserve");
+                string name = ServerHost.Text(current, "name", "Sormus");
                 string label = stopping ? "Stopping" : running ? (paused ? "Paused" : "Running") : unmanaged ? "Console instance" : "Stopped";
                 string summary = name + " — " + label;
                 status.Text = summary;
@@ -350,7 +350,7 @@ namespace LocalserveDesktop
                     if (previous != null) previous.Dispose();
                 }
             }
-            catch (Exception error) { status.Text = "Localserve — " + error.Message; }
+            catch (Exception error) { status.Text = "Sormus — " + error.Message; }
             finally { refreshing = false; }
         }
 
@@ -359,10 +359,10 @@ namespace LocalserveDesktop
             try
             {
                 string file = host.FileAt("data/tray/server.log");
-                if (!File.Exists(file)) { tray.ShowBalloonTip(3000, "Localserve", "No server log yet.", ToolTipIcon.Info); return; }
+                if (!File.Exists(file)) { tray.ShowBalloonTip(3000, "Sormus", "No server log yet.", ToolTipIcon.Info); return; }
                 Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
             }
-            catch (Exception error) { tray.ShowBalloonTip(3000, "Localserve", error.Message, ToolTipIcon.Error); }
+            catch (Exception error) { tray.ShowBalloonTip(3000, "Sormus", error.Message, ToolTipIcon.Error); }
         }
 
         protected override void ExitThreadCore()
@@ -402,7 +402,7 @@ namespace LocalserveDesktop
                         case "--enable-startup": host.WindowsStartup = true; Console.WriteLine("{\"ok\":true}"); break;
                         case "--disable-startup": host.WindowsStartup = false; Console.WriteLine("{\"ok\":true}"); break;
                         case "--startup-status": Console.WriteLine(host.Json(new { enabled = host.WindowsStartup })); break;
-                        default: throw new ArgumentException("Unknown Localserve tray command.");
+                        default: throw new ArgumentException("Unknown Sormus tray command.");
                     }
                     return 0;
                 }
@@ -421,7 +421,7 @@ namespace LocalserveDesktop
             {
                 host.Log(error.ToString());
                 if (args.Length > 0 && args[0] != "--autostart") Console.Error.WriteLine(error.Message);
-                else MessageBox.Show(error.Message, "Localserve", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                else MessageBox.Show(error.Message, "Sormus", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return 1;
             }
         }

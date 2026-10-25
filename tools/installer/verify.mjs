@@ -16,7 +16,7 @@ const probe=await buildInstaller(process.argv[3],{test:true});assert.equal(probe
 const workspace=await fs.mkdtemp(path.join(root,'work/installer-check-')),installation=path.join(workspace,'Localserve ä (setup)'),probeFile=path.resolve(root,probe.installer);
 const registry='HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Localserve.Windows.InstallTest_is1';
 const programs=(await execute('powershell.exe',['-NoProfile','-Command','[Environment]::GetFolderPath("Programs")'],{windowsHide:true})).stdout.trim();
-const shortcut=path.join(programs,'Localserve Install Test/Localserve.lnk');
+const shortcut=path.join(programs,'Localserve Install Test/Sormus.lnk');
 assert.equal(await fs.stat(shortcut).then(()=>true,()=>false),false,'An existing test shortcut must not be overwritten.');
 let phase='fresh install',failure=null,uninstallCount=0;
 async function registryExists(){try{await execute('reg.exe',['query',registry],{windowsHide:true});return true;}catch(error){if(error.code===1)return false;throw error;}}
@@ -33,6 +33,14 @@ async function uninstall(purge=false){
   const stat=await fs.lstat(file);assert.ok(stat.isFile()&&!stat.isSymbolicLink());
   console.error('Installer check: '+phase+' using '+path.basename(file));
   await execute(file,['/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',`/LOG=${path.join(workspace,'uninstall-'+(++uninstallCount)+'.log')}`,...(purge?['/DELETEPRIVATE=1']:[])],{cwd:workspace,windowsHide:true,timeout:90000});
+  // The uninstaller's self-removal can finish after its launcher returns. Wait
+  // only for this fixture's owned uninstall directory before the next install;
+  // never retry Setup or relax its directory-link checks.
+  const deadline=Date.now()+15000;
+  while(await fs.stat(path.dirname(file)).then(()=>true,error=>{if(error.code==='ENOENT')return false;throw error;})) {
+    if(Date.now()>=deadline)throw Error('Owned uninstaller directory did not finish removal.');
+    await new Promise(resolve=>setTimeout(resolve,100));
+  }
 }
 let report;
 try{
@@ -55,6 +63,12 @@ try{
   report={checkedAt:new Date().toISOString(),installer:path.relative(root,setup).replaceAll('\\','/'),sha256:receipt.sha256,testIdentity:true,freshInstall:true,shortcutsCreatedAndRemoved:true,runningServerUpgrade:true,settingsPreserved:true,unownedFolderRejected:true,directoryLinksRejected:true,uninstallKeepsData:true,reinstallPreservesData:true,explicitPurge:true,registrationRemoved:true,windowsStartupChanged:false,firewallChanged:false,providerOrDeviceActions:0,cleanWindowsVm:false,signed:false};
 }catch(error){
   failure=error;
+  // Keep owned fixture diagnostics before cleanup removes temporary logs.
+  // These records remain private and are never distribution inputs.
+  try {
+    const diagnostics=path.join(root,'work/installer-diagnostics');await fs.mkdir(diagnostics,{recursive:true});
+    for(const name of await fs.readdir(workspace))if(/^(setup|uninstall-\d+)\.log$/.test(name))await fs.copyFile(path.join(workspace,name),path.join(diagnostics,name));
+  } catch(diagnosticError) {console.error('Could not retain installer logs: '+diagnosticError.message);}
   console.error('Installer verification failed during '+phase+': '+error.message);
   await fs.writeFile(path.join(root,'work/installer-verification-error.txt'),phase+'\n'+String(error.stack)+'\n'+String(error.stdout||'')+'\n'+String(error.stderr||''));
   throw error;

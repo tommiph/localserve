@@ -18,7 +18,7 @@ import java.util.*;
  * them once. No history, offline replay, device control or cloud connection. */
 public final class PhoneEvents {
     public static final String[] IDS={"battery","screen","unlock","network","bluetooth","audio","call","notification","media","app","nfc","button","location","geofence","activity"};
-    public static final String[] LABELS={"Battery and charging","Screen and lock state","Phone unlocked","Network connectivity","Bluetooth connections","Audio device connections","Mobile call state","Notifications (selected apps)","Media playback","Foreground app","NFC tags (app open)","Manual button","Location (Android GPS/network)","Named region transitions","Activity transitions (Google Play services)"};
+    public static final String[] LABELS={"Battery and charging","Screen and lock state","Phone unlocked","Network connectivity","Bluetooth connections","Audio device connections","Mobile call state","Notifications (selected apps)","Media playback","Foreground app","NFC tags (app open)","Manual button","Location","Named region transitions","Movement"};
     private static volatile PhoneEvents active;
     private final Context context;
     private final Set<String> selected;

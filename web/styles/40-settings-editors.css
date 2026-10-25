@@ -393,7 +393,7 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
   font-size: calc(12px * var(--font-scale));
 }
 
-.check-field input {
+.check-field input:not(.switch) {
   accent-color: var(--accent);
   width: 16px;
   height: 16px;

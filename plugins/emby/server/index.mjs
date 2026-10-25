@@ -1,4 +1,4 @@
-/** Localserve API v1 lifecycle. Only refresh performs one read; no discovery,
+/** Sormus API v1 lifecycle. Only refresh performs one read; no discovery,
  * playback commands, account changes or artwork downloads. */
 import { configuration, readSessions } from './client.mjs';
 import { digest, parseSessions, playbackChanges } from './sessions.mjs';

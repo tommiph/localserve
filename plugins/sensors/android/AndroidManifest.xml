@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="local.localserve.sensors" android:versionCode="14" android:versionName="2.2.1">
+    package="local.localserve.sensors" android:versionCode="17" android:versionName="2.3.1">
     <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -21,6 +21,7 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-feature android:name="android.hardware.nfc" android:required="false" />
     <uses-feature android:name="android.hardware.location" android:required="false" />
+    <queries><intent><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent></queries>
     <application android:label="Controller" android:icon="@drawable/controller_icon"
         android:theme="@android:style/Theme.Material.NoActionBar" android:allowBackup="false"
         android:supportsRtl="true" android:usesCleartextTraffic="true">
@@ -37,10 +38,10 @@
         <service android:name=".PhoneNotifications" android:exported="true" android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter><action android:name="android.service.notification.NotificationListenerService" /></intent-filter>
         </service>
-        <service android:name=".ManualTile" android:label="Localserve event" android:icon="@drawable/app_icon" android:exported="true" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+        <service android:name=".ManualTile" android:label="Sormus event" android:icon="@drawable/app_icon" android:exported="true" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
         </service>
-        <receiver android:name=".ManualWidget" android:exported="false" android:label="Localserve event">
+        <receiver android:name=".ManualWidget" android:exported="false" android:label="Sormus event">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/manual_widget" />
         </receiver>
@@ -49,7 +50,7 @@
              an explicit optional foreground source, never a background grant. -->
         <service android:name=".SensorService" android:exported="false" android:foregroundServiceType="specialUse|location">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="User-started forwarding of selected hardware/phone sources to the user's private LAN Localserve server, until explicitly stopped. Optional location uses the dedicated location foreground type." />
+                android:value="User-started forwarding of selected hardware/phone sources to the user's private LAN Sormus server, until explicitly stopped. Optional location uses the dedicated location foreground type." />
         </service>
     </application>
 </manifest>

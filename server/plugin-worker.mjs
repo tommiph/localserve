@@ -96,7 +96,7 @@ process.on('message', message => {
 });
 
 process.on('disconnect', () => {
-  // Never leave a child behind after its owning Localserve process disappears.
+  // Never leave a child behind after its owning Sormus process disappears.
   for (const controller of controllers.values()) controller.abort();
   process.exit(0);
 });

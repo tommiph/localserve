@@ -51,7 +51,7 @@
   }
   function armHealth() {
     clearTimeout(healthGuard);
-    if (!document.hidden && !settingsOpen) healthGuard = setTimeout(function () { healthy = false;settings('Localserve stopped responding. Check the server connection.'); },9000);
+    if (!document.hidden && !settingsOpen) healthGuard = setTimeout(function () { healthy = false;settings('Sormus stopped responding. Check the server connection.'); },9000);
   }
   function showGame() {
     if (!healthy || document.hidden) return;
@@ -79,14 +79,14 @@
   node('hud-opacity').oninput = updateOpacity;
   function openPage() {
     hdmi.hide();attempted = false;healthy = false;settingsOpen = false;
-    clearTimeout(guard);clearTimeout(healthGuard);node('connection').hidden = true;node('launcher').hidden = false;node('status').textContent = 'Connecting to Localserve…';
+    clearTimeout(guard);clearTimeout(healthGuard);node('connection').hidden = true;node('launcher').hidden = false;node('status').textContent = 'Connecting to Sormus…';
     if (!page) {
       page = document.createElement('iframe');page.id = 'page';page.title = 'PlayStation information';
       page.setAttribute('sandbox','allow-scripts allow-same-origin');page.onload = challenge;
       page.onerror = function () { healthy = false;settings('Unable to load the PlayStation screen. Check the server address.'); };
     }
     probe = '';page.src = defaultUrl;if (!page.parentNode) document.body.appendChild(page);
-    guard = setTimeout(function () { healthy = false;settings('Localserve is unavailable. Enter its current server address.'); },20000);
+    guard = setTimeout(function () { healthy = false;settings('Sormus is unavailable. Enter its current server address.'); },20000);
   }
   window.addEventListener('message',function (event) {
     var data = event.data;
@@ -97,7 +97,7 @@
     if (data.type === 'localserve-ps-cycle') { cycleAppearance();return; }
     if (data.type !== 'localserve-ps-state' || typeof data.connected !== 'boolean') return;
     healthy = data.connected;node('resume').disabled = !healthy;
-    if (!healthy) { settings('The PlayStation screen cannot read Localserve. Check the server connection.');return; }
+    if (!healthy) { settings('The PlayStation screen cannot read Sormus. Check the server connection.');return; }
     clearTimeout(guard);
     if (!settingsOpen) showGame();
   });

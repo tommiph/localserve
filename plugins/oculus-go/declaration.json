@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "oculus-go",
   "name": "Oculus Go",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Wi-Fi headset diagnostics and a manual APK library",
   "icon": "vr-cardboard",
   "runtime": {
@@ -71,7 +71,7 @@
       "type": "string",
       "default": "library/oculus-go",
       "maxLength": 500,
-      "help": "Folder containing your standalone APK files. Relative paths start at the Localserve folder; an absolute path may select your own external library. Subfolder links are ignored. APKs are private user content."
+      "help": "Folder containing your standalone APK files. Relative paths start at the Sormus folder; an absolute path may select your own external library. Subfolder links are ignored. APKs are private user content."
     },
     {
       "id": "home-vr-enabled",
@@ -1968,7 +1968,7 @@
       {
         "title": "Connect",
         "steps": [
-          "Enable wireless ADB on the headset and authorize this computer’s ADB key. Localserve uses legacy ADB TCP, not Android’s wireless pairing-code flow.",
+          "Enable wireless ADB on the headset and authorize this computer’s ADB key. Sormus uses legacy ADB TCP, not Android’s wireless pairing-code flow.",
           "Enter the headset Wi-Fi address with port, normally :5555, and its exact serial. Supply an already authorized RSA key as Base64 if no protected key is saved.",
           "Enable the plugin and select Test connection. After success, clear the key field; the protected key remains available on this Windows account."
         ]
@@ -1977,7 +1977,7 @@
         "title": "Reconnect",
         "steps": [
           "If the headset address changes, update Wi-Fi address and select Test connection. The saved key is reused and the serial must match.",
-          "If unavailable, check the current address, network and whether wireless ADB is enabled. If necessary, enable wireless ADB again through your device setup tools. Localserve does not control the shared PC ADB service.",
+          "If unavailable, check the current address, network and whether wireless ADB is enabled. If necessary, enable wireless ADB again through your device setup tools. Sormus does not control the shared PC ADB service.",
           "If the key is rejected, authorize it on the headset or supply an already authorized replacement. A serial mismatch means the configured device identity must be checked; do not replace it just to bypass the check.",
           "Scheduled diagnostics resume on the next poll when the device is available. A failed connection does not prove the headset is asleep or powered off."
         ]

@@ -1,4 +1,4 @@
-/** Localserve runtime API v1 for read-only Google News RSS polling.
+/** Sormus runtime API v1 for read-only Google News RSS polling.
  * Import, configuration validation, and start never initiate network requests.
  */
 import sax from '../vendor/sax/lib/sax.js';

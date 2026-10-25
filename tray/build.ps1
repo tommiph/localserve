@@ -80,7 +80,7 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') { throw 'Use a numeric package version
 $metadataFolder = Join-Path $trayFolder '.build'
 New-Item -ItemType Directory -Path $metadataFolder -Force | Out-Null
 $metadataFile = Join-Path $metadataFolder 'version-info.cs'
-('[assembly:System.Reflection.AssemblyTitle("Localserve")][assembly:System.Reflection.AssemblyProduct("Localserve")][assembly:System.Reflection.AssemblyVersion("' + $version + '.0")][assembly:System.Reflection.AssemblyFileVersion("' + $version + '.0")]') | Set-Content -LiteralPath $metadataFile -Encoding utf8
+('[assembly:System.Reflection.AssemblyTitle("Sormus")][assembly:System.Reflection.AssemblyProduct("Sormus")][assembly:System.Reflection.AssemblyVersion("' + $version + '.0")][assembly:System.Reflection.AssemblyFileVersion("' + $version + '.0")]') | Set-Content -LiteralPath $metadataFile -Encoding utf8
 & $compiler /nologo /target:winexe /optimize+ /platform:x64 "/out:$trayFolder\$OutputName" "/win32icon:$iconFolder\logo.ico" /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:System.Web.Extensions.dll "$trayFolder\LocalserveTray.cs" $metadataFile
 if ($LASTEXITCODE -ne 0) { throw 'Tray compilation failed.' }
 Remove-Item -LiteralPath $metadataFile

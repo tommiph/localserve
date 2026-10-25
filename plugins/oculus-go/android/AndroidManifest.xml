@@ -1,14 +1,14 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.localserve.go" android:versionCode="3" android:versionName="1.0.2">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="org.localserve.go" android:versionCode="4" android:versionName="1.0.3">
   <uses-sdk android:minSdkVersion="25" android:targetSdkVersion="25" />
   <uses-permission android:name="android.permission.INTERNET" />
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.WAKE_LOCK" />
   <uses-feature android:glEsVersion="0x00030000" android:required="true" />
-  <application android:label="# Localserve #" android:icon="@drawable/icon"
+  <application android:label="# Sormus #" android:icon="@drawable/icon"
     android:theme="@android:style/Theme.Material.NoActionBar.Fullscreen"
     android:allowBackup="false" android:hardwareAccelerated="true" android:usesCleartextTraffic="true">
     <meta-data android:name="com.samsung.android.vr.application.mode" android:value="vr_only" />
-    <activity android:name=".MainActivity" android:label="# Localserve #" android:exported="true"
+    <activity android:name=".MainActivity" android:label="# Sormus #" android:exported="true"
       android:screenOrientation="landscape" android:launchMode="singleTask"
       android:configChanges="screenSize|orientation|keyboardHidden|keyboard|navigation">
       <intent-filter>

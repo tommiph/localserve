@@ -93,8 +93,8 @@ export function createYouTubeControl({fetchImpl = fetch} = {}) {
           || !privateValue(screens[0].loungeToken)) throw new YouTubeControlError('Samsung TV YouTube returned an unexpected playback identity.');
         const token = screens[0].loungeToken;
         const bound = await post(bindPath, {RID: '0', VER: '8', CVER: '1'}, {
-          device: 'REMOTE_CONTROL', id: randomUUID().replaceAll('-', ''), name: 'Localserve',
-          'mdx-version': '3', pairing_type: 'cast', app: 'Localserve',
+          device: 'REMOTE_CONTROL', id: randomUUID().replaceAll('-', ''), name: 'Sormus',
+          'mdx-version': '3', pairing_type: 'cast', app: 'Sormus',
         }, token, signal, gate);
         const session = sessionIdentifiers(bound);
         // Exactly one setPlaylist effect; no rebind/resend after uncertainty.

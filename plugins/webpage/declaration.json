@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "webpage",
   "name": "Webpage",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Embedded webpages, parsed text and page change events",
   "icon": "language",
   "runtime": {
@@ -60,7 +60,7 @@
         "12 hours",
         "24 hours"
       ],
-      "help": "Applies to public webpages. Localserve display pages are display-only and are not polled. Successful public refreshes reload embedded Cards; page-change events compare downloaded HTML."
+      "help": "Applies to public webpages. Sormus display pages are display-only and are not polled. Successful public refreshes reload embedded Cards; page-change events compare downloaded HTML."
     },
     {
       "id": "pages",

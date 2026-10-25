@@ -10,7 +10,7 @@ Nothing starts automatically, including after a server restart.
 Configure and enable the original TRÅDFRI gateway plugin, then refresh its
 readings. Choose **Start** on an enabled animation, select up to ten reported
 lights and set a duration. **0 minutes** runs until you choose **Stop**. Starting
-turns the selected lights on. The animation runs on Localserve even if you close
+turns the selected lights on. The animation runs on Sormus even if you close
 the browser. Only one animation can run at a time.
 
 RGB bulbs use colour and brightness. White-temperature bulbs use warmth and

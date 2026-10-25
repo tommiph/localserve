@@ -44,7 +44,7 @@ await run(java,['-jar',path.join(sdk,'lib/apksigner.jar'),'sign','--ks',keystore
 const verification=await run(java,['-jar',path.join(sdk,'lib/apksigner.jar'),'verify','--verbose','--print-certs',apk]);
 await run(path.join(sdk,'zipalign.exe'),['-c','4',apk]);
 const badging=await run(path.join(sdk,'aapt2.exe'),['dump','badging',apk]);
-if(!badging.includes("package: name='org.localserve.go'")||!badging.includes("application-label:'# Localserve #'"))throw Error('APK identity or launcher label is incorrect.');
+if(!badging.includes("package: name='org.localserve.go'")||!badging.includes("application-label:'# Sormus #'"))throw Error('APK identity or launcher label is incorrect.');
 const manifest=await fs.readFile(path.join(app,'AndroidManifest.xml'),'utf8');
 if(!manifest.includes('android:versionName="'+metadata.version+'"')||!manifest.includes('android:versionCode="'+metadata.versionCode+'"'))throw Error('APK versions disagree.');
 const bytes=await fs.readFile(apk),sha256=createHash('sha256').update(bytes).digest('hex');

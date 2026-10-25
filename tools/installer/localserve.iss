@@ -1,17 +1,17 @@
-; Localserve's per-user installer consumes only a verified clean payload.
+; Sormus's per-user installer consumes only a verified clean payload.
 ; Private files are initialized separately and retained by default on removal.
 #ifndef ProductId
   #define ProductId "Localserve.Windows"
 #endif
 #ifndef ShortcutGroup
-  #define ShortcutGroup "Localserve"
+  #define ShortcutGroup "Sormus"
 #endif
 [Setup]
 AppId={#ProductId}
-AppName=Localserve
+AppName=Sormus
 AppVersion={#AppVersion}
-AppPublisher=Localserve
-DefaultDirName={localappdata}\Programs\Localserve
+AppPublisher=Sormus
+DefaultDirName={localappdata}\Programs\Sormus
 DefaultGroupName={#ShortcutGroup}
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible and not arm64
@@ -31,20 +31,20 @@ OutputDir={#OutputDir}
 OutputBaseFilename={#OutputName}
 SetupIconFile={#Payload}\tray\assets\logo.ico
 UninstallDisplayIcon={app}\tray\LocalserveTray.exe
-UninstallDisplayName=Localserve
+UninstallDisplayName=Sormus
 UninstallFilesDir={app}\uninstall
 UsePreviousTasks=yes
 [Tasks]
-Name: startup; Description: "Start Localserve when I sign in"; Flags: unchecked
+Name: startup; Description: "Start Sormus when I sign in"; Flags: unchecked
 [Files]
 Source: "{#Payload}\tray\LocalserveTray.exe"; Flags: dontcopy
 #include FileList
 [Icons]
-Name: "{group}\Localserve"; Filename: "{app}\tray\LocalserveTray.exe"; Parameters: "--open"; WorkingDir: "{app}"
-Name: "{group}\Uninstall Localserve"; Filename: "{uninstallexe}"
+Name: "{group}\Sormus"; Filename: "{app}\tray\LocalserveTray.exe"; Parameters: "--open"; WorkingDir: "{app}"
+Name: "{group}\Uninstall Sormus"; Filename: "{uninstallexe}"
 [Run]
 Filename: "{app}\tray\LocalserveTray.exe"; Parameters: "--enable-startup"; Tasks: startup; Flags: runhidden waituntilterminated
-Filename: "{app}\tray\LocalserveTray.exe"; Parameters: "--open"; Description: "Open Localserve"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\tray\LocalserveTray.exe"; Parameters: "--open"; Description: "Open Sormus"; Flags: nowait postinstall skipifsilent
 [Code]
 const
   Marker = '{"product":"localserve-windows","schemaVersion":1}';
@@ -101,7 +101,7 @@ begin
   end;
   if Nonempty then begin
     if not LoadStringFromFile(Folder + '\data\installation.json', Existing) then Existing := '';
-    if Trim(Existing) <> Marker then begin Result := 'Choose an empty folder. This folder is not owned by the Localserve installer.'; exit; end;
+    if Trim(Existing) <> Marker then begin Result := 'Choose an empty folder. This folder is not owned by the Sormus installer.'; exit; end;
     Count := 0;
     if HasLinks(Folder, Count) then Result := 'This installation contains directory links or too many entries. Setup cannot safely replace it.';
   end;
@@ -122,14 +122,14 @@ begin
   if Maintenance = 0 then begin Result := 'Could not reserve this installation for maintenance.'; exit; end;
   if FileExists(ExpandConstant('{app}\tray\LocalserveTray.exe')) then begin
     if not Exec(ExpandConstant('{app}\tray\LocalserveTray.exe'), '--stop-and-exit', '', SW_HIDE, ewWaitUntilTerminated, Code) then Code := -1;
-    if Code <> 0 then begin Result := 'Close this Localserve installation normally before continuing. No process was force-stopped.'; ReleaseMaintenance; end;
+    if Code <> 0 then begin Result := 'Close this Sormus installation normally before continuing. No process was force-stopped.'; ReleaseMaintenance; end;
   end;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 begin
   Result := ValidateDestination; if Result <> '' then exit;
-  if not IsDotNetInstalled(net48, 0) then begin Result := 'Localserve requires Microsoft .NET Framework 4.8 or later. Install it and run Setup again.'; exit; end;
+  if not IsDotNetInstalled(net48, 0) then begin Result := 'Sormus requires Microsoft .NET Framework 4.8 or later. Install it and run Setup again.'; exit; end;
   Result := AcquireMaintenance(True);
 end;
 
@@ -140,7 +140,7 @@ begin
     ForceDirectories(ExpandConstant('{app}\data'));
     if not SaveStringToFile(ExpandConstant('{app}\data\installation.json'), Marker, False) then RaiseException('Could not record the installation.');
     if not Exec(ExpandConstant('{app}\runtime\node.exe'), '"' + ExpandConstant('{app}\tools\initialize-settings.mjs') + '"', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) then Code := -1;
-    if Code <> 0 then RaiseException('Could not initialize Localserve settings. Your existing settings were not replaced.');
+    if Code <> 0 then RaiseException('Could not initialize Sormus settings. Your existing settings were not replaced.');
     ReleaseMaintenance;
   end;
 end;
@@ -155,7 +155,7 @@ begin
   if not Result then SuppressibleMsgBox(Error, mbError, MB_OK, IDOK);
   RemovePrivate := ExpandConstant('{param:DELETEPRIVATE|0}') = '1';
   if Result and not UninstallSilent then
-    RemovePrivate := MsgBox('Also permanently delete Localserve settings, saved Tasks, Vistas, Cards, Controls, credentials and logs? Choose No to keep them.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
+    RemovePrivate := MsgBox('Also permanently delete Sormus settings, saved Tasks, Vistas, Cards, Controls, credentials and logs? Choose No to keep them.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

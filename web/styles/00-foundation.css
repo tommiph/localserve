@@ -1,5 +1,9 @@
-/* Localserve design tokens. Both themes share geometry and component behavior. */
+/* Sormus design tokens. Both themes share geometry and component behavior. */
 :root {
+  --panel-gap: 20px;
+  --panel-padding: 20px;
+  --content-gap: 12px;
+  --action-gap: 10px;
   color-scheme: light;
   --canvas: #f5f6f8;
   --surface: #ffffff;

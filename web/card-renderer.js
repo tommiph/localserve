@@ -153,7 +153,7 @@ const CardRenderer = (() => {
             if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.port) url = null;
           } catch { url = null; }
           if (!url) return '<div class="display-card-empty">Webpage unavailable</div>';
-          // An opaque sandbox origin isolates even a redirect back to Localserve.
+          // An opaque sandbox origin isolates even a redirect back to Sormus.
           // Downloaded HTML is never placed in srcdoc or interpreted by our DOM.
           return `<iframe class="display-card-webpage-frame" title="${escape(field.label)}" src="${escape(url.href)}" data-webpage-key="${escape(JSON.stringify([url.href, input.revision, card.crop === true]))}" sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer" loading="lazy" scrolling="${card.crop === true ? 'no' : 'auto'}" tabindex="${card.crop === true ? '-1' : '0'}"${card.crop === true ? ' inert' : ''}></iframe>`;
         }

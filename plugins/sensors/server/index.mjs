@@ -1,4 +1,4 @@
-/** Push reports run inside Localserve's supervised plugin process. Storage keeps
+/** Push reports run inside Sormus's supervised plugin process. Storage keeps
  * only current samples and bounded sequence/Event cursors, never a raw archive. */
 import { validateSensorReport, sensorTypes, vectorSensorTypes, isDiscreteSensor } from '../../../server/sensor-protocol.mjs';
 import {randomUUID} from 'node:crypto';

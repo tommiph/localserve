@@ -1,4 +1,4 @@
-/** Localserve serial polling of named Fingrid datasets. Validation/start
+/** Sormus serial polling of named Fingrid datasets. Validation/start
  * stay offline; the shared host owns queues, pause, cancellation and polling. */
 import { createHash } from 'node:crypto';
 import { createClient, validDatasetId, validKey, mapMetadata, mapLatest, text } from './client.mjs';

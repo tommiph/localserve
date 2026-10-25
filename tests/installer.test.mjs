@@ -24,7 +24,7 @@ test('installer file list excludes settings seeds and rejects unsafe names',()=>
   for(const path of ['../secret','C:/private','bad"name','folder\\private'])assert.throws(()=>installerFiles({files:[{path}]}));
 });
 test('demo link updates one README block from public metadata',()=>{
-  const original='# Localserve\n\nProduct guide.\n',metadata={demoVideoUrl:'https://youtu.be/iRawtvXB6DQ'};
+  const original='# Sormus\n\nProduct guide.\n',metadata={demoVideoUrl:'https://youtu.be/iRawtvXB6DQ'};
   const first=renderDemoReadme(original,metadata);assert.match(first,/https:\/\/youtu.be\/iRawtvXB6DQ/);assert.equal(renderDemoReadme(first,metadata),first);
   const next=renderDemoReadme(first,{demoVideoUrl:'https://youtu.be/abcdefghijk'});assert.equal((next.match(/demo:start/g)||[]).length,1);assert.doesNotMatch(next,/iRawtvXB6DQ/);assert.match(next,/Product guide/);
   for(const demoVideoUrl of ['http://youtu.be/iRawtvXB6DQ','https://example.com/iRawtvXB6DQ','https://youtu.be/iRawtvXB6DQ?secret=value'])assert.throws(()=>renderDemoReadme(original,{demoVideoUrl}));

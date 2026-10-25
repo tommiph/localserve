@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "hsl-trains",
   "name": "HSL Trains",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Finnish passenger train station boards · Source: Fintraffic / Digitraffic, CC BY 4.0",
   "icon": "train",
   "runtime": {
@@ -16,7 +16,7 @@
     "url": "https://www.digitraffic.fi/en/railway-traffic/",
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
     "licenseLabel": "CC BY 4.0",
-    "notice": "Filtered and formatted by Localserve"
+    "notice": "Filtered and formatted by Sormus"
   },
   "polling": {
     "actionId": "refresh",
