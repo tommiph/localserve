@@ -4,12 +4,12 @@ const ActivityUI = {
   contexts: new Map(), opened: new Set(),
 
   context(scope) {
-    if (!this.contexts.has(scope)) this.contexts.set(scope, {search: '', plugin: '', task: '', level: '', type: '', group: true, paused: false, held: []});
+    if (!this.contexts.has(scope)) this.contexts.set(scope, {search: '', plugin: '', task: '', level: '', type: '', group: true, paused: false, held: [],page:1,pageSize:50});
     return this.contexts.get(scope);
   },
 
   countText(filtered, source, paused, limit) {
-    return `${filtered} of ${source} recent entries shown · ${paused ? 'Display paused; server logging continues · Snapshot limited to 500 entries' : 'Live display · Recent view limited to ' + limit + ' entries'} · Search covers shown entries only; older retained logs remain on disk`;
+    return `${filtered} of ${source} recent entries match · ${paused ? 'Display paused; server logging continues · Snapshot limited to '+limit+' entries' : 'Live display · Recent view limited to ' + limit + ' entries'} · Search covers this recent window; older retained logs remain on disk`;
   },
 
   type(entry) { return entry.eventId ? 'event' : entry.taskId ? 'task' : entry.pluginId ? 'plugin' : 'server'; },
@@ -49,11 +49,16 @@ const ActivityUI = {
     const tasks = new Map(source.filter(entry => entry.taskId).map(entry => [entry.taskId, state.tasks.find(task => task.id === entry.taskId)?.name || 'Deleted Task']));
     const select = (key, label, options) => `<label>${label}<select data-activity-filter="${key}"><option value="">${{plugin: 'All plugins', task: 'All Tasks', level: 'All severities', type: 'All types'}[key]}</option>${options.map(([id, name]) => `<option value="${escapeHtml(id)}" ${settings[key] === id ? 'selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>`;
     return `<section class="panel activity-inspector" data-activity-scope="${escapeHtml(scope)}"><div class="panel-header"><h2>Activity log</h2><button class="button" type="button" data-action="activity-pause" aria-pressed="${settings.paused}">${icon(settings.paused ? 'play' : 'pause')}${settings.paused ? 'Resume display' : 'Pause display'}</button></div>
-      <div class="inspection-filters"><label class="inspection-search">Search<input type="search" data-activity-filter="search" value="${escapeHtml(settings.search)}" placeholder="Search messages or sources"></label>${scope === 'global' ? select('plugin', 'Plugin', state.services.map(plugin => [plugin.id, plugin.name])) : ''}${select('task', 'Task', [...tasks])}${select('level', 'Severity', [['info', 'Info'], ['success', 'Success'], ['warning', 'Warning'], ['error', 'Error']])}${select('type', 'Type', [['event', 'Event'], ['task', 'Task'], ['plugin', 'Plugin'], ['server', 'Server']])}<label class="check-field"><input type="checkbox" data-activity-filter="group" ${settings.group ? 'checked' : ''}>Group repeated entries</label><button type="button" class="text-button" data-action="activity-reset">Reset filters</button></div><p class="inspection-count">${this.countText(filtered.length, source.length, settings.paused, scope === 'global' ? 2000 : 500)}</p><div data-activity-results>${this.rows(filtered, settings)}</div></section>`;
+      <div class="inspection-filters"><label class="inspection-search">Search<input type="search" data-activity-filter="search" value="${escapeHtml(settings.search)}" placeholder="Search messages or sources"></label>${scope === 'global' ? select('plugin', 'Plugin', state.services.map(plugin => [plugin.id, plugin.name])) : ''}${select('task', 'Task', [...tasks])}${select('level', 'Severity', [['info', 'Info'], ['success', 'Success'], ['warning', 'Warning'], ['error', 'Error']])}${select('type', 'Type', [['event', 'Event'], ['task', 'Task'], ['plugin', 'Plugin'], ['server', 'Server']])}<label class="check-field"><input type="checkbox" data-activity-filter="group" ${settings.group ? 'checked' : ''}>Group repeated entries</label><button type="button" class="text-button" data-action="activity-reset">Reset filters</button></div><p class="inspection-count">${this.countText(filtered.length, source.length, settings.paused, scope === 'global' ? 2000 : 500)}</p><div data-activity-results>${this.rows(filtered, settings,scope)}</div></section>`;
   },
 
-  rows(entries, settings) {
-    return entries.length ? `<ul class="activity-list">${this.groups(entries, settings.group).map(group => this.row(group)).join('')}</ul>` : '<div class="empty-state">No entries match these filters.</div>';
+  rows(entries, settings, scope='global') {
+    const groups=this.groups(entries,settings.group);
+    if(scope!=='global')return groups.length?`<ul class="activity-list">${groups.map(group=>this.row(group)).join('')}</ul>`:'<div class="empty-state">No entries match these filters.</div>';
+    const size=[25,50,100].includes(settings.pageSize)?settings.pageSize:50,pages=Math.max(1,Math.ceil(groups.length/size));
+    settings.page=Math.max(1,Math.min(settings.page||1,pages));
+    const visible=groups.slice((settings.page-1)*size,settings.page*size);
+    return `<nav class="activity-pagination" aria-label="Activity pages" data-live-key="activity-pagination"><div class="row-actions"><button class="button" type="button" data-action="activity-previous" ${settings.page<=1?'disabled':''}>${icon('arrow-left')}Previous</button><span aria-live="polite">Page ${settings.page} of ${pages}</span><button class="button" type="button" data-action="activity-next" ${settings.page>=pages?'disabled':''}>Next${icon('arrow-right')}</button></div><label>Rows per page<select data-activity-page-size aria-label="Activity rows per page">${[25,50,100].map(value=>`<option value="${value}" ${size===value?'selected':''}>${value}</option>`).join('')}</select></label><button class="button" type="button" data-action="activity-live" ${!settings.paused&&settings.page===1?'disabled':''}>${icon('arrows-rotate')}Latest entries</button><small>${settings.group?'Repeated entries count as one row. ':''}Browsing older pages freezes this view until you choose Latest entries.</small></nav>${visible.length?`<ul class="activity-list">${visible.map(group=>this.row(group)).join('')}</ul>`:'<div class="empty-state">No entries match these filters.</div>'}`;
   },
 
   source(scope) {
@@ -67,28 +72,39 @@ document.addEventListener('input', event => {
   if (!panel || control.dataset.activityFilter !== 'search') return;
   const scope = panel.dataset.activityScope, settings = ActivityUI.context(scope);
   settings.search = control.value;
+  settings.page=1;
   // Update rows only, preserving the search caret and current scroll position.
   const source = settings.paused ? settings.held : ActivityUI.source(scope), filtered = ActivityUI.filtered(source, settings);
-  AdminDOM.update(panel.querySelector('[data-activity-results]'),ActivityUI.rows(filtered, settings));
+  AdminDOM.update(panel.querySelector('[data-activity-results]'),ActivityUI.rows(filtered, settings,scope));
   panel.querySelector('.inspection-count').textContent = `${ActivityUI.countText(filtered.length, source.length, settings.paused, scope === 'global' ? 2000 : 500)}`;
 });
 
 document.addEventListener('change', event => {
   const control = event.target, panel = control.closest('[data-activity-scope]');
+  if(panel&&control.hasAttribute('data-activity-page-size')){
+    const settings=ActivityUI.context(panel.dataset.activityScope),value=Number(control.value);
+    if([25,50,100].includes(value)){settings.pageSize=value;settings.page=1;renderView();}return;
+  }
   if (!panel || !control.dataset.activityFilter || control.dataset.activityFilter === 'search') return;
   const key = control.dataset.activityFilter;
-  ActivityUI.context(panel.dataset.activityScope)[key] = key === 'group' ? control.checked : control.value;
+  const settings=ActivityUI.context(panel.dataset.activityScope);settings[key] = key === 'group' ? control.checked : control.value;settings.page=1;
   renderView();
 });
 
 document.addEventListener('click', event => {
-  const button = event.target.closest('[data-action="activity-pause"], [data-action="activity-reset"]');
+  const button = event.target.closest('[data-action="activity-pause"], [data-action="activity-reset"], [data-action="activity-previous"], [data-action="activity-next"], [data-action="activity-live"]');
   if (!button) return;
   const scope = button.closest('[data-activity-scope]').dataset.activityScope, settings = ActivityUI.context(scope);
-  if (button.dataset.action === 'activity-reset') Object.assign(settings, {search: '', plugin: '', task: '', level: '', type: ''});
+  const action=button.dataset.action;
+  if (action === 'activity-reset') Object.assign(settings, {search: '', plugin: '', task: '', level: '', type: '',page:1});
+  else if(action==='activity-live'){settings.paused=false;settings.held=[];settings.page=1;}
+  else if(action==='activity-previous'||action==='activity-next'){
+    if(!settings.paused){settings.held=structuredClone(ActivityUI.source(scope)).slice(0,scope==='global'?2000:500);settings.paused=true;}
+    settings.page=Math.max(1,settings.page+(action==='activity-next'?1:-1));
+  }
   else {
     settings.paused = !settings.paused;
-    settings.held = settings.paused ? structuredClone(ActivityUI.source(scope)).slice(0, 500) : [];
+    settings.page=1;settings.held = settings.paused ? structuredClone(ActivityUI.source(scope)).slice(0, scope==='global'?2000:500) : [];
   }
   renderView();
 });

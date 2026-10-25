@@ -14,7 +14,7 @@ export function localHost(value) {
 }
 export const validToken = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,512}$/.test(value);
 export const validPin = value => typeof value === 'string' && /^(?:[A-Fa-f0-9]{2}:){31}[A-Fa-f0-9]{2}$/.test(value);
-export const keys = ['POWER', 'POWEROFF', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'ENTER', 'RETURN', 'HOME', 'EXIT', 'MENU', 'SOURCE', 'HDMI', 'HDMI1', 'HDMI2', 'HDMI3', 'HDMI4', 'TV', 'VOLUP', 'VOLDOWN', 'MUTE', 'CHUP', 'CHDOWN', 'GUIDE', 'INFO', 'PLAY', 'PAUSE', 'STOP', 'REWIND', 'FF', ...Array.from({ length: 10 }, (_, i) => String(i))].map(key => 'KEY_' + key);
+export const keys = ['POWER', 'POWEROFF', 'UP', 'DOWN', 'LEFT', 'RIGHT', 'ENTER', 'RETURN', 'HOME', 'EXIT', 'MENU', 'SOURCE', 'HDMI', 'HDMI1', 'HDMI2', 'HDMI3', 'HDMI4', 'TV', 'VOLUP', 'VOLDOWN', 'MUTE', 'CHUP', 'CHDOWN', 'GUIDE', 'INFO', 'PLAY', 'PAUSE', 'STOP', 'REWIND', 'FF', ...Array.from({ length: 10 }, (_, i) => String(i)), 'PMODE', 'DYNAMIC', 'STANDARD', 'MOVIE1', 'GAME', 'CUSTOM'].map(key => 'KEY_' + key);
 export const xmlEscape = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[character]);
 
 export async function responseText(response, signal, maximum = 256 * 1024) {

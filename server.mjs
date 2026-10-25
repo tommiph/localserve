@@ -2,6 +2,7 @@
  * declarations, supervised runtimes and cooperative Task/Control execution.
  * Device capabilities are scoped by their installed trusted declarations.
  */
+import {validateColorThemes,themeCatalogue} from './server/color-themes.mjs';
 import http from 'node:http';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -23,11 +24,14 @@ import {ApkLibrary, nativeLibraryRoute, serveNativeLibrary, libraryAdminOperatio
 import { UniverseStore } from './server/universe.mjs';
 import { GamesStore,requireMazeDisplay } from './server/games.mjs';
 import { LightingAnimations } from './server/lighting-animations.mjs';
+import {LightingRoom} from './server/lighting-room.mjs';
+import {GatewayScenes} from './server/gateway-scenes.mjs';
 import { SensorIngress } from './server/sensor-ingress.mjs';
 import {phoneDisplay} from './server/phone-display.mjs';
 import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
+import {controlRoomView} from './server/control-room.mjs';
 import {readClientPackages} from './server/client-packages.mjs';
 import {downloadCatalogue,serveProductDownload} from './server/downloads.mjs';
 import { readCardAsset } from './server/card-templates.mjs';
@@ -52,6 +56,7 @@ function validateConfig(value) {
   if (typeof value.name !== 'string' || !value.name.trim() || value.name.length > 64 || /[\u0000-\u001f]/.test(value.name)) throw new HttpError(400, 'Enter a server name between 1 and 64 characters.');
   if (!['12', '24'].includes(value.timeFormat)) throw new HttpError(400, 'Choose 12-hour or 24-hour time.');
   validateDoNotDisturb(value.doNotDisturb);
+  validateColorThemes(value);
   if (!Number.isInteger(value.activityRetentionDays) || value.activityRetentionDays < 1 || value.activityRetentionDays > 3650) throw new HttpError(400, 'Keep Activity logs for 1 to 3650 whole days.');
   // Null means unconfigured, while zero is a valid coordinate. Never substitute
   // a guessed location for missing values or change the server's timezone.
@@ -175,6 +180,8 @@ export async function createLocalserve(root, options = {}) {
     const games = await new GamesStore(root,registry,activity).load();
     const controls = await new ControlsStore(root, registry, config, activity).load();
     registry.controls = controls;
+    const lightingRoom = new LightingRoom(registry,controls);
+    const gatewayScenes = new GatewayScenes(registry,controls,lightingRoom);
     const lightingAnimations = await new LightingAnimations(root,registry,activity).load();
     registry.lightingAnimations = lightingAnimations;
     engine.vistas = vistas;
@@ -211,7 +218,10 @@ export async function createLocalserve(root, options = {}) {
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
       const cpu = process.cpuUsage(), seconds = Math.max(process.uptime(), 0.001);
-      return { config: {...config.snapshot(),version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services: registry.services(), controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      // Lighting receipts travel with the existing incremental administrator
+      // read. Opening the workspace never starts another periodic gateway read.
+      const services=registry.services().map(service=>service.controls?.lighting?.inventoryState?{...service,lightingRoom:lightingRoom.snapshot(service.id)}:service);
+      return { config: {...config.snapshot(),colorThemes:themeCatalogue(config.snapshot()),adminColorTheme:config.snapshot().adminColorTheme??'',displayColorTheme:config.snapshot().displayColorTheme??'',version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services, controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(), lightingAnimations: lightingAnimations.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -282,6 +292,10 @@ export async function createLocalserve(root, options = {}) {
           return json(response,200,await sensorIngress.receive(request));
         }
         if (request.method === 'GET' && url.pathname === '/api/control-view') return json(response, 200, controls.index());
+        if(url.pathname==='/api/control-room'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the control room.');
+          return json(response,200,controlRoomView(phoneHome,controls,lightingRoom));
+        }
         if(url.pathname==='/api/phone-home'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the Home page.');
           return json(response,200,{...phoneHome.viewer(),version:serverVersion});
@@ -357,11 +371,16 @@ export async function createLocalserve(root, options = {}) {
         const viewerApi = /^\/api\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
         if (request.method === 'GET' && viewerApi) return json(response, 200, vistas.viewer(viewerApi[1]));
         if (url.pathname.startsWith('/api/')) {
+          const roomAdmin=/^\/api\/lighting-room\/([a-z0-9-]+)(\/manage)?$/.exec(url.pathname);
+          if(roomAdmin&&url.search)throw new HttpError(400,'Unexpected lighting parameters.');
+          if(roomAdmin&&request.method==='GET'&&!roomAdmin[2])return json(response,200,lightingRoom.snapshot(roomAdmin[1]));
           if(url.pathname==='/api/downloads'){
             if(request.method!=='GET'||url.search)throw new HttpError(405,'Use Downloads.');
             return json(response,200,{items:await downloadCatalogue(root)});
           }
           const sceneAdmin=/^\/api\/lighting-scenes\/([a-z0-9-]+)\/([a-zA-Z0-9-]+)(\/run)?$/.exec(url.pathname);
+          const gatewaySceneAdmin=/^\/api\/lighting-scenes\/([a-z0-9-]+)\/([a-zA-Z0-9-]+)\/gateway$/.exec(url.pathname);
+          if(gatewaySceneAdmin&&url.search)throw new HttpError(400,'Unexpected gateway scene parameters.');
           if(sceneAdmin&&url.search)throw new HttpError(400,'Unexpected scene parameters.');
           if(sceneAdmin&&request.method==='GET'&&!sceneAdmin[3])return json(response,200,controls.sceneDetails(sceneAdmin[1],sceneAdmin[2]));
           const explanation=/^\/api\/tasks\/([a-zA-Z0-9-]{1,80})\/explanation$/.exec(url.pathname);
@@ -380,7 +399,17 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(sceneAdmin){
+          if(roomAdmin){
+            const controller=new AbortController(),cancelled=()=>{if(!response.writableEnded)controller.abort(new Error('Client disconnected.'));};
+            response.once('close',cancelled);
+            try{return json(response,200,await lightingRoom[roomAdmin[2]?'manage':'command'](roomAdmin[1],values,controller.signal));}
+            finally{response.removeListener('close',cancelled);}
+          } else if(gatewaySceneAdmin){
+            const controller=new AbortController(),cancelled=()=>{if(!response.writableEnded)controller.abort(new Error('Client disconnected.'));};
+            response.once('close',cancelled);
+            try{return json(response,200,await gatewayScenes.request(gatewaySceneAdmin[1],gatewaySceneAdmin[2],values,controller.signal));}
+            finally{response.removeListener('close',cancelled);}
+          } else if(sceneAdmin){
             return json(response,sceneAdmin[3]?202:200,await controls.administerScene(sceneAdmin[1],sceneAdmin[2],values,Boolean(sceneAdmin[3])));
           } else if(url.pathname==='/api/cloud-relay/setup'){
             if(url.search)throw new HttpError(400,'Unexpected relay parameters.');
@@ -423,7 +452,7 @@ export async function createLocalserve(root, options = {}) {
           } else if (url.pathname === '/api/universe') {
             await universe.save(values);
           } else if (url.pathname === '/api/config') {
-            const permitted = ['name', 'theme', 'displayTheme', 'fontScale', 'vistaFontScale', 'timeFormat', 'location', 'listen', 'maxConcurrentRuns', 'activityRetentionDays', 'doNotDisturb'];
+            const permitted = ['name', 'theme', 'displayTheme', 'colorThemes', 'adminColorTheme', 'displayColorTheme', 'fontScale', 'vistaFontScale', 'timeFormat', 'location', 'listen', 'maxConcurrentRuns', 'activityRetentionDays', 'doNotDisturb'];
             if (!values || Object.keys(values).some(key => !permitted.includes(key))) throw new HttpError(400, 'Unknown setting.');
             await config.update(current => Object.assign(current, validateConfig({ ...current, ...values })));
             if (Object.hasOwn(values, 'activityRetentionDays')) await cleanupActivity(true);
@@ -479,8 +508,9 @@ export async function createLocalserve(root, options = {}) {
             } finally { response.removeListener('close', cancelled); }
           }
           else if (url.pathname === '/api/tasks') {
-            const task = validateTask(values, null, registry.actions(), registry.events(), vistas.snapshot());
+            let task;
             await tasks.update(items => {
+              task = validateTask(values, null, registry.actions(), registry.events(), vistas.snapshot(), items);
               if (items.some(item => item.name.toLowerCase() === task.name.toLowerCase())) throw new HttpError(409, 'A Task with this name already exists.');
               items.push(task);
             });
@@ -522,7 +552,7 @@ export async function createLocalserve(root, options = {}) {
                   if (typeof values.enabled !== 'boolean') throw new HttpError(400, 'Enabled must be true or false.');
                   old.enabled = values.enabled; old.revision += 1; disabled = !old.enabled;
                 } else {
-                  const task = validateTask(values, old, registry.actions(), registry.events(), vistas.snapshot());
+                  const task = validateTask(values, old, registry.actions(), registry.events(), vistas.snapshot(), items);
                   if (items.some(item => item.id !== id && item.name.toLowerCase() === task.name.toLowerCase())) throw new HttpError(409, 'A Task with this name already exists.');
                   items[index] = task; disabled = !task.enabled;
                 }
@@ -584,15 +614,17 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations','/controller-setup','/lighting-scenes','/remotes','/downloads'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = url.pathname === '/control-room' ? 'control-room.html' : playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations','/controller-setup','/lighting-scenes','/remotes','/downloads'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
+        for(const file of ['control-room.html','control-room.js','control-room.css'])webFiles.add(file);
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
         for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('lighting-scenes-ui.js');
+        webFiles.add('lighting-room-ui.js');webFiles.add('color-themes.js');webFiles.add('color-themes-ui.js');
         webFiles.add('downloads-ui.js');
         webFiles.add('vr-library-ui.js');
         webFiles.add('devices-ui.js');webFiles.add('cloud-relay-ui.js');
@@ -608,7 +640,7 @@ export async function createLocalserve(root, options = {}) {
         if (!realFile.startsWith(realRoot + path.sep)) throw new HttpError(404, 'File not found.');
         if(builderPlugin&&!realFile.startsWith((await fs.realpath(path.join(root,'plugins',builderPlugin.folder)))+path.sep))throw new HttpError(404,'Task builder unavailable.');
         let content = await fs.readFile(realFile);
-        if(relative==='phone-home.html'||relative==='scene-selector.html'){
+        if(relative==='phone-home.html'||relative==='scene-selector.html'||relative==='control-room.html'){
           response.setHeader('Referrer-Policy','no-referrer');
           response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
         }

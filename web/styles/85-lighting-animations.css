@@ -59,6 +59,13 @@
 .lighting-history { margin-top:24px; }
 .lighting-targets { border:1px solid var(--border); border-radius:10px; padding:16px; margin:20px 0; min-width:0; }
 .lighting-targets legend { padding:0 8px; font-weight:600; }
+.scene-fade-editor { border:1px solid var(--border); border-radius:10px; padding:16px; margin:20px 0; min-width:0; }
+.scene-fade-editor legend { padding:0 8px; font-weight:600; }
+.scene-fade-editor .check-field { display:flex; align-items:center; gap:10px; min-height:32px; margin-bottom:12px; }
+.scene-fade-editor .field-help { margin:12px 0 0; }
+#gateway-scene-form [data-native-scene-picker],#gateway-scene-form [data-import-name] { margin-top:16px; }
+#gateway-scene-form [data-import-status] { margin:16px 0; }
+#gateway-scene-form [data-import-details] ul { margin:12px 0; padding-left:24px; }
 .lighting-target-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:10px; margin-top:14px; }
 .lighting-target { display:flex; gap:10px; align-items:center; padding:12px; border-radius:8px; border:1px solid var(--border); cursor:pointer; min-width:0; }
 .lighting-target:has(input:checked) { border-color:var(--accent); background:var(--accent-soft); }

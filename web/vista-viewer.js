@@ -37,6 +37,7 @@ async function refreshVista(signal) {
     document.title = `${lastVista.vista?.name || 'Display'} · ${lastVista.options.name}`;
     vistaDisplay.setAttribute('aria-label', lastVista.vista?.name || 'Display');
     document.documentElement.dataset.theme = lastVista.options.theme;
+    if(window.ColorThemes)ColorThemes.apply(document,lastVista.options.colorTheme);
     // Launcher identity stays white on black in either display theme.
     const logoPath = '../assets/controls/app-icon.svg';
     const favicon = document.querySelector('link[rel="icon"]');

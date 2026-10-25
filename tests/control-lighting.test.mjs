@@ -11,6 +11,7 @@ import { validateDeclaration } from '../server/plugins.mjs';
 import { publicReading } from '../plugins/tradfri/server/readings.mjs';
 
 const raw = JSON.parse(await fs.readFile(new URL('../plugins/tradfri/declaration.json', import.meta.url)));
+raw.controls.lighting.sceneFadeSetting='fade-seconds';
 const plugin = { ...validateDeclaration(raw), folder: 'tradfri' };
 test('shared action forms preserve absent optional white/RGB arguments and explicit zero', async () => {
   const source = await fs.readFile(new URL('../web/plugin-ui.js', import.meta.url),'utf8');

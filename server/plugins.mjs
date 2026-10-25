@@ -11,12 +11,14 @@ import { isIdentifier, validateFields, validateValues, glyphs } from './plugin-s
 import { validateCardFields, cardCatalog, validateCard, validateCardStore, projectCardData } from './cards.mjs';
 import { validateInstances, pluginInstances, instanceEventId } from './plugin-instances.mjs';
 import { validateControlsDeclaration } from './controls.mjs';
-import { validateCardTemplates } from './card-templates.mjs';
+import { validateCardTemplates, readyMadeCatalog } from './card-templates.mjs';
 import { doNotDisturbStatus, isTvAction, tvDoNotDisturbError } from './do-not-disturb.mjs';
 import {localDisplayPath, requireLocalDisplay, requireUniverseDisplay,requirePhoneDisplay} from './local-pages.mjs';
 import {reportedSensors,vectorSensorTypes,isDiscreteSensor} from './sensor-protocol.mjs';
 
 const reservedIds = new Set(['overview', 'tasks', 'vistas', 'universe', 'controls', 'activity', 'settings', 'server', 'all', 'vr-library']);
+const recoveryDelays = [15000, 30000, 60000, 120000, 300000];
+const recoveryStableMilliseconds = 300000;
 
 function validateSettingsGuide(value) {
   if (value === undefined) return undefined;
@@ -194,7 +196,7 @@ export function validateDeclaration(value) {
     ...(connectionSetup ? {connectionSetup} : {}),
     ...(value.taskBuilder ? {taskBuilder:true} : {}),
     ...(listActions ? {listActions} : {}),
-    events, actions, ...(settingsLookup ? {settingsLookup} : {}), controls: validateControlsDeclaration(value.controls, actions, runtime, cardFields), cardFields,
+    events, actions, ...(settingsLookup ? {settingsLookup} : {}), controls: validateControlsDeclaration(value.controls, actions, runtime, cardFields, settings), cardFields,
     cardTemplates: validateCardTemplates(value.cardTemplates, cardFields),
   };
 }
@@ -291,6 +293,9 @@ export class PluginRegistry {
       this.fingerprint = fingerprint;
       for (const error of errors) await this.activity.add(`Plugin rejected: ${error.folder}: ${error.message}`, { level: 'warning' });
     }
+    // Discovery validates the current contract before replacing at most one
+    // failed process. Recovery never retains or replays action arguments.
+    await this.recoverOne();
   }
 
   async load(plugin) {
@@ -316,6 +321,7 @@ export class PluginRegistry {
     const record = { plugin, config, state, log, cards: null, cardsError: '', runtime: null, configured: false, health: 'not-loaded',
       error: '', operations: new Set(), actionQueue: Promise.resolve(), settingsQueue: Promise.resolve(), pending: 0,
       pollDueAt: null, lastPollAt: null, pollObservation: null, pollGeneration: 0, pollPending: false, pollOperation: Promise.resolve(), instancePolls: new Map() };
+    record.recovery = { failures: 0, nextAt: null, readySince: null, active: false };
     this.records.set(plugin.id, record);
     // Invalid card definitions quarantine the designer only. They must not stop
     // an otherwise healthy integration or overwrite the user's original file.
@@ -397,31 +403,92 @@ export class PluginRegistry {
     await config.update(current => { current.settings = next; current.revision += 1; });
   }
 
-  async startRuntime(record) {
+  runtimeFailed(record, runtime, error, now = Date.now()) {
+    if (record.runtime !== runtime || this.closing || ['removed', 'restart-required'].includes(record.health)) return;
+    const recovery = record.recovery;
+    if (recovery.readySince !== null && now - recovery.readySince >= recoveryStableMilliseconds) recovery.failures = 0;
+    recovery.readySince = null;
+    recovery.failures += 1;
+    recovery.nextAt = now + recoveryDelays[Math.min(recovery.failures - 1, recoveryDelays.length - 1)];
+    record.health = 'error';
+    record.error = error.message;
+    if (record.pollObservation?.status === 'running') record.pollObservation = {
+      ...record.pollObservation, status: 'cancelled', finishedAt: now, error: error.message,
+    };
+    record.pollGeneration += 1;
+    this.cancelOperations(record);
+  }
+
+  async recoverOne(now = Date.now()) {
+    if (this.closing || this.engine?.gate.paused) return;
+    const record = [...this.records.values()].find(record => record.health === 'error'
+      && record.config.snapshot().enabled && record.recovery.nextAt !== null && record.recovery.nextAt <= now
+      && !record.recovery.active && !record.pending && !record.pollPending);
+    if (!record) return;
+    const runtime = record.runtime;
+    const operation = record.settingsQueue.then(async () => {
+      const eligible = () => !this.closing && !this.engine?.gate.paused && record.health === 'error'
+        && this.records.get(record.plugin.id) === record && record.runtime === runtime
+        && record.config.snapshot().enabled && !record.pending && !record.pollPending;
+      if (!eligible()) return;
+      record.recovery.active = true;
+      try {
+        // An old child may still have a durable host write in progress. Drain
+        // it before the replacement can read state or produce new Events.
+        await runtime.close();
+        if (!eligible()) return;
+        await this.startRuntime(record, true);
+      } catch (error) {
+        record.health = 'error';
+        record.error = error.message;
+        record.recovery.nextAt = null;
+      } finally { record.recovery.active = false; }
+    });
+    record.settingsQueue = operation.catch(() => {});
+    await operation;
+  }
+
+  async startRuntime(record, recovering = false) {
     const { plugin } = record;
     const folder = await fs.realpath(path.join(this.directory, plugin.folder));
     const entry = await fs.realpath(path.join(folder, plugin.runtime.entry));
     if (!entry.startsWith(folder + path.sep) || !(await fs.stat(entry)).isFile()) throw new Error('Runtime entry escapes its plugin folder.');
     record.health = 'loading';
-    record.runtime = new PluginRuntime(
-      (operation, values, context) => this.hostCall(record, operation, values, context),
-      error => { record.health = 'error'; record.error = error.message; this.cancelOperations(record); },
+    const epoch = this.noticeEpoch;
+    const admitted = () => !this.closing && (!recovering || !this.engine?.gate.paused && this.noticeEpoch === epoch);
+    const runtime = new PluginRuntime(
+      (operation, values, context) => {
+        if (record.runtime !== runtime) throw new Error('Plugin process is no longer current.');
+        return this.hostCall(record, operation, values, context);
+      },
+      error => this.runtimeFailed(record, runtime, error),
     );
+    record.runtime = runtime;
     try {
-      record.configured = (await record.runtime.request('load', { entry, settings: record.config.snapshot().settings })) === true;
+      record.configured = (await runtime.request('load', { entry, settings: record.config.snapshot().settings })) === true;
+      if (!admitted()) throw new Error('Plugin recovery deferred while the server is paused or stopping.');
       record.health = 'idle';
-      if (record.config.snapshot().enabled && record.configured) await this.activate(record);
+      if (record.config.snapshot().enabled && record.configured) await this.activate(record, admitted);
+      record.error = '';
+      record.recovery.nextAt = null;
+      record.recovery.readySince = Date.now();
     } catch (error) {
       record.health = 'error'; record.error = error.message;
-      await record.runtime.close();
+      // Validation/import errors require a settings/code fix, rather than a
+      // respawn loop. A pause during recovery defers the same admission.
+      if (!runtime.error && admitted()) record.recovery.nextAt = null;
+      await runtime.close();
     }
   }
 
-  async activate(record) {
+  async activate(record, admitted = () => !this.closing) {
+    if (!admitted()) throw new Error('Plugin activation was cancelled.');
     await record.runtime.request('start', { settings: record.config.snapshot().settings });
+    if (!admitted()) throw new Error('Plugin activation was cancelled.');
     record.health = 'ready';
     record.error = '';
     record.pollGeneration += 1;
+    if(record.plugin.id==='tradfri')record.gatewayConnection={status:'checking',checkedAt:null,failures:0};
     // One initial poll after activation, then completion-based intervals. A rate
     // edit preserves the last attempt, so changing the dropdown cannot trigger
     // an immediate extra request unless the newly selected interval is due.
@@ -455,6 +522,20 @@ export class PluginRegistry {
     return (record.config.snapshot().settings[setting] ?? field.default) * 60000;
   }
 
+  gatewayPollDelay(record) {
+    const failures=record.plugin.id==='tradfri'?record.gatewayConnection?.failures||0:0;
+    return Math.max(this.pollMilliseconds(record),failures?[60000,120000,300000][Math.min(failures-1,2)]:0);
+  }
+  observeGateway(record,error,generation,revision) {
+    if(record.plugin.id!=='tradfri'||record.pollGeneration!==generation||record.config.snapshot().revision!==revision)return;
+    if(error&&!/^TRÅDFRI (connection or request failed\.|did not respond within 20 seconds;)/.test(error.message))return;
+    const failures=error?Math.min((record.gatewayConnection?.failures||0)+1,3):0;
+    record.gatewayConnection={status:error?'unreachable':'reachable',checkedAt:Date.now(),failures};
+    // Reaching the hub does not replay failed commands. Only the next ordinary
+    // read is scheduled; manual commands remain explicit single admissions.
+    record.pollDueAt=Date.now()+this.gatewayPollDelay(record);
+  }
+
   pollDue(now = Date.now()) {
     if (this.closing || this.engine?.gate.paused) return;
     for (const record of this.records.values()) {
@@ -463,7 +544,7 @@ export class PluginRegistry {
         || !record.config.snapshot().enabled || !record.configured) continue;
       // Reserve synchronously before enqueueing: discovery ticks must never
       // overlap polls or accumulate a backlog. Missed intervals coalesce into
-      // one attempt; failures wait the full selected interval without retries.
+      // one attempt; failures wait the selected interval or gateway backoff.
       record.pollPending = true;
       let parameters = {};
       if (record.plugin.polling.targetParameter) {
@@ -569,6 +650,27 @@ export class PluginRegistry {
     return operation;
   }
 
+  cardLibrary(pluginId = null) {
+    // Choosing designs needs declarations and enabled sources only. Do not
+    // clone readings, retained activity or saved Cards for a catalogue refresh.
+    return this.plugins.filter(plugin => (pluginId === null || plugin.id === pluginId) && plugin.cardTemplates?.length).flatMap(plugin => {
+      const config = this.records.get(plugin.id)?.config.snapshot();
+      return config?.enabled ? [{id: plugin.id, name: plugin.name, icon: config.icon || plugin.icon,
+        enabled: true, cardData: {readyMade: readyMadeCatalog(plugin, config.settings)}}] : [];
+    });
+  }
+
+  cardSource(pluginId) {
+    // A visible Card refresh projects one installed plugin. The administrator
+    // snapshot and other integrations' private stores are outside this path.
+    const plugin = this.plugins.find(plugin => plugin.id === pluginId);
+    const record = this.records.get(pluginId), config = record?.config.snapshot();
+    if (!plugin || !config?.enabled) return null;
+    return {cardCatalog: cardCatalog(plugin, config.settings),
+      cardData: projectCardData(plugin, record, this.engine?.gate.paused,
+        {now: Date.now(), location: this.globalConfig?.snapshot().location})};
+  }
+
   services() {
     const environment = { now: Date.now(), location: this.globalConfig?.snapshot().location };
     return this.plugins.map(plugin => {
@@ -576,6 +678,9 @@ export class PluginRegistry {
       const config = record?.config.snapshot();
       return { ...plugin, actions: this.instanceActions(plugin, config?.settings).map(action => ({...action, ...this.actionAvailability(plugin.id, action.id)})), declarationIcon: plugin.icon, icon: config?.icon || plugin.icon, enabled: config?.enabled || false,
         configurationReady: record?.configured || false, health: record?.health || 'error', error: record?.error || '',
+        runtimeRecovery: record?.recovery.nextAt !== null && record?.recovery.nextAt !== undefined && config?.enabled
+          && ['error', 'loading'].includes(record.health)
+          ? {status: record.recovery.active ? 'recovering' : 'waiting', nextAttemptAt: record.recovery.nextAt, failures: record.recovery.failures} : null,
         config, pluginState: record?.state.snapshot() || {}, pluginActivity: record?.log.latest() || [],
         cards: record?.cards?.snapshot().cards || [], cardsError: record?.cardsError || '',
         cardCatalog: cardCatalog(plugin, config?.settings), cardData: projectCardData(plugin, record, this.engine?.gate.paused, environment),
@@ -583,6 +688,7 @@ export class PluginRegistry {
         // Administrator-only execution evidence. Completion is not a claim that
         // every provider/source returned fresh data; declared reception is separate.
         pollObservation: record?.pollObservation ? structuredClone(record.pollObservation) : null,
+        ...(plugin.id==='tradfri'?{gatewayConnection:{...(record?.gatewayConnection||{status:'checking',checkedAt:null,failures:0}),nextPollAt:record?.pollDueAt??null}}:{}),
         pollTargets: plugin.instances ? pluginInstances(plugin, config?.settings).filter(item => item.enabled).length : 1 };
     });
   }
@@ -795,12 +901,21 @@ export class PluginRegistry {
   execute(id, actionId, parameters, context = {}) {
     // Explicit Controls/Tasks take over from a continuous animation. Refreshes
     // remain observations and must not interrupt it or create another loop.
-    if (id === 'tradfri' && actionId !== 'refresh' && !context.lightingAnimation)
+    if (id === 'tradfri' && !['refresh','inspect-scenes'].includes(actionId) && !context.lightingAnimation)
       this.lightingAnimations?.interrupt('Another lighting control took over.');
     if (context.lightingAnimation && (this.lightingAnimations?.active?.receipt.id !== context.lightingAnimation
       || context.signal?.aborted || id !== 'tradfri' || actionId !== 'light-state'
       || !Number.isFinite(context.lightingFadeSeconds) || context.lightingFadeSeconds < 0 || context.lightingFadeSeconds > 60))
       throw new HttpError(409, 'Lighting animation is no longer active.');
+    const checkSceneFade = () => {
+      if(context.lightingScene!==undefined){
+        if(!this.controls)throw new HttpError(409,'Stored lighting scenes are unavailable.');
+        this.controls.assertSceneFade(id,actionId,context);
+      }
+      if(context.lightingFadeSeconds!==undefined && !context.lightingAnimation
+        && (context.lightingScene===undefined || !this.controls)) throw new HttpError(409,'Lighting fade needs a current scene or animation.');
+    };
+    checkSceneFade();
     this.assertTvQuietHours(id, actionId, context);
     const record = this.get(id);
     this.assertReady(record);
@@ -840,10 +955,12 @@ export class PluginRegistry {
       controller.signal.throwIfAborted();
       await this.engine.gate.wait(controller.signal);
       this.assertReady(record);
+      checkSceneFade();
       this.assertTvQuietHours(id, actionId, context);
       if (context.configRevision !== undefined && context.configRevision !== record.config.snapshot().revision) throw new HttpError(409, 'Plugin settings changed. Refresh before running this action.');
       const pollAction = actionId === record.plugin.polling?.actionId;
       const pollGeneration = record.pollGeneration;
+      const executionRevision = record.config.snapshot().revision;
       if (pollAction) record.lastPollAt = Date.now();
       if (pollAction) record.pollObservation = {attemptedAt: record.lastPollAt, finishedAt: null, status: 'running', error: ''};
       const targetId = validated[record.plugin.polling?.targetParameter];
@@ -862,6 +979,7 @@ export class PluginRegistry {
           ? await this.notices.create(validated, controller.signal) : undefined;
         await this.engine.gate.wait(controller.signal);
         this.assertReady(record);
+        checkSceneFade();
         this.assertTvQuietHours(id, actionId, context);
         const sourceConfig = record.config.snapshot();
         const enabledPages = record.plugin.id === 'webpage' && actionId === 'open-on-tv'
@@ -875,7 +993,8 @@ export class PluginRegistry {
           ...(record.plugin.runtime.preview ? {previewGeneration: record.previewGeneration || 0} : {})};
         try {
           const result = await record.runtime.request('execute', { actionId, parameters: validated, noticeUrl,
-            ...(context.lightingAnimation ? {lightingFadeSeconds:context.lightingFadeSeconds} : {}) }, requestContext, 0);
+            ...(context.lightingAnimation || context.lightingScene ? {lightingFadeSeconds:context.lightingFadeSeconds} : {}) }, requestContext, 0);
+          this.observeGateway(record,null,pollGeneration,executionRevision);
           if (pollAction && pollGeneration === record.pollGeneration) record.pollObservation = {
             attemptedAt: record.lastPollAt, finishedAt: Date.now(), status: 'completed', error: '',
           };
@@ -885,6 +1004,7 @@ export class PluginRegistry {
           throw error;
         }
       } catch (error) {
+        if(!controller.signal.aborted)this.observeGateway(record,error,pollGeneration,executionRevision);
         if (pollAction && pollGeneration === record.pollGeneration) record.pollObservation = {
           attemptedAt: record.lastPollAt, finishedAt: Date.now(), status: controller.signal.aborted ? 'cancelled' : 'failed',
           error: String(error.message || 'Check failed.').slice(0, 1000),
@@ -900,7 +1020,7 @@ export class PluginRegistry {
             record.pollDueAt = Math.min(...[...record.instancePolls.values()].map(clock => clock.nextAt));
           } else if (record.plugin.polling.targetParameter) {
             record.pollDueAt = record.instancePolls.size ? Math.min(...[...record.instancePolls.values()].map(clock => clock.nextAt)) : null;
-          } else record.pollDueAt = Date.now() + this.pollMilliseconds(record);
+          } else record.pollDueAt = Date.now() + this.gatewayPollDelay(record);
         }
       }
     });

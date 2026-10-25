@@ -8,6 +8,25 @@ const context = vm.createContext({document: {addEventListener() {}}, state: {tas
 vm.runInContext(await fs.readFile(new URL('../web/activity-ui.js', import.meta.url), 'utf8') + '\nglobalThis.activity = ActivityUI;', context);
 vm.runInContext(await fs.readFile(new URL('../web/run-ui.js', import.meta.url), 'utf8') + '\nglobalThis.runs = RunUI;', context);
 
+test('Activity pages group before slicing and clamp after filtering without changing history',()=>{
+  const entries=Array.from({length:126},(_,i)=>({id:'row-'+i,message:'Message '+i,source:'Server'})),original=JSON.stringify(entries);
+  const settings={group:false,page:2,pageSize:50};let html=context.activity.rows(entries,settings);
+  assert.match(html,/Page 2 of 3/);assert.match(html,/Message 50</);assert.match(html,/Message 99</);assert.doesNotMatch(html,/Message 49<|Message 100</);
+  html=context.activity.rows(entries.slice(0,3),settings);assert.equal(settings.page,1);assert.match(html,/Page 1 of 1/);
+  settings.group=true;settings.pageSize=25;html=context.activity.rows(Array.from({length:70},(_,i)=>({id:'r'+i,message:'Same',source:'Server'})),settings);
+  assert.match(html,/70 identical entries/);assert.match(html,/Page 1 of 1/);assert.equal(JSON.stringify(entries),original);
+});
+
+test('paging freezes a bounded snapshot and Latest entries explicitly resumes live reads',async()=>{
+  const listeners={},state={activity:Array.from({length:120},(_,i)=>({id:String(i),message:'Message '+i})),tasks:[],services:[]};
+  const scope=vm.createContext({document:{addEventListener:(name,fn)=>listeners[name]=fn},state,structuredClone,renderView(){},escapeHtml:String,icon:()=>'',relativeTime:()=>''});
+  vm.runInContext(await fs.readFile(new URL('../web/activity-ui.js',import.meta.url),'utf8')+';this.ui=ActivityUI;',scope);
+  const panel={dataset:{activityScope:'global'}},button={dataset:{action:'activity-next'},closest:()=>panel};
+  listeners.click({target:{closest:()=>button}});const settings=scope.ui.context('global');assert.equal(settings.page,2);assert.equal(settings.paused,true);
+  state.activity.unshift({id:'fresh',message:'New arrival'});assert.equal(settings.held.length,120);assert.equal(settings.held[0].id,'0');
+  button.dataset.action='activity-live';listeners.click({target:{closest:()=>button}});assert.equal(settings.page,1);assert.equal(settings.paused,false);assert.equal(settings.held.length,0);
+});
+
 test('run captions use captured names without reconstructing historical labels', () => {
   const run={event:{pluginId:'phone',eventId:'reading'},reason:'Event: Event',automatic:true,
     eventLabel:{pluginName:'Original phone',name:'Ambient light'}};

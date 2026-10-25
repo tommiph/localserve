@@ -13,7 +13,7 @@ export function explainTask(engine,id,date=new Date()) {
   if(engine.gate.paused)gates.push('Server functions are paused.');
   if(!task.enabled)gates.push('This Task is disabled.');
   if(engine.pending.has(id)||[...engine.active.values()].some(run=>run.taskId===id))gates.push('This Task is already queued or running.');
-  if(engine.pending.size+engine.active.size>=config.maxConcurrentRuns)gates.push('The concurrent Task limit is reached.');
+  if(engine.rootRunCount()>=config.maxConcurrentRuns)gates.push('The concurrent Task limit is reached.');
   const enabled=task.starts.filter(rule=>rule.enabled);
   if(!enabled.length)gates.push('No enabled start rules. This Task can only be started manually.');
   const rules=task.starts.map(rule=>{
@@ -42,10 +42,14 @@ export function explainTask(engine,id,date=new Date()) {
   const steps=task.steps.map((step,index)=>{
     const action=step.type==='plugin'?actions.find(item=>item.id===step.capabilityId):null;
     let status=!step.enabled?'Disabled':step.type==='plugin'?!action?'Capability missing.':action.available===false?action.unavailableReason||'Plugin unavailable.':'Available':step.type==='show-vista'&&!engine.vistas?.snapshot().some(item=>item.id===step.vistaId&&item.enabled)?'Vista unavailable or disabled.':'Available';
-    return {number:index+1,name:action?.name||({'show-vista':'Show Vista',log:'Log activity',delay:'Delay'})[step.type]||'Plugin action',status};
+    if(step.enabled && step.type==='run-task') {
+      const target=engine.tasks.snapshot().find(task=>task.id===step.taskId);
+      try {engine.assertStart(target,null,target?.revision,{ancestors:[task.id],nested:true});status='Waits for '+target.name+' to complete.';}catch(error){status=error.message;}
+    }
+    return {number:index+1,name:action?.name||({'show-vista':'Show Vista','run-task':'Run task',log:'Log activity',delay:'Delay'})[step.type]||'Plugin action',status};
   });
   const latest=state.runs.filter(run=>run.taskId===id).at(-1),skipped=engine.activity.latest().find(entry=>entry.taskId===id&&entry.level==='warning');
-  const quiet=doNotDisturbStatus(config.doNotDisturb,date).active&&task.steps.some(step=>{const action=step.enabled&&actions.find(item=>item.id===step.capabilityId);return action&&isTvAction(action.pluginId,action.actionId);});
+  const quiet=doNotDisturbStatus(config.doNotDisturb,date).active&&engine.referencedTasks(task).some(task=>task.steps.some(step=>{const action=step.enabled&&actions.find(item=>item.id===step.capabilityId);return action&&isTvAction(action.pluginId,action.actionId);}));
   return {taskId:id,name:task.name,revision:task.revision,checkedAt:date.getTime(),gates,rules,steps,
     ruleMode:task.ruleMode||'or',quietHours:quiet,
     latestRun:latest?{status:latest.status,startedAt:latest.startedAt,finishedAt:latest.finishedAt||null,message:latest.error||''}:null,

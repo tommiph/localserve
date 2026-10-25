@@ -1,3 +1,5 @@
+import {lightingEditToken} from '../../../server/lighting-edit-contract.mjs';
+
 const text = (value, max = 100) => typeof value === 'string' && value.trim()
   ? value.replace(/[\u0000-\u001f\u007f]/gu, ' ').trim().slice(0, max) : null;
 const percent = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? Math.round(value * 10) / 10 : null;
@@ -32,6 +34,23 @@ export function lightRows(devices, groups) {
       saturation: light.spectrum === 'rgb' ? percent(light.saturation) : null,
       battery: percent(device.deviceInfo?.battery), firmware: text(device.deviceInfo?.firmwareVersion) };
   }).sort((a, b) => Number(a.id) - Number(b.id));
+}
+/** Administrator inventory is separate from bounded public Card tables. Only
+ * named telemetry is retained; credentials and raw gateway resources stay out. */
+export function administrationInventory(devices, groups) {
+  return {
+    schemaVersion: 1,
+    lights: lightRows(devices, groups).slice(0, 100),
+    groups: groups.slice(0, 100).map(group => ({id: String(group.instanceId), name: text(group.name),
+      on: bool(group.onOff), brightness: percent(group.dimmer),
+      editToken: lightingEditToken('group',group.instanceId,group.name,(group.deviceIDs||[]).map(String)),
+      deviceIds: Array.isArray(group.deviceIDs) ? group.deviceIDs.slice(0, 100).map(String) : []})),
+    devices: devices.slice(0, 100).map(device => ({id: String(device.instanceId), name: text(device.name),
+      editToken: lightingEditToken('device',device.instanceId,device.name),
+      type: Number.isInteger(device.type) ? device.type : null, reachable: bool(device.alive),
+      battery: percent(device.deviceInfo?.battery), model: text(device.deviceInfo?.modelNumber),
+      firmware: text(device.deviceInfo?.firmwareVersion)})),
+  };
 }
 export function publicReading(lights, groups, receivedAt) {
   const reading = { 'connection-status': 'Connected', 'light-count': lights.length,

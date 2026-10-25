@@ -1,12 +1,17 @@
 {
   "name": "localserve",
-  "version": "0.48.0",
+  "version": "0.57.0",
   "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
     "start": ".\\runtime\\node.exe server.mjs",
-    "test": ".\\runtime\\node.exe tools/testing/run.mjs",
+    "test": ".\\runtime\\node.exe tools/testing/run.mjs --full",
+    "test:public": ".\\runtime\\node.exe tools/testing/run.mjs --full",
+    "test:full": ".\\runtime\\node.exe tools/testing/run.mjs --full",
+    "test:focused": ".\\runtime\\node.exe tools/testing/run.mjs --focused",
+    "test:core": ".\\runtime\\node.exe tools/testing/run.mjs --core",
+    "test:activate": ".\\runtime\\node.exe tools/testing/run.mjs --activate",
     "version:check": ".\\runtime\\node.exe tools/version.mjs --check"
   },
   "engines": {

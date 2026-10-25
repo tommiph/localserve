@@ -135,6 +135,7 @@ function changeSettings(values) {
 function setTheme(value) {
   const theme = value === 'light' ? 'light' : 'dark';
   document.documentElement.dataset.theme = theme;
+  if(typeof ColorThemes!=='undefined')ColorThemes.apply(document,typeof ColorThemeUI!=='undefined'?ColorThemeUI.selected('adminColorTheme'):null);
   // Follow the saved UI theme rather than the operating system's preference.
   // Skip identical URLs during polling to avoid reloading the header image.
   // The favicon keeps the same white-on-black mark as the remote web apps.
@@ -189,7 +190,8 @@ function serviceCheck(service) {
 function serviceEvidence(service) {
   const reception = AdminUX.reception(service);
   const check = service.pollObservation;
-  return `<div class="service-evidence"><span>Last check: <b>${escapeHtml(serviceCheck(service))}</b></span><span>Latest reception: <b title="${escapeHtml(reception ? `${reception.label} · ${formatServerTimestamp(reception.value.value)}` : 'No declared reception timestamp is available')}">${reception ? escapeHtml(relativeTime(reception.value.value)) : 'Not reported'}</b></span>${check?.error ? `<span class="evidence-error">${escapeHtml(check.error)}</span>` : ''}</div>`;
+  const recovery = AdminUX.recoveryHint(service, state.paused);
+  return `<div class="service-evidence"><span>Last check: <b>${escapeHtml(serviceCheck(service))}</b></span><span>Latest reception: <b title="${escapeHtml(reception ? `${reception.label} · ${formatServerTimestamp(reception.value.value)}` : 'No declared reception timestamp is available')}">${reception ? escapeHtml(relativeTime(reception.value.value)) : 'Not reported'}</b></span>${check?.error ? `<span class="evidence-error">${escapeHtml(check.error)}</span>` : ''}${recovery ? `<span>${escapeHtml(recovery)}</span>` : ''}</div>`;
 }
 
 function renderNavigation() {
@@ -224,8 +226,8 @@ function servicesPanel() {
 }
 
 function renderOverview() {
-  const configured = state.services.filter(service => service.enabled && service.configurationReady && service.health === 'ready');
-  const polling = state.paused ? [] : configured.filter(service => service.pollSeconds > 0);
+  const configured = state.services.filter(service => service.enabled && service.configurationReady && service.health === 'ready' && !['unreachable','checking'].includes(service.gatewayConnection?.status));
+  const polling = state.paused ? [] : state.services.filter(service => service.enabled && service.configurationReady && service.health === 'ready' && service.pollSeconds > 0);
   const pollsPerHour = polling.reduce((sum, service) => sum + 3600 / service.pollSeconds * (service.pollTargets ?? 1), 0);
   const warnings = state.server.discoveryErrors.length + state.services.filter(service => ['error', 'restart-required'].includes(service.health) || service.enabled && (!service.configurationReady || service.pollObservation?.status === 'failed')).length;
   const failedRuns = RunUI.recentFailures();
@@ -264,6 +266,7 @@ function renderSettings() {
       ${fontSizeSetting('Administrator font size', 'font-scale', config.fontScale, 'Administrator interface')}
       ${fontSizeSetting('Display font size', 'vista-font-scale', config.vistaFontScale, 'Vistas, Cards and browser controls')}
     </section>
+    ${ColorThemeUI.render()}
     <section class="panel settings-group" aria-label="Automation"><div class="panel-header"><h2>Automation</h2></div>
       <div class="settings-item">${icon('moon')}<div class="settings-text"><h3 id="do-not-disturb-label">Do not disturb · Enable now</h3><p>${state.doNotDisturb?.active ? 'Active' : 'Inactive'}${state.doNotDisturb?.scheduled ? ' · Weekly schedule' : ''}${state.doNotDisturb?.manual ? ' · Enabled manually' : ''}. Skips automatic TV actions. Manual controls and Run / Rerun remain available.</p></div><button id="do-not-disturb" class="switch" type="button" role="switch" aria-labelledby="do-not-disturb-label" aria-checked="${config.doNotDisturb.enabled}" data-action="toggle-do-not-disturb"></button></div>
       <div class="settings-item">${icon('calendar')}<div class="settings-text"><h3>Do not disturb schedule</h3><p>${doNotDisturbScheduleSummary()}</p></div><button class="button" data-action="edit-do-not-disturb" aria-label="Edit Do not disturb schedule">${icon('pen')}Edit</button></div>
@@ -367,9 +370,10 @@ document.addEventListener('click', async event=>{
   if (control.dataset.view) { const mobile = window.matchMedia('(max-width: 800px)').matches; setNavigationOpen(false); currentView=control.dataset.view; serviceSearch=''; renderView(); if (mobile) workspace.focus({preventScroll: true}); return; }
   const {action,id}=control.dataset;
   try {
-    if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme}); return; }
-    if (action==='display-theme') { await changeSettings({displayTheme:config.displayTheme==='dark'?'light':'dark'}); return; }
+    if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme,adminColorTheme:''}); return; }
+    if (action==='display-theme') { await changeSettings({displayTheme:config.displayTheme==='dark'?'light':'dark',displayColorTheme:''}); return; }
     if (!action) return;
+    if(action.startsWith('room-'))return await LightingRoomUI.handle(action,control);
     if(action==='downloads-refresh')return await DownloadsUI.load();
     if(action.startsWith('scene-'))return await LightingScenesUI.handle(action,control);
     if(action.startsWith('cloud-')&&typeof CloudRelayUI!=='undefined')return await CloudRelayUI.handle(control);
@@ -751,6 +755,7 @@ function serializeForm(form) {
   if (id === 'vista-editor-form') return JSON.stringify(VistaUI.readDraft());
   if (id === 'lighting-animation-form') return JSON.stringify(LightingUI.readDraft());
   if (id === 'lighting-scene-form') return JSON.stringify(LightingScenesUI.draft(form));
+  if (id === 'lighting-management-form') return JSON.stringify(LightingRoomUI.editDraft(form));
   if (id === 'card-editor-form') return JSON.stringify(CardDesigner.readDraft());
   if (id === 'controls-editor-form') return JSON.stringify(ControlsUI.readDraft());
   // timeText is presentation only; its hidden HH:mm value determines changes.

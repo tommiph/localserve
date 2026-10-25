@@ -5,6 +5,7 @@ const RunUI = {
   task: '', status: '', period: '', limit: 20, opened: new Set(),
 
   triggerText(run) {
+    if (run.parentRunId) return run.reason || 'Called by another Task';
     const label = run.eventLabel;
     if (run.event && typeof label?.name === 'string' && typeof label.pluginName === 'string') {
       return `${run.rerunOf ? 'Manual rerun' : run.automatic ? 'Event' : 'Manual with Event values'}: ${label.pluginName} · ${label.name}`;
@@ -76,6 +77,12 @@ const RunUI = {
       && (cutoff === null || run.startedAt >= cutoff));
   },
 
+  childReceipt(step) {
+    if (!step.childRunId) return '';
+    const child = state.runs.find(run => run.id === step.childRunId);
+    return `<p>Called Task: ${escapeHtml(step.childTaskName || 'Task')} · ${escapeHtml(child?.status || 'Result no longer retained')}</p>`;
+  },
+
   details(run) {
     const event = run.event;
     const declaration = this.eventSource(event);
@@ -87,7 +94,7 @@ const RunUI = {
     const time = value => Number.isFinite(value) ? escapeHtml(formatServerTimestamp(value)) : 'Not recorded';
     return `<div class="run-details" id="run-details-${escapeHtml(run.id)}" ${this.opened.has(run.id) ? '' : 'hidden'}><dl class="run-facts"><div><dt>Started by</dt><dd>${escapeHtml(trigger)}</dd></div><div><dt>Task revision</dt><dd>${escapeHtml(run.taskRevision ?? 'Not recorded')}</dd></div><div><dt>Started</dt><dd>${time(run.startedAt)}</dd></div><div><dt>Finished</dt><dd>${time(run.finishedAt)}</dd></div><div><dt>Duration</dt><dd>${this.elapsed(run.startedAt, run.finishedAt)}</dd></div>${run.rerunOf ? `<div><dt>Rerun of</dt><dd>${escapeHtml(run.rerunOf)}</dd></div>` : ''}</dl>
       <h4>Captured Event values</h4>${event ? `<p>${escapeHtml(declaration ? `${declaration.pluginName} · ${declaration.name}` : `${event.pluginId} · ${event.eventId}`)} · Observed ${time(event.occurredAt)}</p><dl class="event-values">${values.map(([key, value]) => `<div><dt>${escapeHtml(declaration?.payload?.find(field => field.id === key)?.label || key)}</dt><dd>${escapeHtml(typeof value === 'boolean' ? value ? 'Yes' : 'No' : value)}</dd></div>`).join('')}</dl>` : '<p>No Event payload was captured for this run.</p>'}
-      <h4>Steps</h4>${run.steps ? `<ol class="run-steps">${run.steps.map(step => `<li><div><strong>${step.number}. ${escapeHtml(step.label)}</strong><span>${escapeHtml(step.status === 'not-run' ? 'Not run' : step.status)} · ${this.elapsed(step.startedAt, step.finishedAt)}</span></div>${step.reason ? `<p>${escapeHtml(step.reason)}</p>` : ''}</li>`).join('')}</ol>${run.stepCount > run.steps.length ? `<p>Showing the first ${run.steps.length} of ${run.stepCount} step receipts.</p>` : ''}` : '<p>Per-step timing was not recorded for this older run.</p>'}${run.error ? `<p class="evidence-error">${escapeHtml(run.error)}</p>` : ''}</div>`;
+      <h4>Steps</h4>${run.steps ? `<ol class="run-steps">${run.steps.map(step => `<li><div><strong>${step.number}. ${escapeHtml(step.label)}</strong><span>${escapeHtml(step.status === 'not-run' ? 'Not run' : step.status)} · ${this.elapsed(step.startedAt, step.finishedAt)}</span></div>${this.childReceipt(step)}${step.reason ? `<p>${escapeHtml(step.reason)}</p>` : ''}</li>`).join('')}</ol>${run.stepCount > run.steps.length ? `<p>Showing the first ${run.steps.length} of ${run.stepCount} step receipts.</p>` : ''}` : '<p>Per-step timing was not recorded for this older run.</p>'}${run.error ? `<p class="evidence-error">${escapeHtml(run.error)}</p>` : ''}</div>`;
   },
 };
 

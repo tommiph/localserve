@@ -38,7 +38,11 @@ function fakeGateway() {
 const adapterFor = fake => createTradfriAdapter({ vault: { async load() { return auth; } }, credentialReady: async () => true, gateway: fake.gateway });
 
 test('TRÅDFRI declaration/offline readiness/secret boundaries and invalid resources', async () => {
-  const plugin = validateDeclaration(declaration); assert.equal(plugin.name, 'TRÅDFRI'); assert.equal(plugin.actions.length, 10);
+  const plugin = validateDeclaration(declaration); assert.equal(plugin.name, 'TRÅDFRI'); assert.ok(plugin.actions.length >= 12);
+  for(const id of ['device-rename','room-edit']){
+    assert.equal(plugin.actions.find(action=>action.id===id).settingsOnly,true);
+    assert.ok(!plugin.controls.actions.includes(id));
+  }
   assert.equal(plugin.controls.taskSceneAction, 'run-scene');
   assert.ok(!plugin.controls.actions.includes('run-scene'), 'Stored scenes cannot recursively call scenes.');
   assert.ok(!plugin.cardFields.some(field => field.source.key === 'security-code'));
@@ -211,6 +215,8 @@ test('installed TRÅDFRI runtime projects chosen List columns and keeps credenti
   const base = fileURLToPath(new URL('./.tmp/', import.meta.url)); await fs.mkdir(base, { recursive: true });
   const root = await fs.mkdtemp(path.join(base, 'tradfri-install-')), folder = path.join(root, 'plugins/tradfri');
   await fs.cp(new URL('../plugins/tradfri/', import.meta.url), folder, { recursive: true, filter: file => !file.split(path.sep).includes('data') });
+  await fs.mkdir(path.join(root,'server'),{recursive:true});
+  await fs.copyFile(new URL('../server/lighting-edit-contract.mjs',import.meta.url),path.join(root,'server/lighting-edit-contract.mjs'));
   const metadata = structuredClone(declaration); metadata.runtime.entry = 'server/test-entry.mjs'; await fs.writeFile(path.join(folder, 'declaration.json'), JSON.stringify(metadata));
   await fs.writeFile(path.join(folder, 'server/test-entry.mjs'), `import {createTradfriAdapter} from './index.mjs';
 const auth=${JSON.stringify(auth)}, light=${JSON.stringify(rawLight)}, group=${JSON.stringify(rawGroup)};

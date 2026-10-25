@@ -12,9 +12,9 @@ const contracts = {
   lightState: ['id:string', 'on:boolean', 'brightness:number', 'temperature:number', 'hue:number', 'saturation:number'],
   groupPower: ['id:string', 'on:boolean'], groupBrightness: ['id:string', 'value:number'], refresh: [],
 };
-export function validateLighting(value, actions, cardFields, allowed) {
+export function validateLighting(value, actions, cardFields, allowed, settings = []) {
   if (value === undefined) return undefined;
-  const keys = ['lights', 'details', 'groups', 'received', 'identitySetting', 'identityState', 'actions'];
+  const keys = ['lights', 'details', 'groups', 'received', 'identitySetting', 'identityState', 'actions', 'inventoryState', 'sceneFadeSetting'];
   if (!value || typeof value !== 'object' || Object.keys(value).some(key => !keys.includes(key))
     || !Array.isArray(value.lights) || value.lights.length !== 2 || !Array.isArray(value.details) || value.details.length !== 2
     || !/^[a-z0-9-]+$/.test(value.identitySetting) || !/^[a-z0-9-]+$/.test(value.identityState)) throw new Error('Invalid lighting Controls declaration.');
@@ -22,6 +22,10 @@ export function validateLighting(value, actions, cardFields, allowed) {
     const field = cardFields.find(field => field.id === id && field.type === 'table');
     if (!field || columns.some(([id, type]) => !field.columns.some(column => column.id === id && column.type === type))) throw new Error('Lighting Controls needs compatible public tables.');
   }
+  if (value.inventoryState !== undefined && (typeof value.inventoryState !== 'string' || !/^[a-z][a-z0-9-]{0,63}$/.test(value.inventoryState))) throw new Error('Invalid lighting inventory state key.');
+  if (value.sceneFadeSetting !== undefined && !settings.some(field => field.id === value.sceneFadeSetting
+    && field.type === 'number' && field.min === 0 && field.max === 60 && Number.isFinite(field.default)
+    && field.default >= 0 && field.default <= 60)) throw new Error('Scene fades require a declared 0–60 second numeric setting.');
   value.lights.forEach(id => table(id, [['id','string'],['name','string'],['room','string'],['on','boolean'],['brightness','number'],['reachable','boolean']]));
   value.details.forEach(id => table(id, [['id','string'],['spectrum','string'],['temperature','number'],['hue','number'],['saturation','number']]));
   table(value.groups, [['id','string'],['name','string'],['on','boolean'],['brightness','number'],['count','number']]);

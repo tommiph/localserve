@@ -1,0 +1,17 @@
+/* Theme controls share administrator form sizes and spacing. */
+.theme-choices { display:flex; flex-wrap:wrap; gap:var(--content-gap); }
+.theme-choice { flex:1 1 240px; display:flex; flex-direction:column; gap:8px; }
+.theme-choices .field-help { flex-basis:100%; margin:0; }
+.theme-swatches { display:flex; gap:4px; flex-shrink:0; }
+.theme-swatches span { width:16px; height:32px; border:1px solid var(--border); border-radius:4px; }
+.theme-color-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-block:20px; }
+.theme-color-grid label { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.theme-color-grid input[type="color"] { width:64px; height:44px; padding:4px; cursor:pointer; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.theme-preview { padding:20px; border:1px solid; border-radius:8px; }
+.theme-preview p { margin-block:10px; }
+:root[data-color-theme="custom"] .button.primary { color:var(--accent-contrast); }
+@media(max-width:640px) {
+  .theme-color-grid { grid-template-columns:1fr; }
+  [aria-label="Color themes"] .settings-item { flex-wrap:wrap; }
+  [aria-label="Color themes"] .item-actions { margin-left:auto; }
+}

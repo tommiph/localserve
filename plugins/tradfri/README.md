@@ -12,12 +12,12 @@ Starts disabled with fresh default settings, no cached readings, saved Cards or 
 
 - **Gateway address**: Private IPv4 address of the original TRÅDFRI gateway. DIRIGERA is not supported..
 - **Gateway security code** (private secret): Optional replacement: the code printed on this gateway. A refresh derives a Windows-protected identity/PSK. Clear after success; a nonempty setting remains private plaintext..
-- **Fade duration (seconds)**: Brightness, white temperature and colour transitions, including saved scenes. 0–60 seconds, rounded to 0.1 second; 0 means immediate. Simple on/off commands do not fade..
+- **Fade duration (seconds)**: Default brightness, white temperature and colour fade. Stored scenes can override it under Scenes - Transition. 0-60 seconds, rounded to 0.1 second; 0 means immediate. Simple on/off commands do not fade..
 - **Polling interval**: number. Choices: 30 seconds, 1 minute, 5 minutes.
 
 ## Actions and events
 
-Actions: Refresh lights and groups; Reauthenticate gateway; Set light power; Set light brightness; Set light white temperature; Set light color; Set group power; Set group brightness; Restore light state; Run lighting scene.
+Actions: Refresh lights and groups; Reauthenticate gateway; Set light power; Set light brightness; Set light white temperature; Set light color; Set group power; Set group brightness; Restore light state; Run lighting scene; Rename gateway device; Edit gateway room; Read gateway scenes.
 
 Events: Lights updated; Light changed.
 

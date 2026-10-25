@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+    <script src="/color-themes.js" defer></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#1b1c29">
+  <title>Control room · Sormus</title>
+  <link rel="icon" href="assets/controls/app-icon.svg">
+  <link rel="stylesheet" href="assets/material-symbols/material-symbols.css">
+  <link rel="stylesheet" href="control-room.css">
+  <script src="assets/card-preview.js" defer></script>
+  <script src="card-renderer.js" defer></script>
+  <script src="control-room.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to controls</a>
+  <div class="home-shell">
+    <header class="home-header">
+      <div><p class="connection" id="connection" role="status">Connecting</p><h1 id="home-name">Your home</h1><p id="clock" class="clock"></p></div>
+      <nav class="quick-nav" aria-label="Jump to section"><a href="#devices">Controls</a><a href="#scenes">Scenes</a><a href="#tasks">Tasks</a></nav>
+      <button class="round-button" id="view-options" aria-label="View options" title="View options"><i class="material-symbol ms-sliders" aria-hidden="true"></i></button>
+    </header>
+    <main id="main">
+      <div class="connection-notice" id="connection-notice" role="status" hidden></div>
+      <section aria-labelledby="state-title"><div class="section-heading"><h2 id="state-title">Current state</h2><span id="reading-note">Reported by your devices</span></div><div class="status-strip" id="status-strip"><p class="empty">Connecting to Sormus…</p></div></section>
+      <section id="devices" aria-labelledby="devices-title"><div class="section-heading"><h2 id="devices-title">Your controls</h2><span>Tap to open</span></div><div class="device-grid" id="device-grid"></div></section>
+      <section id="scenes" aria-labelledby="scenes-title"><div class="section-heading"><h2 id="scenes-title">Lighting scenes</h2><span>Choose a mood</span></div><div class="shortcut-grid" id="scene-grid"></div></section>
+      <section id="tasks" aria-labelledby="tasks-title"><div class="section-heading"><h2 id="tasks-title">Tasks</h2><span>Tap to run</span></div><div class="shortcut-grid" id="task-grid"></div></section>
+      <section id="rooms" aria-labelledby="rooms-title"><div class="section-heading"><h2 id="rooms-title">Rooms</h2><span>Gateway groups</span></div><div class="room-grid" id="room-grid"></div></section>
+      <section id="information" aria-labelledby="information-title"><div class="section-heading"><h2 id="information-title">At a glance</h2><button class="text-button" id="choose-cards">Choose Cards</button></div><div class="information-grid" id="information-grid"></div></section>
+    </main>
+    <footer><span class="circle-mark" aria-hidden="true">○</span><span id="footer-status">Control room</span><a href="/">Administration</a></footer>
+  </div>
+  <aside class="receipt" id="receipt" role="status" aria-live="polite" hidden><span class="receipt-symbol" id="receipt-symbol"></span><div><strong id="receipt-name"></strong><p id="receipt-message"></p></div><button class="round-button" id="dismiss-result" aria-label="Dismiss result" hidden><i class="material-symbol ms-xmark" aria-hidden="true"></i></button></aside>
+  <dialog id="detail" aria-labelledby="detail-title"><header><div><p id="detail-caption"></p><h2 id="detail-title"></h2></div><button class="round-button" id="close-detail" aria-label="Close"><i class="material-symbol ms-xmark" aria-hidden="true"></i></button></header><div id="detail-content"></div></dialog>
+  <dialog id="options" aria-labelledby="options-title"><header><div><p>This browser</p><h2 id="options-title">Make it yours</h2></div><button class="round-button" id="close-options" aria-label="Close view options"><i class="material-symbol ms-xmark" aria-hidden="true"></i></button></header><p class="muted">Choose up to six information Cards. Scenes, Tasks and remotes are managed in administration.</p><div id="card-choices" class="card-choices"></div></dialog>
+  <noscript>Enable JavaScript to use the control room.</noscript>
+</body>
+</html>

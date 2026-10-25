@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://localserve.example/vista" version="1.5.2" viewmodes="maximized">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://localserve.example/vista" version="1.5.3" viewmodes="maximized">
   <tizen:application id="HwGlance01.HomeGlance" package="HwGlance01" required_version="2.3"/>
   <name>Sormus Vistas</name>
   <content src="index.html"/>

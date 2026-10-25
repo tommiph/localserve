@@ -4,7 +4,8 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 import {createLocalserve} from '../../server.mjs';
 import {validateTask} from '../../server/tasks.mjs';
-export async function selectorFixture() {
+import {inspectionAction} from '../../plugins/tradfri/server/gateway-scenes.mjs';
+export async function selectorFixture({cardTemplates=false,sceneFades=false,gatewayScenes=false}={}) {
   const source=path.resolve(import.meta.dirname,'../..'),base=path.join(source,'tests/.tmp');
   await fs.mkdir(base,{recursive:true});const root=await fs.mkdtemp(path.join(base,'scene-selector-'));
   for(const folder of ['web','assets/material-symbols','assets/controls','assets/scenes'])await fs.cp(path.join(source,folder),path.join(root,folder),{recursive:true});
@@ -12,9 +13,13 @@ export async function selectorFixture() {
   await fs.copyFile(path.join(source,'styles.css'),path.join(root,'styles.css'));
   const folder=path.join(root,'plugins/tradfri');await fs.mkdir(path.join(folder,'server'),{recursive:true});
   const declaration=JSON.parse(await fs.readFile(path.join(source,'plugins/tradfri/declaration.json'),'utf8'));
-  declaration.runtime.entry='server/fixture.mjs';delete declaration.cardTemplates;
+  declaration.runtime.entry='server/fixture.mjs';
+  if(sceneFades)declaration.controls.lighting.sceneFadeSetting='fade-seconds';
+  if(gatewayScenes&&!declaration.actions.some(action=>action.id==='inspect-scenes'))declaration.actions.push(inspectionAction);
+  if(cardTemplates)await fs.cp(path.join(source,'plugins/tradfri/cards'),path.join(folder,'cards'),{recursive:true});
+  else delete declaration.cardTemplates;
   await fs.writeFile(path.join(folder,'declaration.json'),JSON.stringify(declaration));
-  await fs.writeFile(path.join(folder,'server/fixture.mjs'),`export default {async validateConfiguration(){return true;},async start(){},async stop(){},async execute(id,values,context){await context.wait(.08);await context.log('Synthetic scene effect');return {completed:true};}};`);
+  await fs.writeFile(path.join(folder,'server/fixture.mjs'),`export default {async validateConfiguration(){return true;},async start(){},async stop(){},async execute(id,values,context){await context.wait(.08);${gatewayScenes?"if(id==='inspect-scenes'){const fixture=(await context.readState()).gatewaySceneFixture;return values['scene-id']?fixture.details:fixture.list;}":''}${sceneFades?"const state=await context.readState();state.effects=[...(state.effects||[]),{id,values,fade:context.lightingFadeSeconds??null}].slice(-100);await context.saveState(state);":''}await context.log('Synthetic scene effect');return {completed:true};}};`);
   const app=await createLocalserve(root,{automatic:false});
   try {
   await app.registry.saveConfiguration('tradfri',{revision:1,enabled:true});

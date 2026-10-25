@@ -1,7 +1,40 @@
 # Interface verification
 
-Run `runtime/node.exe tools/testing/run.mjs` for the isolated public regression
-suite. It covers retained administrator DOM, Event search, receipt labels,
+Use explicit selections during development, combining the changed feature with
+its affected callers and shared contracts:
+
+```powershell
+.\runtime\node.exe tools/testing/run.mjs --focused gateway-scenes tradfri
+.\runtime\node.exe tools/testing/run.mjs --activate gateway-scenes tradfri
+.\runtime\node.exe tools/testing/run.mjs --full
+```
+
+`--focused` runs only the named public test files. `--activate` adds the core
+defaults, HTTP boundary, Controls admission/persistence, Task Event validation
+and worker-recovery checks, without repeating files. `--core` runs those checks
+alone. Short names, `tests/name.test.mjs` and Windows-relative paths are accepted.
+Use `--list` with any profile to review its selection without executing it.
+Empty focused selections, unknown names and arbitrary paths are rejected.
+Register new isolated test files in `tools/testing/public-tests.mjs` before
+selecting them through these commands.
+
+Run focused checks while iterating and core plus focused checks before local
+activation. After a pass, rerun only when code changes, failures or new concerns
+justify it. Run the complete suite once for the final feature batch before
+publication; CI and clean-source/installer verification retain their full gates.
+The no-argument command and `npm test` also run the full suite for compatibility.
+Broad changes to shared execution, security or persistence may justify a full
+run earlier. A selection is a reviewed scope, not an automatic dependency proof.
+
+Include display and legacy-viewer checks when changing Card projection/rendering,
+Task consumers when changing Event contracts, and shared Controls/Task scene
+checks when changing lighting behavior. Review overlap while maintaining an
+area: merge redundant fixtures/assertions where they protect the same behavior,
+but retain distinct failure, cancellation, privacy and no-replay cases. Do not
+add tests that merely restate a low-impact implementation. Report the profile,
+selected files and results; focused/core passes are not full-suite passes.
+
+The tests cover retained administrator DOM, Event search, receipt labels,
 template formatting, camera inspection and definition/revision boundaries.
 
 For browser review, run:

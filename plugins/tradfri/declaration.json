@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "tradfri",
   "name": "TRÅDFRI",
-  "version": "1.4.1",
+  "version": "1.8.1",
   "description": "Legacy IKEA gateway lights, groups and lighting controls",
   "icon": "lightbulb",
   "runtime": {
@@ -38,7 +38,7 @@
       "default": 0.4,
       "min": 0,
       "max": 60,
-      "help": "Brightness, white temperature and colour transitions, including saved scenes. 0–60 seconds, rounded to 0.1 second; 0 means immediate. Simple on/off commands do not fade."
+      "help": "Default brightness, white temperature and colour fade. Stored scenes can override it under Scenes - Transition. 0-60 seconds, rounded to 0.1 second; 0 means immediate. Simple on/off commands do not fade."
     },
     {
       "id": "poll-minutes",
@@ -2306,6 +2306,93 @@
           "help": "Save and enable scenes under Controls → TRÅDFRI → Scenes. The Controls page must also be enabled."
         }
       ]
+    },
+    {
+      "id": "device-rename",
+      "name": "Rename gateway device",
+      "description": "Update a reported device name using a current editor token.",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Device ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "expected",
+          "label": "Editor token",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "room-edit",
+      "name": "Edit gateway room",
+      "description": "Update one existing room name and its light membership using a current editor token.",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Room ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "members",
+          "label": "Member IDs",
+          "type": "string",
+          "required": true,
+          "maxLength": 1600
+        },
+        {
+          "id": "expected",
+          "label": "Editor token",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "id": "inspect-scenes",
+      "name": "Read gateway scenes",
+      "description": "Read a room scene list or one stored light-only scene without activating it. Use Scenes - Import from gateway.",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "id",
+          "label": "Room ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 10
+        },
+        {
+          "id": "scene-id",
+          "label": "Scene ID (blank lists scenes)",
+          "type": "string",
+          "default": "",
+          "maxLength": 10
+        }
+      ]
     }
   ],
   "controls": {
@@ -2341,7 +2428,9 @@
         "groupPower": "group-power",
         "groupBrightness": "group-brightness",
         "refresh": "refresh"
-      }
+      },
+      "inventoryState": "lighting-inventory",
+      "sceneFadeSetting": "fade-seconds"
     },
     "taskSceneAction": "run-scene"
   },

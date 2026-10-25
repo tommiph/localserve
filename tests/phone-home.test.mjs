@@ -309,7 +309,7 @@ test('a phone shell without the Card renderer keeps Home connected and explains 
 test('Home discovers installed ready-made designs without remotes or saved Cards and projects selected public readings only', async (t) => {
   const f = await fixture(t),
     service = informationService();
-  f.app.phoneHome.registry = { services: () => [service] };
+  f.app.phoneHome.registry = { cardLibrary: () => [service], cardSource: () => service };
   const index = await fetch(f.app.origin + '/api/phone-home').then((response) => response.json());
   assert.equal(index.remotes.length, 0);
   assert.equal(index.cards.length, 1);
@@ -339,7 +339,7 @@ test('Home discovers installed ready-made designs without remotes or saved Cards
 test('Home Card reads revoke disabled plugins, sources and removed designs without serving retained data', async (t) => {
   const f = await fixture(t),
     service = informationService();
-  f.app.phoneHome.registry = { services: () => [service] };
+  f.app.phoneHome.registry = { cardLibrary: () => [service], cardSource: () => service };
   const route = f.app.origin + '/api/phone-home/cards/information/reading/phone';
   service.enabled = false;
   assert.deepEqual(f.app.phoneHome.viewer().cards, []);

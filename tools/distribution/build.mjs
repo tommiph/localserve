@@ -15,6 +15,7 @@ import {validateControlPage} from '../../server/controls.mjs';
 import {assertPublicPath} from './boundary.mjs';
 import {renderDemoReadme} from './readme.mjs';
 import {publicTests} from '../testing/public-tests.mjs';
+import {testScripts} from '../testing/profiles.mjs';
 import {androidPackages,verifyAndroidPackage} from '../android-build/source-receipt.mjs';
 import {sanitizeOculusReadings,initializeSourceLauncher} from './sanitize-source.mjs';
 
@@ -179,7 +180,7 @@ try {
   // Only public isolated tests are copied; never traverse tests/.tmp.
   for (const file of publicTests.filter(file=>file!=='tests/source.test.mjs')) await copyFile(file);
   await copyFile('tests/fixtures/scene-selector.mjs');
-  for (const file of ['tools/testing/public-tests.mjs','tools/testing/run.mjs','tools/testing/ui-preview.mjs','tools/testing/form-controls.mjs','UI-UX-TESTING.md','.github/workflows/windows.yml']) await copyFile(file);
+  for (const file of ['tools/testing/public-tests.mjs','tools/testing/profiles.mjs','tools/testing/run.mjs','tools/testing/ui-preview.mjs','tools/testing/form-controls.mjs','UI-UX-TESTING.md','.github/workflows/windows.yml']) await copyFile(file);
   await write('tests/source.test.mjs',await fs.readFile(path.join(tooling,'templates/source.test.mjs')));
   await write('tools/initialize-settings.mjs',await fs.readFile(path.join(tooling,'templates/initialize-settings.mjs')));
   await write('tools/install-control-examples.mjs',await fs.readFile(path.join(tooling,'templates/install-control-examples.mjs')));
@@ -208,6 +209,8 @@ try {
   for(const file of ['maze-core.js','maze.js','maze.css','music.js','music/README.md']) await copyFile('assets/games/'+file);
   await copyFile('GAMES.md');
   await copyFile('LIGHTING-ANIMATIONS.md');
+  await copyFile('TRADFRI-CONTROL-ROOM.md');
+  await copyFile('CONTROL-ROOM.md');
   await copyFile('DEVICES.md');
   await copyFile('PHONE-HOME.md');
   await copyFile('FULLSCREEN-CARDS.md');
@@ -304,7 +307,7 @@ try {
     doNotDisturb:{enabled:false,scheduleEnabled:false,days:[1,2,3,4,5,6,0],start:'22:00',end:'07:00'},
     listen:{host:'127.0.0.1',port:0},maxConcurrentRuns:8},null,2)+'\n');
   await write('tray/settings.json',JSON.stringify({autoStartServer:true},null,2)+'\n');
-  await write('package.json',JSON.stringify({name:'localserve',version,license:'MIT',private:true,type:'module',scripts:{start:'.\\runtime\\node.exe server.mjs',test:'.\\runtime\\node.exe tools/testing/run.mjs','version:check':'.\\runtime\\node.exe tools/version.mjs --check'},engines:{node:'>=24'}},null,2)+'\n');
+  await write('package.json',JSON.stringify({name:'localserve',version,license:'MIT',private:true,type:'module',scripts:{start:'.\\runtime\\node.exe server.mjs',...testScripts,'version:check':'.\\runtime\\node.exe tools/version.mjs --check'},engines:{node:'>=24'}},null,2)+'\n');
 
   await write('.gitignore',await fs.readFile(path.join(tooling,'gitignore.txt')));
   await copyFile('.gitattributes');

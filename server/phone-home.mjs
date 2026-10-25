@@ -1,5 +1,6 @@
 /** Scoped phone shortcuts. Publishing grants manual execution, never editing or
  * historical Event access. Durable request claims prevent ambiguous retries. */
+import {displayPalette} from './color-themes.mjs';
 import path from 'node:path';
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { JsonStore, HttpError } from './storage.mjs';
@@ -122,7 +123,7 @@ export class PhoneHome {
           : 'Check this Task’s actions and settings in the administrator.')};
     }
   }
-  cardIndex(services = this.registry?.services() || []) {
+  cardIndex(services = this.registry?.cardLibrary() || []) {
     // Installed designs and enabled named sources are sufficient. Phone
     // favorites never create or edit the administrator's saved Cards.
     return services
@@ -146,19 +147,20 @@ export class PhoneHome {
       });
   }
   card(pluginId, templateId, sourceId) {
-    const services = this.registry?.services() || [];
+    const services = this.registry?.cardLibrary(pluginId) || [];
     const entry = this.cardIndex(services).find(
       (item) => item.pluginId === pluginId && item.templateId === templateId && item.sourceId === sourceId,
     );
     if (!entry?.available) throw new HttpError(404, 'Card unavailable.');
-    const service = services.find((item) => item.id === pluginId);
+    const service = this.registry?.cardSource(pluginId);
+    if (!service) throw new HttpError(404, 'Card unavailable.');
     const card = { name: entry.name, layout: 'readymade', templateId, sourceId, fields: [] };
     const config = this.config.snapshot();
     return {
       card,
       ...selectedCardData(card, service.cardData, service.cardCatalog),
       options: {
-        theme: config.displayTheme ?? config.theme,
+        theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config),
         fontScale: config.vistaFontScale,
         timeFormat: config.timeFormat,
         timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -166,7 +168,7 @@ export class PhoneHome {
       },
     };
   }
-  viewer(selector = false) {
+  viewer(selector = false, library = false) {
     const home = this.store.snapshot(),
       expires = (Math.floor(Date.now() / 60000) + 5) * 60000;
     const scenes = [];
@@ -192,6 +194,7 @@ export class PhoneHome {
       paused: this.engine.gate.paused,
       revision: home.revision,
       ...(selector ? {scenes} : {remotes: pages, cards: this.cardIndex()}),
+      ...(selector && library ? {remotes: pages, cards: this.cardIndex()} : {}),
       tasks: home.tasks
         .filter((item) => item.enabled)
         .flatMap((item) => {

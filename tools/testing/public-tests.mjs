@@ -1,5 +1,15 @@
 /** The complete isolated suite is shared by local checks, clean-source verification and CI. */
 export const publicTests = Object.freeze([
+  "tests/color-themes.test.mjs",
+  "tests/lighting-workflows.test.mjs",
+  "tests/tradfri-connection.test.mjs",
+  "tests/task-calls.test.mjs",
+  "tests/testing-profiles.test.mjs",
+  "tests/gateway-scenes.test.mjs",
+  "tests/lighting-scene-fade.test.mjs",
+  "tests/plugin-recovery.test.mjs",
+  "tests/control-room.test.mjs",
+  "tests/lighting-management.test.mjs",
   "tests/activity-retention.test.mjs",
   "tests/activity-ui.test.mjs",
   "tests/admin-editor-ux.test.mjs",
@@ -40,6 +50,7 @@ export const publicTests = Object.freeze([
   "tests/hsl-trains.test.mjs",
   "tests/installer.test.mjs",
   "tests/lighting-animations.test.mjs",
+  "tests/lighting-room.test.mjs",
   "tests/material-symbols.test.mjs",
   "tests/native-packages.test.mjs",
   "tests/network.test.mjs",

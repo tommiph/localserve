@@ -18,6 +18,7 @@ const ControlsUI = {
   switch(name, label, value) { return `<div class="card-option"><input type="hidden" name="${name}" value="${value}"><span>${escapeHtml(label)}</span><button type="button" class="switch" role="switch" aria-label="${escapeHtml(label)}" aria-checked="${value}" data-action="control-option"></button></div>`; },
   hub() {
     const entries=[
+      ['control-room','Control room','dashboard','Use scenes, Tasks, remotes and live Cards from a desktop or tablet.','/control-room'],
       ['lighting-scenes','Lighting scenes','lightbulb','Save a lighting look, choose its symbol and manage your scenes.'],
       ['lighting','Lighting animations','palette','Design moving colours, fades and lighting sequences.'],
       ['control-pages','Remotes','settings-remote','Set up the TV, lighting and other remote controls available in Controller.'],
@@ -25,7 +26,7 @@ const ControlsUI = {
       ['vr-library','VR library','vr-cardboard','Manage the headset library and install applications.'],
     ];
     return pageHeading('Controls','Set up what people can use from Controller and your devices')+
-      '<div class="control-hub">'+entries.map(([view,name,glyph,description])=>`<section class="panel control-hub-card" data-live-key="control-hub:${view}"><div class="panel-body"><span class="control-hub-symbol">${icon(glyph)}</span><h2>${name}</h2><p>${description}</p><button class="button" data-view="${view}" aria-label="Open ${name}">${icon('arrow-right')}Open</button></div></section>`).join('')+'</div>';
+      '<div class="control-hub">'+entries.map(([view,name,glyph,description,href])=>`<section class="panel control-hub-card" data-live-key="control-hub:${view}"><div class="panel-body"><span class="control-hub-symbol">${icon(glyph)}</span><h2>${name}</h2><p>${description}</p>${href?`<a class="button" href="${href}" target="_blank" rel="noopener" aria-label="Open ${name}">${icon('arrow-right')}Open</a>`:`<button class="button" data-view="${view}" aria-label="Open ${name}">${icon('arrow-right')}Open</button>`}</div></section>`).join('')+'</div>';
   },
   render(service = null) { return service ? this.pages(service) : this.hub(); },
   pages(service = null) {
@@ -80,6 +81,7 @@ const ControlsUI = {
       <div class="field-row">${this.field('Label', `<input name="itemLabel" maxlength="64" required value="${escapeHtml(item.label)}">`)}${this.field('Type', this.select('itemKind', [['button','Mapped button'],['scene','Scene'],['toggle','Toggle'],['range','Slider'],['select','Selection']], item.kind))}${this.field('Glyph', this.select('itemIcon', (state.pluginGlyphs || []).map(glyph => [glyph, glyph]), item.icon))}</div>
       <div class="control-editor-toolbar">${this.switch('itemEnabled','Control enabled', item.enabled)}<button type="button" class="icon-button" data-action="control-item-up" aria-label="Move control up">${icon('arrow-up')}</button><button type="button" class="icon-button" data-action="control-item-down" aria-label="Move control down">${icon('arrow-down')}</button><button type="button" class="icon-button" data-action="control-item-copy" aria-label="Copy control">${icon('copy')}</button><button type="button" class="icon-button delete" data-action="control-item-delete" aria-label="Delete control">${icon('trash-can')}</button></div>
       <div class="control-steps">${item.steps.map(step => this.stepEditor(step, service)).join('')}</div>
+      ${service.controls?.lighting?.sceneFadeSetting ? `<div class="control-scene-fade" ${item.kind!=='scene'?'hidden':''}>${this.field('Scene fade (seconds)', `<input name="sceneFadeSeconds" type="number" min="0" max="60" step="0.1" placeholder="Use plugin default" value="${item.fadeSeconds ?? ''}"><small class="field-help">Stored light-setting scenes only. Leave blank to use the plugin default; 0 changes immediately.</small>`)}</div>` : ''}
       <button type="button" class="button control-add-step" data-action="control-step-add" ${item.kind === 'scene' ? '' : 'hidden'}>Add scene step</button>
       <div class="control-adjustment" data-saved-parameter="${escapeHtml(item.parameter || '')}"></div>
       <div class="control-binding" data-saved-binding="${escapeHtml(JSON.stringify(item.binding))}"></div></div></details>`;
@@ -96,7 +98,8 @@ const ControlsUI = {
     const binding = !field ? null : column ? { field, column, rowColumn: value('rowColumn'), rowValue: value('rowValue') } : { field };
     return { id: element.dataset.itemId, label: value('itemLabel'), kind: value('itemKind'), icon: value('itemIcon'), enabled: value('itemEnabled') === 'true',
       steps: [...element.querySelectorAll('.control-step')].map(step => this.readStep(step, service)), parameter: element.querySelector('[name="variableParameter"]') ? value('variableParameter') || null : ['toggle','range','select'].includes(value('itemKind')) ? element.querySelector('.control-adjustment').dataset.savedParameter || null : null,
-      binding: element.querySelector('[name="reading"]') ? binding : JSON.parse(element.querySelector('.control-binding').dataset.savedBinding) };
+      binding: element.querySelector('[name="reading"]') ? binding : JSON.parse(element.querySelector('.control-binding').dataset.savedBinding),
+      ...(value('itemKind')==='scene' && value('sceneFadeSeconds')!==undefined && value('sceneFadeSeconds')!=='' ? {fadeSeconds:Number(value('sceneFadeSeconds'))} : {}) };
   },
   readDraft() {
     const form = dialog.querySelector('#controls-editor-form'), service = this.service(dialogContext.pluginId);
@@ -107,6 +110,7 @@ const ControlsUI = {
   },
   hydrateProperties(element, service) {
     const kind = element.querySelector('[name="itemKind"]').value, step = element.querySelector('.control-step');
+    const fade=element.querySelector('.control-scene-fade');if(fade)fade.hidden=kind!=='scene';
     const action = this.actions(service).find(action => action.id === step?.querySelector('[name="controlAction"]').value);
     const adjustable = element.querySelector('.control-adjustment'), oldParameter = adjustable.querySelector('select')?.value || adjustable.dataset.savedParameter;
     const fields = (action?.parameters || []).filter(field => kind === 'toggle' ? field.type === 'boolean' : kind === 'range' ? field.type === 'number' && !field.enum && Number.isFinite(field.min) && Number.isFinite(field.max) : kind === 'select' ? ['string','number'].includes(field.type) && field.enum?.length : false);

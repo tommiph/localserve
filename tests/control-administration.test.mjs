@@ -48,6 +48,6 @@ test('Controls has one destination per tool and Controller setup prominently off
   vm.runInContext(await fs.readFile(new URL('../web/phone-home-ui.js',import.meta.url),'utf8')+'\nglobalThis.phone=PhoneHomeUI;',context);
   const hub=context.controls.render();
   for(const view of ['lighting-scenes','lighting','control-pages','phone-home','vr-library'])assert.equal(hub.split('data-view="'+view+'"').length-1,1);
-  assert.doesNotMatch(hub,/href=|Open Home|Phone home/);
+  assert.equal(hub.split('href="/control-room"').length-1,1);assert.match(hub,/data-live-key="control-hub:control-room"/);assert.doesNotMatch(hub,/Open Home|Phone home/);
   const setup=context.phone.render();assert.match(setup,/Controller setup/);assert.match(setup,/Choose Tasks/);assert.doesNotMatch(setup,/Open Home|personal to each phone|published by/);
 });

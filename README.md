@@ -78,10 +78,14 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
   Calm forest and Sunset dunes, with configurable travel, population and detail.
 - **Lighting animations:** eleven editable TRÅDFRI palettes, per-step fades and
   explicit Start/Stop controls. See [Lighting animations](LIGHTING-ANIMATIONS.md).
+  The [TRÅDFRI control room](TRADFRI-CONTROL-ROOM.md) provides desktop room controls,
+  complete device inventory, lighting scenes and reported-state feedback.
 - **Games:** Neon Labyrinth, an endless first-person maze game with TV remote
   controls, gems, speed scoring and optional local looping music. See [Games](GAMES.md).
 - **Controls:** mobile TV and lighting remotes; local lighting scenes and supported
   transitions. Remote web app installation depends on browser/HTTPS support.
+- **Control room:** a separate desktop/tablet page for scenes, published Tasks,
+  room controls, full remotes and selected live Cards. See [Control room](CONTROL-ROOM.md).
 - **Controller:** the Android phone app for Lights, Tasks, full Remotes and
   ready-made Cards, with optional phone sharing in Settings. Choose phone Tasks
   in **Controls → Controller setup** and edit lighting scenes on the server.

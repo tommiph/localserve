@@ -1,12 +1,16 @@
 /** Sormus gateway reads and explicit supervised TRÅDFRI lighting actions.
- * Every action owns and closes its gateway session; no background observers.
+ * Serialized actions share one authenticated session; no background observers.
  */
 import { createVault, helperReady } from './vault.mjs';
 import { createHash } from 'node:crypto';
-import { localHost, validAuth, resourceId, withGateway, gatewayRead, boundedIds, parseAccessory, parseGroup, lightPayload, transitionTicks } from './client.mjs';
-import { lightRows, publicReading, hexToHsv } from './readings.mjs';
+import { localHost, validAuth, resourceId, createGatewaySession, gatewayRead, boundedIds, parseAccessory, parseGroup, lightPayload, transitionTicks } from './client.mjs';
+import { lightRows, publicReading, hexToHsv, administrationInventory } from './readings.mjs';
+import {lightingEditToken,lightingEditName,lightingMemberIds} from '../../../server/lighting-edit-contract.mjs';
+import {readGatewayScenes} from './gateway-scenes.mjs';
 const rates = [0.5, 1, 5];
-export function createTradfriAdapter({ vault = createVault(), credentialReady = helperReady, gateway = withGateway, now = Date.now } = {}) {
+export function createTradfriAdapter({ vault = createVault(), credentialReady = helperReady, gateway = null, now = Date.now } = {}) {
+  const session = gateway ? null : createGatewaySession();
+  gateway ||= session.run;
   let settings, auth;
   return {
     async validateConfiguration(values) {
@@ -16,11 +20,12 @@ export function createTradfriAdapter({ vault = createVault(), credentialReady = 
       try { return validAuth(await vault.load(), values.host); } catch { return false; }
     },
     async start(values) {
+      session?.close();
       transitionTicks(values['fade-seconds']);
       settings = structuredClone(values);
       try { auth = await vault.load(); } catch (error) { if (!values['security-code']) throw error; auth = null; }
     },
-    async stop() { settings = null; auth = null; },
+    async stop() { session?.close(); settings = null; auth = null; },
     async execute(actionId, parameters, context) {
       context.signal.throwIfAborted();
       const signal = AbortSignal.any([context.signal, AbortSignal.timeout(20000)]);
@@ -54,8 +59,41 @@ export function createTradfriAdapter({ vault = createVault(), credentialReady = 
             }
             return { devices, groups };
           }
+          if(actionId==='inspect-scenes')return readGatewayScenes(client,parameters,signal);
           const id = parameters.id;
           if (!resourceId(id)) throw new Error('Enter a reported light or group ID.');
+          if(['device-rename','room-edit'].includes(actionId)){
+            const group=actionId==='room-edit',path=(group?'15004/':'15001/')+id;
+            const raw=await gatewayRead(client,path),target=group?parseGroup(raw):parseAccessory(raw);
+            if(String(target.instanceId)!==id)throw Error('The selected device or room no longer exists.');
+            const previous=group?lightingMemberIds((target.deviceIDs||[]).map(String)):[];
+            if(!/^[a-f0-9]{64}$/.test(parameters.expected||'')||parameters.expected!==lightingEditToken(group?'group':'device',id,target.name,previous))
+              throw Error('The selected device or room changed. Refresh and reopen its editor.');
+            const name=lightingEditName(parameters.name),payload={};
+            if(name!==target.name)payload['9001']=name;
+            if(group){
+              let requested;try{requested=lightingMemberIds(JSON.parse(parameters.members));}catch{throw Error('Choose valid reported room members.');}
+              const removed=previous.filter(id=>!requested.includes(id)),added=requested.filter(id=>!previous.includes(id));
+              // Preserve other device types. This editor changes light membership
+              // only; it never unpairs or reassigns a steering device implicitly.
+              for(const member of [...removed,...added]){
+                const device=parseAccessory(await gatewayRead(client,'15001/'+member));
+                if(String(device.instanceId)!==member||device.type!==2)throw Error('Choose lights only; other room members must stay unchanged.');
+              }
+              if(JSON.stringify(requested)!==JSON.stringify(previous))payload['9018']={'15002':{'9003':requested.map(Number)}};
+            }
+            if(!Object.keys(payload).length)return {commandSent:false};
+            await context.wait(0.01);signal.throwIfAborted();
+            const latestRaw=await gatewayRead(client,path),latest=group?parseGroup(latestRaw):parseAccessory(latestRaw);
+            if(String(latest.instanceId)!==id||parameters.expected!==lightingEditToken(group?'group':'device',id,latest.name,group?(latest.deviceIDs||[]).map(String):[]))
+              throw Error('The selected device or room changed. Refresh and reopen its editor.');
+            // Re-enter the cooperative gate if pause arrived during the read.
+            await context.wait(0.01);
+            signal.throwIfAborted();
+            const response=await client.request(path,'put',payload);signal.throwIfAborted();
+            if(!/^2\./.test(response.code))throw Error('The gateway rejected the administration update.');
+            return {commandSent:true};
+          }
           const groupAction = actionId.startsWith('group-');
           const path = (groupAction ? '15004/' : '15001/') + id;
           const raw = await gatewayRead(client, path);
@@ -126,12 +164,17 @@ export function createTradfriAdapter({ vault = createVault(), credentialReady = 
         throw new Error('TRÅDFRI connection or request failed. Check gateway availability and credentials.');
       }
       context.signal.throwIfAborted();
+      if(actionId==='inspect-scenes'){
+        await context.log('Gateway scenes inspected; no lighting command was sent.');
+        return result;
+      }
       if (actionId === 'reconnect') {
         await context.log('Gateway credentials were protected and the connection verified. Clear the security-code setting.', 'success');
         return { completed: true };
       }
       if (actionId !== 'refresh') {
-        await context.log(result.commandSent ? 'Lighting command acknowledged; a later refresh reports actual state.' : 'Lighting already matched the requested value.', 'info');
+        const administration=['device-rename','room-edit'].includes(actionId);
+        await context.log(result.commandSent ? (administration?'Gateway settings update acknowledged; a later refresh reports actual settings.':'Lighting command acknowledged; a later refresh reports actual state.') : (administration?'Gateway settings already matched the requested values.':'Lighting already matched the requested value.'), 'info');
         return result;
       }
       const lights = lightRows(result.devices, result.groups), previous = await context.readState();
@@ -152,7 +195,7 @@ export function createTradfriAdapter({ vault = createVault(), credentialReady = 
       }
       // Save the whole observed snapshot and occurrence claims before dispatch.
       // A crash can lose an event; restart never replays a device/control effect.
-      const reading = { ...publicReading(lights, result.groups, now()), 'gateway-host': settings.host, 'light-baseline': nextBaseline, sequence };
+      const reading = { ...publicReading(lights, result.groups, now()), 'lighting-inventory': administrationInventory(result.devices, result.groups), 'gateway-host': settings.host, 'light-baseline': nextBaseline, sequence };
       await context.saveState(reading);
       await context.log(`TRÅDFRI refreshed: ${lights.length} lights, ${result.groups.length} groups.`, 'success');
       for (const payload of changes) await context.emit('light-changed', payload);

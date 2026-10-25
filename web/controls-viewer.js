@@ -27,6 +27,7 @@ function pendingReceipt() {
 }
 function appearance(options) {
   document.documentElement.dataset.theme = options.theme;
+  if(window.ColorThemes)ColorThemes.apply(document,options.colorTheme);
   document.documentElement.style.setProperty('--font-scale', options.fontScale / 100);
   const logo = `/assets/logo${options.theme === 'dark' ? '-dark' : ''}.svg`;
   // Header branding follows the theme; installed-app icons/favicon always use

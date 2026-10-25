@@ -5,6 +5,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
+import {createHash} from 'node:crypto';
 const root=fileURLToPath(new URL('../../',import.meta.url)),run=promisify(execFile);
 const withInstaller=process.argv.includes('--installer');
 if(process.argv.slice(2).some(argument=>argument!=='--installer'))throw Error('Use optional --installer; preparation never publishes.');
@@ -19,7 +20,18 @@ async function step(script,args=[]){
 }
 await step('tools/version.mjs',['--check']);
 console.log('Checking native tray build');
-await run('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File','tray/build.ps1','-OutputName','LocalserveTray.next.exe'],{cwd:root,windowsHide:true});
+// Reuse only a source-bound, current executable. A running tray may lock the
+// alternate build target; packaging must never stop the user's tray to rebuild.
+const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+let nativeReady=false;
+try{
+  const receipt=JSON.parse((await fs.readFile(path.join(root,'tray/build-result.json'),'utf8')).replace(/^\uFEFF/,''));
+  const version=JSON.parse(await fs.readFile(path.join(root,'package.json'))).version;
+  nativeReady=receipt.version===version&&['tray/LocalserveTray.exe','tray/LocalserveTray.next.exe'].includes(receipt.binary)
+    &&receipt.sourceSha256===hash(await fs.readFile(path.join(root,'tray/LocalserveTray.cs')))
+    &&receipt.binarySha256===hash(await fs.readFile(path.join(root,receipt.binary)));
+}catch{/* Missing or obsolete build receipts require a new native build. */}
+if(!nativeReady)await run('powershell.exe',['-NoProfile','-ExecutionPolicy','Bypass','-File','tray/build.ps1','-OutputName','LocalserveTray.next.exe'],{cwd:root,windowsHide:true});
 const build=await step('tools/distribution/build.mjs');
 const verification=await step('tools/distribution/verify.mjs',[build.archive]);
 const source=await step('tools/distribution/prepare-source.mjs',[build.archive]);

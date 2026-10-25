@@ -170,7 +170,7 @@ test('empty install, API boundaries, configuration persistence, and stale edits'
   assert.equal(app.config.snapshot().displayTheme, legacyConfig.theme, 'Existing displays retain their initial theme');
   assert.equal(app.snapshot().server.timeZone, new Intl.DateTimeFormat().resolvedOptions().timeZone);
   assert.equal(app.snapshot().services.length,0);
-  assert.deepEqual(app.snapshot().taskActions.map(action=>action.name),['Log activity','Delay','Show Vista']);
+  assert.deepEqual(app.snapshot().taskActions.map(action=>action.name),['Log activity','Delay','Show Vista','Run task']);
   assert.equal((await app.call('/api/config',{name:'Changed'},{Origin:'https://foreign.example'})).status,403);
   assert.equal((await app.call('/api/config',{name:'Changed'},{'X-Localserve-Token':'wrong'})).status,403);
   for (const endpoint of ['/config.json','/data/tasks.json','/server.mjs','/runtime/node.exe']) assert.equal((await app.call(endpoint)).status,404);

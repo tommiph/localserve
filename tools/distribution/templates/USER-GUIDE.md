@@ -384,3 +384,39 @@ Time-based starts provide no Event variables. The Variables page documents the
 
 Controller explains why a Task cannot run, including disabled Tasks, missing Event values, unavailable plugins or scenes, and concurrent-run limits. Fix the indicated setup in the administrator. AND conditions from a phone require its current reporting session; retained sensor values from an offline phone do not satisfy a condition. Offline presence can be selected as its own condition.
 
+
+
+## Mobile lighting administration
+
+TRÅDFRI administration adapts to phones and tablets. Rooms form a horizontal
+selector; light controls stack into a single column on narrow screens. Tap a
+light name to open its inline inspector, then **Back to lights** to return to
+that light. Reported values and unsent edits remain separate. Device inventory
+rows become labelled cards on phones. All commands use the same gateway guards
+as the desktop interface.
+
+## Activity pages
+
+Server Activity offers 25, 50 or 100 grouped rows per page. **Next** or
+**Previous** freezes the displayed snapshot so incoming entries cannot move
+older pages. **Latest entries** returns to the live first page. Filtering and
+search cover the recent 2,000-entry server window; older retained log files
+remain on disk. Grouped repeats count as one row. Plugin logs retain their
+existing recent-entry view. Pagination does not pause logging or retention.
+
+## Custom color themes
+
+Open **Settings → Color themes** to choose separate palettes for administration
+and display views. Midnight blue, Forest and Sand are editable examples. Use
+**New theme**, **Edit**, **Copy**, **Delete** or the enable switch to manage up to
+12 palettes. The popup edits page, panel, text, border and accent colors, with
+a preview and primary-text contrast indication. Aim for at least 4.5:1.
+
+Display colors apply to Vista canvases, browser remotes and the Control room,
+including literal canvas colors in the older TV viewer. Designed Card artwork,
+Universes and cinematic displays retain their own motifs; Controller retains
+its own appearance. **Default colors** restores the existing light/dark palette.
+Switching a view's light/dark setting also clears its custom selection. Disabling
+or deleting a selected palette restores defaults for that view. No lighting or
+device state changes when editing a theme. Custom palettes are local settings
+and are excluded from shared distributions; the three product examples remain.

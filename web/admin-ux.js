@@ -81,12 +81,28 @@ const AdminUX = {
     return '';
   },
   serviceStatus(service, paused = false) {
+    if (service.enabled && service.runtimeRecovery && !paused) return {label: service.runtimeRecovery.status === 'recovering' ? 'Recovering' : 'Recovery pending', className: 'waiting'};
     if (['loading', 'configuring'].includes(service.health)) return {label: service.health === 'loading' ? 'Loading' : 'Updating', className: 'waiting'};
     if (['error', 'restart-required'].includes(service.health)) return {label: service.health === 'error' ? 'Runtime error' : 'Restart required', className: 'waiting'};
     if (!service.configurationReady) return {label: 'Configure', className: 'waiting'};
     if (!service.enabled) return {label: 'Disabled', className: 'paused'};
     if (paused) return {label: 'Paused', className: 'paused'};
+    if(service.health==='ready'&&service.gatewayConnection?.status==='unreachable')return {label:'Unreachable',className:'waiting'};
+    if(service.health==='ready'&&service.gatewayConnection?.status==='checking')return {label:'Checking gateway',className:'waiting'};
     return service.health === 'ready' ? {label: 'Ready', className: 'running'} : {label: 'Not running', className: 'waiting'};
+  },
+
+  recoveryHint(service, paused = false, now = Date.now()) {
+    if(service.enabled&&service.gatewayConnection?.status==='unreachable'){
+      if(paused)return 'Gateway unreachable. Automatic checks resume with the server; failed lighting commands are not retried.';
+      const seconds=Math.max(0,Math.ceil((service.gatewayConnection.nextPollAt-now)/1000));
+      return `Gateway unreachable. Next connection check ${seconds?'in '+seconds+' s':'is due'}. Failed lighting commands are not retried.`;
+    }
+    if (!service.enabled || !service.runtimeRecovery) return '';
+    if (paused) return 'Automatic recovery will continue when the server resumes.';
+    if (service.runtimeRecovery.status === 'recovering') return 'Restarting the plugin process. Interrupted commands are not retried.';
+    const seconds = Math.max(0, Math.ceil((service.runtimeRecovery.nextAttemptAt - now) / 1000));
+    return `Automatic recovery ${seconds ? 'in ' + seconds + ' s' : 'is due'}. Interrupted commands are not retried.`;
   },
 
   reception(service) {

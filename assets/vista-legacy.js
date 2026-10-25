@@ -701,6 +701,7 @@
       entries[payload.cards[i].pluginId + '/' + payload.cards[i].card.id] = payload.cards[i];
     }
     document.documentElement.setAttribute('data-theme', payload.options.theme === 'light' ? 'light' : 'dark');
+    if(window.ColorThemes)window.ColorThemes.apply(document,payload.options.colorTheme);
     applyVistaFontSize(document);
     document.title = (payload.vista ? payload.vista.name : 'Display') + ' · ' + payload.options.name;
     var emptyMessage = !payload.vista ? 'No enabled Vista selected.' : !payload.cards.length

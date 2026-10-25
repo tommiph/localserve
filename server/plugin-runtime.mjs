@@ -53,7 +53,9 @@ export class PluginRuntime {
         // child ends its other requests too; no command is automatically retried.
         clearTimeout(timer);
         timer = setTimeout(() => {
-          pending.reject(context.signal?.reason || new Error('Plugin request timed out; outcome unknown.'));
+          // A timed-out lifecycle request can be caught before the exit event.
+          // Mark the process unavailable first so its owner can recover it too.
+          this.fail(context.signal?.reason || new Error('Plugin request timed out; outcome unknown.'));
           this.child.kill();
         }, 1000);
       };

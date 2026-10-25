@@ -1,6 +1,7 @@
 /** Server-owned Vista layouts reference plugin-owned cards. Viewer responses
  * contain only the cards' declared display data, never administrator snapshots.
  */
+import {displayPalette} from './color-themes.mjs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { JsonStore, HttpError } from './storage.mjs';
@@ -133,7 +134,7 @@ export class VistaStore {
     // An empty display is a successful, pollable response. A later Task can
     // select a Vista without forcing the end user to reopen the display page.
     return { vista: null, cards: [], displayRevision: display.revision,
-      options: { name: config.name, theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale, timeFormat: config.timeFormat } };
+      options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale, timeFormat: config.timeFormat } };
   }
 
   async save(values, id = null, operation = null) {
@@ -174,7 +175,7 @@ export class VistaStore {
         ...selectedCardData(card, plugin.cardData, plugin.cardCatalog) };
     });
     const config = this.config.snapshot();
-    return { vista, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale,
+    return { vista, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale,
       timeFormat: config.timeFormat, timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now() } };
   }
 }

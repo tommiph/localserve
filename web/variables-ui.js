@@ -10,6 +10,9 @@ const VariablesUI = {
     const add = (owner, ownerName, kind, context, label, code, type, help, file, example) =>
       rows.push({owner, ownerName, kind, context, label, code, type, help, file, example});
     const services = snapshot.services || [], events = snapshot.taskEvents || [];
+    add('server','Server','parameter','Run task','Target Task','taskId','reference',
+      'Saved Task ID on a run-task step. Waits for completion, bypasses start rules and inherits captured Event values and automatic/manual behavior. The target must be enabled; loops and nesting beyond eight levels are rejected.',
+      'data/tasks.json; server/tasks.mjs',{steps:[{id:'call',type:'run-task',enabled:true,taskId:'saved-task-id'}]});
     add('server','Server','rule','Task rule combination','AND / OR','ruleMode','string',
       'Task ruleMode is or (default) or and. AND combines latest reported Event comparisons; time rules must fall due together. Event tags still come only from the triggering report.',
       'data/tasks.json; server/task-rule-groups.mjs',{ruleMode:'and'});

@@ -96,8 +96,12 @@ try {
     if(!release){
       // Record an owned empty draft before uploading. Interrupted uploads may
       // resume without adopting another publisher's draft or replacing assets.
-      await github('release','create',tag,'--repo',repository,'--target',session.commit,'--draft','--prerelease','--title','Sormus '+version+' Preview','--notes-file',notesFile);
-      release=await findRelease();assert.ok(release);session.releaseId=release.id;await save();
+      const requestFile=path.join(root,'work/publication-release-request.json');
+      await fs.writeFile(requestFile,JSON.stringify({tag_name:tag,target_commitish:session.commit,draft:true,prerelease:true,name:'Sormus '+version+' Preview',body:await fs.readFile(notesFile,'utf8')}));
+      try{release=JSON.parse(await github('api','repos/'+repository+'/releases','--method','POST','--input',requestFile));}
+      finally{await fs.rm(requestFile,{force:true});}
+      assert.equal(release.tag_name,tag);assert.equal(release.target_commitish,session.commit);assert.equal(release.draft,true);assert.equal(release.assets.length,0);
+      session.releaseId=release.id;await save();
     }
     if(release.draft){for(const file of files){const existing=release.assets.find(item=>item.name===file.name);if(existing){assert.equal(existing.digest,'sha256:'+file.sha256);assert.equal(existing.size,file.bytes);}else await github('release','upload',tag,file.path,'--repo',repository);}}
     release=await api('repos/'+repository+'/releases/'+release.id);checkAssets(release,files,identity);

@@ -185,6 +185,9 @@ test('remote handshake validates saved target, protects rotated tokens before co
 });
 
 test('explicit TV actions validate wire data, URLs, wake packet and app row limits', () => {
+  for(const key of ['KEY_PMODE','KEY_DYNAMIC','KEY_STANDARD','KEY_MOVIE1','KEY_GAME','KEY_CUSTOM']){
+    assert.deepEqual(remoteMessage('key',{key}),{method:'ms.remote.control',params:{Cmd:'Click',DataOfCmd:key,Option:'false',TypeOfRemote:'SendRemoteKey'}});
+  }
   assert.equal(remoteMessage('power-off', {}).params.DataOfCmd, 'KEY_POWEROFF');
   assert.equal(remoteMessage('input', { input: 'HDMI2' }).params.DataOfCmd, 'KEY_HDMI2');
   assert.throws(() => remoteMessage('key', { key: 'KEY_DELETE_EVERYTHING' }), /supported/);

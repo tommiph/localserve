@@ -267,7 +267,7 @@ export function projectCardData(plugin, record, paused = false, environment = {}
     else if (record.health === 'configuring') status = 'Updating';
     else if (!record.configured) status = 'Configure';
     else if (!config.enabled) status = 'Disabled';
-    else status = paused ? 'Paused' : 'Ready';
+    else status = paused ? 'Paused' : record.gatewayConnection?.status==='unreachable'?'Unreachable':record.gatewayConnection?.status==='checking'?'Checking':'Ready';
   }
   const values = {};
   function set(field, value) {
@@ -307,7 +307,11 @@ export function projectCardData(plugin, record, paused = false, environment = {}
       try { normalized = new URL(url).href; } catch { normalized = null; }
       value = record?.configured && config?.enabled && sourceState[source.urlKey] === normalized ? { url: normalized,
         revision: Number.isFinite(sourceState[source.revisionKey]) ? sourceState[source.revisionKey] : 0 } : undefined;
-    } else if (source.kind === 'state') value = Object.hasOwn(sourceState, source.key) ? sourceState[source.key] : undefined;
+    } else if (source.kind === 'state') {
+      value = Object.hasOwn(sourceState, source.key) ? sourceState[source.key] : undefined;
+      if(plugin.id==='tradfri'&&source.key==='connection-status'&&record?.gatewayConnection?.status==='unreachable')value='Unreachable';
+      if(plugin.id==='tradfri'&&source.key==='connection-status'&&record?.gatewayConnection?.status==='checking')value='Checking';
+    }
     else if (source.kind === 'clock') value = environment.now ?? Date.now();
     else if (source.kind === 'solar') value = solarOccurrence(new Date(environment.now ?? Date.now()), { type: source.event }, environment.location);
     else if (source.kind === 'setting') value = config?.settings?.[source.key];

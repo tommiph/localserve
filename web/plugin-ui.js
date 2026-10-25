@@ -145,24 +145,27 @@ const PluginUI = {
   },
 
   render(service) {
+    const room=Boolean(service.controls?.lighting?.inventoryState)&&typeof LightingRoomUI!=='undefined';
     const tabNames = [
+      ...(room ? [['rooms','Rooms','home'],['devices','Devices','lightbulb'],['scenes','Scenes','palette'],['effects','Effects','auto-awesome'],['diagnostics','Diagnostics','heart']] : []),
       ...(service.taskBuilder ? [['create','Create','auto-awesome']] : []),
       ['settings', 'Settings', 'sliders'],
       ...(!service.taskBuilder ? [['cards', 'Card designer', 'table-cells']] : []),
-      ...(service.controls ? [['controls', 'Controls', 'gamepad']] : []),
+      ...(service.controls ? [['controls', room?'Remotes':'Controls', 'gamepad']] : []),
       ...(service.events.length ? [['events', 'Events', 'tower-broadcast']] : []),
-      ['log', 'Log', 'clipboard-list'],
+      ['log', room?'Activity':'Log', 'clipboard-list'],
     ];
     const remembered = this.tabs.get(service.id);
-    const selected = tabNames.some(([id]) => id === remembered) ? remembered : service.taskBuilder?'create':'settings';
+    const selected = tabNames.some(([id]) => id === remembered) ? remembered : room?'rooms':service.taskBuilder?'create':'settings';
     this.tabs.set(service.id,selected);
     const status = serviceStatus(service);
     const heading = `<div class="page-heading"><div class="plugin-heading"><span class="service-icon">${icon(service.icon)}</span><div><h1>${escapeHtml(service.name)} <small class="plugin-version" title="Plugin version">v${escapeHtml(service.version)}</small></h1><div class="plugin-readiness">${statusPill(status.label, status.className)}</div></div></div></div>`;
     const tabs = `<div class="tabs" role="tablist" aria-label="${escapeHtml(service.name)} workspace">${tabNames.map(([id, label, glyph]) => `<button type="button" id="plugin-tab-${id}" class="tab" role="tab" aria-selected="${selected === id}" aria-controls="plugin-panel" tabindex="${selected === id ? 0 : -1}" data-action="plugin-tab" data-id="${id}">${icon(glyph)}${label}</button>`).join('')}</div>`;
-    const error = `<div id="plugin-error" class="form-error" role="alert" ${service.error ? '' : 'hidden'}>${escapeHtml(service.error)}</div>`;
-    const panel = selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
+    const recovery = AdminUX.recoveryHint(service, state.paused);
+    const error = `<div id="plugin-error" class="form-error" role="alert" ${service.error || recovery ? '' : 'hidden'}>${escapeHtml(service.error)}${recovery ? `<p>${escapeHtml(recovery)}</p>` : ''}</div>`;
+    const panel = room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected) ? LightingRoomUI.render(service,selected) : selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
       : selected === 'events' ? this.events(service) : this.settings(service);
-    const evidence=selected==='create'?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
+    const evidence=selected==='create'||room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected)?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
     renderWorkspace(heading + evidence + tabs + error + `<div id="plugin-panel" role="tabpanel" aria-labelledby="plugin-tab-${selected}">${panel}</div>`);
     renderSaveFeedback();
   },

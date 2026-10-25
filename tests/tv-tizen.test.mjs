@@ -3,12 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
+// The packaged launcher must parse on the old TV JavaScript engine.
+const acornModule={exports:{}};
+vm.runInNewContext(process.binding('natives')['internal/deps/acorn/acorn/dist/acorn'],{module:acornModule,exports:acornModule.exports});
+acornModule.exports.parse(fs.readFileSync('tv-tizen/app/launch.js','utf8'),{ecmaVersion:5});
+
 const fallback = /var defaultUrl = '([^']+)'/.exec(fs.readFileSync('tv-tizen/app/launch.js','utf8'))[1];
 const alternative = 'http://192.168.50.10:7041/assets/page.html';
 function fixture(control = null, boot = true, saved = null, native = {}) {
   const listeners = {};
   const timers = new Map();
-  let nextTimer = 0;
+  let nextTimer = 0, clock = 0;
   const makeFrame = () => ({ hidden: true, messages:[], navigations: [], focus() {}, getAttribute() { return this.current || null; },
     setAttribute(name, value) { this[name] = value; },
     set src(url) { this.current = url; this.navigations.push(url); } });
@@ -26,7 +31,7 @@ function fixture(control = null, boot = true, saved = null, native = {}) {
     getElementById(id) { return nodes[id]; }, addEventListener(name, fn) { listeners[name] = fn; },
   }, window: { addEventListener(name, fn) { listeners[name] = fn; } },
   localStorage:{getItem(){return saved;},setItem(key,value){saved=value;}},
-  setTimeout(callback, delay) { const id = ++nextTimer; timers.set(id, { callback, delay }); return id; },
+  setTimeout(callback, delay) { const id = ++nextTimer; timers.set(id, { callback, delay, at:clock+delay }); return id; },
   clearTimeout(id) { timers.delete(id); },
   tizen: { tvinputdevice:{getKey(name){return {code:{ChannelUp:427,MediaPlayPause:10252,MediaPlay:415,MediaPause:19}[name]};},registerKey(){}},...native, application: { getCurrentApplication() { return { exit() { exits++; }, getRequestedAppControl() { return control ? { appControl: control } : null; } }; } } } });
   vm.runInContext(fs.readFileSync('tv-tizen/app/url-target.js', 'utf8'), context);
@@ -38,7 +43,15 @@ function fixture(control = null, boot = true, saved = null, native = {}) {
       timer.callback();
     }
   }
-  const result = { context, page, nodes, appended, flush, get exits() { return exits; },
+  function advance(milliseconds) {
+    const end=clock+milliseconds;
+    for(;;){
+      const next=[...timers].filter(([,timer])=>timer.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];
+      if(!next)break;clock=next[1].at;timers.delete(next[0]);next[1].callback();
+    }
+    clock=end;
+  }
+  const result = { context, page, nodes, appended, flush, advance, get exits() { return exits; },
     message(frame, data, origin = new URL(frame.current).origin) { listeners.message({ source: frame.contentWindow, origin, data }); },
     load() { listeners.load(); }, launch(value) { control = value; listeners.appcontrol(); },
     hide() { context.document.hidden = true; listeners.visibilitychange(); },
@@ -62,7 +75,7 @@ const noticeId = 'a'.repeat(48);
 const noticeUrl = `http://192.168.50.10:7041/tv-notices/${noticeId}?seconds=10`;
 
 test('Vista address fields require OK before editing and relock on remote navigation',()=>{
-  const f=fixture();f.flush(20000);assert.equal(f.nodes['server-host'].readOnly,true);
+  const f=fixture();f.flush(30000);assert.equal(f.nodes['server-host'].readOnly,true);
   f.key(13);assert.equal(f.nodes['server-host'].readOnly,false);f.key(40);assert.equal(f.nodes['server-host'].readOnly,true);
   assert.equal(f.context.document.activeElement,f.nodes['server-port']);f.key(13);assert.equal(f.nodes['server-port'].readOnly,false);
   f.key(13);assert.equal(f.nodes['server-port'].readOnly,true);
@@ -169,7 +182,8 @@ test('remote loading cannot participate in packaged startup or hold its load eve
 });
 test('a stalled page retains a local retry screen and does not automatically retry', () => {
   const f = fixture(payload(alternative));
-  f.flush(20000);
+  f.advance(29999);assert.equal(f.nodes['connection-settings'].hidden,true);
+  f.advance(1);
   assert.equal(f.nodes.launcher.hidden, false);
   assert.match(f.nodes.status.textContent, /not finished loading/);
   assert.equal(f.page.navigations.length, 1);
@@ -177,7 +191,7 @@ test('a stalled page retains a local retry screen and does not automatically ret
   assert.equal(f.page.navigations.length, 2);
   f.page.onload();
   assert.equal(f.nodes.launcher.hidden, true);
-  f.flush(20000);
+  f.flush(30000);
   assert.equal(f.nodes.launcher.hidden, true, 'completed navigation cancels the timeout');
 });
 test('menu reopen uses the default even when Tizen retains the last requested URL', () => {
@@ -223,23 +237,54 @@ function confirmViewer(f, connected=true) {
 test('display load requires a scoped health response, then a silent connection opens settings',()=>{
   const f=fixture();f.page.onload();assert.notEqual(f.nodes.launcher.hidden,true);
   confirmViewer(f);assert.equal(f.nodes.launcher.hidden,true);
-  f.flush(8000);assert.equal(f.nodes['connection-settings'].hidden,false);
+  f.advance(29999);assert.equal(f.nodes['connection-settings'].hidden,true);assert.equal(f.nodes.launcher.hidden,true);
+  f.advance(1);assert.equal(f.nodes['connection-settings'].hidden,false);
   assert.equal(f.nodes['server-host'].value,new URL(fallback).hostname);
   assert.equal(f.nodes['server-port'].value,new URL(fallback).port);assert.equal(f.nodes['server-path'].value,'/display');
   assert.equal(f.page.navigations.length,1,'No automatic navigation retry');
+});
+
+test('failed reports and frame errors retain the display until the first failure has lasted thirty seconds',()=>{
+  const f=fixture(),probe=confirmViewer(f);
+  f.advance(1000);
+  const report=()=>f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected:false});
+  report();f.advance(10000);report();f.page.onerror();
+  f.advance(19999);assert.equal(f.nodes['connection-settings'].hidden,true);assert.equal(f.nodes.launcher.hidden,true);
+  f.advance(1);assert.equal(f.nodes['connection-settings'].hidden,false);
+  assert.equal(f.page.navigations.length,1,'Failure never reloads the page automatically.');
+});
+
+test('healthy responses cancel failure deadlines and new navigation gets its own thirty-second load budget',()=>{
+  const f=fixture(),probe=confirmViewer(f);
+  const report=connected=>f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected});
+  report(false);f.advance(20000);report(true);f.advance(20000);
+  assert.equal(f.nodes.launcher.hidden,true);assert.equal(f.nodes['connection-settings'].hidden,true);
+  report(false);f.advance(29999);assert.equal(f.nodes['connection-settings'].hidden,true);
+  report(true);f.launch(payload('http://10.23.42.3:7041/vistas/another'));report(false);
+  f.advance(29999);assert.equal(f.nodes['connection-settings'].hidden,true);
+  f.advance(1);assert.equal(f.nodes['connection-settings'].hidden,false);
+});
+
+test('background time does not expire a viewer connection and resume starts a fresh heartbeat grace period',()=>{
+  const f=fixture(),probe=confirmViewer(f);
+  f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected:false});
+  f.advance(10000);f.hide();f.advance(60000);
+  assert.equal(f.nodes['connection-settings'].hidden,true);
+  f.show();f.flush(250);f.advance(29999);assert.equal(f.nodes.launcher.hidden,true);
+  f.advance(1);assert.equal(f.nodes['connection-settings'].hidden,false);
 });
 test('initial failure opens editable connection fields and ignores forged or obsolete viewer messages',()=>{
   const f=fixture();const probe=confirmViewer(f);
   f.page.onload();
   f.launch(payload('http://10.23.42.3:7041/vistas/another'));
   f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected:true});
-  f.flush(20000);assert.equal(f.nodes['connection-settings'].hidden,false);
+  f.flush(30000);assert.equal(f.nodes['connection-settings'].hidden,false);
   const other=fixture();other.page.onload();const current=other.page.messages.at(-1).data;
   other.message(other.page,{type:'localserve-viewer-state',id:current.id,path:current.path,connected:true},'https://unrelated.example');
-  other.flush(20000);assert.equal(other.nodes['connection-settings'].hidden,false);
+  other.flush(30000);assert.equal(other.nodes['connection-settings'].hidden,false);
 });
 test('saved connection is explicit, validated, durable and remains default after appcontrol overrides',()=>{
-  const f=fixture();f.flush(20000);
+  const f=fixture();f.flush(30000);
   f.nodes['server-host'].value='192.168.1.5';f.nodes['server-port'].value='8080';
   f.nodes['server-path'].value='/display';f.nodes['server-protocol'].value='http:';
   f.nodes['connection-settings'].onsubmit({preventDefault(){}});
@@ -247,7 +292,7 @@ test('saved connection is explicit, validated, durable and remains default after
   f.launch(payload(alternative));f.launch(null);assert.equal(f.page.current,f.saved);
   assert.equal(fixture(null,true,f.saved).page.current,f.saved);
   for(const saved of ['file:///private','http://user:pass@192.168.1.5/'])assert.equal(fixture(null,true,saved).page.current,fallback);
-  const bad=fixture();bad.flush(20000);bad.nodes['server-host'].value='user@server';
+  const bad=fixture();bad.flush(30000);bad.nodes['server-host'].value='user@server';
   bad.nodes['connection-settings'].onsubmit({});assert.equal(bad.saved,null);assert.equal(bad.page.navigations.length,1);
 });
 test('connection failure never replaces a visible settings draft, and Back can return without saving',()=>{
@@ -322,7 +367,10 @@ test('native PIP is hidden by settings, notices, background, navigation and conn
     if(reason==='notice')f.launch(payload(noticeUrl));
     if(reason==='background')f.hide();
     if(reason==='navigation')f.launch(payload(alternative));
-    if(reason==='failure')f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected:false});
+    if(reason==='failure'){
+      f.message(f.page,{type:'localserve-viewer-state',id:probe.id,path:probe.path,connected:false});
+      f.advance(29999);assert.deepEqual(calls,['source','show'],'PIP remains visible during the grace period.');f.advance(1);
+    }
     assert.deepEqual(calls,['source','show','hide'],reason);
   }
 });

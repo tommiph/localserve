@@ -1,5 +1,5 @@
 /** TRÅDFRI gateway access through bundled node-tradfri-client sessions.
- * No discovery, connection watcher, automatic reconnect or request retry.
+ * No discovery, connection watcher, background keepalive or command retry.
  */
 import lib from '../vendor/node_modules/node-tradfri-client/build/index.js';
 import coap from '../vendor/node_modules/node-coap-client/build/CoapClient.js';
@@ -17,9 +17,79 @@ export function parseAccessory(raw) {
   // The library constructor defaults alive=false. Only a reported reachability
   // flag is telemetry; an omitted flag stays unknown instead of inventing Off.
   if (!Object.hasOwn(raw, '9019')) device.alive = null;
+  if (!Object.hasOwn(raw, '5750')) device.type = null;
   return device.createProxy();
 }
 export const parseGroup = raw => new lib.Group().parse(raw).createProxy();
+
+export function createGatewaySession(factory = address => new lib.TradfriClient(address, {
+  watchConnection: false, customLogger: () => {},
+})) {
+  let current = null, busy = false, generation = 0;
+  const close = () => {
+    const previous = current; current = null; generation++;
+    previous?.client.destroy();
+  };
+  return {close, async run(host, signal, operation) {
+    signal.throwIfAborted();
+    if (!localHost(host)) throw new Error('Enter a private IPv4 gateway address.');
+    if (busy) throw new Error('Gateway operation is already active.');
+    busy = true;
+    let abort, entry;
+    try {
+      if (current && current.host !== host) close();
+      if (!current) {
+        coap.CoapClient.setDefaultRequestOptions({retransmit:false});
+        current = {host, client:factory(host), identity:null, psk:null, connected:false};
+        const owned = current;
+        owned.client.on('error', () => {
+          if (current !== owned) return;
+          if (owned.fail) owned.fail(); else close();
+        });
+      }
+      entry = current;
+      const admitted = generation;
+      const check = () => {
+        signal.throwIfAborted();
+        if (current !== entry || generation !== admitted) throw new Error('Gateway session is no longer active.');
+      };
+      // Reuse only the same authenticated session. Cancellation, transport errors,
+      // settings changes and stop destroy it; a later explicit operation can
+      // establish a new session, without replaying any earlier request.
+      const client = {
+        async authenticate(code) {
+          check(); entry.connected=false;
+          const result=await entry.client.authenticate(code);check();return result;
+        },
+        async connect(identity, psk) {
+          check();
+          if (entry.connected && entry.identity===identity && entry.psk===psk) return true;
+          entry.connected=false;
+          await entry.client.connect(identity,psk);check();
+          entry.identity=identity;entry.psk=psk;entry.connected=true;return true;
+        },
+        async request(path, method, payload) {
+          check();const result=await entry.client.request(path,method,payload);check();return result;
+        },
+      };
+      const boundary = new Promise((resolve,reject) => {
+        const fail = error => {if(current===entry)close();reject(error);};
+        entry.fail=()=>fail(new Error('Gateway transport failed.'));
+        abort=()=>fail(signal.reason||new Error('Gateway operation cancelled.'));
+        signal.addEventListener('abort',abort,{once:true});
+        if(signal.aborted)abort();
+      });
+      return await Promise.race([Promise.resolve().then(()=>{check();return operation(client);}),boundary]);
+    } catch(error) {
+      if(current===entry)close();
+      throw error;
+    } finally {
+      signal.removeEventListener('abort',abort);
+      if(entry)delete entry.fail;
+      busy=false;
+    }
+  }};
+}
 
 export async function withGateway(host, signal, operation, factory = address => new lib.TradfriClient(address, {
   watchConnection: false, customLogger: () => {},

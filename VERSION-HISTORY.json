@@ -1141,6 +1141,139 @@
       "from": "0.47.2",
       "version": "0.48.0",
       "summary": "Add a per-light lighting scene editor and restore current-lighting capture in the Lights remote."
+    },
+    {
+      "date": "2026-10-25T06:45:26.880Z",
+      "component": "server",
+      "from": "0.48.0",
+      "version": "0.49.0",
+      "summary": "Add a desktop lighting control room with complete inventory, room controls and reported-state command feedback."
+    },
+    {
+      "date": "2026-10-25T06:45:27.035Z",
+      "component": "tradfri",
+      "from": "1.4.1",
+      "version": "1.5.0",
+      "summary": "Report complete bounded administrator device and group inventory separately from public Card tables."
+    },
+    {
+      "date": "2026-10-25T07:27:24.795Z",
+      "component": "server",
+      "from": "0.49.0",
+      "version": "0.50.0",
+      "summary": "Add guarded gateway device naming and room membership editors to the desktop lighting control room."
+    },
+    {
+      "date": "2026-10-25T07:27:24.957Z",
+      "component": "tradfri",
+      "from": "1.5.0",
+      "version": "1.6.0",
+      "summary": "Support explicit device rename and room light membership updates with fresh gateway edit guards."
+    },
+    {
+      "date": "2026-10-25T07:48:02.676Z",
+      "component": "server",
+      "from": "0.50.0",
+      "version": "0.51.0",
+      "summary": "Add a desktop and tablet control room for published scenes, Tasks, rooms, remotes and live Cards."
+    },
+    {
+      "date": "2026-10-25T09:04:41.454Z",
+      "component": "server",
+      "from": "0.51.0",
+      "version": "0.51.1",
+      "summary": "List Control room alongside the other Controls destinations."
+    },
+    {
+      "date": "2026-10-25T11:50:52.872Z",
+      "component": "server",
+      "from": "0.51.1",
+      "version": "0.51.2",
+      "summary": "Recover failed plugin processes automatically with bounded backoff while preserving interrupted action outcomes."
+    },
+    {
+      "date": "2026-10-25T11:59:09.539Z",
+      "component": "server",
+      "from": "0.51.2",
+      "version": "0.51.3",
+      "summary": "Reduce Control room and Controller Card refresh overhead with metadata-only catalogues and scoped plugin readings."
+    },
+    {
+      "date": "2026-10-25T12:17:00.326Z",
+      "component": "server",
+      "from": "0.51.3",
+      "version": "0.52.0",
+      "summary": "Add saved lighting-scene transitions with per-scene fade overrides shared by Controls, Controller and Tasks."
+    },
+    {
+      "date": "2026-10-25T12:17:00.499Z",
+      "component": "tradfri",
+      "from": "1.6.0",
+      "version": "1.7.0",
+      "summary": "Declare saved-scene fade support with inherited default and bounded per-scene transitions."
+    },
+    {
+      "date": "2026-10-25T12:37:10.471Z",
+      "component": "server",
+      "from": "0.52.0",
+      "version": "0.53.0",
+      "summary": "Add guarded gateway scene inspection and disabled-copy imports to lighting administration."
+    },
+    {
+      "date": "2026-10-25T12:37:10.622Z",
+      "component": "tradfri",
+      "from": "1.7.0",
+      "version": "1.8.0",
+      "summary": "Read bounded native gateway scenes without activation and reject incomplete or non-light imports."
+    },
+    {
+      "date": "2026-10-25T12:53:51.712Z",
+      "component": "server",
+      "from": "0.53.0",
+      "version": "0.53.1",
+      "summary": "Add explicit focused, core and activation test profiles while retaining complete publication and CI gates."
+    },
+    {
+      "date": "2026-10-25T16:43:05.933Z",
+      "component": "samsung-tv",
+      "from": "1.6.2",
+      "version": "1.7.0",
+      "summary": "Add picture-mode, Dynamic, Standard, Movie, Game and Custom remote keys."
+    },
+    {
+      "date": "2026-10-25T17:12:22.174Z",
+      "component": "server",
+      "from": "0.53.1",
+      "version": "0.54.0",
+      "summary": "Add ordered Task calls that wait for completion, inherit Event values and cancellation, and prevent recursive loops."
+    },
+    {
+      "date": "2026-10-25T17:45:50.694Z",
+      "component": "server",
+      "from": "0.54.0",
+      "version": "0.55.0",
+      "summary": "Reuse TRADFRI gateway sessions, back off failed reads and report unreachable gateway status."
+    },
+    {
+      "date": "2026-10-25T17:45:51.291Z",
+      "component": "tradfri",
+      "from": "1.8.0",
+      "version": "1.8.1",
+      "summary": "Reuse one authenticated gateway connection across serialized actions and discard failed or cancelled sessions without retrying commands."
+    },
+    {
+      "date": "2026-10-25T18:51:14.948Z",
+      "component": "server",
+      "from": "0.55.0",
+      "version": "0.56.0",
+      "summary": "Add contextual lighting Task drafts and read-only gateway diagnostics with bounded receipt-file lock recovery."
+    },
+    {
+      "date": "2026-10-25T21:59:33.451Z",
+      "component": "server",
+      "from": "0.56.0",
+      "version": "0.57.0",
+      "summary": "Add mobile lighting administration, stable Activity pagination and independent editable color themes."
     }
   ]
 }

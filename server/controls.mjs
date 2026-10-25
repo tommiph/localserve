@@ -2,6 +2,7 @@
  * page/revision capability, never administrator credentials or action arguments.
  * Runs claim their request identity before admission and never replay on restart.
  */
+import {displayPalette} from './color-themes.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID, randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
@@ -23,7 +24,7 @@ function checkStorageSize(value) {
   // accepted here must also fit the startup bound after a restart.
   if (Buffer.byteLength(JSON.stringify(value, null, 2) + '\n', 'utf8') > 2 * 1024 * 1024) throw new HttpError(400, 'This plugin’s saved Controls must fit within 2 MiB.');
 }
-export function validateControlsDeclaration(value, actions, runtime, cardFields = []) {
+export function validateControlsDeclaration(value, actions, runtime, cardFields = [], settings = []) {
   if (value === undefined) return null;
   object(value, ['actions', 'lighting', 'television', 'taskSceneAction']);
   if (value.television !== undefined && value.television !== true) throw new Error('Television presentation must explicitly opt in.');
@@ -31,7 +32,7 @@ export function validateControlsDeclaration(value, actions, runtime, cardFields 
     || new Set(value.actions).size !== value.actions.length || value.actions.some(id => id === 'delay' || !actions.some(action => action.id === id)
       || actions.find(action => action.id === id).settingsOnly
       || actions.find(action => action.id === id).parameters.some(field => field.format === 'secret' || field.type === 'list'))) throw new Error('Controls needs an explicit list of non-secret declared runtime actions.');
-  const lighting = validateLighting(value.lighting, actions, cardFields, value.actions);
+  const lighting = validateLighting(value.lighting, actions, cardFields, value.actions, settings);
   if (value.taskSceneAction !== undefined) {
     const action = actions.find(action => action.id === value.taskSceneAction);
     if (!lighting || !action || action.settingsOnly || value.actions.includes(action.id)
@@ -46,6 +47,14 @@ export function validateControlsDeclaration(value, actions, runtime, cardFields 
 }
 export function controlActions(plugin) {
   return plugin.actions.filter(action => plugin.controls?.actions.includes(action.id));
+}
+function sceneFade(value, plugin, item) {
+  if (value === undefined || value === null) return undefined;
+  if (!plugin.controls?.lighting?.sceneFadeSetting || item.kind !== 'scene'
+    || !item.steps.some(step => step.actionId !== 'delay')
+    || item.steps.some(step => !['delay', plugin.controls.lighting.actions.lightState].includes(step.actionId))
+    || !Number.isFinite(value) || value < 0 || value > 60) throw new HttpError(400, 'Choose a 0–60 second fade for a scene containing stored light settings only.');
+  return Math.round(value * 10) / 10;
 }
 function validateBinding(binding, plugin, expectedType = null) {
   if (binding === null || binding === undefined) return null;
@@ -92,7 +101,7 @@ export function validateControlPage(value, plugin, existing = null, preserveMiss
     || !Number.isInteger(value.columns) || value.columns < 1 || value.columns > 6 || !Array.isArray(value.items) || value.items.length > 64) throw new HttpError(400, 'Choose a URL name, glyph, 1–6 columns and at most 64 controls.');
   const identities = new Set();
   const items = value.items.map(item => {
-    object(item, ['id', 'label', 'kind', 'enabled', 'icon', 'steps', 'parameter', 'binding']);
+    object(item, ['id', 'label', 'kind', 'enabled', 'icon', 'steps', 'parameter', 'binding', 'fadeSeconds']);
     if (typeof item.id !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(item.id) || item.id.startsWith('remote-') || identities.has(item.id)
       || !['button', 'scene', 'toggle', 'range', 'select'].includes(item.kind) || typeof item.enabled !== 'boolean'
       || !glyphs.includes(item.icon) || !Array.isArray(item.steps) || !item.steps.length || item.steps.length > 32
@@ -119,7 +128,9 @@ export function validateControlPage(value, plugin, existing = null, preserveMiss
     let binding;
     try { binding = validateBinding(item.binding, plugin, expectedType); }
     catch (error) { if (!(preserveMissing || old && JSON.stringify(old.binding) === JSON.stringify(item.binding))) throw error; binding = structuredClone(item.binding); }
-    return { id: item.id, label: label(item.label), kind: item.kind, enabled: item.enabled, icon: item.icon, steps, parameter, binding };
+    const fadeSeconds = sceneFade(item.fadeSeconds, plugin, {...item, steps});
+    return { id: item.id, label: label(item.label), kind: item.kind, enabled: item.enabled, icon: item.icon, steps, parameter, binding,
+      ...(fadeSeconds !== undefined ? {fadeSeconds} : {}) };
   });
   return { schemaVersion: 1, id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
     name: label(value.name), slug: value.slug, enabled: value.enabled, icon: value.icon, columns: value.columns, presentation, items };
@@ -129,6 +140,7 @@ export class ControlsStore {
   constructor(root, registry, config, activity) {
     Object.assign(this, { root, registry, config, activity });
     this.stores = new Map(); this.active = new Map(); this.secret = randomBytes(32); this.closing = false;
+    this.failures = new Map();
     this.runs = new JsonStore(path.join(root, 'data/control-runs.json'), { schemaVersion: 1, runs: [] });
   }
   async load() {
@@ -239,6 +251,7 @@ export class ControlsStore {
     if (!item?.enabled || !item.steps.length) return false;
     try {
       for (const step of item.steps) validateStep(step, plugin, null, false);
+      sceneFade(item.fadeSeconds, plugin, item);
       if (['toggle', 'range', 'select'].includes(item.kind)) {
         const field = controlActions(plugin).find(action => action.id === item.steps[0].actionId)?.parameters.find(field => field.id === item.parameter);
         if (!field || (item.kind === 'toggle' ? field.type !== 'boolean' : item.kind === 'range'
@@ -250,7 +263,7 @@ export class ControlsStore {
   ready(pluginId) {
     try { this.registry.assertReady(this.registry.get(pluginId)); return !this.registry.engine.gate.paused && !this.closing; } catch { return false; }
   }
-  options() { const config = this.config.snapshot(); return { name: config.name, theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale ?? config.fontScale, timeFormat: config.timeFormat }; }
+  options() { const config = this.config.snapshot(); return { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale ?? config.fontScale, timeFormat: config.timeFormat }; }
   index() {
     return { options: this.options(), pages: this.registry.plugins.filter(plugin => plugin.controls).flatMap(plugin => this.pages(plugin.id).filter(page => page.enabled).map(page => ({
       pluginId: plugin.id, pluginName: plugin.name, name: page.name, slug: page.slug, icon: page.icon, available: this.ready(plugin.id), url: `/controls/${plugin.id}/${page.slug}`,
@@ -278,7 +291,11 @@ export class ControlsStore {
     const plugin=this.plugin(pluginId),page=this.pages(pluginId).find(item=>item.id===pageId);
     if(!page||!this.lighting(plugin,page))throw new HttpError(404,'Lighting remote unavailable.');
     const lighting=this.lighting(plugin,page);
+    const fadeSetting=plugin.controls.lighting.sceneFadeSetting;
+    const fadeDefault=fadeSetting ? this.registry.get(pluginId).config.snapshot().settings[fadeSetting]
+      ?? plugin.settings.find(field=>field.id===fadeSetting).default : undefined;
     return {pageId:page.id,name:page.name,revision:page.revision,enabled:page.enabled,available:this.ready(pluginId)&&page.enabled,busy:this.active.has(pluginId),lighting,
+      ...(fadeSetting ? {fadeDefault} : {}),
       scenes:page.items.filter(item=>item.kind==='scene'),
       editableScenes:Object.fromEntries(page.items.filter(item=>item.kind==='scene').map(scene=>[scene.id,editableLightingScene(plugin,lighting,scene)]))};
   }
@@ -291,15 +308,16 @@ export class ControlsStore {
     }
     return this.scene(pluginId,page.slug,null,values,true);
   }
-  async scene(pluginId, slug, token, values, administrator=false) {
-    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'lights', 'enabled', 'icon']);
+  async scene(pluginId, slug, token, values, administrator=false, admission=()=>{}) {
+    object(values, ['action', 'revision', 'itemId', 'name', 'lightIds', 'lights', 'enabled', 'icon', 'fadeSeconds']);
     const plugin=this.plugin(pluginId),page=this.pages(pluginId).find(item=>item.slug===slug&&(administrator||item.enabled));
     if(!page)throw new HttpError(404,'Lighting remote unavailable.');
     if(!administrator)this.verify(pluginId,page,token);
     if (!administrator && (values.action==='create' || values.lights!==undefined)) throw new HttpError(403,'Use administration to design lighting settings.');
+    if (!administrator && values.fadeSeconds!==undefined) throw new HttpError(403,'Use administration to change scene fades.');
     if (!this.lighting(plugin, page) || !['create', 'capture', 'edit', 'copy', 'enabled', 'delete'].includes(values.action)) throw new HttpError(400, 'Choose a lighting scene operation.');
-    const fields = {create:['action','revision','name','lights','icon'], capture: ['action','revision','name','lightIds','icon'], edit: ['action','revision','itemId','name','lightIds','lights','icon'],
-      copy: ['action','revision','itemId','name','icon'], enabled: ['action','revision','itemId','enabled'], delete: ['action','revision','itemId'] };
+    const fields = {create:['action','revision','name','lights','icon','fadeSeconds'], capture: ['action','revision','name','lightIds','icon','fadeSeconds'], edit: ['action','revision','itemId','name','lightIds','lights','icon','fadeSeconds'],
+      copy: ['action','revision','itemId','name','icon','fadeSeconds'], enabled: ['action','revision','itemId','enabled'], delete: ['action','revision','itemId'] };
     object(values, fields[values.action]);
     if(values.lights!==undefined&&values.lightIds!==undefined)throw new HttpError(400,'Choose designed settings or current lighting.');
     if(values.icon!==undefined&&!glyphs.includes(values.icon))throw new HttpError(400,'Choose a bundled Material Symbols glyph.');
@@ -308,6 +326,7 @@ export class ControlsStore {
     if (needsReading&&!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Wait until lighting is ready and no Control is running.');
     const { store } = this.entry(pluginId);
     await store.update(current => {
+      admission();
       if (this.closing || needsReading&&!this.ready(pluginId) || this.active.has(pluginId)) throw new HttpError(409, 'Lighting is unavailable or busy.');
       const saved = current.pages.find(entry => entry.id === page.id && (administrator||entry.enabled));
       if (!saved || saved.revision !== values.revision) throw new HttpError(409, 'These scenes changed. Close and reopen the editor.');
@@ -322,6 +341,11 @@ export class ControlsStore {
         const copy = structuredClone(item);
         copy.id = randomUUID(); copy.label = label(values.name); copy.enabled = false;
         if(values.icon!==undefined)copy.icon=values.icon;
+        if(Object.hasOwn(values,'fadeSeconds')){
+          delete copy.fadeSeconds;
+          const fade=sceneFade(values.fadeSeconds,plugin,copy);
+          if(fade!==undefined)copy.fadeSeconds=fade;
+        }
         copy.steps.forEach(step => { step.id = randomUUID(); }); saved.items.push(copy);
       } else {
         const name = label(values.name);
@@ -335,11 +359,18 @@ export class ControlsStore {
         if (['create','capture'].includes(values.action)) {
           if (saved.items.length >= 64) throw new HttpError(400, 'This page supports at most 64 controls.');
           if(values.icon!==undefined)captured.icon=values.icon;
+          const fade=sceneFade(values.fadeSeconds,plugin,captured);
+          if(fade!==undefined)captured.fadeSeconds=fade;
           saved.items.push(captured);
         } else {
           item.label = name;
           if(values.icon!==undefined)item.icon=values.icon;
           if (captured) item.steps = captured.steps;
+          if(Object.hasOwn(values,'fadeSeconds')){
+            delete item.fadeSeconds;
+            const fade=sceneFade(values.fadeSeconds,plugin,item);
+            if(fade!==undefined)item.fadeSeconds=fade;
+          }
         }
       }
       if (new Set(saved.items.filter(entry => entry.kind === 'scene').map(entry => entry.label.toLowerCase())).size !== saved.items.filter(entry => entry.kind === 'scene').length) throw new HttpError(409, 'Choose a unique scene name.');
@@ -415,7 +446,7 @@ export class ControlsStore {
         }
         if (!this.ready(pluginId)) throw new HttpError(409, 'Controls unavailable or server paused.');
         if (this.active.has(pluginId) || this.active.size >= 8) throw new HttpError(429, 'Controls busy. Wait for the current command to finish.');
-        active = { page: structuredClone(page), controller: new AbortController(), runId: values.requestId, itemId: item.id,
+        active = { page: structuredClone(page), controller: new AbortController(), runId: values.requestId, itemId: item.id, fadeSeconds: item.fadeSeconds,
           configurationRevision: this.registry.get(pluginId).config.snapshot().revision, context };
         // Link the owning Task before persisting admission. Cancellation during
         // that write must prevent the first command, and shutdown drains done.
@@ -443,7 +474,8 @@ export class ControlsStore {
       // Begin only after the durable claim succeeds. HTTP acceptance survives
       // viewer disconnect; explicit Cancel/disable/stop cooperatively ends work.
       if (this.closing) active.controller.abort(new Error('Server stopping.'));
-      active.operation = this.perform(pluginId, active, steps).catch(async () => {
+      active.operation = this.perform(pluginId, active, steps).catch(async error => {
+        this.rememberFailure(pluginId,active,error,'history-result');
         // A failed history replacement may also prevent saving the terminal
         // status. Do not replay; leave its durable claim for restart recovery.
         await this.activity.add(`Controls history unavailable: ${active.page.name}; no remaining commands were replayed.`, { pluginId, controlPageId: active.page.id, level: 'warning' }).catch(() => {});
@@ -455,27 +487,60 @@ export class ControlsStore {
     }
     return { id: run.id, status: run.status };
   }
-  async updateRun(id, patch) { await this.runs.update(current => { const run = current.runs.find(run => run.id === id); if (run) Object.assign(run, patch); }); }
+  async updateRun(id, patch) {
+    for(let attempt=0;;attempt++)try {
+      await this.runs.update(current => {const run=current.runs.find(run=>run.id===id);if(run)Object.assign(run,patch);});
+      return;
+    }catch(error){
+      // Windows file sharing can briefly block atomic replacement. Retry only
+      // this receipt write, never admission, a command or the execution loop.
+      if(process.platform!=='win32'||error.syscall!=='rename'||!['EPERM','EBUSY','EACCES'].includes(error.code)||attempt>=2)throw error;
+      await new Promise(resolve=>setTimeout(resolve,50*(attempt+1)));
+    }
+  }
+  rememberFailure(pluginId,active,error,stage) {
+    const code=['EPERM','EBUSY','EACCES','ENOSPC','EROFS','EIO','ERR_INVALID_ARG_TYPE'].includes(error.code)?error.code:null;
+    const type=['Error','TypeError','RangeError','DataCloneError','AbortError','TimeoutError'].includes(error.name)?error.name:'Error';
+    this.failures.set(pluginId,{at:Date.now(),runId:active.runId,stage,code,type});
+  }
+  assertSceneFade(pluginId, actionId, context) {
+    const active=this.active.get(pluginId),plugin=this.plugin(pluginId);
+    if(!active || active.runId!==context.lightingScene || active.signal!==context.signal || context.signal.aborted
+      || !Number.isFinite(context.lightingFadeSeconds)
+      || active.controller.signal.aborted || !plugin.controls?.lighting?.sceneFadeSetting
+      || actionId!==plugin.controls.lighting.actions.lightState || active.fadeSeconds!==context.lightingFadeSeconds
+      || this.registry.get(pluginId).config.snapshot().revision!==active.configurationRevision
+      || this.pages(pluginId).find(page=>page.id===active.page.id)?.revision!==active.page.revision)
+      throw new HttpError(409,'Lighting scene changed or stopped; no fade override was applied.');
+    sceneFade(active.fadeSeconds,plugin,active.page.items.find(item=>item.id===active.itemId));
+  }
   async perform(pluginId, active, steps) {
     const signal = AbortSignal.any([active.controller.signal, AbortSignal.timeout(300000)]);
+    active.signal=signal;
     try {
+      active.phase='history-start';
       await this.updateRun(active.runId, { status: 'running', message: 'Running' });
       for (let index = 0; index < steps.length; index++) {
+        active.phase='readiness';
         signal.throwIfAborted(); this.reconcile(); signal.throwIfAborted();
         await this.registry.engine.gate.wait(signal);
         this.registry.assertReady(this.registry.get(pluginId));
-        await this.updateRun(active.runId, { step: index + 1 });
+        active.phase='history-step';await this.updateRun(active.runId, { step: index + 1 });
         // A write yields to edits, pause and configuration changes. Recheck the
         // saved ownership and current declaration before the next effect.
         this.reconcile(); signal.throwIfAborted();
         await this.registry.engine.gate.wait(signal);
         const step = steps[index];
+        active.phase='command';
         if (step.actionId === 'delay') await this.registry.engine.gate.delay(step.seconds * 1000, signal);
-        else await this.registry.execute(pluginId, step.actionId, step.parameters, {...active.context, signal});
+        else await this.registry.execute(pluginId, step.actionId, step.parameters, {...active.context, signal,
+          ...(active.fadeSeconds!==undefined ? {lightingScene:active.runId,lightingFadeSeconds:active.fadeSeconds,
+            configRevision:active.configurationRevision} : {})});
       }
-      await this.updateRun(active.runId, { status: 'completed', finishedAt: Date.now(), message: 'Commands completed. Reported readings confirm device state.' });
+      active.phase='history-complete';await this.updateRun(active.runId, { status: 'completed', finishedAt: Date.now(), message: 'Commands completed. Reported readings confirm device state.' });
       await this.activity.add(`Controls completed: ${active.page.name}`, { pluginId, controlPageId: active.page.id });
     } catch (error) {
+      if(!signal.aborted)this.rememberFailure(pluginId,active,error,active.phase||'execution');
       await this.updateRun(active.runId, { status: signal.aborted ? 'cancelled' : 'failed', finishedAt: Date.now(),
         message: signal.aborted ? 'Remaining steps cancelled. Check any command already sent before trying again.' : 'Control failed. Check plugin Activity and any command already sent before trying again.' });
       await this.activity.add(`Controls ${signal.aborted ? 'cancelled' : 'failed'}: ${active.page.name}`, { pluginId, controlPageId: active.page.id, level: 'warning' });

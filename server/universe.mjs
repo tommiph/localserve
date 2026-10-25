@@ -1,4 +1,5 @@
 /** Universe owns display preferences only. Card data still belongs to plugins. */
+import {displayPalette} from './color-themes.mjs';
 import path from 'node:path';
 import { JsonStore, HttpError } from './storage.mjs';
 import { selectedCardData } from './cards.mjs';
@@ -78,7 +79,7 @@ export class UniverseStore {
         ...selectedCardData(card, service.cardData, service.cardCatalog) };
     }) : [];
     // No token, capabilities, plugin configuration or administrator state.
-    return { universe: settings, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme,
+    return { universe: settings, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config),
       fontScale: config.vistaFontScale, timeFormat: config.timeFormat,
       timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now() } };
   }

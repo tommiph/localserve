@@ -24,6 +24,13 @@ tests cover Tasks, Event values, reruns, quiet hours, Controls, Simulator, Recip
 displays and packaging contracts, not every provider/device behavior. The list
 in tools/testing/public-tests.mjs also drives clean-release verification.
 Add focused isolated tests alongside new capabilities.
+Use `tools/testing/run.mjs --focused <tests...>` during development and
+`--activate <tests...>` for core plus affected checks before local activation.
+Use `--full` once for the final batch before publication; CI and clean-source
+verification keep the complete gate. `--list` previews a selection. Do not repeat
+passed suites without changed code, a failure or a new concern. Review redundant
+checks while maintaining an area, preserving distinct data-loss, privacy,
+cancellation and no-replay protections. See [testing workflow](UI-UX-TESTING.md).
 Running a checkout creates private files; keep them out of commits.
 
 For verified source and matching preview downloads, use the root `Publish.ps1`

@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.6.2",
+  "version": "1.7.0",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -615,7 +615,13 @@
             "KEY_6",
             "KEY_7",
             "KEY_8",
-            "KEY_9"
+            "KEY_9",
+            "KEY_PMODE",
+            "KEY_DYNAMIC",
+            "KEY_STANDARD",
+            "KEY_MOVIE1",
+            "KEY_GAME",
+            "KEY_CUSTOM"
           ],
           "enumLabels": [
             "POWER",
@@ -657,7 +663,13 @@
             "6",
             "7",
             "8",
-            "9"
+            "9",
+            "Picture mode",
+            "Dynamic",
+            "Standard",
+            "Movie",
+            "Game",
+            "Custom"
           ]
         }
       ],

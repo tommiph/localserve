@@ -14,6 +14,7 @@
   var notice = null;
   var settingsOpen = false, healthy = false, failure = '', healthTimer = null;
   var probeId = '', probeSerial = 0;
+  var connectionGraceMs = 30000, connectionFailing = false;
   var launcher = document.getElementById('launcher');
   var status = document.getElementById('status');
   var pipOpen = false;
@@ -31,6 +32,11 @@
   });
 
   function node(id) { return document.getElementById(id); }
+  function clearConnectionTimers() {
+    clearTimeout(loadTimer); loadTimer = null;
+    clearTimeout(healthTimer); healthTimer = null;
+    connectionFailing = false;
+  }
   function lockFields() { ['server-host','server-port','server-path'].forEach(function (id) { node(id).readOnly = true; }); }
   function consume(event) {
     if (event.preventDefault) event.preventDefault();
@@ -55,7 +61,7 @@
   function showSettings(message) {
     pip.hide(); pipOpen = false; node('pip-panel').hidden = true;
     if (notice) { failure = message || ''; return; }
-    clearTimeout(loadTimer); clearTimeout(healthTimer);
+    clearConnectionTimers();
     status.textContent = message || 'Enter the Sormus server address.';
     launcher.hidden = false; launcher.className = 'settings-open';
     node('loading-panel').hidden = true; node('launcher-actions').hidden = true;
@@ -79,11 +85,27 @@
   }
   function armHealthTimer() {
     clearTimeout(healthTimer);
+    healthTimer = null; connectionFailing = false;
     if (document.hidden || settingsOpen || !VistaUrlTarget.viewer(target)) return;
     healthTimer = setTimeout(function () {
+      healthTimer = null;
+      if (document.hidden || settingsOpen) return;
       healthy = false;
       showSettings('The server is not responding. Check its address and connection.');
-    }, 8000);
+    }, connectionGraceMs);
+  }
+  function deferConnectionFailure(message) {
+    if (document.hidden || settingsOpen || loadTimer !== null || connectionFailing) return;
+    // Keep the existing page during a brief outage. Repeated failed reports
+    // share the first failure's deadline instead of postponing it indefinitely.
+    connectionFailing = true;
+    clearTimeout(healthTimer);
+    healthTimer = setTimeout(function () {
+      healthTimer = null;
+      if (document.hidden || settingsOpen) return;
+      healthy = false;
+      showSettings(message);
+    }, connectionGraceMs);
   }
   function leaveSettings() {
     if (page && healthy) { hideSettings(); launcher.hidden = true; page.focus(); armHealthTimer(); }
@@ -151,19 +173,18 @@
           // A network-error document can also fire load. Only this navigation's
           // same-origin Vista response can confirm a working server connection.
         } else {
-          clearTimeout(loadTimer); loadTimer = null; healthy = true;
+          clearConnectionTimers(); healthy = true;
           if (!settingsOpen) { launcher.hidden = true; page.focus(); }
         }
       };
-      page.onerror = function () { healthy = false; showSettings('Unable to open the page. Check the server address and Page URL path.'); };
+      page.onerror = function () { deferConnectionFailure('Unable to open the page. Check the server address and Page URL path.'); };
     }
     if (force || target !== url || !page.getAttribute('src')) {
       pip.hide();
       target = url;
       hideSettings(); healthy = false; failure = '';
       probeId = Date.now().toString(36) + '-' + (++probeSerial);
-      clearTimeout(loadTimer);
-      clearTimeout(healthTimer);
+      clearConnectionTimers();
       status.textContent = 'Opening page…';
       launcher.hidden = false;
       // Some old TV builds do not render a frame first navigated while hidden.
@@ -171,7 +192,7 @@
       loadTimer = setTimeout(function () {
         healthy = false;
         showSettings('The page has not finished loading. Check its URL and connection, then try again.');
-      }, 20000);
+      }, connectionGraceMs);
       page.src = url;
       if (!page.parentNode) document.body.appendChild(page);
     } else if (healthy) {
@@ -229,8 +250,8 @@
       if (data.type === 'localserve-viewer-settings' && !notice) { showSettings();return; }
       if (viewer && data.type === 'localserve-viewer-state' && typeof data.connected === 'boolean') {
         if (document.hidden) return;
-        healthy = data.connected;
-        if (healthy) {
+        if (data.connected) {
+          healthy = true; failure = '';
           clearTimeout(loadTimer); loadTimer = null;
           if (!settingsOpen && !notice) {
             var wasCovered = !launcher.hidden;
@@ -238,7 +259,7 @@
             if (wasCovered) page.focus();
           }
           armHealthTimer();
-        } else showSettings('Unable to read the server display. Check the server address and connection.');
+        } else deferConnectionFailure('Unable to read the server display. Check the server address and connection.');
         return;
       }
     }
@@ -268,7 +289,7 @@
     pending = VistaUrlTarget.fromControl(requestedControl(), defaultUrl);
     if (document.hidden) {
       pip.hide();
-      clearTimeout(loadTimer); clearTimeout(healthTimer);
+      clearConnectionTimers();
       freshWhileHidden = true;
     } else if (started) {
       clearTimeout(showTimer);
@@ -283,6 +304,7 @@
     clearTimeout(showTimer);
     showTimer = null;
     if (document.hidden) {
+      clearConnectionTimers();
       pip.hide();
       closeNotice(false);
       resumedFromHidden = true;

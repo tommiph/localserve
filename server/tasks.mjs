@@ -21,13 +21,35 @@ export const builtInActions = [
   activityAction,
   { id: 'delay', type: 'delay', category: 'server', name: 'Delay', description: 'Wait before the next step.', defaults: { seconds: 5 }, available: true },
   { id: 'show-vista', type: 'show-vista', category: 'server', name: 'Show Vista', icon: 'display', description: 'Change the Vista on the shared end-user /display page.', defaults: { vistaId: '' }, available: true },
+  { id: 'run-task', type: 'run-task', category: 'server', name: 'Run task', icon: 'list-check', description: 'Run another Task and wait for it to finish before continuing.', defaults: { taskId: '' }, available: true },
 ];
+
+// References are checked inside the definition write queue. Runtime admission
+// repeats the check because saved targets can be edited or removed later.
+export function assertTaskLinks(task, tasks) {
+  const definitions = new Map(tasks.map(item => [item.id, item]));
+  definitions.set(task.id, task);
+  const heights = new Map();
+  function visit(item, path = []) {
+    if (path.includes(item.id)) throw new HttpError(400, 'Tasks cannot call themselves or form a loop.');
+    if (heights.has(item.id)) return heights.get(item.id);
+    let height = 1;
+    for (const step of item.steps.filter(step => step.type === 'run-task')) {
+      const child = definitions.get(step.taskId);
+      if (child) height = Math.max(height, 1 + visit(child, [...path, item.id]));
+    }
+    if (height > 8) throw new HttpError(400, 'Tasks can be nested at most eight levels deep.');
+    heights.set(item.id, height); return height;
+  }
+  // A changed child can increase the depth of any of its callers.
+  for (const item of definitions.values()) visit(item);
+}
 
 // Receipts contain identity/outcome/timing only, never action arguments. Large
 // Tasks still execute fully; history explicitly reports omitted receipt rows.
 const runReceiptLimit = 256;
 
-export function validateTask(value, existing = null, actions = [], events = [], vistas = []) {
+export function validateTask(value, existing = null, actions = [], events = [], vistas = [], tasks = []) {
   // Build a new allowlisted definition rather than storing the request object.
   // Disabled blocks still need valid fields so enabling them later is safe.
   if (!value || typeof value.name !== 'string' || !value.name.trim() || value.name.length > 64) throw new HttpError(400, 'Enter a Task name between 1 and 64 characters.');
@@ -80,6 +102,12 @@ export function validateTask(value, existing = null, actions = [], events = [], 
       }
       return { ...common, vistaId: step.vistaId };
     }
+    if (step.type === 'run-task') {
+      const previous = existing?.steps.find(item => item.id === step.id && item.type === 'run-task' && item.taskId === step.taskId);
+      if (typeof step.taskId !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(step.taskId)
+        || !tasks.some(task => task.id === step.taskId) && !previous) throw new HttpError(400, 'Choose a saved Task.');
+      return {...common, taskId: step.taskId};
+    }
     if (step.type === 'plugin') {
       // Keep definitions editable when a producer is disabled; execution checks
       // live readiness separately at admission and again at each plugin step.
@@ -97,8 +125,10 @@ export function validateTask(value, existing = null, actions = [], events = [], 
     }
     throw new HttpError(400, 'Choose a server action or a declared plugin action.');
   });
-  return { id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
+  const task = { id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
     name: value.name.trim(), enabled: value.enabled, ...((value.ruleMode!==undefined || existing?.ruleMode!==undefined)?{ruleMode}:{}), starts, steps };
+  assertTaskLinks(task, tasks);
+  return task;
 }
 
 /** Shared pause gate. Each run retains its own cancellation signal.
@@ -177,6 +207,7 @@ export class TaskEngine {
     this.gate = new ExecutionGate(state.snapshot().paused);
     this.active = new Map();
     this.pending = new Set();
+    this.nestedPending = new Set();
     this.scheduling = false;
     this.andRules = new AndRuleGroups(this);
   }
@@ -225,7 +256,7 @@ export class TaskEngine {
     const source = this.registry.events().find(item => item.pluginId === run.event.pluginId && item.eventId === run.event.eventId
       && (!item.instanceId || run.event.payload?.[item.instanceKey] === item.instanceId)
       && (!item.sensorId || run.event.payload?.['sensor-id'] === item.sensorId));
-    if (!source || !task.starts.some(rule => rule.type === 'event' && rule.eventId === source.id)) {
+    if (!source || !this.referencedTasks(task).some(task => task.starts.some(rule => rule.type === 'event' && rule.eventId === source.id))) {
       throw new HttpError(409, 'This Task needs a matching declared Event rule to use these saved values.');
     }
     // Reuse only server-owned history and the current public schema. Removed,
@@ -284,20 +315,33 @@ export class TaskEngine {
           && Object.hasOwn(resolved, field.id)).map(field => ({id: field.id, label: field.label || field.id, value: resolved[field.id]}));
       } else if (step.enabled && step.type === 'delay') parameters = [{id:'seconds',label:'Seconds',value:step.seconds}];
       else if (step.enabled && step.type === 'show-vista') parameters = [{id:'vista',label:'Vista',value:this.vistas.snapshot().find(vista=>vista.id===step.vistaId)?.name || 'Unavailable Vista'}];
+      else if (step.enabled && step.type === 'run-task') parameters = [{id:'task',label:'Task',value:this.tasks.snapshot().find(task=>task.id===step.taskId)?.name || 'Unavailable Task'}];
       return {number:index + 1, label:action?.name || 'Unavailable action', enabled:step.enabled, parameters};
     });
     return {taskId:task.id, taskName:task.name, revision:task.revision, sourceRunId:source.id, sourceTaskRevision:source.taskRevision ?? null,
-      stepCount:task.steps.length, steps, manualTvEffects:task.steps.some(step => {
+      stepCount:task.steps.length, steps, manualTvEffects:this.referencedTasks(task).some(task => task.steps.some(step => {
         const action = step.enabled && step.type === 'plugin' && actions.find(action => action.id === step.capabilityId);
         return action && isTvAction(action.pluginId, action.actionId);
-      }),
+      })),
       event:event ? {name:declaration?.name || 'Event', pluginName:declaration?.pluginName || event.pluginId,
         occurredAt:event.occurredAt ?? null, values:fields.filter(field=>Object.hasOwn(event.payload,field.id)).map(field=>({id:field.id,label:field.label || field.id,value:event.payload[field.id]}))} : null};
   }
 
-  assertStart(task, eventContext, revision) {
+  rootRunCount() {
+    return this.pending.size - this.nestedPending.size + [...this.active.values()].filter(run => !run.parentRunId).length;
+  }
+  referencedTasks(task, seen = new Set()) {
+    if (!task || seen.has(task.id)) return [];
+    seen.add(task.id);
+    return [task, ...task.steps.filter(step => step.enabled && step.type === 'run-task')
+      .flatMap(step => this.referencedTasks(this.tasks.snapshot().find(task => task.id === step.taskId), seen))];
+  }
+  assertStart(task, eventContext, revision, {ancestors = [], nested = false, checked = new Map()} = {}) {
     if (this.closing) throw new HttpError(503, 'Server is stopping.');
     if (!task) throw new HttpError(404, 'Task not found.');
+    if (ancestors.includes(task.id)) throw new HttpError(409, 'Tasks cannot call themselves or form a loop.');
+    if (ancestors.length >= 8) throw new HttpError(409, 'Tasks can be nested at most eight levels deep.');
+    if (checked.has(task.id) && checked.get(task.id) >= ancestors.length) return;
     if (revision !== undefined && revision !== task.revision) throw new HttpError(409, 'This Task changed. Refresh before running it.');
     if (this.gate.paused) throw new HttpError(409, 'Server is paused.');
     if (!task.enabled) throw new HttpError(409, 'Task is disabled.');
@@ -314,9 +358,14 @@ export class TaskEngine {
       this.registry.assertTaskTarget?.(action, parameters);
     }
     if (this.pending.has(task.id) || [...this.active.values()].some(run => run.taskId === task.id)) throw new HttpError(409, 'This Task is already running.');
-    if (this.pending.size + this.active.size >= this.config.snapshot().maxConcurrentRuns) throw new HttpError(409, 'The server has reached its concurrent Task limit.');
+    if (!nested && this.rootRunCount() >= this.config.snapshot().maxConcurrentRuns) throw new HttpError(409, 'The server has reached its concurrent Task limit.');
+    for (const step of task.steps.filter(step => step.enabled && step.type === 'run-task')) {
+      this.assertStart(this.tasks.snapshot().find(task => task.id === step.taskId), eventContext, undefined,
+        {ancestors:[...ancestors, task.id], nested:true, checked});
+    }
+    checked.set(task.id, ancestors.length);
   }
-  async start(id, reason = 'Manual', eventContext = null, {revision, rerunOf, eventRunId, automatic = false} = {}) {
+  async start(id, reason = 'Manual', eventContext = null, {revision, rerunOf, eventRunId, automatic = false, parent = null} = {}) {
     // Capture before the first await: delays and later emissions must never
     // change which upload this run launches. Manual Event values come only from
     // an explicitly selected server-owned history entry.
@@ -329,7 +378,9 @@ export class TaskEngine {
     const task = this.tasks.snapshot().find(task => task.id === id);
     // Preview and admission share preflight; admission repeats it immediately
     // before reserving work. A preview never authorizes a later stale definition.
-    this.assertStart(task, eventContext, revision);
+    if (parent && (this.active.get(parent.run.id)?.controller !== parent.controller || parent.controller.signal.aborted)) throw new HttpError(409, 'The calling Task is no longer running.');
+    const ancestors = parent?.ancestors || [];
+    this.assertStart(task, eventContext, revision, {ancestors, nested:Boolean(parent)});
     // Reserve admission before the first await. Other start requests must count
     // runs whose history write is pending as well as runs already executing.
     // Display labels are captured at admission, independent of later schema or
@@ -340,6 +391,7 @@ export class TaskEngine {
     const eventLabel = eventDeclaration ? {pluginName:String(eventDeclaration.pluginName || eventDeclaration.pluginId).slice(0,160),
       name:String(eventDeclaration.name || eventDeclaration.eventId).slice(0,160)} : null;
     this.pending.add(id);
+    if (parent) this.nestedPending.add(id);
     const run = { id: randomUUID(), taskId: id, name: task.name, reason, status: 'running', startedAt: Date.now(), step: 0,
       stepCount: task.steps.length,
       steps: task.steps.slice(0, runReceiptLimit).map((step, index) => ({
@@ -349,27 +401,39 @@ export class TaskEngine {
           : builtInActions.find(action => action.type === step.type)?.name || step.type,
       })),
       taskRevision: task.revision, automatic, ...(rerunOf ? {rerunOf} : {}), ...(eventRunId ? {eventRunId} : {}),
+      ...(parent ? {parentRunId:parent.run.id, parentStepId:parent.stepId} : {}),
       ...(eventLabel ? {eventLabel} : {}),
       ...(eventContext ? { event: eventContext } : {}) };
     const controller = new AbortController();
+    const abortChild = () => controller.abort(new Error('Calling Task cancelled'));
+    parent?.controller.signal.addEventListener('abort', abortChild, {once:true});
     try {
       // Record the run before executing any step. A failed write starts no work.
       await this.state.update(state => {
         state.runs.unshift(run);
         state.runs = state.runs.slice(0, 200);
+        const receipt = parent && state.runs.find(item => item.id === parent.run.id)?.steps?.find(step => step.id === parent.stepId);
+        if (receipt) {receipt.childRunId = run.id; receipt.childTaskId = id; receipt.childTaskName = task.name;}
       });
       // Pause, shutdown, deletion, or disabling may have occurred during the write.
       if (this.closing || this.gate.paused || !this.tasks.snapshot().find(item => item.id === id)?.enabled) controller.abort(new Error('Task is no longer runnable'));
       this.active.set(run.id, { ...run, controller });
+    } catch (error) {
+      parent?.controller.signal.removeEventListener('abort', abortChild);
+      throw error;
     } finally {
       this.pending.delete(id);
+      this.nestedPending.delete(id);
     }
     // HTTP returns once the run is admitted; execution proceeds asynchronously.
     // A saved snapshot fixes the running order even if the Task is later edited.
-    this.execute(structuredClone(task), run, controller).catch(error => console.error('Task persistence failure:', error.message));
+    const completion = this.execute(structuredClone(task), run, controller, [...ancestors, id])
+      .finally(() => parent?.controller.signal.removeEventListener('abort', abortChild));
+    if (parent) return completion;
+    completion.catch(error => console.error('Task persistence failure:', error.message));
     return run;
   }
-  async execute(task, run, controller) {
+  async execute(task, run, controller, ancestors = [task.id]) {
     // Link every entry to both the definition and this particular run so history
     // remains identifiable after a Task is renamed or deleted.
     const log = (message, level = 'info') => this.activity.add(message, { source: task.name, taskId: task.id, runId: run.id, level });
@@ -398,6 +462,12 @@ export class TaskEngine {
           await this.vistas.show(step.vistaId, { signal: controller.signal, gate: this.gate });
           const vista = this.vistas.snapshot().find(vista => vista.id === step.vistaId);
           await log(`Step ${index + 1}: Show Vista · ${vista?.name || 'Unavailable Vista'}`);
+        } else if (step.type === 'run-task') {
+          const child = await this.start(step.taskId, `Called by ${task.name}`, run.event || null, {
+            automatic:run.automatic, parent:{run, controller, stepId:step.id, ancestors},
+          });
+          controller.signal.throwIfAborted();
+          if (child.status !== 'completed') throw new Error(`Called Task ${child.name} ${child.status}.`);
         } else if (step.type === 'plugin') {
           const action = this.registry.actions().find(action => action.id === step.capabilityId);
           if (!action?.available) throw new Error('Plugin action is unavailable.');
@@ -422,6 +492,7 @@ export class TaskEngine {
       }
       await this.finish(run.id, 'completed');
       await log('Task completed', 'success');
+      return {...run, status:'completed'};
     } catch (error) {
       const cancelled = controller.signal.aborted;
       if (currentStep >= 0) await this.recordStep(run.id, currentStep, {
@@ -430,6 +501,7 @@ export class TaskEngine {
       });
       await this.finish(run.id, cancelled ? 'cancelled' : 'failed', cancelled ? undefined : error.message);
       await log(cancelled ? 'Task cancelled' : `Task failed: ${error.message}`, cancelled ? 'info' : 'warning');
+      return {...run, status:cancelled ? 'cancelled' : 'failed'};
     } finally {
       this.active.delete(run.id);
     }

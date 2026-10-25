@@ -1,7 +1,7 @@
 /** Tasks and ordered action blocks. All saves and runs go through the server. */
 const TaskUI = {
   search: '',
-  stepTypes: { log: 'Log activity', delay: 'Delay', 'show-vista': 'Show Vista' },
+  stepTypes: { log: 'Log activity', delay: 'Delay', 'show-vista': 'Show Vista', 'run-task': 'Run task' },
   ruleTypes: { schedule: 'Schedule', timer: 'Timer', interval: 'Interval', sunrise: 'Sunrise', sunset: 'Sunset', event: 'Event' },
   librarySearch: '',
   libraryCategory: 'all',
@@ -12,7 +12,7 @@ const TaskUI = {
   },
 
   glyphFor(type) {
-    return { log: 'clipboard-list', delay: 'hourglass-half', 'show-vista': 'display', timer: 'hourglass-start', interval: 'arrows-rotate', sunrise: 'sun', sunset: 'moon', event: 'tower-broadcast', schedule: 'calendar' }[type] || 'bolt';
+    return { log: 'clipboard-list', delay: 'hourglass-half', 'show-vista': 'display', 'run-task':'list-check', timer: 'hourglass-start', interval: 'arrows-rotate', sunrise: 'sun', sunset: 'moon', event: 'tower-broadcast', schedule: 'calendar' }[type] || 'bolt';
   },
 
   renderLibrary() {
@@ -275,6 +275,7 @@ const TaskUI = {
   },
 
   stepFields(step) {
+    if (step.type === 'run-task') return this.field('Task', 'list-check', `<select name="taskId" required><option value="">Select Task</option>${this.options((state.tasks || []).filter(task => task.id !== this.editorTaskId).map(task => ({id:task.id, name:task.name + (task.enabled ? '' : ' (Disabled)')})), step.taskId)}</select>`, 'Waits for this Task to finish before continuing. Its start rules are bypassed; it must be enabled. Event values are passed through. Failure or cancellation stops the calling Task.');
     if (step.type === 'show-vista') return this.field('Vista', 'display', `<select name="vistaId"><option value="">Select Vista</option>${this.options((state.vistas || []).map(vista => ({ id: vista.id, name: vista.name + (vista.enabled ? '' : ' (Disabled)') })), step.vistaId)}</select>`, 'Changes the shared /display page. The selected Vista must be enabled when the Task runs.');
     if (step.type === 'log') return this.field('Message', 'comment', `<textarea name="message" maxlength="2000" rows="3">${escapeHtml(step.message || '')}</textarea>`)
       + `<label class="event-value-picker">Message event value<select data-event-value-picker data-parameter="message">${this.eventValueOptions()}</select></label><div class="event-binding-hints" data-binding-parameter="message">${this.bindingHints(step.message)}</div>` + this.eventValueHelp();
@@ -304,12 +305,38 @@ const TaskUI = {
     </article>`;
   },
 
+  lightingShortcut({pluginId,kind,id='',pageId='',sceneId='',name=''}) {
+    if(kind==='scene'&&!state.services.find(service=>service.id===pluginId)?.controls?.taskSceneAction)return '';
+    return `<button class="button" type="button" data-action="task-from-light" data-plugin-id="${escapeHtml(pluginId)}" data-kind="${escapeHtml(kind)}" data-target-id="${escapeHtml(id)}" data-page-id="${escapeHtml(pageId)}" data-scene-id="${escapeHtml(sceneId)}" aria-label="Create task for ${escapeHtml(name)}">${icon('list-check')}Create task</button>`;
+  },
+  openLightingTask({pluginId,kind,id,pageId,sceneId}) {
+    const service=state.services.find(service=>service.id===pluginId);
+    if(!service?.controls?.lighting)throw Error('Lighting service unavailable. Refresh the page.');
+    let actionId,parameters,name;
+    if(kind==='scene'){
+      const page=(state.controls||[]).find(owner=>owner.pluginId===pluginId)?.pages.find(page=>page.id===pageId);
+      const scene=page?.items.find(scene=>scene.id===sceneId&&scene.kind==='scene');
+      if(!scene)throw Error('Scene unavailable. Refresh the scene list.');
+      actionId=service.controls.taskSceneAction;parameters={'scene-id':page.id+'/'+scene.id};name='Apply '+scene.label;
+    }else{
+      const model=service.lightingRoom;
+      const target=(kind==='group'?model?.groups:kind==='light'?model?.lights:[])?.find(target=>target.id===id);
+      if(!target)throw Error('Lighting target unavailable. Refresh the inventory.');
+      actionId=service.controls.lighting.actions[kind==='group'?'groupPower':'lightPower'];parameters={id:target.id,on:true};name='Turn on '+target.name;
+    }
+    const capabilityId='plugin:'+pluginId+':'+actionId;
+    const action=actionCatalog.find(action=>action.id===capabilityId);
+    if(!action)throw Error('This lighting action is unavailable. Refresh the page.');
+    this.openEditor(null,false,{name:name.slice(0,48),enabled:false,starts:[],steps:[{id:crypto.randomUUID(),type:'plugin',enabled:true,capabilityId,parameters:{...action.defaults,...parameters}}]});
+  },
+
   openEditor(id, copy = false, draft = null) {
     // Capture the original revision in dialogContext. Polling may update saved
     // state while this modal is open; it must not advance the draft's revision.
     const existing = state.tasks.find(task => task.id === id);
     const task = existing || draft || { name: '', enabled: false, starts: [], steps: [] };
     this.editorStarts = task.starts;
+    this.editorTaskId = existing && !copy ? existing.id : null;
     this.editorRuleMode = task.ruleMode || 'or';
     this.replaceStepId = null;
     this.librarySearch = ''; this.libraryCategory = 'all';
@@ -372,6 +399,7 @@ const TaskUI = {
     }
     if (item.type === 'delay') detail = `${item.seconds} second${item.seconds === 1 ? '' : 's'}`;
     if (item.type === 'show-vista') detail = `Show Vista · ${state.vistas?.find(vista => vista.id === item.vistaId)?.name || 'Unavailable Vista'}`;
+    if (item.type === 'run-task') detail = `Run task · ${state.tasks?.find(task => task.id === item.taskId)?.name || 'Unavailable Task'} · Wait for completion`;
     if (item.type === 'plugin') {
       const action = actionCatalog.find(action => action.id === item.capabilityId);
       detail = `${action?.name || 'Unavailable action'}${this.parameterSummary(item, action)}`;
@@ -435,6 +463,7 @@ const TaskUI = {
     if (item.type === 'log') Object.assign(item, { message: get('message') });
     if (item.type === 'delay') item.seconds = Number(get('seconds'));
     if (item.type === 'show-vista') item.vistaId = get('vistaId');
+    if (item.type === 'run-task') item.taskId = get('taskId');
     if (item.type === 'timer' || item.type === 'interval') item.seconds = get('seconds') ? Number(get('seconds')) : NaN;
     if (item.type === 'event') {
       item.eventId = get('eventId');
@@ -452,6 +481,7 @@ const TaskUI = {
   },
 
   validateCard(item) {
+    if (item.type === 'run-task' && !item.taskId) return 'Select a Task to run.';
     if (item.type === 'show-vista' && !item.vistaId) return 'Select a Vista to show on the display.';
     if (item.name !== undefined && !item.name) return 'Enter a name for each rule.';
     if (item.type === 'log' && !item.message) return 'Enter an activity message.';
@@ -518,12 +548,19 @@ const TaskUI = {
     container.children[position].querySelector('[data-task-type], [data-action="task-replace"]').focus();
   },
 
+  referencedTasks(task, seen = new Set()) {
+    if (!task || seen.has(task.id)) return [];
+    seen.add(task.id);
+    return [task, ...task.steps.filter(step => step.enabled && step.type === 'run-task')
+      .flatMap(step => this.referencedTasks(state.tasks.find(task => task.id === step.taskId), seen))];
+  },
+
   eventRuns(task) {
     return state.runs.filter(run => run.event && !['running', 'queued'].includes(run.status)).filter(run => {
       const source = (state.taskEvents || []).find(event => event.pluginId === run.event.pluginId && event.eventId === run.event.eventId
         && (!event.instanceId || run.event.payload?.[event.instanceKey] === event.instanceId)
         && (!event.sensorId || run.event.payload?.['sensor-id'] === event.sensorId));
-      return source && task.starts.some(rule => rule.type === 'event' && rule.eventId === source.id);
+      return source && this.referencedTasks(task).some(task => task.starts.some(rule => rule.type === 'event' && rule.eventId === source.id));
     });
   },
 
@@ -542,8 +579,8 @@ const TaskUI = {
 
   async runTask(id) {
     const task = state.tasks.find(task => task.id === id);
-    const needsEvent = task.steps.some(step => step.enabled && (step.type === 'log'
-      ? step.message.includes('{{event.') : step.type === 'plugin' && Object.values(step.parameters).some(value => typeof value === 'string' && value.includes('{{event.'))));
+    const needsEvent = this.referencedTasks(task).some(task => task.steps.some(step => step.enabled && (step.type === 'log'
+      ? step.message.includes('{{event.') : step.type === 'plugin' && Object.values(step.parameters).some(value => typeof value === 'string' && value.includes('{{event.')))));
     if (!needsEvent) {
       await mutate(`api/tasks/${id}/run`, {revision: task.revision});
       return notify('Task started');
@@ -624,6 +661,7 @@ const TaskUI = {
   },
 
   async handleAction(action, id, control) {
+    if(action==='task-from-light')return this.openLightingTask({pluginId:control.dataset.pluginId,kind:control.dataset.kind,id:control.dataset.targetId,pageId:control.dataset.pageId,sceneId:control.dataset.sceneId});
     if (action === 'task-dismiss-notice') {
       control.disabled = true;
       try { await mutate('api/tv-notices/dismiss', {revision: Number(control.dataset.revision)}); notify('Notice dismissal requested'); }

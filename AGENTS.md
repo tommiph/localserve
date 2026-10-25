@@ -3,6 +3,16 @@
 Read README.md, INSTALL.md and CONTRIBUTING.md before editing. These instructions
 apply to this repository, including plugins, Android and optional TV source.
 
+- Testing workflow: use tools/testing/run.mjs --focused <tests...> while
+  developing, including affected callers/shared contracts. Before local
+  activation use --activate <tests...> to add core safety checks once. Review
+  the files with --list. Run --full once for the final batch before publication;
+  CI and clean-source/installer gates remain full. Broader shared execution,
+  security or persistence changes may justify full testing earlier. Rerun passed
+  checks only after relevant changes, failures or new concerns. Review duplicate
+  coverage when maintaining an area; retain distinct failure/privacy/data-loss/
+  cancellation/no-replay cases. Report actual scope; focused/core is not full.
+
 - Keep deployed interface files compatible with the running backend. New script
   routes may need a cooperative server restart before updated HTML uses them.
   Optional interface features must tolerate missing scripts/capabilities without
