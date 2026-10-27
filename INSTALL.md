@@ -51,6 +51,15 @@ The app generates fresh configuration, private state and logs on first start.
 There are no example Tasks, Vistas, saved Cards, remotes or lighting scenes.
 Ready-made **designs** are installed, not preconfigured Card instances.
 
+## Guided setup
+
+In Overview, choose **Setup guide**. It explains service configuration, a safe
+manual Task, ready-made Cards and Vistas, and Controller setup. You can follow one
+path at a time and return later. The guide opens normal editors and never saves,
+enables or runs anything on your behalf. Controller uses a six-character phone
+approval code and retrieves connection details automatically; no configuration
+file needs to be downloaded or pasted.
+
 ## Try the editor without a device
 
 On an empty installation, Overview offers **Create demo**. This is optional and

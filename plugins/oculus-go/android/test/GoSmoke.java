@@ -12,6 +12,8 @@ import android.view.Surface;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /** Opt-in device checks. No library package installation, removal or launch. */
 public final class GoSmoke extends Instrumentation {
@@ -55,9 +57,23 @@ public final class GoSmoke extends Instrumentation {
                 if (!original.contains(first.packageName) && activity.visibleApps().isEmpty()) throw new RuntimeException("Favorite not visible.");
                 activity.connectionSettings.preferences().edit().putStringSet("favorites", original).commit();
                 activity.navigate("Library"); activity.selected = first; activity.render(); save("details");
-                activity.reviewInstall(first, first.versions.get(0));
-                if (first.versions.get(0).compatible() && activity.confirmation == null) throw new RuntimeException("Install review missing.");
+                LibraryItem.Version latest = first.latestVersion();
+                if (latest != null) activity.reviewInstall(first, latest);
+                if (latest != null && latest.compatible() && activity.confirmation == null) throw new RuntimeException("Install review missing.");
                 if (activity.confirmation != null) { save("review"); activity.back(); }
+                // Drop all PC catalogue data while retaining real headset apps.
+                // Inspecting and rendering local entries never launches them.
+                List<LibraryItem> catalog = new ArrayList<>(activity.catalogApps);
+                activity.selected = null; activity.online = false; activity.catalogApps.clear();
+                activity.refreshInstalled(); activity.query = ""; activity.genre = "All genres";
+                activity.setFilter("Installed");
+                if (activity.visibleApps().size() != activity.localApps.size()) throw new RuntimeException("Offline headset apps disappeared.");
+                for (LibraryItem local : activity.visibleApps()) if (local.latestVersion() != null) throw new RuntimeException("Local entry invented an APK.");
+                activity.render(); save("offline-library");
+                if (!activity.visibleApps().isEmpty()) {
+                    activity.selected = activity.visibleApps().get(0); activity.render(); save("offline-details");
+                }
+                activity.selected = null; activity.catalogApps.addAll(catalog); activity.online = true; activity.refreshInstalled();
                 activity.selected = null; activity.navigate("Settings"); save("settings");
                 activity.inputMode = "address"; activity.render(); save("keyboard");
                 activity.back(); activity.navigate("Activity"); save("activity");

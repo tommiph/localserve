@@ -1,0 +1,14 @@
+/* The packaged connection surface remains available without the PC. */
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font:28px Arial,sans-serif}
+*{box-sizing:border-box}[hidden]{display:none!important}
+#cover{position:absolute;z-index:2;top:0;left:0;width:100%;height:100%;background:#000}
+#splash{position:absolute;left:50%;top:50%;width:400px;margin:-130px 0 0 -200px;text-align:center}
+#splash img{display:block;margin:0 auto}#loading-status{font-size:22px;color:#959aa4;letter-spacing:2px}
+#settings{width:1160px;margin:80px auto 0}.mark{display:block;margin-left:-44px}h1{font-size:48px;margin:8px 0 20px;font-weight:400}
+#status{color:#b5c1d1;min-height:40px;margin:0 0 38px}.row{display:-webkit-flex;display:flex}
+label{display:block;margin-right:24px;font-size:22px;color:#b5c1d1}.protocol{width:190px}.host{-webkit-flex:1;flex:1}.port{width:160px;margin-right:0}
+input,select,button{font:28px Arial,sans-serif;color:#fff;background:#131823;border:1px solid #4b5363;border-radius:12px;height:76px;padding:16px 22px}
+input,select{display:block;width:100%;margin-top:14px}button{margin:0 20px 0 0;cursor:pointer}button:last-child{margin-right:0}
+input:focus,select:focus,button:focus{outline:none;background:#294d52;box-shadow:0 8px 24px rgba(0,0,0,.4)}#save{background:#d2fff1;color:#0b2020;border-color:#d2fff1}#save:focus{background:#92dec7}
+.hint{font-size:22px;line-height:1.6;color:#939cab;margin:30px 0}.actions{margin-top:38px}small{font-size:18px;color:#687385}
+#page{position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000}

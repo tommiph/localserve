@@ -20,7 +20,7 @@ export function assertPublicPath(file,{seeds=false}={}) {
     ||/^apps\/scenes\/build\//.test(file)
     ||/^plugins\/oculus-go\/android\/build\//.test(file)
     ||/^tools\/oculus-build\//.test(file)&&!['tools/oculus-build/prepare.ps1','tools/oculus-build/README.md'].includes(file)
-    ||/^tv-tizen\/(?:playstation\/)?dist\//.test(file)
+    ||/^tv-tizen\/(?:(?:playstation|launcher)\/)?dist\//.test(file)
     ||/\.(?:dpapi|p12|pfx|pwd|wgt|log|jsonl|tmp)$/i.test(file)
     ||/(?:author-signature|signature1)\.xml$/.test(file))throw Error('Private/generated release path: '+file);
   if(file.startsWith('assets/games/music/')&&file!=='assets/games/music/README.md')throw Error('User music is not a release input: '+file);

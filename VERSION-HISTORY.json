@@ -1274,6 +1274,69 @@
       "from": "0.56.0",
       "version": "0.57.0",
       "summary": "Add mobile lighting administration, stable Activity pagination and independent editable color themes."
+    },
+    {
+      "date": "2026-10-26T12:01:22.142Z",
+      "component": "server",
+      "from": "0.57.0",
+      "version": "0.58.0",
+      "summary": "Add Sormus Launcher for Samsung TV with PC-served navigation and local connection settings."
+    },
+    {
+      "date": "2026-10-26T12:42:29.623Z",
+      "component": "server",
+      "from": "0.58.0",
+      "version": "0.58.1",
+      "summary": "Simplify Sormus Launcher with six-button navigation, quiet presentation and borderless focus."
+    },
+    {
+      "date": "2026-10-26T13:01:55.397Z",
+      "component": "server",
+      "from": "0.58.1",
+      "version": "0.58.2",
+      "summary": "Fix TV launcher app-grid navigation and scrolling with stable rows and columns."
+    },
+    {
+      "date": "2026-10-26T16:31:25.856Z",
+      "component": "server",
+      "from": "0.58.2",
+      "version": "0.59.0",
+      "summary": "Add TV app icons, remote-friendly library search, hidden apps and remembered navigation."
+    },
+    {
+      "date": "2026-10-26T16:51:14.881Z",
+      "component": "server",
+      "from": "0.59.0",
+      "version": "0.59.1",
+      "summary": "Fix launcher keyboard entry and widescreen app artwork; add icon and glyph preferences."
+    },
+    {
+      "date": "2026-10-26T17:03:30.749Z",
+      "component": "server",
+      "from": "0.59.1",
+      "version": "0.60.0",
+      "summary": "Use TV Smart Hub artwork in Launcher and add full-button artwork without labels."
+    },
+    {
+      "date": "2026-10-26T17:17:10.090Z",
+      "component": "server",
+      "from": "0.60.0",
+      "version": "0.60.1",
+      "summary": "Resolve Smart Hub store artwork through the paired TV connection."
+    },
+    {
+      "date": "2026-10-26T17:17:10.196Z",
+      "component": "samsung-tv",
+      "from": "1.7.0",
+      "version": "1.7.1",
+      "summary": "Provide bounded read-only Smart Hub artwork for Launcher app tiles."
+    },
+    {
+      "date": "2026-10-27T08:09:53.562Z",
+      "component": "server",
+      "from": "0.60.1",
+      "version": "0.61.0",
+      "summary": "Improve guided service, Task, display and Controller setup with actionable service connection hints."
     }
   ]
 }

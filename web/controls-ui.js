@@ -19,6 +19,7 @@ const ControlsUI = {
   hub() {
     const entries=[
       ['control-room','Control room','dashboard','Use scenes, Tasks, remotes and live Cards from a desktop or tablet.','/control-room'],
+      ['tv-launcher','Sormus Launcher','tv','Choose TV app favorites, inputs, displays and published shortcuts. Install the TV app from Downloads.','/assets/launcher/index.html'],
       ['lighting-scenes','Lighting scenes','lightbulb','Save a lighting look, choose its symbol and manage your scenes.'],
       ['lighting','Lighting animations','palette','Design moving colours, fades and lighting sequences.'],
       ['control-pages','Remotes','settings-remote','Set up the TV, lighting and other remote controls available in Controller.'],

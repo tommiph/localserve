@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=1920"><title>Sormus Launcher</title><link rel="stylesheet" href="launch.css"><script src="url-target.js" defer></script><script src="inputs.js" defer></script><script src="icons.js" defer></script><script src="launch.js" defer></script></head>
+<body>
+  <main id="cover"><section id="splash"><img src="launch-icon.png" width="320" height="180" alt=""></section>
+    <form id="settings" hidden>
+      <img class="mark" src="launch-icon.png" width="160" height="90" alt="">
+      <h1>Sormus Launcher</h1><p id="status" role="status">Enter your server address.</p>
+      <div class="row"><label class="protocol">Connection<select id="protocol"><option value="http:">HTTP</option><option value="https:">HTTPS</option></select></label><label class="host">Server IP or hostname<input id="host" type="text" readonly maxlength="253" autocomplete="off" spellcheck="false"></label><label class="port">Port<input id="port" type="number" readonly min="1" max="65535" inputmode="numeric"></label></div>
+      <p class="hint">Use the address of the PC running Sormus. Press OK to edit a field.</p>
+      <div class="actions"><button id="save" type="submit">Save and connect</button><button id="retry" type="button">Retry connection</button><button id="return" type="button">Return to launcher</button></div>
+      <p class="hint">Use arrows and OK to choose a control. Return goes back or closes the app.</p><small>Sormus Launcher 1.2.3</small>
+    </form>
+  </main>
+</body></html>

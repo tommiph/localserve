@@ -1,17 +1,17 @@
 {
   "packageName": "org.localserve.go",
-  "version": "1.0.3",
-  "versionCode": 4,
+  "version": "1.0.4",
+  "versionCode": 5,
   "label": "# Sormus #",
   "minSdk": 25,
   "targetSdk": 25,
   "abi": "armeabi-v7a",
-  "size": 1057709,
-  "sha256": "4edc24d8fd2e0ccff2c7d730d4c003d96d0beca2254b532f50d17930d1eecce7",
+  "size": 1057706,
+  "sha256": "dc46eae08a7fa6e87f08e3161ee4a6bccbf1e9122bbee746bd6c47f71444454b",
   "sourceReceipt": {
     "algorithm": "sha256",
-    "files": 15,
-    "digest": "2e8da49c13e715ff5d0e0a951f822ca4ee5eb3b8a3b6cb326728b73a36014502"
+    "files": 16,
+    "digest": "163d7775442b4b6af52214e4a3aebbbf93e69d67aef5d3e3157fff03c74a2588"
   },
   "unconfigured": true,
   "signatureVerified": true,

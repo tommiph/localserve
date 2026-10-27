@@ -148,16 +148,19 @@ final class GoScreen {
         for (int i = 0; i < filters.length; i++) {
             final String value = filters[i]; button(value, 48 + i * 200, 234, 184, 44, app.currentFilter().equals(value), () -> app.setFilter(value));
         }
-        button(app.loading ? "Refreshing…" : "Refresh", 1238, 234, 250, 44, false, !app.loading && app.session != null, () -> { app.refreshInstalled(); app.refresh(); });
+        button(app.loading ? "Refreshing…" : "Refresh", 1238, 234, 250, 44, false, !app.loading, () -> {
+            app.refreshInstalled();
+            if (app.session != null) app.refresh(); else app.status("Installed apps refreshed.");
+        });
         List<LibraryItem> values = app.visibleApps();
         int pages = Math.max(1, (values.size() + 5) / 6); app.page = Math.max(0, Math.min(pages - 1, app.page));
         text(values.size() + " titles", 950, 263, 20, MUTED, false);
         if (values.isEmpty()) {
             glyph("\uf1cf", 694, 490, 100, CYAN);
             text(app.tab.equals("Favorites") ? "No favorites match" : "No applications to show", 420, 574, 40, INK, true);
-            wrap(app.session == null ? "Connect this headset from Settings to load your collection."
+            wrap(!app.online ? "Choose Installed or clear your search to browse apps on this headset. Connect from Settings for the PC collection."
                 : "Try All, clear your search, or refresh after the server library scan finishes.", 300, 642, 930, 27, 3, MUTED);
-            button("Show all applications", 495, 746, 546, 70, true, () -> { app.tab = "Library"; app.query = ""; app.genre = "All genres"; app.setFilter("All"); });
+            button(app.online ? "Show all applications" : "Show installed applications", 495, 746, 546, 70, true, () -> { app.tab = "Library"; app.query = ""; app.genre = "All genres"; app.setFilter(app.online ? "All" : "Installed"); });
         }
         for (int i = 0; i < 6 && app.page * 6 + i < values.size(); i++) {
             final LibraryItem item = values.get(app.page * 6 + i);
@@ -166,13 +169,14 @@ final class GoScreen {
             artwork(item, new RectF(x + 5, y + 5, x + 459, y + 157));
             text(fit(item.title, 422, 25), x + 18, y + 190, 25, INK, true);
             int have = app.installedVersion(item.packageName);
-            String summary = have >= 0 ? have < item.versions.get(0).code ? "Update available" : "Installed" : size(item.versions.get(0).size);
+            LibraryItem.Version latest = item.latestVersion();
+            String summary = have >= 0 ? latest != null && have < latest.code ? app.online ? "Update available" : "Cached update" : "Installed" : latest == null ? "Unavailable" : size(latest.size);
             text(fit(summary, 230, 18), x + 18, y + 233, 18, have >= 0 ? CYAN : MUTED, false);
             if (app.favorites().contains(item.packageName)) glyph("\ue838", x + 421, y + 36, 26, CYAN);
             hits.add(new Hit(new RectF(x, y, x + 464, y + 256), item.title, () -> { app.selected = item; app.versionIndex = 0; }));
             if (new RectF(x, y, x + 464, y + 256).contains(app.pointerX, app.pointerY)) border(x, y, 464, 256, CYAN, 18);
-            button(have >= 0 ? "Play" : "Install", x + 296, y + 205, 150, 38, have >= 0, !app.busy(),
-                () -> { if (have >= 0) app.launch(item); else app.reviewInstall(item, item.versions.get(0)); });
+            button(have >= 0 ? "Play" : "Install", x + 296, y + 205, 150, 38, have >= 0, have >= 0 || !app.busy() && app.online && latest != null,
+                () -> { if (have >= 0) app.launch(item); else app.reviewInstall(item, latest); });
         }
         button("‹ Previous", 48, 866, 244, 58, false, app.page > 0, () -> app.page--);
         text((app.page + 1) + " / " + pages, 720, 905, 24, VIOLET, true);
@@ -196,26 +200,29 @@ final class GoScreen {
     }
 
     void details() {
-        LibraryItem item = app.selected; LibraryItem.Version version = item.versions.get(app.versionIndex);
+        LibraryItem item = app.selected; LibraryItem.Version version = item.versionAt(app.versionIndex);
+        int installed = app.installedVersion(item.packageName);
         button("‹ Collection", 48, 155, 214, 58, false, () -> app.selected = null);
         text(fit(item.title, 1170, 36), 290, 197, 36, INK, true);
         artwork(item, new RectF(48, 244, 698, 654));
         text(fit(android.text.TextUtils.join(" · ", item.tags), 740, 19), 738, 267, 19, CYAN, false);
         wrap(item.description.isEmpty() ? item.packageName : item.description, 738, 315, 730, 26, 6, INK);
-        text("VERSION", 738, 578, 17, VIOLET, true);
-        button((version.name.isEmpty() ? "Build " + version.code : version.name) + " · " + size(version.size) + "  ›", 738, 597, 750, 62, false,
+        text(version == null ? "ON THIS HEADSET" : "PC VERSION", 738, 578, 17, VIOLET, true);
+        button(version == null ? "Installed build " + installed : (version.name.isEmpty() ? "Build " + version.code : version.name) + " · " + size(version.size) + "  ›", 738, 597, 750, 62, false, version != null,
             () -> { app.versionIndex = (app.versionIndex + 1) % item.versions.size(); });
         text(fit(item.packageName, 650, 19), 48, 699, 19, MUTED, false);
-        int installed = app.installedVersion(item.packageName);
         button("Play", 48, 738, 330, 74, true, installed >= 0, () -> app.launch(item));
         boolean favorite = app.favorites().contains(item.packageName);
         button(favorite ? "★ Favorited" : "☆ Favorite", 398, 738, 300, 74, false, () -> app.toggleFavorite(item));
         button(installed < 0 ? "Install selected" : "Install / replace", 738, 738, 350, 74, false,
-            !app.busy() && app.online && version.compatible() && !item.packageName.equals(app.getPackageName()), () -> app.reviewInstall(item, version));
+            !app.busy() && app.online && version != null && version.compatible() && !item.packageName.equals(app.getPackageName()), () -> app.reviewInstall(item, version));
         button("Uninstall", 1108, 738, 380, 74, false,
             !app.busy() && app.online && installed >= 0 && !item.packageName.equals(app.getPackageName()) && !item.packageName.equals("com.tommi.homevr"), () -> app.reviewUninstall(item));
         text(installed >= 0 ? "Installed build " + installed : "Not installed", 48, 871, 24, installed >= 0 ? CYAN : MUTED, true);
-        text(version.compatible() ? "Standalone APK · Android signatures enforced" : "This version is not compatible with Oculus Go", 738, 871, 23, version.compatible() ? MUTED : RED, false);
+        String availability = version == null ? "Available offline · Installed on this headset"
+            : !version.compatible() ? "This version is not compatible with Oculus Go"
+            : !app.online ? "Saved PC catalogue · Connect to install" : "Standalone APK · Android signatures enforced";
+        text(availability, 738, 871, 23, version != null && !version.compatible() ? RED : MUTED, false);
     }
 
     void settings() {
@@ -293,7 +300,7 @@ final class GoScreen {
         text(review.checking ? "Checking the configured headset…" : review.submitted ? "Request sent. Do not submit again." : "Keep the server and headset connected until the operation finishes.", 100, 697, 24, MUTED, false);
         button(review.submitted ? "View activity" : uninstall ? "Keep application" : "Cancel", 100, 778, 570, 84, false, () -> { app.confirmation = null; if (review.submitted) app.tab = "Activity"; });
         button(uninstall ? "Uninstall + delete saved data" : "Install selected version", 698, 778, 738, 84, true,
-            !review.submitted && !review.checking && (!uninstall || !review.token.isEmpty()), () -> app.confirmOperation());
+            app.online && !review.submitted && !review.checking && (!uninstall || !review.token.isEmpty()), () -> app.confirmOperation());
     }
 
     void keyboard() {

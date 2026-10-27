@@ -12,6 +12,24 @@ remains the default. Follow [setup and privacy details](GOOGLE-APPS-SCRIPT.md).
 
 ## Administrator and services
 
+Open **Overview ? Setup guide** whenever you need a next step. Choose **Connect a
+service**, **Create a first Task**, **Create a display** or **Use Controller**.
+The guide shows current setup counts and opens the ordinary editors. It does not
+enable plugins, save content, send device commands or run Tasks.
+
+For a first Task, the guide prepares a disabled, unsaved **Log activity** draft.
+Review it, leave automatic rules empty, enable it and save. Run it once from Tasks,
+then check its completed run and Activity. Publish selected Tasks to your phone in
+**Controls ? Controller setup ? Choose Tasks**.
+
+For a real device or information source, complete its plugin Settings, enable it
+when ready and inspect its readings. **Configure** means required fields are
+missing; **Ready** describes the plugin runtime, not proof of a successful device
+response. Overview separates the latest check from the latest reported reception
+and gives next-step hints when an enabled service needs attention.
+
+
+
 **SERVER → Devices** provides manual discovery on an attached private network.
 Choose **Discover devices** to list addresses, reported names and advertised
 services. Unknowns remain explicit and inferred device types are labelled.
@@ -420,3 +438,37 @@ Switching a view's light/dark setting also clears its custom selection. Disablin
 or deleting a selected palette restores defaults for that view. No lighting or
 device state changes when editing a theme. Custom palettes are local settings
 and are excluded from shared distributions; the three product examples remain.
+
+## Oculus Go offline library
+
+The Oculus Go app can browse and launch applications installed on the headset
+without the PC connection or a saved PC catalogue. **Refresh** rescans the headset;
+**Installed** lists local applications. Cached PC metadata is retained for known
+titles. Installation, updates and removal still require the connected server.
+
+## Sormus Launcher for Samsung TV
+
+Install **Sormus Launcher** from Downloads using your TV developer setup. Open
+it on the TV, enter the Sormus PC address and port, then Save and connect. A
+failed connection opens these settings after 10 seconds. The PC must be running
+to serve the launcher interface. **Controls → Sormus Launcher** opens a browser
+view; TV app discovery and HDMI selection require the installed application.
+
+Use arrows and OK to select apps, inputs, displays, published lighting scenes or
+Task shortcuts. The header personalization button contains **Edit favorites**,
+reordering, three backgrounds, refreshing and server address settings. Finish
+favorite selection with its header checkmark or Return. Preferences stay on that
+TV. Return closes an input, returns Home or exits the app. No color, channel or
+media buttons are needed. Vistas must be installed to open display tiles. See the
+[launcher guide](tv-tizen/launcher/README.md) for installation and key details.
+
+In Apps, use the header magnifier to search with the on-screen letter keyboard.
+Header personalization → **Manage apps** hides or restores entries without
+uninstalling them. Apps remembers its selected tile, search and scroll position.
+Installed icons load from the TV, with glyphs retained where an icon cannot be
+read. These preferences stay on that TV.
+
+In Sormus Launcher, personalization → **App artwork** switches between widescreen
+icons and glyphs; **App tiles: Artwork only** fills app buttons without labels.
+Icon mode uses the TV’s own Smart Hub artwork when accessible. Connection settings opens the TV keyboard with OK on a field;
+Done or Return finishes editing before Save and connect.

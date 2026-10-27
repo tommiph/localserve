@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="https://sormus.example/launcher" version="1.2.3" viewmodes="maximized">
+  <tizen:application id="SormusL001.Launcher" package="SormusL001" required_version="2.3"/>
+  <name>Sormus Launcher</name>
+  <content src="index.html"/>
+  <icon src="icon-tv.png"/>
+  <access origin="*" subdomains="true"/>
+  <tizen:content-security-policy>default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; frame-src http: https:; child-src http: https:; base-uri 'none'; object-src 'none'</tizen:content-security-policy>
+  <tizen:allow-navigation>http://*:* https://*:*</tizen:allow-navigation>
+  <tizen:privilege name="http://tizen.org/privilege/internet"/>
+  <tizen:privilege name="http://tizen.org/privilege/application.info"/>
+  <tizen:privilege name="http://tizen.org/privilege/filesystem.read"/>
+  <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+  <tizen:privilege name="http://tizen.org/privilege/tv.window"/>
+  <tizen:profile name="tv-samsung"/>
+  <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
+</widget>

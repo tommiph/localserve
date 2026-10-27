@@ -1,7 +1,7 @@
 # Sormus Go
 
-Version 1.0.2 uses the shared circle launcher and library mark. Install over the
-existing package to retain its connection; no headset reset is required.
+Sormus Go lists installed headset applications independently of the PC. Install
+an update over the existing package to retain its connection and favorites.
 
 Native Oculus Go app, listed as **# Sormus #**. Package identity: org.localserve.go. It can coexist with Home VR.
 
@@ -11,7 +11,7 @@ Install dist/localserve-go.apk using your own authorized headset setup tools. In
 
 ## Use
 
-Library provides All, Installed and Updates filters, search, genres and version sorting. Favorites keeps your chosen titles on this headset. Select artwork for details and version selection; Play launches locally installed apps even while the server is offline. Install opens a review before sending one request. Uninstall requires confirmation and deletes app saves; the PC APK remains. Activity shows the latest server package job and can request cancellation. No package request is retried automatically. Settings also offers recentering.
+Library provides All, Installed and Updates filters, search, genres and version sorting. Favorites keeps your chosen titles on this headset. Select artwork for details and version selection; Play launches locally installed apps even while the server is offline. The headset inventory is available without a saved PC catalogue or a paired server. Cached PC descriptions and version information enrich matching titles; headset-only apps show their local names and installed builds. Refresh also rescans local apps while disconnected. System utilities and this launcher are not added to the local list. Install, update and uninstall require a connected PC; unavailable actions are disabled. Install opens a review before sending one request. Uninstall requires confirmation and deletes app saves; the PC APK remains. Activity shows the latest server package job and can request cancellation. No package request is retried automatically. Settings also offers recentering.
 
 Point the Go controller and press its trigger. Swipe to change library pages; Back closes menus and reviews. Head movement controls the stationary stereo cockpit; there is no automatic camera movement. The app uses a dark cyan/violet palette, local Material Symbols and Sormus artwork.
 
@@ -30,3 +30,12 @@ After building the main app, run `plugins/oculus-go/android/test/build.mjs` with
 ## Source verification
 
 The distributable APK records a digest of its manifest, build recipe, first-party Java/native sources, resources/assets and dependency lock. Release preparation rejects changed inputs until the APK is rebuilt with the retained signing identity. This verification does not require connecting a headset.
+
+## Offline library checks
+
+Run `runtime/node.exe plugins/oculus-go/android/test/offline.mjs` from the project
+root after preparing the project-local JDK. It checks catalogue merging, empty-PC
+and no-cache browsing, favorites, search, filters, version handling and removal
+from the local list. These host checks use no network or headset. The optional
+instrumentation check also renders the local library with its PC catalogue
+removed, without launching or removing any installed application.

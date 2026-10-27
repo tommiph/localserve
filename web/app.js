@@ -191,7 +191,8 @@ function serviceEvidence(service) {
   const reception = AdminUX.reception(service);
   const check = service.pollObservation;
   const recovery = AdminUX.recoveryHint(service, state.paused);
-  return `<div class="service-evidence"><span>Last check: <b>${escapeHtml(serviceCheck(service))}</b></span><span>Latest reception: <b title="${escapeHtml(reception ? `${reception.label} · ${formatServerTimestamp(reception.value.value)}` : 'No declared reception timestamp is available')}">${reception ? escapeHtml(relativeTime(reception.value.value)) : 'Not reported'}</b></span>${check?.error ? `<span class="evidence-error">${escapeHtml(check.error)}</span>` : ''}${recovery ? `<span>${escapeHtml(recovery)}</span>` : ''}</div>`;
+  const nextStep = service.enabled && (!service.configurationReady || ['error','restart-required'].includes(service.health) || service.gatewayConnection?.status === 'unreachable' || check?.status === 'failed') ? AdminUX.nextStep(service,state.paused) : '';
+  return `<div class="service-evidence"><span>Last check: <b>${escapeHtml(serviceCheck(service))}</b></span><span>Latest reception: <b title="${escapeHtml(reception ? `${reception.label} · ${formatServerTimestamp(reception.value.value)}` : 'No declared reception timestamp is available')}">${reception ? escapeHtml(relativeTime(reception.value.value)) : 'Not reported'}</b></span>${check?.error ? `<span class="evidence-error">${escapeHtml(check.error)}</span>` : ''}${recovery ? `<span>${escapeHtml(recovery)}</span>` : ''}${nextStep ? `<span class="service-next-step">${escapeHtml(nextStep)}</span>` : ''}</div>`;
 }
 
 function renderNavigation() {
@@ -706,6 +707,7 @@ function showDialog(content, context) {
   dialog.classList.toggle('vista-editor', context.kind === 'vista' || context.kind === 'universe');
   dialog.classList.toggle('controls-editor', context.kind === 'controls');
   dialog.classList.toggle('task-builder-editor', context.kind === 'task-builder');
+  dialog.classList.toggle('setup-editor', context.kind === 'setup-guide');
   document.querySelector('#dialog-content').innerHTML = content;
   const form = dialog.querySelector('form');
   initialFormValues = form ? serializeForm(form) : '';

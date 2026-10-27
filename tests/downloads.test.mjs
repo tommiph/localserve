@@ -46,7 +46,9 @@ test('download routes preserve HEAD semantics, attachment identity and missing-f
   const head=await fetch(url,{method:'HEAD'});assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(f.apk.length));assert.equal((await head.arrayBuffer()).byteLength,0);
   assert.equal((await fetch(url+'?file=config.json')).status,400);
   assert.equal((await fetch(url,{method:'POST'})).status,405);
-  const index=await fetch(app.origin+'/api/downloads').then(response=>response.json());assert.equal(index.items.length,7);
+  const index=await fetch(app.origin+'/api/downloads').then(response=>response.json());assert.equal(index.items.length,9);
+  assert.equal(index.items.find(item=>item.id==='launcher-tv').available,false);
+  assert.equal(index.items.find(item=>item.id==='launcher-source').platform,'Samsung Tizen TV');
   const legacy=await fetch(app.origin+'/sensors',{redirect:'manual'});assert.equal(legacy.status,307);assert.equal(legacy.headers.get('location'),'/downloads');
   } finally {await app.close();}
 });

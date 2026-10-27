@@ -32,6 +32,57 @@ test('readiness, enablement and check failure are separate states', () => {
   assert.equal(ux.serviceStatus({...ready, pollObservation: {status: 'failed'}}).label, 'Ready');
 });
 
+test('service guidance explains configuration, pause, recovery and failed reads without claiming device success', () => {
+  const ready={health:'ready',enabled:true,configurationReady:true};
+  assert.match(ux.nextStep({...ready,configurationReady:false}),/required fields/);
+  assert.match(ux.nextStep({...ready,enabled:false}),/Enable/);
+  assert.match(ux.nextStep(ready,true),/Resume/);
+  assert.match(ux.nextStep({...ready,runtimeRecovery:{status:'pending'}}),/not replayed/);
+  assert.match(ux.nextStep({...ready,health:'error'}),/Log and Settings/);
+  assert.match(ux.nextStep({...ready,pollObservation:{status:'failed'}}),/Check the device or provider/);
+  assert.match(ux.nextStep({...ready,gatewayConnection:{status:'unreachable'}}),/Check the device or provider/);
+  assert.match(ux.nextStep({...ready,gatewayConnection:{status:'checking'}}),/Wait/);
+  assert.match(ux.nextStep(ready),/Review the latest readings/);
+});
+
+async function setupFixture() {
+  const effects=[],pages=[];
+  const state={services:[{id:'source',name:'<Weather>',icon:'cloud',enabled:false,configurationReady:false,health:'ready',cards:[],cardData:{readyMade:{templates:[{}]}}}],tasks:[],vistas:[],server:{},paused:false};
+  const context=vm.createContext({state,crypto:{randomUUID:()=> 'draft-step'},
+    escapeHtml:value=>String(value).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;'),
+    icon:name=>`<i>${name}</i>`,statusPill:label=>label,dialogHeader:label=>`<h1>${label}</h1>`,
+    showDialog:html=>pages.push(html),closeDialog:()=>effects.push('close'),renderView:()=>effects.push('render'),
+    workspace:{focus:()=>effects.push('focus')},currentView:'overview',PluginUI:{tabs:new Map()},
+    TaskUI:{openEditor:(...args)=>effects.push({editor:'task',args})},VistaUI:{openEditor:()=>effects.push({editor:'vista'})},
+  });
+  const setup=vm.runInContext(await fs.readFile(new URL('../web/admin-ux.js',import.meta.url),'utf8')+'\nSetupUI;',context);
+  return {setup,state,context,effects,pages};
+}
+
+test('setup guide offers service, Task, display and Controller paths without enabling or saving anything', async () => {
+  const f=await setupFixture(),before=JSON.stringify(f.state);
+  f.setup.open();assert.match(f.pages.at(-1),/Create a first Task/);assert.match(f.pages.at(-1),/0 configured and enabled services/);
+  f.setup.open('device');assert.match(f.pages.at(-1),/&lt;Weather&gt;/,'Data providers remain selectable without a remote-control declaration');
+  f.setup.open('device','source');assert.match(f.pages.at(-1),/required fields/);
+  f.setup.handle('setup-back');assert.match(f.pages.at(-1),/Choose a service/);
+  f.setup.open('display');assert.match(f.pages.at(-1),/Add ready-made card/);assert.match(f.pages.at(-1),/No data/);
+  f.setup.open('phone');assert.match(f.pages.at(-1),/six-character approval code/);assert.match(f.pages.at(-1),/setup-network/);assert.doesNotMatch(f.pages.at(-1),/JSON|\/sensors/);
+  f.state.server.lanAddress='http://192.168.50.10:7041';f.setup.open('phone');assert.doesNotMatch(f.pages.at(-1),/data-action="setup-network"/);
+  delete f.state.server.lanAddress;assert.equal(JSON.stringify(f.state),before);assert.deepEqual(f.effects,[]);
+});
+
+test('first Task setup opens only a disabled unsaved manual draft; handoffs select the ordinary editors', async () => {
+  const f=await setupFixture();f.setup.handle('setup-first-task');
+  const draft=f.effects.find(effect=>effect.editor==='task');assert.ok(draft);assert.equal(draft.args[0],null);assert.equal(draft.args[1],false);
+  assert.equal(draft.args[2].enabled,false);assert.equal(draft.args[2].starts.length,0);assert.equal(draft.args[2].steps[0].type,'log');
+  assert.equal(f.state.tasks.length,0);assert.equal(f.state.services[0].enabled,false);
+  f.setup.handle('setup-phone');assert.equal(f.context.currentView,'phone-home');
+  f.setup.handle('setup-tasks');assert.equal(f.context.currentView,'tasks');
+  f.setup.handle('setup-downloads');assert.equal(f.context.currentView,'downloads');
+  f.setup.handle('setup-open-cards','source');assert.equal(f.context.currentView,'source');assert.equal(f.context.PluginUI.tabs.get('source'),'cards');
+  f.setup.handle('setup-open-plugin','missing');assert.equal(f.context.currentView,'source');
+});
+
 test('reception uses declared reported timestamps, including zero, never Event/clock/publication time', () => {
   const service = {cardFields: [
     {id: 'received', source: {kind: 'state'}}, {id: 'clock', source: {kind: 'clock'}},

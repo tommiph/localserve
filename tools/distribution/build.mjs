@@ -81,7 +81,7 @@ async function definitions() {
 }
 
 const setup = {
-  sensors: 'Enable Sensors, open /sensors on Android and install the APK. Enter this server’s private LAN address, select sensors and Start. Devices register without pairing. Phone events, location, named regions and activity transitions are optional and require real Android permissions; activity needs installed Google Play services. Disable a device to reject reports. See android/README.md for setup, privacy, Task conditions and building.',
+  sensors: 'Install Controller from Downloads on Android and enter this server’s private LAN address in its Settings. For a new phone, use Controls → Controller setup → Connect a phone and enter its six-character approval code. Controller retrieves connection details automatically. Phone reporting is optional in Controller Settings; select the sources and grant the Android permissions you want to use. Activity recognition needs installed Google Play services. Disable a device to reject reports. See ../../CONTROLLER.md and android/README.md for setup, privacy, Task conditions and building.',
   'adsb-lol': 'Add an Area with your coordinates, radius in nautical miles and maximum reported position age. Enabling the plugin and Area sends those coordinates to api.adsb.lol. No map, route enrichment or device control is provided.',
   calendar: 'Add your own complete public HTTPS/webcal ICS subscription URL. No subscription is supplied. Reminder checks use cached agenda data; feed refresh is separate. No authenticated CalDAV, calendar edits or attachment downloads are provided.',
   emby: 'Enter your private/loopback Emby URL including port and a dedicated Emby API key. Paste only the key value, without its application label or spaces. Reads sessions only; connected clients without reported media can show No data. No playback or library control is provided.',
@@ -196,7 +196,7 @@ try {
   // recursively copy assets/, which can contain private user-authored pages.
   for (const file of ['favicon.svg','logo.svg','logo-dark.svg','vista-boot.js','card-preview.js','card-fullscreen.css','tv-viewer.js','lighting-ui.js',
     'vista-legacy-ready.css','vista-legacy.css','vista-legacy.js']) await copyFile('assets/'+file);
-    for (const directory of ['controls','material-symbols','qrcode','notices','timezones','universe','sensors','playstation-mode','scenes']) await copyTree('assets/'+directory);
+    for (const directory of ['controls','material-symbols','qrcode','notices','timezones','universe','sensors','playstation-mode','scenes','launcher']) await copyTree('assets/'+directory);
   await copyTree('apps/shared/android');
   await copyFile('tools/build-scenes-icons.ps1');
   await copyFile('tools/android-build/source-receipt.mjs');
@@ -297,6 +297,9 @@ try {
   const psScript='tv-tizen/playstation/app/launch.js';
   await write(psScript,(await fs.readFile(path.join(stage,psScript),'utf8')).replace(/var defaultUrl = '[^']+';/,"var defaultUrl = 'http://192.0.2.1:7041/playstation-mode';"));
   await copyFile('tv-tizen/playstation/README.md');
+  for(const file of ['config.xml','index.html','launch.js','launch.css','url-target.js','inputs.js','icons.js','icon-tv.png','launch-icon.png'])await copyFile('tv-tizen/launcher/app/'+file);
+  await copyFile('tv-tizen/launcher/README.md');
+  for(const file of ['build.mjs','install.mjs'])await copyFile('tv-tizen/'+file);
   for (const [target, source] of [['README.md','README.md'],['INSTALL.md','INSTALL.md'],['tv-tizen/README.md','TV-README.md']]) await write(target,await fs.readFile(path.join(tooling,'templates',source)));
   await write('README.md',renderDemoReadme(await fs.readFile(path.join(tooling,'templates/README.md'),'utf8'),JSON.parse(await fs.readFile(path.join(root,'project-info.json'),'utf8'))));
   for (const file of ['USER-GUIDE.md','CONTRIBUTING.md','AGENTS.md','SECURITY.md']) await write(file,await fs.readFile(path.join(tooling,'templates',file)));

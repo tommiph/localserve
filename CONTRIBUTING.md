@@ -38,6 +38,11 @@ command described in [Publishing](tools/distribution/PUBLISHING.md).
 
 ## Code map
 
+For Samsung TV launcher artwork, see the
+[Smart Hub artwork protocol](tv-tizen/launcher/README.md#smart-hub-artwork-protocol).
+It covers native/store app identities, exact EDEN messages, wide-image paths,
+validation, caching and glyph fallbacks.
+
 The Windows checks workflow runs on pushes and pull requests using a pinned
 checkout action and read-only repository permissions. It runs the public tests,
 builds clean packages and exercises installation in its own disposable instance.

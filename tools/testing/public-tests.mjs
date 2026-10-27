@@ -1,5 +1,6 @@
 /** The complete isolated suite is shared by local checks, clean-source verification and CI. */
 export const publicTests = Object.freeze([
+  "tests/launcher.test.mjs",
   "tests/color-themes.test.mjs",
   "tests/lighting-workflows.test.mjs",
   "tests/tradfri-connection.test.mjs",

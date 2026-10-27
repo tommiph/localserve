@@ -32,6 +32,8 @@ import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
 import {controlRoomView} from './server/control-room.mjs';
+import {launcherView} from './server/launcher.mjs';
+import {LauncherArtwork} from './server/launcher-artwork.mjs';
 import {readClientPackages} from './server/client-packages.mjs';
 import {downloadCatalogue,serveProductDownload} from './server/downloads.mjs';
 import { readCardAsset } from './server/card-templates.mjs';
@@ -179,6 +181,7 @@ export async function createLocalserve(root, options = {}) {
     registry.universe = universe;
     const games = await new GamesStore(root,registry,activity).load();
     const controls = await new ControlsStore(root, registry, config, activity).load();
+    const launcherArtwork=new LauncherArtwork(root,registry,engine.gate);
     registry.controls = controls;
     const lightingRoom = new LightingRoom(registry,controls);
     const gatewayScenes = new GatewayScenes(registry,controls,lightingRoom);
@@ -295,6 +298,18 @@ export async function createLocalserve(root, options = {}) {
         if(url.pathname==='/api/control-room'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the control room.');
           return json(response,200,controlRoomView(phoneHome,controls,lightingRoom));
+        }
+        if(url.pathname==='/api/launcher'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use Sormus Launcher.');
+          return json(response,200,launcherView({phoneHome,controls,vistas,universe,games,version:serverVersion}));
+        }
+        if(url.pathname==='/api/launcher/artwork'){
+          if(request.method!=='GET'||[...url.searchParams.keys()].some(key=>key!=='names')||url.searchParams.getAll('names').length!==1)throw new HttpError(405,'Use Sormus Launcher artwork.');
+          let names;try{names=JSON.parse(url.searchParams.get('names'));}catch{throw new HttpError(400,'Choose installed app names.');}
+          const controller=new AbortController(),abort=()=>controller.abort();
+          request.once('aborted',abort);const closed=()=>{if(!response.writableEnded)abort();};response.once('close',closed);
+          try{return json(response,200,await launcherArtwork.read(names,controller.signal));}
+          finally{request.removeListener('aborted',abort);response.removeListener('close',closed);}
         }
         if(url.pathname==='/api/phone-home'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the Home page.');
@@ -682,7 +697,7 @@ export async function createLocalserve(root, options = {}) {
         // blocks the entire viewer before any Card or script can load.
         // Only saved enabled Vistas, /display, and the explicit public test page
         // admit local packaged ancestors; admin and Controls remain unframeable.
-        if (viewerPage || url.pathname === '/display' || url.pathname === '/universe' || relative === 'assets/tv-url-test.html') {
+        if (viewerPage || url.pathname === '/display' || url.pathname === '/universe' || relative === 'assets/tv-url-test.html' || relative === 'assets/launcher/index.html') {
           response.setHeader('Content-Security-Policy', String(response.getHeader('Content-Security-Policy'))
             .replace("frame-ancestors 'none'", "frame-ancestors 'self' file:"));
         }
@@ -734,7 +749,7 @@ export async function createLocalserve(root, options = {}) {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
         if (!closePromise) closePromise = (async () => {
-          closing = true; tvClose.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
+          closing = true; tvClose.close();launcherArtwork.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});

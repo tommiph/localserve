@@ -109,11 +109,12 @@ test('definition row tools keep names, action identities and source scope withou
 test('setup guide derives outcomes from installed capabilities without changing saved state', () => {
   const services=state.services;state.services=[{id:'camera',name:'Camera',icon:'videocam',enabled:false,configurationReady:false,runtime:{preview:'jpeg-v1'},cards:[]}];
   const before=JSON.stringify(state);let html='';
+  context.statusPill=label=>label;
   context.showDialog=body=>{html=body;};context.dialogHeader=label=>label;
-  context.setup.open();assert.match(html,/Connect a device/);assert.match(html,/Create a display/);assert.match(html,/Use my phone/);
-  context.setup.open('device','camera');assert.match(html,/Needs configuration/);assert.match(html,/Nothing is enabled or tested/);
-  context.setup.handle('setup-back');assert.match(html,/Choose a device/);
-  context.setup.open('display');assert.match(html,/shared \/display selection/);
+  context.setup.open();assert.match(html,/Connect a service/);assert.match(html,/Create a first Task/);assert.match(html,/Create a display/);assert.match(html,/Use Controller/);
+  context.setup.open('device','camera');assert.match(html,/Configure/);assert.match(html,/guide does not test the connection/);
+  context.setup.handle('setup-back');assert.match(html,/Choose a service/);
+  context.setup.open('display');assert.match(html,/does not open the TV or change \/display/);
   assert.equal(JSON.stringify(state),before);state.services=services;
 });
 

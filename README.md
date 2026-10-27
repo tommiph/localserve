@@ -43,6 +43,24 @@ included with an installer that preserves existing remotes. Configure your own
 devices before enabling them. [Local display examples](assets/pages/README.md)
 include a sci-fi screen and solar-system screensaver.
 
+## Follow the setup guide
+
+Open **Overview ? Setup guide** whenever you need a next step. Choose **Connect a
+service**, **Create a first Task**, **Create a display** or **Use Controller**.
+The guide shows current setup counts and opens the ordinary editors. It does not
+enable plugins, save content, send device commands or run Tasks.
+
+For a first Task, the guide prepares a disabled, unsaved **Log activity** draft.
+Review it, leave automatic rules empty, enable it and save. Run it once from Tasks,
+then check its completed run and Activity. Publish selected Tasks to your phone in
+**Controls ? Controller setup ? Choose Tasks**.
+
+For a real device or information source, complete its plugin Settings, enable it
+when ready and inspect its readings. **Configure** means required fields are
+missing; **Ready** describes the plugin runtime, not proof of a successful device
+response. Overview separates the latest check from the latest reported reception
+and gives next-step hints when an enabled service needs attention.
+
 ## Your first Task
 
 For a finished example, choose **Create demo** on Overview in an empty
@@ -93,6 +111,10 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
 - **Downloads:** one administrator page for Controller, TV widgets and source,
   the Oculus Go app and Google Apps Script. Versions and readiness are listed.
   See [Downloads](DOWNLOADS.md).
+- **Sormus Launcher:** an optional separate TV home screen for installed apps,
+  inputs, displays, lighting scenes and published Tasks. It supports favorites,
+  app search, hidden entries, Smart Hub artwork and glyphs, including artwork-only
+  tiles. See [Launcher](tv-tizen/launcher/README.md).
 - **Samsung TV:** optional Tizen launcher displays Vistas, webpages and notices
   with sound, looping and timed/manual dismissal.
 - **Oculus Go:** manual APK library and a separate **# Sormus #** VR client

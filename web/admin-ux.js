@@ -105,6 +105,19 @@ const AdminUX = {
     return `Automatic recovery ${seconds ? 'in ' + seconds + ' s' : 'is due'}. Interrupted commands are not retried.`;
   },
 
+  nextStep(service, paused = false) {
+    if (!service.configurationReady) return 'Open Settings and complete the required fields before enabling this service.';
+    if (!service.enabled) return 'Enable this service when you are ready to use it.';
+    if (paused) return 'Resume server functions to continue automatic checks.';
+    if (service.runtimeRecovery) return 'Automatic recovery is pending. Open the plugin Log for details; interrupted actions are not replayed.';
+    if (['error','restart-required'].includes(service.health)) return 'Open the plugin Log and Settings to review the reported error.';
+    if (service.gatewayConnection?.status === 'unreachable' || service.pollObservation?.status === 'failed')
+      return 'Check the device or provider connection and its Settings. Use Refresh to request a new reading when available.';
+    if (service.gatewayConnection?.status === 'checking' || ['loading','configuring'].includes(service.health))
+      return 'Wait for the current connection check to finish, then inspect its readings.';
+    return 'Review the latest readings before adding actions or automatic rules.';
+  },
+
   reception(service) {
     // A completed check may only inspect a cache. Reception must instead come
     // from a plugin-declared reception timestamp, never from command delivery,
@@ -136,21 +149,59 @@ const AdminUX = {
 /** Read-only setup navigation hands off to ordinary configuration editors. */
 const SetupUI = {
   page:'', selected:'',
+  choice(id, glyph, title, help, action='setup-page') {
+    return `<button type="button" class="setup-choice" data-action="${action}" data-id="${escapeHtml(id)}">${icon(glyph)}<strong>${escapeHtml(title)}</strong><span>${escapeHtml(help)}</span></button>`;
+  },
+  navigate(view) {
+    closeDialog();currentView=view;renderView();workspace.focus();
+  },
   open(page='', selected='') {
     this.page=page;this.selected=selected;
+    const services=state.services || [];
+    const tasks=state.tasks || [];
+    const cards=services.reduce((total,service)=>total+(service.cards || []).filter(card=>card.enabled).length,0);
+    const configured=services.filter(service=>service.enabled && service.configurationReady).length;
     let body='';
-    if(!page)body=`<h2>What would you like to set up?</h2><div class="setup-choices">${[['device','devices','Connect a device','Configure a local device and check its readiness.'],['display','display','Create a display','Choose information Cards, then arrange a Vista.'],['phone','smartphone','Use my phone','Open Home, remotes and optional sensor reporting.']].map(([id,glyph,label,help])=>`<button type="button" class="setup-choice" data-action="setup-page" data-id="${id}">${icon(glyph)}<strong>${label}</strong><span>${help}</span></button>`).join('')}</div>`;
+    if(!page) {
+      body=`<h2>Choose your next step</h2><p>Start with a service, try a manual Task, then put your controls or information where you want them. You can return here at any time.</p>
+        <p class="setup-progress">${configured} configured and enabled services · ${tasks.length} saved Tasks · ${cards} enabled Cards</p>
+        <div class="setup-choices">${[
+          ['device','devices','Connect a service','Set up a device or information source and inspect its readings.'],
+          ['task','list-check','Create a first Task','Try a manual activity message, without controlling any device.'],
+          ['display','display','Create a display','Choose a ready-made Card, then arrange it in a Vista.'],
+          ['phone','smartphone','Use Controller','Connect your phone and choose the shortcuts it can use.'],
+        ].map(choice=>this.choice(...choice)).join('')}</div>
+        <p class="field-help">This guide opens the normal editors. It never enables services, saves content or runs actions for you.</p>`;
+    }
     if(page==='device') {
-      const services=state.services.filter(service=>service.controls || service.connectionSetup || service.runtime?.preview || service.runtime?.ingest);
       const service=services.find(item=>item.id===selected);
-      body=service?`<h2>${escapeHtml(service.name)}</h2><ol class="setup-checklist"><li>Configuration: <strong>${service.configurationReady?'Complete':'Needs configuration'}</strong></li><li>Plugin: <strong>${service.enabled?'Enabled':'Disabled'}</strong></li><li>Check reported readings or use an explicit connection check in Settings.</li></ol><p class="field-help">Configuration readiness does not prove a live device connection. Nothing is enabled or tested by this guide.</p><button type="button" class="button primary" data-action="setup-open-plugin" data-id="${escapeHtml(service.id)}">Open Settings</button>`:`<h2>Choose a device</h2><div class="setup-choices">${services.map(service=>`<button type="button" class="setup-choice" data-action="setup-device" data-id="${escapeHtml(service.id)}">${icon(service.icon)}<strong>${escapeHtml(service.name)}</strong><span>${service.enabled?'Enabled':'Disabled'}</span></button>`).join('') || '<p>No installed plugin declares a device interface. Install a trusted plugin in plugins/ and refresh discovery.</p>'}</div>`;
+      const status=service && AdminUX.serviceStatus(service,state.paused);
+      body=service?`<h2>${escapeHtml(service.name)}</h2>
+        <p>${statusPill(status.label,status.className)}</p><p>${escapeHtml(AdminUX.nextStep(service,state.paused))}</p>
+        <ol class="setup-checklist"><li>Open Settings and read this plugin's setup instructions.</li><li>Complete its required fields with your own device or provider details.</li><li>Enable the service when ready, then check its latest readings and Log.</li></ol>
+        <p class="field-help">Configured means the required fields are present. It does not prove that the device or provider has responded. The guide does not test the connection.</p>
+        <div class="row-actions"><button type="button" class="button primary" data-action="setup-open-plugin" data-id="${escapeHtml(service.id)}">Open Settings</button><button type="button" class="button" data-action="setup-page" data-id="task">Next: Task</button></div>`:
+        `<h2>Choose a service</h2><p>Devices and information sources are configured in their own plugin. Simulator works without a device or account.</p><div class="setup-choices">${services.map(service=>this.choice(service.id,service.icon,service.name,AdminUX.serviceStatus(service,state.paused).label,'setup-device')).join('') || '<p>No plugins are installed. Add a trusted plugin folder and refresh discovery.</p>'}</div>`;
+    }
+    if(page==='task') {
+      body=`<h2>Create a first Task</h2><p>Try the Task editor using a message in Activity. No device or plugin is required.</p>
+        <ol class="setup-checklist"><li>Open the prepared draft and change its name or message.</li><li>Leave automatic rules empty. Enable the Task and choose Save when ready.</li><li>In Tasks, choose Run once. Check its completed run and your message in Activity.</li><li>For phone access, use Controller setup → Choose Tasks after saving.</li></ol>
+        <p class="field-help">The draft starts disabled and unsaved. Opening it does not create or execute a Task. Add real actions and automatic rules only after reviewing what they will do.</p>
+        <div class="row-actions"><button type="button" class="button primary" data-action="setup-first-task">Open Task draft</button><button type="button" class="button" data-action="setup-tasks">Open Tasks</button><button type="button" class="button" data-action="setup-activity">Open Activity</button></div>
+        <p>${tasks.length} saved Task${tasks.length===1?'':'s'}. The optional Simulator demo on an empty Overview also provides a finished Task and display.</p>`;
     }
     if(page==='display') {
-      const services=state.services.filter(service=>service.cardData?.readyMade?.templates?.length);
-      const count=state.services.reduce((total,service)=>total+(service.cards || []).filter(card=>card.enabled).length,0);
-      body=`<h2>Create a display</h2><ol class="setup-checklist"><li>Configure a data source in its plugin.</li><li>Create its Card in Card designer.</li><li>Add the Card to a Vista and preview its own URL.</li></ol><p>${count} enabled Card${count===1?'':'s'} available. You can arrange a Vista before its data source is ready.</p><div class="setup-choices">${services.map(service=>`<button type="button" class="setup-choice" data-action="setup-open-cards" data-id="${escapeHtml(service.id)}">${icon(service.icon)}<strong>${escapeHtml(service.name)}</strong><span>Open Card designer</span></button>`).join('')}</div><button type="button" class="button primary" data-action="setup-new-vista">Add Vista</button><p class="field-help">Previewing does not change the shared /display selection. For a device-free example, Create demo is available on an empty Overview.</p>`;
+      const sources=services.filter(service=>service.cardData?.readyMade?.templates?.length);
+      body=`<h2>Create a display</h2><ol class="setup-checklist"><li>Configure an information source in its plugin and check its readings.</li><li>Open its Card designer, choose Add ready-made card, select a source and enable the Card.</li><li>Create a Vista, use Add here to choose where to insert the Card, then save and enable the Vista.</li><li>Open the Vista's own URL. Choose it for /display only when you want to change the shared TV display.</li></ol>
+        <p>${cards} enabled Card${cards===1?'':'s'} available. A ready-made design is a template; it is not a saved Card until you create one. Missing readings remain No data.</p>
+        <div class="setup-choices">${sources.map(service=>this.choice(service.id,service.icon,service.name,'Open Card designer','setup-open-cards')).join('') || '<p>No ready-made designs are installed. You can still create a Vista and add Cards later.</p>'}</div>
+        <div class="row-actions"><button type="button" class="button primary" data-action="setup-new-vista">Add Vista</button><button type="button" class="button" data-action="setup-vistas">Open Vistas</button></div>
+        <p class="field-help">Previewing does not open the TV or change /display. Install compatible TV applications from Downloads when you are ready to use a TV.</p>`;
     }
-    if(page==='phone')body=`<h2>Use my phone</h2><ol class="setup-checklist"><li>Connect the phone and server to the same Wi-Fi.</li><li>${state.server?.lanAddress?'A LAN address is active. Copy it from Controller setup.':'Set an explicit LAN address in Settings → Network; localhost reaches this PC only.'}</li><li>Open Controller at /scenes in a browser or install Controller for Android.</li><li>Use Controller Settings → Phone reporting only if you want to share phone sources.</li></ol><p class="field-help">Use Controls → Controller setup → Choose Tasks to make Tasks available on your phone. Enabled remotes, lighting scenes and compatible Cards appear automatically.</p><button type="button" class="button primary" data-action="setup-phone">Open Controller setup</button>`;
+    if(page==='phone')body=`<h2>Use Controller</h2><ol class="setup-checklist"><li>Connect the phone and PC to the same home network.</li><li>${state.server?.lanAddress?'A LAN address is active. Use the address shown in Controller setup.':'Open Settings → Network and configure a reachable private LAN address. Localhost reaches this PC only.'}</li><li>On the phone, open the server's Downloads page, download Controller and install it.</li><li>In Controller Settings, enter the server address and choose Save server.</li><li>For a new phone, open Controller setup → Connect a phone in administration. Enter its six-character approval code in Controller.</li><li>Use Controller setup → Choose Tasks to publish selected saved Tasks. Enable lighting scenes for end-user access in their editor.</li></ol>
+      <p class="field-help">Connection details come from the server automatically after approval. There are no configuration files to copy. Full remotes and Cards use the home network; away-from-home Lights and Tasks need the optional Google Apps Script relay.</p>
+      <p>Phone reporting is optional in Controller Settings and requires Android permission for the sources you choose.</p>
+      <div class="row-actions"><button type="button" class="button primary" data-action="setup-phone">Open Controller setup</button><button type="button" class="button" data-action="setup-downloads">Open Downloads</button>${!state.server?.lanAddress?'<button type="button" class="button" data-action="setup-network">Open server Settings</button>':''}</div>`;
     showDialog(`${dialogHeader('Setup guide')}<div class="dialog-body setup-guide">${body}</div><div class="dialog-footer">${page?'<button type="button" class="button" data-action="setup-back">Back</button>':''}<button type="button" class="button" data-action="close-dialog">Close</button></div>`,{kind:'setup-guide'});
   },
   handle(action,id) {
@@ -159,7 +210,11 @@ const SetupUI = {
     if(action==='setup-page')return this.open(id);
     if(action==='setup-device')return this.open('device',id);
     if(action==='setup-new-vista'){closeDialog();return VistaUI.openEditor();}
-    if(action==='setup-phone'){closeDialog();currentView='phone-home';renderView();workspace.focus();return;}
+    if(action==='setup-first-task'){
+      closeDialog();return TaskUI.openEditor(null,false,{name:'First Task',enabled:false,starts:[],steps:[{id:crypto.randomUUID(),type:'log',enabled:true,message:'My first Task completed.'}]});
+    }
+    const destinations={'setup-phone':'phone-home','setup-tasks':'tasks','setup-activity':'activity','setup-downloads':'downloads','setup-network':'settings','setup-vistas':'vistas'};
+    if(destinations[action])return this.navigate(destinations[action]);
     if(['setup-open-plugin','setup-open-cards'].includes(action)) {
       if(!state.services.some(service=>service.id===id))return;
       closeDialog();PluginUI.tabs.set(id,action==='setup-open-cards'?'cards':'settings');currentView=id;renderView();workspace.focus();

@@ -5,12 +5,27 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Public catalogue fields only; files stay on the server until installation. */
+/** PC catalogue metadata or a launchable app reported by the headset itself.
+ * Local entries have no downloadable versions or server file identifiers. */
 final class LibraryItem {
     final String packageName, title, description, image;
     final List<String> tags = new ArrayList<>();
     final List<Version> versions = new ArrayList<>();
     final long added;
+
+    LibraryItem(String packageName, String title, long installedAt) {
+        this.packageName = packageName;
+        this.title = title == null || title.trim().isEmpty() ? packageName : title;
+        description = "Installed on this headset.";
+        image = "";
+        added = installedAt;
+    }
+
+    Version latestVersion() { return versions.isEmpty() ? null : versions.get(0); }
+
+    Version versionAt(int index) {
+        return versions.isEmpty() ? null : versions.get(Math.max(0, Math.min(index, versions.size() - 1)));
+    }
 
     static final class Version {
         final String id, name, abi;

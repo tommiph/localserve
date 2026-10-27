@@ -6,7 +6,7 @@ on another device. Refresh checks the files again.
 
 - **Controller** is the only phone APK. Install it over the existing app to retain
   its settings, then use **Controls → Controller setup** to connect and choose Tasks.
-- **Sormus Vistas** and **PlayStation TV app** are signed widgets when built on
+- **Sormus Vistas**, **Sormus Launcher** and **PlayStation TV app** are signed widgets when built on
   this server. Installation requires an authorized Tizen developer connection.
 - **TV source ZIPs** contain application sources without signing keys or configured
   addresses. Build and sign them with your own Tizen SDK and certificate.

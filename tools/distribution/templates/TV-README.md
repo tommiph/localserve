@@ -1,4 +1,19 @@
-# Optional Vista Tizen application source
+# Samsung TV applications
+
+Three independent TV applications are available as source:
+
+| Application | Purpose | Identity |
+| --- | --- | --- |
+| Sormus Vistas | Displays, webpages, notices and optional HDMI overlay | HwGlance01.HomeGlance |
+| Sormus Launcher | Apps, inputs, favorites, lighting scenes and Task shortcuts | SormusL001.Launcher |
+| PlayStation | Dedicated game information and HDMI screen | LsPsMode01.PlaystationMode |
+
+See [Launcher setup and Smart Hub artwork](launcher/README.md) for its separate
+connection screen, app search and tile preferences. Vistas and Launcher wait
+30 seconds without readiness before showing connection settings. Installation
+and compatible device behavior are separate from the server's availability.
+
+## Vistas source
 
 For a dedicated HDMI 1 and PSN information screen, see the separate
 [PlayStation application source](playstation/README.md) and
@@ -28,7 +43,10 @@ Before building for your own TV:
 4. Configure your own author/distributor certificates and authorized TV target,
    then build/sign/install through that tool's workflow. Keep all generated
    credentials, signing files and output packages private. This distribution does
-   not provide an automatic signing/install script or perform device discovery.
+   include an SDK or signing credentials, and no build or install is automatic.
+   With the project-local SDK and your own authorized signing profile prepared,
+   the supplied build.mjs and install.mjs commands can build and install the
+   selected app on the explicitly configured TV. See the application guides.
 
 The source keeps application ID `HwGlance01.HomeGlance`. Updating a package that
 was already installed under another author requires that author's signing

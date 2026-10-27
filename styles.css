@@ -1626,6 +1626,12 @@ dialog.task-editor {
 .setup-choice > i { color:var(--accent); font-size:calc(30px * var(--font-scale)); }
 .setup-choice > span { color:var(--muted); font-size:calc(12px * var(--font-scale)); }
 .setup-checklist { padding-left:24px; line-height:1.7; }
+.setup-guide > p, .setup-guide > .row-actions, .setup-checklist { margin:16px 0; }
+.setup-checklist li + li { margin-top:10px; }
+.setup-progress { padding:12px 16px; border:1px solid var(--border); border-radius:8px; color:var(--muted); background:var(--surface-muted); }
+.setup-choice { min-width:0; overflow-wrap:anywhere; cursor:pointer; }
+.setup-choice:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+dialog.setup-editor { width:min(900px, calc(100vw - 32px)); }
 .task-step + .task-step { position: relative; }
 .task-step + .task-step::before { content: ""; position: absolute; top: -15px; left: 28px; height: 14px; width: 2px; background: var(--border); }
 @media (max-width: 850px) {

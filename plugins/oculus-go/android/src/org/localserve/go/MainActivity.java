@@ -3,6 +3,9 @@ package org.localserve.go;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -25,7 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -45,6 +47,8 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     final ExecutorService network = Executors.newFixedThreadPool(3);
     final NetApi api = new NetApi();
     final List<LibraryItem> apps = new ArrayList<>();
+    final List<LibraryItem> catalogApps = new ArrayList<>();
+    final List<LibraryItem> localApps = new ArrayList<>();
     final Map<String, Integer> installed = new HashMap<>();
     final Set<String> pendingArt = Collections.synchronizedSet(new HashSet<>());
     final Set<String> missingArt = new HashSet<>();
@@ -62,7 +66,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     float pointerX = -1, pointerY = -1;
     String tab = "Library", filter = "Installed", query = "", genre = "All genres", sort = "A–Z";
     String favoriteFilter = "All";
-    String message = "Connect to Sormus to load your collection.";
+    String message = "Installed apps are available here. Connect to Sormus for your PC collection.";
     String inputMode = "", menu = "", addressDraft = "", codeDraft = "";
     LibraryItem selected;
     Confirmation confirmation;
@@ -97,8 +101,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         sort = connectionSettings.preferences().getString("sort", "A–Z");
         try { session = connectionSettings.load(); }
         catch (Exception error) { message = "Connection could not be unlocked. Connect again in Settings."; }
-        if (session == null) tab = "Settings";
-        else {
+        if (session != null) {
             addressDraft = session.base.replace("http://", "");
             try (FileInputStream input = new FileInputStream(new File(getFilesDir(), "catalog.json"))) {
                 loadCatalog(new JSONObject(new String(NetApi.read(input, 8 * 1024 * 1024), "UTF-8")));
@@ -106,6 +109,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
             } catch (Exception ignored) { /* A missing cache leaves an empty collection. */ }
         }
         refreshInstalled();
+        if (session == null && apps.isEmpty()) tab = "Settings";
         screen = new GoScreen(this);
         SurfaceView view = new SurfaceView(this);
         view.getHolder().addCallback(this);
@@ -198,8 +202,43 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
     int installedVersion(String packageName) { Integer value = installed.get(packageName); return value == null ? -1 : value; }
     void refreshInstalled() {
+        PackageManager manager = getPackageManager();
         installed.clear();
-        for (PackageInfo info : getPackageManager().getInstalledPackages(0)) installed.put(info.packageName, info.versionCode);
+        localApps.clear();
+        for (PackageInfo info : manager.getInstalledPackages(0)) {
+            installed.put(info.packageName, info.versionCode);
+            ApplicationInfo application = info.applicationInfo;
+            if (info.packageName.equals(getPackageName()) || application == null || !application.enabled
+                    || (application.flags & ApplicationInfo.FLAG_SYSTEM) != 0) continue;
+            if (localLaunchIntent(info.packageName) == null) continue;
+            CharSequence label = manager.getApplicationLabel(application);
+            localApps.add(new LibraryItem(info.packageName, label == null ? info.packageName : label.toString(), info.firstInstallTime));
+        }
+        rebuildLibrary();
+    }
+    Intent localLaunchIntent(String packageName) {
+        PackageManager manager = getPackageManager();
+        Intent launch = manager.getLaunchIntentForPackage(packageName);
+        if (launch != null) return launch;
+        // VR-only titles may expose the Oculus category without a flat launcher.
+        Intent vr = new Intent(Intent.ACTION_MAIN).addCategory("com.oculus.intent.category.VR").setPackage(packageName);
+        for (ResolveInfo result : manager.queryIntentActivities(vr, 0)) {
+            if (result.activityInfo != null && result.activityInfo.enabled && result.activityInfo.exported
+                    && packageName.equals(result.activityInfo.packageName)) {
+                return new Intent(vr).setClassName(packageName, result.activityInfo.name).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
+        }
+        return null;
+    }
+    void rebuildLibrary() {
+        apps.clear();
+        apps.addAll(LibraryCatalog.merge(catalogApps, localApps));
+        if (selected != null) {
+            String packageName = selected.packageName;
+            selected = null;
+            for (LibraryItem item : apps) if (item.packageName.equals(packageName)) selected = item;
+            versionIndex = selected == null ? 0 : Math.max(0, Math.min(versionIndex, selected.versions.size() - 1));
+        }
     }
     Set<String> favorites() { return new HashSet<>(connectionSettings.preferences().getStringSet("favorites", Collections.emptySet())); }
     void toggleFavorite(LibraryItem item) {
@@ -207,19 +246,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
         connectionSettings.preferences().edit().putStringSet("favorites", values).apply(); render();
     }
     List<LibraryItem> visibleApps() {
-        List<LibraryItem> values = new ArrayList<>(); Set<String> favorites = favorites();
-        String effectiveFilter = currentFilter();
-        for (LibraryItem item : apps) {
-            int version = installedVersion(item.packageName);
-            if (!query.isEmpty() && !(item.title + " " + item.packageName + " " + item.tags).toLowerCase(Locale.ROOT).contains(query.toLowerCase(Locale.ROOT))) continue;
-            if (!genre.equals("All genres") && !item.tags.contains(genre)) continue;
-            if (tab.equals("Favorites") && !favorites.contains(item.packageName)) continue;
-            if (effectiveFilter.equals("Installed") && version < 0 || effectiveFilter.equals("Updates") && (version < 0 || version >= item.versions.get(0).code)) continue;
-            values.add(item);
-        }
-        Collections.sort(values, (a, b) -> sort.equals("Newest") ? Long.compare(b.added, a.added)
-            : sort.equals("Size") ? Long.compare(a.versions.get(0).size, b.versions.get(0).size) : a.title.compareToIgnoreCase(b.title));
-        return values;
+        return LibraryCatalog.visible(apps, installed, favorites(), tab.equals("Favorites"), currentFilter(), query, genre, sort);
     }
     List<String> genres() {
         TreeSet<String> tags = new TreeSet<>(); for (LibraryItem item : apps) tags.addAll(item.tags);
@@ -233,18 +260,13 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
     void loadCatalog(JSONObject value) {
         JSONArray entries = value.optJSONArray("apps"); if (entries == null || entries.length() > 10000) return;
-        apps.clear();
+        List<LibraryItem> next = new ArrayList<>();
         for (int i = 0; i < entries.length(); i++) {
             JSONObject entry = entries.optJSONObject(i); if (entry == null) continue;
             LibraryItem item = new LibraryItem(entry);
-            if (item.packageName.matches("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+") && !item.versions.isEmpty()) apps.add(item);
+            if (item.packageName.matches("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+") && !item.versions.isEmpty()) next.add(item);
         }
-        if (selected != null) {
-            LibraryItem replacement = null;
-            for (LibraryItem item : apps) if (item.packageName.equals(selected.packageName)) replacement = item;
-            selected = replacement;
-            if (selected != null) versionIndex = Math.min(versionIndex, selected.versions.size() - 1);
-        }
+        catalogApps.clear(); catalogApps.addAll(next); rebuildLibrary();
     }
 
     void refresh() {
@@ -264,7 +286,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     network.execute(() -> saveCatalog(captured, data));
                 });
             } catch (Exception error) {
-                main.post(() -> { if (current(captured)) { loading = false; online = false; status("Server unavailable: " + shortError(error) + " · Installed apps can still play."); } });
+                main.post(() -> { if (current(captured)) { loading = false; online = false; refreshInstalled(); status("Server unavailable: " + shortError(error) + " · Installed apps can still play."); } });
             }
         });
     }
@@ -281,7 +303,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     void fetchArt(LibraryItem item) {
         final NetApi.Session captured = session;
         // Rapid page changes cannot create an unbounded artwork request queue.
-        if (!online || captured == null || pendingArt.size() >= 12 || missingArt.contains(item.packageName) || art.get(item.packageName) != null || !pendingArt.add(connectionGeneration + "/" + item.packageName)) return;
+        if (item.image.isEmpty() || !online || captured == null || pendingArt.size() >= 12 || missingArt.contains(item.packageName) || art.get(item.packageName) != null || !pendingArt.add(connectionGeneration + "/" + item.packageName)) return;
         final String artKey = connectionGeneration + "/" + item.packageName;
         network.execute(() -> {
             Bitmap bitmap = null;
@@ -322,7 +344,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                     synchronized (MainActivity.this) { session = new NetApi.Session(base, token); new File(getFilesDir(), "catalog.json").delete(); }
                     codeDraft = ""; requestPending = false;
                     loading = false; pollBusy = false; online = false; job = null; selected = null;
-                    apps.clear(); art.evictAll(); pendingArt.clear(); missingArt.clear(); query = ""; genre = "All genres"; page = 0;
+                    catalogApps.clear(); refreshInstalled(); art.evictAll(); pendingArt.clear(); missingArt.clear(); query = ""; genre = "All genres"; page = 0;
                     tab = "Library"; refresh(); pollJob();
                 });
             } catch (Exception error) {
@@ -352,6 +374,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
                 main.post(() -> {
                     if (!current(captured)) return;
                     boolean wasOnline = online; pollBusy = false; online = false;
+                    if (wasOnline) refreshInstalled();
                     if (busy()) status("Connection lost during operation. Check the headset before retrying.");
                     else if (wasOnline) status("Server unavailable. Installed apps can still play; refresh when it returns.");
                     else render();
@@ -363,11 +386,11 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     void reviewInstall(LibraryItem item, LibraryItem.Version version) {
         if (busy()) { status("Wait for the current package operation."); return; }
         if (session == null || !online) { status("Connect to Sormus before installing."); return; }
-        if (!version.compatible() || item.packageName.equals(getPackageName())) { status("This version cannot be installed from the headset library."); return; }
+        if (version == null || !version.compatible() || item.packageName.equals(getPackageName())) { status("This version cannot be installed from the headset library."); return; }
         confirmation = new Confirmation("install", item, version, session); render();
     }
     void reviewUninstall(LibraryItem item) {
-        if (busy() || session == null || item.packageName.equals(getPackageName()) || item.packageName.equals("com.tommi.homevr")) return;
+        if (busy() || session == null || !online || item.packageName.equals(getPackageName()) || item.packageName.equals("com.tommi.homevr")) return;
         final Confirmation review = new Confirmation("uninstall", item, null, session);
         review.checking = true; confirmation = review; render();
         network.execute(() -> {
@@ -381,7 +404,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
     void confirmOperation() {
         final Confirmation review = confirmation;
-        if (review == null || review.submitted || review.checking || !current(review.session) || busy()) return;
+        if (review == null || review.submitted || review.checking || !online || !current(review.session) || busy()) return;
         review.submitted = true; requestPending = true; status("Sending " + review.operation + " request…");
         network.execute(() -> {
             try {
@@ -418,7 +441,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback {
     }
     void launch(LibraryItem item) {
         try {
-            Intent intent = getPackageManager().getLaunchIntentForPackage(item.packageName);
+            Intent intent = localLaunchIntent(item.packageName);
             if (intent == null) throw new Exception("Application is unavailable or has no launcher.");
             startActivity(intent);
         } catch (Exception error) { status(shortError(error)); }

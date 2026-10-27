@@ -4,7 +4,7 @@ Selected Android sensor and phone reports through LAN or an explicitly configure
 
 ## Setup
 
-Enable Sensors, open /sensors on Android and install the APK. Enter this server’s private LAN address, select sensors and Start. Devices register without pairing. Phone events, location, named regions and activity transitions are optional and require real Android permissions; activity needs installed Google Play services. Disable a device to reject reports. See android/README.md for setup, privacy, Task conditions and building.
+Install Controller from Downloads on Android and enter this server’s private LAN address in its Settings. For a new phone, use Controls → Controller setup → Connect a phone and enter its six-character approval code. Controller retrieves connection details automatically. Phone reporting is optional in Controller Settings; select the sources and grant the Android permissions you want to use. Activity recognition needs installed Google Play services. Disable a device to reject reports. See ../../CONTROLLER.md and android/README.md for setup, privacy, Task conditions and building.
 
 Starts disabled with fresh default settings, no cached readings, saved Cards or Controls. Configure through the shared administrator; do not copy credentials from someone else's installation.
 

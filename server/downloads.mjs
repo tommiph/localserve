@@ -52,6 +52,8 @@ const items=[
   {id:'controller',name:'Controller',platform:'Android phone',kind:'APK',file:'controller.apk',folder:'plugins/sensors/android',artifact:'localserve-sensors.apk',description:'Lights, Tasks, remotes, Cards and optional phone reporting.'},
   {id:'vistas-tv',name:'Sormus Vistas',platform:'Samsung Tizen TV',kind:'Signed widget',file:'vistas.wgt',folder:'tv-tizen',description:'Install with the Tizen SDK and an authorized developer connection.'},
   {id:'vistas-source',name:'Vistas TV source',platform:'Samsung Tizen TV',kind:'Source ZIP',file:'vistas-source.zip',folder:'tv-tizen',description:'Build and sign with your own Tizen SDK and certificate.'},
+  {id:'launcher-tv',name:'Sormus Launcher',platform:'Samsung Tizen TV',kind:'Signed widget',file:'sormus-launcher.wgt',folder:'tv-tizen/launcher',description:'TV apps, inputs, displays and published shortcuts. Requires a reachable Sormus PC.'},
+  {id:'launcher-source',name:'Sormus Launcher source',platform:'Samsung Tizen TV',kind:'Source ZIP',file:'sormus-launcher-source.zip',folder:'tv-tizen/launcher',description:'Build and sign the launcher using your own Tizen SDK and certificate.'},
   {id:'playstation-tv',name:'PlayStation TV app',platform:'Samsung Tizen TV',kind:'Signed widget',file:'playstation.wgt',folder:'tv-tizen/playstation',description:'The separate PlayStation display app. Requires your TV developer setup.'},
   {id:'playstation-source',name:'PlayStation TV source',platform:'Samsung Tizen TV',kind:'Source ZIP',file:'playstation-source.zip',folder:'tv-tizen/playstation',description:'Source for the PlayStation TV app, including its launcher artwork.'},
   {id:'oculus-go',name:'Oculus Go app',platform:'Oculus Go headset',kind:'APK',file:'oculus-go.apk',folder:'plugins/oculus-go/android',artifact:'localserve-go.apk',description:'The headset library client. Install on Oculus Go, not on your phone.'},
@@ -59,6 +61,7 @@ const items=[
 ];
 const tvFiles=['config.xml','index.html','launch.js','launch.css','url-target.js','pip.js','icon-tv.png','launch-icon.png'];
 const psFiles=['config.xml','index.html','launch.js','launch.css','url-target.js','hdmi.js','icon.png','wordmark.png','fonts/Rajdhani-Medium.ttf','fonts/Rajdhani-SemiBold.ttf','fonts/OFL.txt'];
+const launcherFiles=['config.xml','index.html','launch.js','launch.css','url-target.js','inputs.js','icons.js','icon-tv.png','launch-icon.png'];
 export async function productDownload(root,id) {
   const item=items.find(item=>item.id===id);if(!item)throw new HttpError(404,'Download not found.');
   let bytes,release;
@@ -68,13 +71,13 @@ export async function productDownload(root,id) {
     const manifest=(await contained(root,item.folder+'/AndroidManifest.xml',32768)).toString('utf8');
     if(!release||meta.sha256!==digest(bytes)||(meta.bytes??meta.size)!==bytes.length||!/android:versionName="([^"]+)"/.exec(manifest)||/android:versionName="([^"]+)"/.exec(manifest)[1]!==release)throw Error('Rebuild the application package.');
   }else if(item.kind==='Signed widget'){
-    bytes=await contained(root,item.folder+'/dist/'+(id==='vistas-tv'?'Vista.wgt':'PlayStation.wgt'));
+    bytes=await contained(root,item.folder+'/dist/'+(id==='launcher-tv'?'SormusLauncher.wgt':id==='vistas-tv'?'Vista.wgt':'PlayStation.wgt'));
     release=widgetVersion(entry(bytes,'config.xml'));
     if(!release||release!==widgetVersion(await contained(root,item.folder+'/app/config.xml',32768)))throw Error('Rebuild the TV package.');
     entry(bytes,'author-signature.xml');entry(bytes,'signature1.xml');
   }else if(item.kind==='Source ZIP'){
     const files=[];
-    for(const file of id==='vistas-source'?tvFiles:psFiles){
+    for(const file of id==='launcher-source'?launcherFiles:id==='vistas-source'?tvFiles:psFiles){
       let content=await contained(root,item.folder+'/app/'+file,1024*1024);
       if(file==='config.xml'){
         release=widgetVersion(content);
