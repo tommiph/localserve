@@ -1,0 +1,19 @@
+/* Attributed topic briefs share the administrator's panels, controls and spacing. */
+.interests-grid{display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;
+  margin:16px 0}
+.interests-grid>.panel{margin:0}
+.interests-grid h3{font-size:1.1rem;
+  line-height:1.4;
+  margin:8px 0 12px}
+.interests-grid .panel-body>p{line-height:1.5;
+  overflow-wrap:anywhere}
+.interest-headline{color:var(--text);
+  text-decoration:none}
+.interest-headline:hover{color:var(--accent)}
+.interest-headline:focus-visible{outline:2px solid var(--accent);
+  outline-offset:4px}
+@media(max-width:760px){.interests-grid{grid-template-columns:minmax(0,1fr)}
+}
+

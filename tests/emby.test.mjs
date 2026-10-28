@@ -6,7 +6,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { EventEmitter } from 'node:events';
-import { serverUrl, configuration, readSessions } from '../plugins/emby/server/client.mjs';
+import vm from 'node:vm';
+import { serverUrl, configuration, readSessions,readLibrary } from '../plugins/emby/server/client.mjs';
+import {libraryOptions,normalizeLibrary} from '../plugins/emby/server/library.mjs';
 import { parseSessions } from '../plugins/emby/server/sessions.mjs';
 import { createEmbyAdapter } from '../plugins/emby/server/index.mjs';
 import { validateDeclaration } from '../server/plugins.mjs';
@@ -15,6 +17,7 @@ import { createLocalserve } from '../server.mjs';
 
 const settings={'server-url':'http://10.23.42.8:8096','api-key':'PRIVATE_API_KEY_123456','poll-minutes':0.5};
 const session=(patch={})=>({Id:'private-session',UserId:'PRIVATE-ACCOUNT',UserName:'Viewer',RemoteEndPoint:'PRIVATE-ADDRESS',DeviceName:'Living room',Client:'Emby TV',NowPlayingItem:{Id:'private-item',Name:'Tesla documentary',SeriesName:'Science',Type:'Movie',RunTimeTicks:6000000000,Path:'PRIVATE-PATH'},PlayState:{IsPaused:false,PositionTicks:3000000000,VolumeLevel:25,IsMuted:false},...patch});
+const libraryMovie=(id='1',patch={})=>({Id:id,Name:'Movie '+id,Type:'Movie',ProductionYear:2024,Genres:['Science Fiction','Drama'],Overview:'A movie summary.',Path:'PRIVATE-PATH',UserData:{UserId:'PRIVATE-USER'},MediaSources:[{Path:'PRIVATE-STREAM'}],...patch});
 function host(seed={}) {
   let state=structuredClone(seed);const events=[],saves=[],controller=new AbortController();
   return {events,saves,controller,get state(){return structuredClone(state);},context:{signal:controller.signal,readState:async()=>structuredClone(state),
@@ -105,4 +108,71 @@ test('Emby actual worker preserves shared Task Contains text comparisons and san
   assert.equal(app.state.snapshot().runs.length,1);assert.equal(app.state.snapshot().runs[0].event.payload.title,'New Tesla documentary');
   const asset=await fetch(app.origin+'/plugin-card-assets/emby/screening/card.html');assert.equal(asset.status,200);assert.match(asset.headers.get('content-security-policy'),/script-src 'none'/);
   assert.equal((await fetch(app.origin+'/plugins/emby/data/config.json')).status,404);
+});
+
+test('library options and normalized metadata are bounded and omit paths, profiles and credentials',()=>{
+ assert.equal(libraryOptions(settings).enabled,false);assert.equal(libraryOptions(settings).monitor,true);assert.equal(libraryOptions({...settings,'library-genres':'Comedy,Comedy'}),null);assert.equal(libraryOptions({...settings,'library-limit':1000}),null);
+ const result=normalizeLibrary({Items:[libraryMovie('1'),libraryMovie('1'),libraryMovie('2',{Type:'Episode'}),libraryMovie('bad/id'),libraryMovie('3',{Name:'<b>Third</b>'})],TotalRecordCount:400},100);
+ assert.equal(result.items.length,2);assert.equal(result.total,400);assert.equal(result.items[1].title,'Third');assert.doesNotMatch(JSON.stringify(result),/PRIVATE|UserData|MediaSources|Path/);
+ assert.equal(normalizeLibrary({Items:[libraryMovie('date',{ProductionYear:undefined,PremiereDate:'2021-02-03T00:00:00Z'})]},100).items[0].year,2021);
+ assert.throws(()=>normalizeLibrary({Items:Array(101).fill(libraryMovie())},100),/Invalid/);
+});
+
+test('library GET stays on the configured private target and never puts a token or user identity in its URL',async()=>{
+ const request=(url,options,callback)=>{
+  assert.equal(url.origin,'http://10.23.42.8:8096');assert.equal(url.pathname,'/emby/Items');assert.equal(url.searchParams.get('Limit'),'100');assert.equal(url.searchParams.get('IncludeItemTypes'),'Movie');assert.equal(url.searchParams.get('EnableUserData'),'false');assert.equal(url.searchParams.get('Fields'),'Overview,Genres,ProductionYear,PremiereDate');assert.ok(!url.href.includes(settings['api-key']));assert.equal(options.headers['X-Emby-Token'],settings['api-key']);assert.equal(options.method,'GET');
+  const req=new EventEmitter();req.end=()=>{const response=new EventEmitter();response.statusCode=200;response.headers={'content-type':'application/json'};response.destroy=()=>{};callback(response);queueMicrotask(()=>{response.emit('data',Buffer.from('{"Items":[]}'));response.emit('end');});};return req;
+ };
+ assert.deepEqual(await readLibrary(configuration(settings),100,new AbortController().signal,{request}),{Items:[]});
+});
+
+test('library-only use makes no session reads or Events, caches metadata and projects daily genre choices',async()=>{
+ let clock=100000,reads=0,sessions=0;const h=host(),adapter=createEmbyAdapter({now:()=>clock,read:async()=>{sessions++;return [];},readMovies:async()=>{reads++;return {Items:[libraryMovie('1'),libraryMovie('2',{Genres:['Comedy']}),libraryMovie('3'),libraryMovie('4'),libraryMovie('5')],TotalRecordCount:5};}});
+ await adapter.start({...settings,'monitor-playback':false,'library-suggestions':true,'library-genres':'Science-Fiction'});assert.equal(reads,0);
+ await adapter.execute('refresh',{},h.context);assert.equal(reads,1);assert.equal(sessions,0);assert.equal(h.events.length,0);assert.equal(h.state.libraryPicks.length,4);assert.ok(h.state.libraryPicks.every(movie=>movie.genres.includes('Science Fiction')));assert.doesNotMatch(JSON.stringify(h.state),/PRIVATE/);assert.ok(h.state.libraryPicks[0].url.startsWith('http://10.23.42.8:8096/web/index.html#!/item?id='));
+ clock+=3000;await adapter.execute('refresh',{},h.context);const saves=h.saves.length;await adapter.execute('refresh',{},h.context);assert.equal(reads,1);assert.equal(h.saves.length,saves);
+ await adapter.stop();await adapter.start({...settings,'monitor-playback':false,'library-suggestions':true,'library-genres':'Comedy'});await adapter.execute('refresh',{},h.context);assert.equal(reads,1);assert.equal(h.state.libraryPicks.length,1);assert.equal(h.state.libraryPicks[0].id,'2');
+ clock+=86400000;await adapter.execute('refresh',{},h.context);assert.equal(reads,2);assert.equal(sessions,0);assert.equal(h.events.length,0);
+});
+
+test('library outages retain same-target picks, respect cooldown and clear replacement-target metadata',async()=>{
+ let clock=100000,fail=false,reads=0;const h=host(),adapter=createEmbyAdapter({now:()=>clock,readMovies:async()=>{reads++;if(fail){const error=Error('PRIVATE');error.status=401;throw error;}return {Items:[libraryMovie()],TotalRecordCount:1};}});
+ const config={...settings,'monitor-playback':false,'library-suggestions':true};await adapter.start(config);await adapter.execute('refresh-library',{},h.context);clock+=3000;fail=true;
+ await assert.rejects(adapter.execute('refresh-library',{},h.context),/Cached metadata/);assert.equal(h.state.libraryPicks.length,1);assert.match(h.state['library-poll-status'],/Cached/);await adapter.execute('refresh',{},h.context);assert.equal(reads,2);
+ await adapter.start({...config,'server-url':'http://10.23.42.9:8096'});await assert.rejects(adapter.execute('refresh-library',{},h.context));assert.equal(h.state.libraryPicks.length,0);assert.equal(h.state['library-received-at'],null);assert.equal(h.events.length,0);
+ const corrupt=host({library:{items:'damaged'}});await assert.rejects(adapter.execute('refresh',{},corrupt.context),/original data retained/);assert.equal(corrupt.state.library.items,'damaged');
+});
+
+test('library failure cannot undo successful playback observations, and cancellation prevents late metadata writes',async()=>{
+ const h=host(),adapter=createEmbyAdapter({now:()=>100000,read:async()=>[session()],readMovies:async()=>{throw Error('unavailable');}});await adapter.start({...settings,'library-suggestions':true});await adapter.execute('refresh',{},h.context);
+ assert.equal(h.state['current-title'],'Tesla documentary');assert.equal(h.state['received-at'],100000);assert.equal(h.events.length,1);assert.equal(h.events[0].id,'reading-updated');assert.equal(h.state['library-poll-status'],'Library unavailable');
+ const cancelled=host(),late=createEmbyAdapter({readMovies:async()=>{cancelled.controller.abort(Error('cancelled'));return {Items:[libraryMovie()]};}});await late.start({...settings,'monitor-playback':false,'library-suggestions':true});await assert.rejects(late.execute('refresh-library',{},cancelled.context),/cancelled/);assert.equal(cancelled.saves.length,1);assert.equal(cancelled.state.libraryPicks.length,0);assert.equal(cancelled.events.length,0);
+});
+
+test('library ready-made Cards select four summaries without media IDs, private cache or playback actions',async()=>{
+ const h=host(),adapter=createEmbyAdapter({now:()=>100000,readMovies:async()=>({Items:[1,2,3,4].map(id=>libraryMovie(String(id))),TotalRecordCount:4})});const config={...settings,'monitor-playback':false,'library-suggestions':true};await adapter.start(config);await adapter.execute('refresh-library',{},h.context);
+ const plugin=validateDeclaration(JSON.parse(await fs.readFile('plugins/emby/declaration.json','utf8'))),record={health:'ready',configured:true,config:{snapshot:()=>({enabled:true,settings:config})},state:{snapshot:()=>h.state},log:{latest:()=>[]}};
+ const card=validateCard({schemaVersion:1,layout:'readymade',templateId:'library-movies',sourceId:'plugin',enabled:true},plugin,null,config),selected=selectedCardData(card,projectCardData(plugin,record),cardCatalog(plugin,config));
+ assert.equal(selected.data.values['pick-4-summary'].available,true);assert.equal(selected.data.values['library-more'].value.length,3);assert.doesNotMatch(JSON.stringify(selected),/PRIVATE|10\.23|credential|api-key|libraryPicks|MediaSources/);assert.equal(plugin.actions.find(action=>action.id==='refresh-library').settingsOnly,true);
+});
+
+test('library-only actual worker exposes fixed Cards and setup refresh stays outside Task actions',async t=>{
+ const base=path.resolve('tests/.tmp');await fs.mkdir(base,{recursive:true});const root=await fs.mkdtemp(path.join(base,'emby-library-')),folder=path.join(root,'plugins/emby');await fs.cp('plugins/emby',folder,{recursive:true,filter:file=>!file.split(path.sep).includes('data')});
+ await fs.writeFile(path.join(folder,'server/test-response.json'),JSON.stringify({Items:[1,2,3,4].map(id=>libraryMovie(String(id))),TotalRecordCount:4}));
+ await fs.writeFile(path.join(folder,'server/test-entry.mjs'),`import fs from 'node:fs/promises';import {createEmbyAdapter} from './index.mjs';export default createEmbyAdapter({read:async()=>{throw Error('Session read forbidden');},readMovies:async()=>JSON.parse(await fs.readFile(new URL('./test-response.json',import.meta.url)))});`);
+ const declaration=JSON.parse(await fs.readFile(path.join(folder,'declaration.json'),'utf8'));declaration.runtime.entry='server/test-entry.mjs';await fs.writeFile(path.join(folder,'declaration.json'),JSON.stringify(declaration));
+ const app=await createLocalserve(root,{automatic:false});t.after(async()=>{await app.close();assert.equal(path.dirname(root),base);await fs.rm(root,{recursive:true,force:true});});
+ await app.registry.saveConfiguration('emby',{revision:1,enabled:true,settings:{...settings,'monitor-playback':false,'library-suggestions':true}});await app.registry.execute('emby','refresh-library',{});assert.equal(app.registry.get('emby').state.snapshot().events,undefined);
+ assert.equal(app.registry.cardSource('emby').cardData.values['library-pick-count'].value,4);assert.equal(app.state.snapshot().runs.length,0);assert.ok(!app.registry.actions().some(action=>action.pluginId==='emby'&&action.actionId==='refresh-library'));
+ await app.registry.saveCard('emby',{schemaVersion:1,layout:'readymade',templateId:'library-movies',sourceId:'plugin',enabled:true});assert.equal(app.registry.services()[0].cards.length,1);
+ const response=await fetch(app.origin+'/plugin-card-assets/emby/library-movies/card.html');assert.equal(response.status,200);assert.match(await response.text(),/data-ready-made/);
+});
+
+test('library guide has Emby links and fixed Card selection without Movies watchlist actions',async()=>{
+ const service={id:'emby',enabled:true,configurationReady:true,health:'ready',config:{settings:{'library-suggestions':true}},pluginState:{library:{items:[]},libraryPicks:[{id:'1',title:'Owned movie',summary:'Summary',year:2024,genres:['Drama'],source:'Emby library',url:'http://10.23.42.8:8096/web/index.html#!/item?id=1'}]},cardData:{readyMade:{templates:[{id:'screening'},{id:'library-movies'}]}}};
+ let chosen;const context={state:{paused:false,services:[service]},escapeHtml:String,icon:()=>'',URL,location:{hostname:'192.168.1.3'},CardDesigner:{openReadyMade:value=>{chosen=value;}}};vm.createContext(context);vm.runInContext(await fs.readFile('web/watch-guide-ui.js','utf8'),context);context.service=service;
+ const html=vm.runInContext('WatchGuideUI.renderEmby(service)',context);assert.match(html,/Open in Emby/);assert.doesNotMatch(html,/watch-movie-save|watch-movie-watched/);
+ await vm.runInContext('WatchGuideUI.handle("watch-cards","emby")',context);assert.equal(chosen.cardData.readyMade.templates[0].id,'library-movies');assert.equal(service.cardData.readyMade.templates[0].id,'screening');
+ context.item={url:'http://127.0.0.1:8096/web/index.html#!/item?id=1'};assert.equal(vm.runInContext('WatchGuideUI.itemLink(item,service)',context),'http://192.168.1.3:8096/web/index.html#!/item?id=1');
+ context.location.hostname='example.test';assert.equal(vm.runInContext('WatchGuideUI.itemLink(item,service)',context),context.item.url);
 });

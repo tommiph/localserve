@@ -7,11 +7,15 @@
   "40-settings-editors.css",
   "50-card-display.css",
   "60-responsive-workspaces.css",
+  "67-tv-calendar.css",
+  "68-interests.css",
+  "69-today.css",
   "70-runtime-history.css",
   "80-libraries-reference.css",
   "85-lighting-animations.css",
   "86-devices.css",
   "87-lighting-room.css",
   "88-color-themes.css",
+  "89-home-map.css",
   "90-mobile-extensions.css"
 ]

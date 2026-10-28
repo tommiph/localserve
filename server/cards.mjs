@@ -7,6 +7,7 @@ import { isIdentifier, glyphs } from './plugin-schema.mjs';
 import { instanceCardFields } from './plugin-instances.mjs';
 import { readyMadeCatalog, validateReadyMadeCard, readyMadeSelection } from './card-templates.mjs';
 import { solarOccurrence } from './rules.mjs';
+import {modeState} from './home-mode-contract.mjs';
 
 const commonFields = [
   { id: 'plugin-name', label: 'Plugin name', type: 'string', icon: 'plug' },
@@ -259,7 +260,8 @@ function safeWebpageUrl(value) {
 export function projectCardData(plugin, record, paused = false, environment = {}) {
   const config = record?.config.snapshot();
   const entries = record?.log.latest() || [];
-  const state = record?.state.snapshot() || {};
+  const savedState = record?.state.snapshot() || {};
+  const state = plugin.modeSelector ? modeState(config?.settings,savedState) : savedState;
   let status = 'Unavailable';
   if (record) {
     if (['error', 'restart-required'].includes(record.health)) status = 'Error';

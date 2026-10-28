@@ -9,7 +9,7 @@ const vistaSlug = location.pathname.split('/').at(-1);
 const followsDisplay = location.pathname === '/display';
 let lastVista;
 let rotationPaused = false;
-function rotationStatus() { if (rotationPaused) { vistaStatus.textContent = 'Collection rotation paused · Play/Pause to resume';vistaStatus.hidden = false; } }
+function rotationStatus() { if (rotationPaused) { vistaStatus.textContent = lastVista?.vista?.presentation?.type==='today'?'Spotlight paused · Play/Pause to resume':'Collection rotation paused · Play/Pause to resume';vistaStatus.hidden = false; } }
 if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(direction => vistaController?.step(direction) || false,{pause(mode) {
   rotationPaused = mode === 'play' ? false : mode === 'pause' ? true : !rotationPaused;
   vistaController?.pause(rotationPaused);vistaStatus.hidden = !rotationPaused;rotationStatus();

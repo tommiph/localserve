@@ -1539,3 +1539,16 @@ html[data-legacy-template] .instrument { width:50%; min-width:0; margin-right:0;
 html[data-legacy-template] .dial { width:96px; height:96px; margin-left:auto; margin-right:auto; }
 html[data-legacy-template] .metric { width:48%; min-width:0; margin-bottom:10px; }
 }
+
+/* Package-owned literal colors for television and attributed topic briefs. */
+html[data-legacy-template="upcoming-television"] body{background:#131b40;color:#f0eefe}
+html[data-legacy-template="interest-brief"] body{background:#0a2134;color:#e5f8fc}
+html[data-legacy-template="home-status"] body{background:#111c36;color:#ecf7ff}
+
+/* Watch suggestions use a literal palette and package-owned film artwork. */
+html[data-legacy-template="daily-tv"] body,html[data-legacy-template="daily-movies"] body{background:#101b35;color:#f0f4ff}
+html[data-theme="light"][data-legacy-template="daily-tv"] body,html[data-theme="light"][data-legacy-template="daily-movies"] body{background:#eef2fa;color:#1b2b43}
+
+/* Emby library recommendations retain their package-owned literal palette. */
+html[data-legacy-template="library-movies"] body{background:#102f2e;color:#f0f4ff}
+html[data-theme="light"][data-legacy-template="library-movies"] body{background:#eef2fa;color:#1b2b43}

@@ -3,8 +3,8 @@
   "apiVersion": 1,
   "id": "emby",
   "name": "Emby",
-  "version": "1.1.1",
-  "description": "Reported playback sessions from your Emby server",
+  "version": "1.2.1",
+  "description": "Playback observations and daily movie suggestions from your Emby library",
   "icon": "movie",
   "defaultCardLayout": "table",
   "runtime": {
@@ -32,7 +32,7 @@
       "default": "",
       "maxLength": 256,
       "pattern": "^(?:[A-Za-z0-9_-]{16,256})?$",
-      "help": "Paste only the dedicated API key value from the Emby dashboard, without its application name, label or spaces. Used only for read-only session requests; never sent to Cards or Tasks."
+      "help": "Paste only the dedicated API key value from the Emby dashboard. Used in read-only request headers; never sent to Cards, Tasks or links."
     },
     {
       "id": "poll-minutes",
@@ -52,7 +52,127 @@
         "30 seconds",
         "1 minute"
       ],
-      "help": "Reads reported sessions serially. Playback events are observed changes; no playback commands are sent."
+      "help": "Checks playback observations and cached daily library picks. Library metadata has its own slower refresh interval."
+    },
+    {
+      "id": "monitor-playback",
+      "label": "Monitor playback sessions",
+      "type": "boolean",
+      "default": true,
+      "section": "Playback",
+      "help": "Enable playback readings and Events. Turn off for library suggestions only; no playback Events are emitted while off."
+    },
+    {
+      "id": "library-suggestions",
+      "label": "Library movie suggestions",
+      "type": "boolean",
+      "section": "Movie library",
+      "help": "Read recent movie metadata from your configured Emby server. Suggestions rotate by date and make no playback changes. Watched status is not filtered."
+    },
+    {
+      "id": "library-hours",
+      "label": "Library metadata refresh",
+      "type": "number",
+      "enum": [
+        6,
+        12,
+        24
+      ],
+      "enumLabels": [
+        "6 hours",
+        "12 hours",
+        "24 hours"
+      ],
+      "section": "Movie library",
+      "help": "Defaults to 6 hours. The Library tab also has an explicit Refresh library button."
+    },
+    {
+      "id": "library-limit",
+      "label": "Recent movies to consider",
+      "type": "number",
+      "enum": [
+        100,
+        50,
+        200
+      ],
+      "enumLabels": [
+        "100 movies",
+        "50 movies",
+        "200 movies"
+      ],
+      "section": "Movie library",
+      "help": "One bounded request reads the most recently added movies. This is a selection window, not a complete-library scan."
+    },
+    {
+      "id": "library-genres",
+      "label": "Preferred library genres",
+      "type": "string",
+      "maxLength": 250,
+      "pattern": "^(?:(?:Science-Fiction|Drama|Comedy|Thriller|Fantasy|Action|Mystery|Adventure|Animation|Crime|Documentary|Family|History|Horror|Romance)(?:,(?!$)|$))*$",
+      "suggestions": [
+        {
+          "value": "Science-Fiction",
+          "label": "Science fiction"
+        },
+        {
+          "value": "Drama",
+          "label": "Drama"
+        },
+        {
+          "value": "Comedy",
+          "label": "Comedy"
+        },
+        {
+          "value": "Thriller",
+          "label": "Thriller"
+        },
+        {
+          "value": "Fantasy",
+          "label": "Fantasy"
+        },
+        {
+          "value": "Action",
+          "label": "Action"
+        },
+        {
+          "value": "Mystery",
+          "label": "Mystery"
+        },
+        {
+          "value": "Adventure",
+          "label": "Adventure"
+        },
+        {
+          "value": "Animation",
+          "label": "Animation"
+        },
+        {
+          "value": "Crime",
+          "label": "Crime"
+        },
+        {
+          "value": "Documentary",
+          "label": "Documentary"
+        },
+        {
+          "value": "Family",
+          "label": "Family"
+        },
+        {
+          "value": "History",
+          "label": "History"
+        },
+        {
+          "value": "Horror",
+          "label": "Horror"
+        },
+        {
+          "value": "Romance",
+          "label": "Romance"
+        }
+      ],
+      "section": "Movie library",
+      "help": "Daily suggestions can match any selected genre. All genres removes the filter."
     }
   ],
   "cardFields": [
@@ -746,13 +866,334 @@
           }
         ]
       }
+    },
+    {
+      "id": "library-day",
+      "label": "Library suggestion date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "library-day"
+      }
+    },
+    {
+      "id": "library-poll-status",
+      "label": "Library status",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "library-poll-status"
+      }
+    },
+    {
+      "id": "library-note",
+      "label": "Library selection information",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "library-note"
+      }
+    },
+    {
+      "id": "library-received-at",
+      "label": "Library metadata received",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "library-received-at"
+      }
+    },
+    {
+      "id": "library-pick-count",
+      "label": "Daily library picks",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "library-pick-count"
+      }
+    },
+    {
+      "id": "library-more-count",
+      "label": "Further daily library picks",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "library-more-count"
+      }
+    },
+    {
+      "id": "library-total",
+      "label": "Reported matching library movies",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "library-total"
+      }
+    },
+    {
+      "id": "pick-1-title",
+      "label": "Library pick 1: title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-title"
+      }
+    },
+    {
+      "id": "pick-1-summary",
+      "label": "Library pick 1: summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-summary"
+      }
+    },
+    {
+      "id": "pick-1-year",
+      "label": "Library pick 1: year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-year"
+      }
+    },
+    {
+      "id": "pick-1-genres",
+      "label": "Library pick 1: genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-genres"
+      }
+    },
+    {
+      "id": "pick-1-source",
+      "label": "Library pick 1: source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-source"
+      }
+    },
+    {
+      "id": "pick-1-url",
+      "label": "Library pick 1: Emby link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-url"
+      }
+    },
+    {
+      "id": "pick-2-title",
+      "label": "Library pick 2: title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-title"
+      }
+    },
+    {
+      "id": "pick-2-summary",
+      "label": "Library pick 2: summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-summary"
+      }
+    },
+    {
+      "id": "pick-2-year",
+      "label": "Library pick 2: year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-year"
+      }
+    },
+    {
+      "id": "pick-2-genres",
+      "label": "Library pick 2: genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-genres"
+      }
+    },
+    {
+      "id": "pick-2-source",
+      "label": "Library pick 2: source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-source"
+      }
+    },
+    {
+      "id": "pick-2-url",
+      "label": "Library pick 2: Emby link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-url"
+      }
+    },
+    {
+      "id": "pick-3-title",
+      "label": "Library pick 3: title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-title"
+      }
+    },
+    {
+      "id": "pick-3-summary",
+      "label": "Library pick 3: summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-summary"
+      }
+    },
+    {
+      "id": "pick-3-year",
+      "label": "Library pick 3: year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-year"
+      }
+    },
+    {
+      "id": "pick-3-genres",
+      "label": "Library pick 3: genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-genres"
+      }
+    },
+    {
+      "id": "pick-3-source",
+      "label": "Library pick 3: source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-source"
+      }
+    },
+    {
+      "id": "pick-3-url",
+      "label": "Library pick 3: Emby link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-url"
+      }
+    },
+    {
+      "id": "pick-4-title",
+      "label": "Library pick 4: title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-title"
+      }
+    },
+    {
+      "id": "pick-4-summary",
+      "label": "Library pick 4: summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-summary"
+      }
+    },
+    {
+      "id": "pick-4-year",
+      "label": "Library pick 4: year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-year"
+      }
+    },
+    {
+      "id": "pick-4-genres",
+      "label": "Library pick 4: genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-genres"
+      }
+    },
+    {
+      "id": "pick-4-source",
+      "label": "Library pick 4: source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-source"
+      }
+    },
+    {
+      "id": "pick-4-url",
+      "label": "Library pick 4: Emby link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-url"
+      }
+    },
+    {
+      "id": "library-more",
+      "label": "More daily library suggestions",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Movie",
+          "type": "string"
+        },
+        {
+          "id": "year",
+          "label": "Year",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "library-more-count",
+        "rows": [
+          {
+            "title": "pick-2-title",
+            "year": "pick-2-year"
+          },
+          {
+            "title": "pick-3-title",
+            "year": "pick-3-year"
+          },
+          {
+            "title": "pick-4-title",
+            "year": "pick-4-year"
+          }
+        ]
+      }
     }
   ],
   "actions": [
     {
       "id": "refresh",
-      "name": "Refresh Emby sessions",
-      "description": "Read sessions from the configured Emby server. Does not control playback.",
+      "name": "Refresh Emby readings",
+      "description": "Check enabled playback observations and due movie-library metadata. Does not control playback.",
+      "parameters": []
+    },
+    {
+      "id": "refresh-library",
+      "name": "Refresh movie library",
+      "description": "Read a bounded selection of movie metadata. Does not read sessions or change playback.",
+      "settingsOnly": true,
       "parameters": []
     }
   ],
@@ -1360,6 +1801,265 @@
           "decimals": 1
         }
       ]
+    },
+    {
+      "id": "library-movies",
+      "name": "From your Emby library",
+      "directory": "cards/library-movies",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-source"
+        },
+        {
+          "id": "day",
+          "field": "library-day"
+        },
+        {
+          "id": "note",
+          "field": "library-note"
+        },
+        {
+          "id": "status",
+          "field": "library-poll-status"
+        },
+        {
+          "id": "received",
+          "field": "library-received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "list",
+          "field": "library-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "year"
+          ]
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-source",
+          "field": "pick-2-source"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-source",
+          "field": "pick-3-source"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-source",
+          "field": "pick-4-source"
+        }
+      ]
+    },
+    {
+      "id": "library-movies-fullscreen",
+      "name": "From your Emby library · Fullscreen",
+      "directory": "cards/library-movies",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-source"
+        },
+        {
+          "id": "day",
+          "field": "library-day"
+        },
+        {
+          "id": "note",
+          "field": "library-note"
+        },
+        {
+          "id": "status",
+          "field": "library-poll-status"
+        },
+        {
+          "id": "received",
+          "field": "library-received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "list",
+          "field": "library-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "year"
+          ]
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-source",
+          "field": "pick-2-source"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-source",
+          "field": "pick-3-source"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-source",
+          "field": "pick-4-source"
+        }
+      ]
     }
-  ]
+  ],
+  "settingsGuide": {
+    "title": "Emby setup",
+    "sections": [
+      {
+        "title": "Connect your server",
+        "steps": [
+          "Enter your private server URL and dedicated Emby API key. Enable Emby when configured. The same connection supplies both playback observations and movie metadata.",
+          "For daily recommendations, turn on Library movie suggestions. Choose the recent-movie window, metadata refresh interval and any preferred genres.",
+          "Monitor playback sessions is independent. Leave it off if you only want library suggestions; playback Events stay silent."
+        ]
+      },
+      {
+        "title": "Choose a film",
+        "steps": [
+          "Library shows four daily picks from the cached recent-movie selection. Watched status is not filtered. No playback command is sent.",
+          "Refresh library makes one explicit metadata request, subject to a short cooldown and provider failure backoff. Source failures retain same-server cached metadata.",
+          "Create a From your Emby library Card, enable it and add it to Today or any Vista. A Fullscreen design is available. Movie links open Emby, which handles its own sign-in and playback."
+        ]
+      }
+    ]
+  }
 }

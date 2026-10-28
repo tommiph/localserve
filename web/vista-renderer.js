@@ -58,7 +58,7 @@ const VistaRenderer = (() => {
       nextAt: !previous || changed || previous.selected !== (selected ? key(selected) : null) ? now + (node.intervalSeconds || 10) * 1000 : previous.nextAt };
   }
 
-  function create(host) {
+  function createStandard(host) {
     let clockReference = null;
     function displayNow() {
       return clockReference ? clockReference.at
@@ -170,6 +170,19 @@ const VistaRenderer = (() => {
       return rotationPaused;
     }
     return { update, step, pause, destroy() { stopped = true; clearInterval(timer); slots.clear(); selections.clear(); } };
+  }
+  function create(host) {
+    let controller=null,kind=null,paused=false;
+    return {
+      update(view){
+        const next=view.vista.layout.enabled&&view.vista.presentation?.type==='today'?'today':'standard';
+        if(!controller||next!==kind){controller?.destroy();host.replaceChildren();kind=next;controller=next==='today'?TodayRenderer.create(host):createStandard(host);controller.pause(paused);}
+        controller.update(view);
+      },
+      step(direction){return controller?.step(direction)||false;},
+      pause(value){paused=value===true;return controller?.pause(paused)??paused;},
+      destroy(){controller?.destroy();controller=null;}
+    };
   }
   return { create, choose, resolveTransition };
 })();

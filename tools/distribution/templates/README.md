@@ -9,7 +9,7 @@ step-by-step Tasks, mobile device remotes and read-only information displays.
 
 ## Install and start
 
-[Download Windows Setup or the portable ZIP](https://github.com/tommiph/localserve/releases).
+[Download Windows Setup or the portable ZIP](https://github.com/tommiph/sormus/releases).
 Choose the newest preview and read its release notes. Windows 10/11 x64 and
 Microsoft .NET Framework 4.8 or later are required. Preview builds are unsigned.
 
@@ -83,6 +83,10 @@ you are ready. See the [user guide](USER-GUIDE.md) for Tasks and display setup.
 
 ## Features
 
+- **Home modes:** persistent named modes, optional Tasks on entry, current-mode
+  conditions and selectors in Controller, Control room and TV Launcher. See
+  [Home modes](HOME-MODES.md).
+
 - **Recipes:** a visual step-by-step builder for actions, device conditions and
   schedules, with editable intent summaries and optional detailed editing.
 
@@ -154,3 +158,35 @@ own SDK, signing identity and compatible TV.
 Sormus-authored code is available under the [MIT License](LICENSE).
 Bundled dependencies and third-party assets retain their own licenses and
 attribution. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+## Daily briefing
+
+Use Vistas → Create Today for an animated daily briefing built from your selected Cards, with a balanced story carousel, upcoming previews, rotating essentials, cached movie artwork and layered 3D effects. Read [Today setup](TODAY.md) for source selection, motion preferences and remote controls. TV Calendar and Interests start with empty source lists; configure your own shows and topics in the administrator. Interests includes free publisher RSS/Atom feeds for AI, pop culture, gaming, music, science and daily news, plus country-specific search trends.
+
+## What to watch
+
+Open `/watch`, or Controls > Watch guide, for daily TV and movie suggestions
+and the next episodes from your followed shows. Enable TV Calendar and Movies
+in the administrator, then refresh their guides. TV Calendar > For you offers
+one-click Follow. Movies offers daily picks, Watchlist and Watched views.
+The starter movie collection needs no account; optional live discovery and
+catalogue search require your own TMDB API read-access token in Movies Settings.
+Suggestions do not confirm availability on a streaming subscription.
+
+Enable Library movie suggestions in Emby to add picks from your own server.
+Playback monitoring is separate and can stay off. Create an Emby library Card
+to include those individual picks in Today. Watched status is not filtered.
+See [Emby setup](plugins/emby/README.md).
+
+Create regular or fullscreen designs through each guide's Create Card button,
+or Add ready-made Card in a plugin's Card designer. Choose Daily TV suggestions or Daily
+movie suggestions, save and enable the Card, then add it to a Vista. See
+[TV Calendar](plugins/tv-calendar/README.md) and [Movies](plugins/movies/README.md).
+
+## The Daily portal
+
+Open `/portal`, or Controls > The Daily, for source-linked headlines and daily information. Configure enabled Interests topics or News searches to populate it. The front page balances topics; choose a topic for its own shareable page. Search the current edition or narrow it by publisher. Refresh edition reads collected information without polling providers or running Tasks.
+
+Your day uses the Cards selected in the enabled Vista with slug `today`: current weather, the next valid train, daylight, followed TV episodes and lighting status. Reception times and cached readings remain visible. It uses the display theme, text size and server time format. It never changes devices. Countdown labels update locally without moving headlines; when a departure has passed, refresh the edition for the next train.
+
+New highlights stories that were absent on your previous visit. Mark edition as seen clears the highlights. This is per browser and server address; a different browser starts a fresh edition. Only up to 500 hashed story identifiers and a visit time are stored locally, with no reading history sent to Sormus. Storage restrictions disable the indicator without hiding stories. Original articles open on their publishers? websites.

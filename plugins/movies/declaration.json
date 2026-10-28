@@ -1,0 +1,897 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "movies",
+  "name": "Movies",
+  "version": "1.2.0",
+  "icon": "movie-filter",
+  "description": "Daily movie suggestions, a watchlist and optional live movie discovery",
+  "defaultCardLayout": "table",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Guide check interval",
+      "type": "number",
+      "required": true,
+      "default": 15,
+      "enum": [
+        15,
+        30,
+        60,
+        120
+      ],
+      "enumLabels": [
+        "15 minutes",
+        "30 minutes",
+        "1 hour",
+        "2 hours"
+      ],
+      "min": 15,
+      "max": 120,
+      "help": "Updates the daily selection from cached metadata. Starter picks make no network requests."
+    },
+    {
+      "id": "refresh-hours",
+      "label": "Live metadata refresh",
+      "type": "number",
+      "required": true,
+      "default": 6,
+      "enum": [
+        6,
+        12,
+        24
+      ],
+      "enumLabels": [
+        "6 hours",
+        "12 hours",
+        "24 hours"
+      ],
+      "min": 6,
+      "max": 24
+    },
+    {
+      "id": "source",
+      "label": "Suggestion source",
+      "type": "string",
+      "required": true,
+      "default": "starter",
+      "enum": [
+        "starter",
+        "discover",
+        "popular",
+        "upcoming"
+      ],
+      "enumLabels": [
+        "Starter collection · no account needed",
+        "TMDB · Discover released movies",
+        "TMDB · Popular movies",
+        "TMDB · Upcoming cinema releases"
+      ]
+    },
+    {
+      "id": "genre",
+      "label": "Preferred genre",
+      "type": "string",
+      "required": false,
+      "default": "",
+      "enum": [
+        "",
+        "Science-Fiction",
+        "Drama",
+        "Comedy",
+        "Thriller",
+        "Fantasy",
+        "Action",
+        "Mystery",
+        "Adventure",
+        "Animation",
+        "Crime",
+        "Documentary",
+        "Family",
+        "History",
+        "Horror",
+        "Romance"
+      ],
+      "enumLabels": [
+        "All genres",
+        "Science-Fiction",
+        "Drama",
+        "Comedy",
+        "Thriller",
+        "Fantasy",
+        "Action",
+        "Mystery",
+        "Adventure",
+        "Animation",
+        "Crime",
+        "Documentary",
+        "Family",
+        "History",
+        "Horror",
+        "Romance"
+      ]
+    },
+    {
+      "id": "genres",
+      "label": "Preferred genres",
+      "type": "string",
+      "maxLength": 250,
+      "pattern": "^(?:(?:Science-Fiction|Drama|Comedy|Thriller|Fantasy|Action|Mystery|Adventure|Animation|Crime|Documentary|Family|History|Horror|Romance)(?:,(?!$)|$))*$",
+      "help": "Select any genres for daily suggestions. An empty selection includes all genres."
+    },
+    {
+      "id": "hide-watched",
+      "label": "Hide watched movies from daily picks",
+      "type": "boolean",
+      "required": true,
+      "default": true
+    },
+    {
+      "id": "api-token",
+      "label": "TMDB API read access token",
+      "type": "string",
+      "default": "",
+      "format": "secret",
+      "maxLength": 2000,
+      "section": "Optional live movie information",
+      "help": "Not needed for the starter collection. Add your own TMDB API read access token to use live discovery, releases and full-catalogue search. It is sent only to TMDB in an authorization header."
+    },
+    {
+      "id": "region",
+      "label": "Release country",
+      "type": "string",
+      "default": "FI",
+      "required": true,
+      "maxLength": 2,
+      "pattern": "^[A-Z]{2}$",
+      "section": "Optional live movie information",
+      "help": "Country code, for example FI, US or GB. Release information does not confirm availability on your streaming subscriptions."
+    },
+    {
+      "id": "language",
+      "label": "Information language",
+      "type": "string",
+      "default": "en-US",
+      "required": true,
+      "maxLength": 5,
+      "pattern": "^[a-z]{2}-[A-Z]{2}$",
+      "section": "Optional live movie information"
+    }
+  ],
+  "settingsGuide": {
+    "title": "Movies setup",
+    "sections": [
+      {
+        "title": "Start watching",
+        "steps": [
+          "Enable Movies. The starter collection provides four day-by-day suggestions without an account or key. Choose a genre in Settings.",
+          "Save adds a movie to Watchlist. Watched moves it to history; the default setting hides watched movies from daily suggestions. Mark unwatched to return it to Watchlist.",
+          "Create a Daily movie suggestions Card, or its Fullscreen design, in Card designer. Add it to a Vista or Card collection. Suggestions are not playback commands."
+        ]
+      },
+      {
+        "title": "Optional live discovery",
+        "steps": [
+          "In TMDB account Settings > API, obtain your own API Read Access Token. Paste it into Movies Settings, select a TMDB source, choose the country and language, then save. Do not share the token.",
+          "Discover released movies uses genre and popularity filters; Popular follows TMDB popularity; Upcoming contains future cinema releases. A release or network name is not confirmation that your subscription includes it.",
+          "Without a token, search covers the starter collection. With a token, explicit searches use the TMDB movie catalogue. Metadata refresh is bounded and cached; no article pages, posters, login cookies or streaming accounts are fetched.",
+          "TMDB data requires attribution. This product uses the TMDB API but is not endorsed or certified by TMDB. Noncommercial API use is free with attribution; commercial use requires agreement with TMDB."
+        ]
+      }
+    ]
+  },
+  "cardFields": [
+    {
+      "id": "pick-day",
+      "label": "Suggestion date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-day"
+      }
+    },
+    {
+      "id": "pick-status",
+      "label": "Suggestion source status",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-status"
+      }
+    },
+    {
+      "id": "pick-1-title",
+      "label": "Daily pick 1: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-title"
+      }
+    },
+    {
+      "id": "pick-1-summary",
+      "label": "Daily pick 1: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-summary"
+      }
+    },
+    {
+      "id": "pick-1-genres",
+      "label": "Daily pick 1: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-genres"
+      }
+    },
+    {
+      "id": "pick-1-source",
+      "label": "Daily pick 1: Source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-source"
+      }
+    },
+    {
+      "id": "pick-1-year",
+      "label": "Daily pick 1: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-year"
+      }
+    },
+    {
+      "id": "pick-1-url",
+      "label": "Daily pick 1: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-url"
+      }
+    },
+    {
+      "id": "pick-1-release",
+      "label": "Daily pick 1: Release date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-release"
+      }
+    },
+    {
+      "id": "pick-2-title",
+      "label": "Daily pick 2: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-title"
+      }
+    },
+    {
+      "id": "pick-2-summary",
+      "label": "Daily pick 2: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-summary"
+      }
+    },
+    {
+      "id": "pick-2-genres",
+      "label": "Daily pick 2: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-genres"
+      }
+    },
+    {
+      "id": "pick-2-source",
+      "label": "Daily pick 2: Source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-source"
+      }
+    },
+    {
+      "id": "pick-2-year",
+      "label": "Daily pick 2: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-year"
+      }
+    },
+    {
+      "id": "pick-2-url",
+      "label": "Daily pick 2: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-url"
+      }
+    },
+    {
+      "id": "pick-2-release",
+      "label": "Daily pick 2: Release date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-release"
+      }
+    },
+    {
+      "id": "pick-3-title",
+      "label": "Daily pick 3: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-title"
+      }
+    },
+    {
+      "id": "pick-3-summary",
+      "label": "Daily pick 3: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-summary"
+      }
+    },
+    {
+      "id": "pick-3-genres",
+      "label": "Daily pick 3: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-genres"
+      }
+    },
+    {
+      "id": "pick-3-source",
+      "label": "Daily pick 3: Source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-source"
+      }
+    },
+    {
+      "id": "pick-3-year",
+      "label": "Daily pick 3: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-year"
+      }
+    },
+    {
+      "id": "pick-3-url",
+      "label": "Daily pick 3: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-url"
+      }
+    },
+    {
+      "id": "pick-3-release",
+      "label": "Daily pick 3: Release date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-release"
+      }
+    },
+    {
+      "id": "pick-4-title",
+      "label": "Daily pick 4: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-title"
+      }
+    },
+    {
+      "id": "pick-4-summary",
+      "label": "Daily pick 4: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-summary"
+      }
+    },
+    {
+      "id": "pick-4-genres",
+      "label": "Daily pick 4: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-genres"
+      }
+    },
+    {
+      "id": "pick-4-source",
+      "label": "Daily pick 4: Source",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-source"
+      }
+    },
+    {
+      "id": "pick-4-year",
+      "label": "Daily pick 4: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-year"
+      }
+    },
+    {
+      "id": "pick-4-url",
+      "label": "Daily pick 4: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-url"
+      }
+    },
+    {
+      "id": "pick-4-release",
+      "label": "Daily pick 4: Release date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-release"
+      }
+    },
+    {
+      "id": "pick-count",
+      "label": "Daily movie picks",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "pick-count"
+      }
+    },
+    {
+      "id": "saved-count",
+      "label": "Movies in Watchlist",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "saved-count"
+      }
+    },
+    {
+      "id": "watched-count",
+      "label": "Watched movies",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "watched-count"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Movie guide updated",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "daily-picks",
+      "label": "Daily movie picks",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Movie",
+          "type": "string"
+        },
+        {
+          "id": "year",
+          "label": "Year",
+          "type": "string"
+        },
+        {
+          "id": "genres",
+          "label": "Genre",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "pick-count",
+        "rows": [
+          {
+            "title": "pick-1-title",
+            "year": "pick-1-year",
+            "genres": "pick-1-genres"
+          },
+          {
+            "title": "pick-2-title",
+            "year": "pick-2-year",
+            "genres": "pick-2-genres"
+          },
+          {
+            "title": "pick-3-title",
+            "year": "pick-3-year",
+            "genres": "pick-3-genres"
+          },
+          {
+            "title": "pick-4-title",
+            "year": "pick-4-year",
+            "genres": "pick-4-genres"
+          }
+        ]
+      }
+    },
+    {
+      "id": "daily-more",
+      "label": "More daily suggestions",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Movie",
+          "type": "string"
+        },
+        {
+          "id": "year",
+          "label": "Year",
+          "type": "string"
+        },
+        {
+          "id": "genres",
+          "label": "Genre",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "more-count",
+        "rows": [
+          {
+            "title": "pick-2-title",
+            "year": "pick-2-year",
+            "genres": "pick-2-genres"
+          },
+          {
+            "title": "pick-3-title",
+            "year": "pick-3-year",
+            "genres": "pick-3-genres"
+          },
+          {
+            "title": "pick-4-title",
+            "year": "pick-4-year",
+            "genres": "pick-4-genres"
+          }
+        ]
+      }
+    },
+    {
+      "id": "more-count",
+      "label": "More daily suggestions",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "more-count"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh movie guide",
+      "description": "Refresh the daily selection and one due metadata request.",
+      "parameters": []
+    },
+    {
+      "id": "search",
+      "name": "Find movies",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "query",
+          "label": "Movie title",
+          "type": "string",
+          "required": false,
+          "maxLength": 100,
+          "default": ""
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "name": "Update movie watchlist",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "movie-id",
+          "label": "Selected movie",
+          "type": "string",
+          "required": true,
+          "maxLength": 80
+        },
+        {
+          "id": "operation",
+          "label": "Operation",
+          "type": "string",
+          "required": true,
+          "enum": [
+            "save",
+            "remove",
+            "watched",
+            "unwatched"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "refresh-catalogue",
+      "name": "Refresh movie catalogue",
+      "description": "Fetch current movie metadata and artwork references, respecting provider cooldown.",
+      "parameters": [],
+      "settingsOnly": true
+    }
+  ],
+  "events": [],
+  "cardTemplates": [
+    {
+      "id": "daily-movies",
+      "name": "Daily movie suggestions",
+      "directory": "cards/daily-movies",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/tmdb.svg"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-source"
+        },
+        {
+          "id": "day",
+          "field": "pick-day"
+        },
+        {
+          "id": "note",
+          "field": "pick-status"
+        },
+        {
+          "id": "list",
+          "field": "daily-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "year"
+          ]
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-source",
+          "field": "pick-2-source"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-source",
+          "field": "pick-3-source"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-source",
+          "field": "pick-4-source"
+        }
+      ]
+    },
+    {
+      "id": "daily-movies-fullscreen",
+      "name": "Daily movie suggestions · Fullscreen",
+      "directory": "cards/daily-movies",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/tmdb.svg"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-source"
+        },
+        {
+          "id": "day",
+          "field": "pick-day"
+        },
+        {
+          "id": "note",
+          "field": "pick-status"
+        },
+        {
+          "id": "list",
+          "field": "daily-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "year"
+          ]
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-source",
+          "field": "pick-2-source"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-source",
+          "field": "pick-3-source"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-source",
+          "field": "pick-4-source"
+        }
+      ]
+    }
+  ],
+  "attribution": {
+    "label": "TMDB",
+    "url": "https://www.themoviedb.org",
+    "licenseUrl": "https://www.themoviedb.org/api-terms-of-use",
+    "licenseLabel": "TMDB API terms",
+    "notice": "Optional live data: TMDB. This product uses the TMDB API but is not endorsed or certified by TMDB. Starter picks are editorial suggestions."
+  }
+}

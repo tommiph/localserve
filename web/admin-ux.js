@@ -141,6 +141,7 @@ const AdminUX = {
   },
 
   savesDefinition(endpoint) {
+    if(endpoint==='/api/home-map/settings')return true;
     if (/^(?:\/)?api\/lighting-scenes\/[^/]+\/[^/]+$/.test(endpoint)) return true;
     return /(?:^|\/)api\/(?:games\/maze|config|universe|display|tasks(?:\/[^/]+(?:\/(?:enabled|delete))?)?|plugins\/[^/]+\/(?:config|enabled|cards(?:\/[^/]+(?:\/(?:enabled|delete))?)?|controls(?:\/[^/]+(?:\/(?:enabled|delete))?)?)|vistas(?:\/[^/]+(?:\/(?:enabled|delete))?)?)$/.test(endpoint);
   },

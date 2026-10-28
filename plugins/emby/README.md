@@ -1,29 +1,34 @@
 # Emby
 
-Reported playback sessions from your Emby server
+Use your Emby server for playback observations and daily film suggestions.
+Both features share one private server connection and its dedicated API key.
 
-## Setup
+## Connect
 
-Enter your private/loopback Emby URL including port and a dedicated Emby API key. Paste only the key value, without its application label or spaces. Reads sessions only; connected clients without reported media can show No data. No playback or library control is provided.
+1. Open Emby > Settings in the Sormus administrator.
+2. Enter your server's private IPv4 address and port, for example `http://192.168.0.10:8096`, and its dedicated API key. Paste only the key value.
+3. Enable Emby. HTTPS requires a trusted certificate. Requests stay on the configured private server; redirects are rejected.
 
-Starts disabled with fresh default settings, no cached readings, saved Cards or Controls. Configure through the shared administrator; do not copy credentials from someone else's installation.
+## Movie library
 
-## Settings
+Turn on **Library movie suggestions**. Choose a window of 50, 100 or 200 recently added movies, the 6/12/24-hour metadata refresh interval, and any preferred genres. A film may match any selected genre. Science fiction and common Sci-Fi spelling variations are matched consistently.
 
-- **Server URL**: Private IPv4 or loopback address with explicit port, for example http://192.168.0.10:8096. HTTPS requires a trusted certificate. No discovery or redirects..
-- **API key** (private secret): Paste only the dedicated API key value from the Emby dashboard, without its application name, label or spaces. Used only for read-only session requests; never sent to Cards or Tasks..
-- **Polling interval**: Reads reported sessions serially. Playback events are observed changes; no playback commands are sent.. Choices: 10 seconds, 30 seconds, 1 minute.
+The **Library** tab shows four day-by-day picks. **Refresh library** reads metadata explicitly, subject to request cooldowns. **Movies > Watch guide** and `/watch` also show the current Emby choices. **Open in Emby** opens its web client; Emby handles its own sign-in and playback. No API key is embedded in links.
 
-## Actions and events
+If Emby is configured through this PC's loopback address, links opened from a private LAN address use that address with Emby's port. Release years appear only when Emby reports them.
 
-Actions: Refresh Emby sessions.
+**Create Card** opens the ordinary ready-made Card editor with **From your Emby library** selected. A Fullscreen version is available. Enable the saved Card and add it to Today, a Vista or a Card collection. Today rotates the individual movies in its movie section. Adding a Card never starts a film.
 
-Events: Emby reading updated; Playback started; Playback paused; Playback resumed; Playback stopped.
+These are selections from movies reported in your library, not a complete-library scan or a personalized ranking. Watched status is not filtered. The cached window is sorted by date added; four picks rotate deterministically with the server date. Public information includes movie titles, descriptions, years, genres and token-free item links. No media file paths, user profiles, credentials or video streams are exposed.
 
-Plugin actions appear in global Tasks only when the plugin is enabled and ready. Explicit device actions can have real effects. Polling failures retain successful same-target readings; missing values remain explicit and uncertain effects are not automatically retried/replayed.
+Available primary/backdrop image tags are retained with this metadata. Today and `/watch` can retrieve those movie images through the PC's bounded private cache. Only the configured private Emby server is contacted, with its token in a header; viewers receive local image URLs. Missing artwork falls back to the story text and local motif. Use Refresh library to obtain image tags for an older cached selection. See [Today artwork](../../TODAY.md) and the official [Emby image API](https://dev.emby.media/reference/RestAPI/ImageService/getItemsByIdImagesByType.html).
 
-## Cards
+Metadata requests are bounded to one response up to 1 MiB and a 15-second timeout. Failed reads keep same-server cached metadata and show its status. Changing the server, key or selection-window size invalidates the old library identity on the next check. Repeated checks use the cache; failed reads back off for 15 minutes, or an hour for authorization/rate-limit failures. Nothing retries immediately.
 
-Ready-made designs: Screening room, Screening room · Fullscreen. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.
+## Playback monitoring
 
-See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin's data folder.
+**Monitor playback sessions** is independent from library suggestions. Turn it off for library-only use; the plugin emits no playback or session-update Events in that mode. Retained observations remain historical. When enabled, reported session changes can drive existing Tasks. Observation times reflect polling and do not confirm that a commanded action happened.
+
+Session baselines commit before Events. Startup, restart and interrupted polling do not replay previous changes. Library errors do not overwrite successful session observations or create playback Events. The plugin sends no playback, account or media-management commands.
+
+Saved configuration, cached metadata, Cards and activity belong to the installation and are excluded from public source distributions. See the official [Emby Items API](https://dev.emby.media/reference/RestAPI/ItemsService/getItems.html) for the metadata interface.

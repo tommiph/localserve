@@ -250,6 +250,10 @@ dialog.task-editor {
 .setup-choice { min-width:0; overflow-wrap:anywhere; cursor:pointer; }
 .setup-choice:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
 dialog.setup-editor { width:min(900px, calc(100vw - 32px)); }
+.home-mode-buttons { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+.mode-choice { border-bottom:3px solid var(--mode-color); }
+.mode-choice[aria-pressed=true] { background:var(--accent-soft); color:var(--text); opacity:1; }
+input[type="color"].mode-color-picker { height:42px; min-height:42px; }
 .task-step + .task-step { position: relative; }
 .task-step + .task-step::before { content: ""; position: absolute; top: -15px; left: 28px; height: 14px; width: 2px; background: var(--border); }
 @media (max-width: 850px) {
@@ -324,7 +328,7 @@ html:has(dialog[open]) {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 9px;
+  gap: var(--action-gap, 10px);
   padding: 16px 24px;
   background: var(--surface-muted);
   border-top: 1px solid var(--border);
@@ -479,6 +483,14 @@ dialog.confirmation-dialog { width: min(420px, calc(100% - 32px)); }
 }
 .plugin-setting-row > span {
   min-width: 110px;
+}
+.plugin-enabled-row {
+  margin-block-start:var(--content-gap, 12px);
+  padding-block:16px;
+  border-block-start:1px solid var(--border);
+}
+.plugin-enabled-row + .field-help {
+  margin-block-start:var(--content-gap, 12px);
 }
 .plugin-setting-row > span > i {
   margin-right: 8px;

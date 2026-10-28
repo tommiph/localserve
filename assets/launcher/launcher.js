@@ -198,7 +198,43 @@
     scenes:['LIGHTING','Lighting scenes','Select a scene to apply it.'],
     tasks:['SHORTCUTS','Tasks','Your published Task shortcuts.']
   };
+
+  // Public mode controls retain buttons/focus during refresh. Only a real
+  // selection sends one UUID-bound command; uncertain commands are not retried.
+  var homeModePending = false;
+  function paintHomeModes(value,connected,visible) {
+    var host=document.getElementById('home-modes');if(!host)return;
+    host.hidden=!value || !Array.isArray(value.items) || !value.items.length || visible===false;if(host.hidden)return;
+    var row=host.querySelector('.home-mode-row');
+    if(!row){row=document.createElement('div');row.className='home-mode-row row';host.appendChild(row);var note=document.createElement('p');note.className='home-mode-feedback';note.setAttribute('role','status');host.appendChild(note);}
+    var items=value.items || [],wanted=items.map(function(mode){return mode.id;});
+    Array.prototype.slice.call(row.children).forEach(function(button){if(wanted.indexOf(button.getAttribute('data-mode-id'))<0)row.removeChild(button);});
+    items.forEach(function(mode,index){
+      var button=Array.prototype.slice.call(row.children).filter(function(node){return node.getAttribute('data-mode-id')===mode.id;})[0];
+      if(!button){button=document.createElement('button');button.type='button';button.className='home-mode-button';button.setAttribute('data-mode-id',mode.id);button.appendChild(document.createElement('i'));button.appendChild(document.createElement('span'));}
+      if(row.children[index]!==button)row.insertBefore(button,row.children[index]||null);
+      button.children[0].className='material-symbol ms-'+String(mode.icon).replace(/[^a-z0-9-]/g,'');button.children[0].setAttribute('aria-hidden','true');button.children[1].textContent=mode.name;
+      var selected=value.currentId===mode.id,color=/^#[a-f0-9]{6}$/i.test(mode.color)?mode.color:'#69bda7';
+      button.setAttribute('aria-pressed',String(selected));button.disabled=homeModePending||!connected||!value.available||selected;
+      button.style.borderColor=color;button.style.backgroundColor=selected?color:'';
+      var rgb=[1,3,5].map(function(at){var x=parseInt(color.substr(at,2),16)/255;return x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4);});
+      button.style.color=selected?(rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722>.179?'#000':'#fff'):'';
+      button.onclick=function(){
+        if(homeModePending||button.disabled)return;
+        var bytes=new Uint8Array(16),id;try{window.crypto.getRandomValues(bytes);bytes[6]=bytes[6]&15|64;bytes[8]=bytes[8]&63|128;id=Array.prototype.map.call(bytes,function(x){return ('0'+x.toString(16)).slice(-2);}).join('');id=id.slice(0,8)+'-'+id.slice(8,12)+'-'+id.slice(12,16)+'-'+id.slice(16,20)+'-'+id.slice(20);}catch(ignore){host.querySelector('.home-mode-feedback').textContent='This browser cannot make a safe mode request.';return;}
+        homeModePending=true;paintHomeModes(value,connected,visible);host.querySelector('.home-mode-feedback').textContent='Selecting '+mode.name+'�';
+        var request=new XMLHttpRequest(),finished=false;
+        function finish(message){if(finished)return;finished=true;homeModePending=false;host.querySelector('.home-mode-feedback').textContent=message;read();}
+        request.open('POST','/api/phone-home/run',true);request.timeout=6500;request.setRequestHeader('Content-Type','application/json');request.setRequestHeader('X-Localserve-Home-Token',value.token);
+        request.onload=function(){var result;try{result=JSON.parse(request.responseText);}catch(ignore){}if(request.status<200||request.status>=300){finish(result&&result.error||'Mode selection was not confirmed. Check Activity before selecting again.');return;}finish(result.taskStatus==='not-started'?'Mode selected. Assigned Task did not start; check Activity.':result.changed?'Mode selected.':'This mode is already active.');};
+        request.onerror=request.ontimeout=function(){finish('Connection interrupted. Check the current mode and Activity before selecting again.');};
+        request.send(JSON.stringify({modeId:mode.id,revision:value.revision,expires:value.expires,requestId:id}));
+      };
+    });
+  }
+
   function paint() {
+    paintHomeModes(model&&model.modes,online,tab==='home');
     catalogue();var labels = tabs[tab];$('eyebrow').textContent = managing ? 'APP VISIBILITY' : editing ? 'EDITING FAVORITES' : labels[0];$('title').textContent = managing ? 'Manage apps' : labels[1];
     $('subtitle').textContent = managing ? 'Select apps to show or hide. Choose the checkmark when finished.'
       : editing ? 'Select tiles to add or remove favorites. Choose the checkmark when finished.' : labels[2];
@@ -372,7 +408,7 @@
     var entries = controls.map(function (element) {
       var group = $('search-panel').contains(element) ? element.parentNode === $('search-keys') ? 'keyboard' : element.parentNode.className === 'search-actions' ? 'search-actions' : 'search-header'
         : element.parentNode === $('primary') ? 'primary' : element.parentNode === $('secondary') ? 'secondary'
-        : $('drawer').contains(element) ? 'drawer' : 'header';
+        : $('drawer').contains(element) ? 'drawer' : $('home-modes').contains(element) ? 'modes' : 'header';
       return {element:element,group:group,rect:LauncherNavigation.measure(element)};
     });
     var current = null, header = null, preferred = null;

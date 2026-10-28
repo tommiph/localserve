@@ -12,6 +12,7 @@ import { validateCardFields, cardCatalog, validateCard, validateCardStore, proje
 import { validateInstances, pluginInstances, instanceEventId } from './plugin-instances.mjs';
 import { validateControlsDeclaration } from './controls.mjs';
 import { validateCardTemplates, readyMadeCatalog } from './card-templates.mjs';
+import {validateModeSelector,modeEntries} from './home-mode-contract.mjs';
 import { doNotDisturbStatus, isTvAction, tvDoNotDisturbError } from './do-not-disturb.mjs';
 import {localDisplayPath, requireLocalDisplay, requireUniverseDisplay,requirePhoneDisplay} from './local-pages.mjs';
 import {reportedSensors,vectorSensorTypes,isDiscreteSensor} from './sensor-protocol.mjs';
@@ -186,6 +187,7 @@ export function validateDeclaration(value) {
       polling.targetParameter = value.polling.targetParameter;
     }
   }
+  if(value.modeSelector&&(!runtime||instances))throw Error('Mode selectors need a runtime and a single shared state, without instances.');
   return {
     id: value.id, name: value.name.trim(), version: String(value.version || '').slice(0, 64),
     description: String(value.description || '').slice(0, 1000),
@@ -195,6 +197,7 @@ export function validateDeclaration(value) {
     ...(settingsGuide ? {settingsGuide} : {}),
     ...(connectionSetup ? {connectionSetup} : {}),
     ...(value.taskBuilder ? {taskBuilder:true} : {}),
+    ...(validateModeSelector(value.modeSelector,settings,actions,events) ? {modeSelector:true} : {}),
     ...(listActions ? {listActions} : {}),
     events, actions, ...(settingsLookup ? {settingsLookup} : {}), controls: validateControlsDeclaration(value.controls, actions, runtime, cardFields, settings), cardFields,
     cardTemplates: validateCardTemplates(value.cardTemplates, cardFields),
@@ -276,7 +279,7 @@ export class PluginRegistry {
     for (const plugin of plugins) {
       const existing = this.records.get(plugin.id);
       if (existing) {
-        const contract = value => JSON.stringify({ runtime: value.runtime, settings: value.settings, actions: value.actions, events: value.events, polling: value.polling, instances: value.instances, settingsLookup:value.settingsLookup, folder: value.folder });
+        const contract = value => JSON.stringify({ runtime: value.runtime, modeSelector:value.modeSelector, settings: value.settings, actions: value.actions, events: value.events, polling: value.polling, instances: value.instances, settingsLookup:value.settingsLookup, folder: value.folder });
         if (contract(existing.plugin) !== contract(plugin)) {
           this.cancelOperations(existing);
           existing.health = 'restart-required';
@@ -773,6 +776,10 @@ export class PluginRegistry {
 
   instanceActions(plugin, settings = {}) {
     const actions = plugin.actions.map(action => {
+      if(plugin.modeSelector && action.id==='select-mode') {
+        const modes=modeEntries(settings).filter(mode=>mode.enabled);
+        return {...action,parameters:action.parameters.map(field=>({...field,enum:modes.length?modes.map(mode=>mode.id):[''],enumLabels:modes.length?modes.map(mode=>mode.name):['No enabled modes'],default:modes[0]?.id||''})),defaults:{'mode-id':modes[0]?.id||''}};
+      }
       if (plugin.controls?.taskSceneAction !== action.id) return action;
       const scenes = this.controls?.taskScenes(plugin.id) || [];
       const first = scenes.find(scene => scene.available)?.id || '';
@@ -886,6 +893,8 @@ export class PluginRegistry {
 
   assertTaskTarget(action, parameters) {
     if (action.controlScene) this.controls.requireTaskScene(action.pluginId, parameters['scene-id']);
+    const record=this.records.get(action.pluginId);
+    if(record?.plugin.modeSelector&&action.actionId==='select-mode'&&!modeEntries(record.config.snapshot().settings).some(mode=>mode.enabled&&mode.id===parameters['mode-id']))throw new HttpError(409,'Choose an enabled home mode.');
   }
 
   assertTvQuietHours(id, actionId, context) {

@@ -147,6 +147,11 @@ const PluginUI = {
   render(service) {
     const room=Boolean(service.controls?.lighting?.inventoryState)&&typeof LightingRoomUI!=='undefined';
     const tabNames = [
+      ...(service.id==='interests' ? [['discover','Discover','interests']] : []),
+      ...(service.id==='movies' ? [['discover','Watch guide','movie-filter']] : []),
+      ...(service.id==='emby' ? [['library','Library','movie-filter']] : []),
+      ...(service.id==='tv-calendar' ? [['calendar','Calendar','calendar-month']] : []),
+      ...(service.modeSelector ? [['modes','Modes','home-work']] : []),
       ...(room ? [['rooms','Rooms','home'],['devices','Devices','lightbulb'],['scenes','Scenes','palette'],['effects','Effects','auto-awesome'],['diagnostics','Diagnostics','heart']] : []),
       ...(service.taskBuilder ? [['create','Create','auto-awesome']] : []),
       ['settings', 'Settings', 'sliders'],
@@ -156,16 +161,16 @@ const PluginUI = {
       ['log', room?'Activity':'Log', 'clipboard-list'],
     ];
     const remembered = this.tabs.get(service.id);
-    const selected = tabNames.some(([id]) => id === remembered) ? remembered : room?'rooms':service.taskBuilder?'create':'settings';
+    const selected = tabNames.some(([id]) => id === remembered) ? remembered : ['interests','movies'].includes(service.id)?'discover':service.id==='emby'?'library':service.id==='tv-calendar'?'calendar':service.modeSelector?'modes':room?'rooms':service.taskBuilder?'create':'settings';
     this.tabs.set(service.id,selected);
     const status = serviceStatus(service);
     const heading = `<div class="page-heading"><div class="plugin-heading"><span class="service-icon">${icon(service.icon)}</span><div><h1>${escapeHtml(service.name)} <small class="plugin-version" title="Plugin version">v${escapeHtml(service.version)}</small></h1><div class="plugin-readiness">${statusPill(status.label, status.className)}</div></div></div></div>`;
     const tabs = `<div class="tabs" role="tablist" aria-label="${escapeHtml(service.name)} workspace">${tabNames.map(([id, label, glyph]) => `<button type="button" id="plugin-tab-${id}" class="tab" role="tab" aria-selected="${selected === id}" aria-controls="plugin-panel" tabindex="${selected === id ? 0 : -1}" data-action="plugin-tab" data-id="${id}">${icon(glyph)}${label}</button>`).join('')}</div>`;
     const recovery = AdminUX.recoveryHint(service, state.paused);
     const error = `<div id="plugin-error" class="form-error" role="alert" ${service.error || recovery ? '' : 'hidden'}>${escapeHtml(service.error)}${recovery ? `<p>${escapeHtml(recovery)}</p>` : ''}</div>`;
-    const panel = room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected) ? LightingRoomUI.render(service,selected) : selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
+    const panel = selected==='library'&&service.id==='emby' ? WatchGuideUI.renderEmby(service) : selected==='discover'&&service.id==='movies' ? WatchGuideUI.renderMovies(service) : selected==='discover'&&service.id==='interests' ? InterestsUI.render(service) : selected==='calendar'&&service.id==='tv-calendar' ? TVCalendarUI.render(service) : selected==='modes' ? HomeModesUI.render(service) : room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected) ? LightingRoomUI.render(service,selected) : selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
       : selected === 'events' ? this.events(service) : this.settings(service);
-    const evidence=selected==='create'||room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected)?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
+    const evidence=selected==='library'||selected==='discover'||selected==='calendar'||selected==='modes'||selected==='create'||room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected)?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
     renderWorkspace(heading + evidence + tabs + error + `<div id="plugin-panel" role="tabpanel" aria-labelledby="plugin-tab-${selected}">${panel}</div>`);
     renderSaveFeedback();
   },
@@ -239,9 +244,9 @@ const PluginUI = {
   settingsBody(service) {
     if (!service.config) return '<section class="panel"><div class="empty-state">Plugin data could not be loaded.</div></section>';
     return `${service.taskBuilder?`<section class="panel plugin-task-builder"><div class="panel-body"><h2>I want… when…</h2><p>Choose an action and when it should happen, then review your Task before saving.</p><button class="button primary" data-action="plugin-task-builder" ${service.enabled?'':'disabled'}>Build a task</button>${!service.enabled?'<p class="field-help">Enable this plugin below to begin.</p>':''}</div></section>`:''}<section class="panel"><div class="panel-header"><h2>Settings</h2><span class="panel-count">v${escapeHtml(service.version)}</span></div><div class="panel-body"><p class="save-guidance">Fields save automatically when changed. List entries use their own editor. <span data-save-status aria-live="polite"></span></p>${this.settingsGuide(service)}
-      ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Controller for Android</span><a class="button" href="/sensors" target="_blank" rel="noopener">Download APK</a></div>' : ''}
-      <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${this.groupFields(service.settings,field=>this.field(field,service.config.settings[field.id] ?? field.default,'plugin-setting'),service.id)}</fieldset></form>
-      <div class="plugin-setting-row"><span>${icon('toggle-on')}Enabled</span><button type="button" class="switch" role="switch" aria-checked="${service.enabled}" aria-label="${escapeHtml(service.name)} enabled" data-action="toggle-service" data-id="${escapeHtml(service.id)}"></button></div>
+      ${service.runtime?.ingest === 'sensors-v1' ? '<div class="plugin-setting-row"><span>Controller for Android</span><a class="button" href="/downloads" target="_blank" rel="noopener">Open Downloads</a></div>' : ''}
+      <form id="plugin-settings-form" data-plugin-id="${escapeHtml(service.id)}" data-revision="${service.config.revision}"><fieldset class="plugin-settings-fields">${this.groupFields(service.settings,field=>(typeof WatchGuideUI==='undefined'?null:WatchGuideUI.genreSetting(service,field))??this.field(field,service.config.settings[field.id] ?? field.default,'plugin-setting'),service.id)}</fieldset></form>
+      <div class="plugin-setting-row plugin-enabled-row"><span>${icon('toggle-on')}Enabled</span><button type="button" class="switch" role="switch" aria-checked="${service.enabled}" aria-label="${escapeHtml(service.name)} enabled" data-action="toggle-service" data-id="${escapeHtml(service.id)}"></button></div>
       ${service.attribution ? `<p class="field-help"><a href="${escapeHtml(service.attribution.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.label)}</a> · <a href="${escapeHtml(service.attribution.licenseUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(service.attribution.licenseLabel)}</a> · ${escapeHtml(service.attribution.notice)}</p>` : ''}
     </div></section>${service.settings.filter(field => field.type === 'list').map(field => this.list(service, field)).join('')}
     <section class="panel plugin-appearance"><div class="panel-body"><details><summary>${icon('palette')} Plugin appearance</summary><div class="plugin-setting-row"><span>Glyph</span><details id="glyph-picker"><summary>${icon(service.icon)}<span>${escapeHtml(service.icon)}</span>${icon('chevron-down')}</summary><div class="glyph-picker-body"><label class="field-label" for="glyph-search">Search glyphs</label><input id="glyph-search" type="search" placeholder="Search glyphs" value="${escapeHtml(this.glyphSearch)}"><div id="glyph-choices" class="glyph-grid">${this.glyphChoices(service)}</div></div></details><button class="button" type="button" data-action="plugin-glyph-default" data-id="${escapeHtml(service.id)}">Reset glyph</button></div></details></div></section>`;
@@ -259,11 +264,12 @@ const PluginUI = {
   },
 
   list(service, field) {
+    if(service.id==='tv-calendar'&&field.id==='shows')return TVCalendarUI.showList(service,field);
     const items = service.config.settings[field.id] || [];
     const lookup = service.settingsLookup?.setting === field.id;
     return `<section class="panel plugin-list"><div class="panel-header"><h2>${escapeHtml(field.label)} <span class="panel-count">${items.length}</span></h2><div class="heading-actions">${lookup ? `<button type="button" class="button" data-action="plugin-find-source" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('magnifying-glass')}Find ${escapeHtml(field.itemLabel)}</button>` : ''}<button type="button" class="button primary" data-action="plugin-list-add" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('plus')}Add ${escapeHtml(field.itemLabel)}</button></div></div>
       ${field.help ? `<div class="panel-body"><p class="field-help">${escapeHtml(field.help)}</p></div>` : ''}
-      ${items.length ? items.map(item => `<div class="settings-item" data-live-key="source:${escapeHtml(field.id)}:${escapeHtml(item.id)}"><div class="settings-text"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(this.itemSummary(field, item))}</p></div>${AdminUX.definitionActions(item,{edit:"plugin-list-edit",copy:"plugin-list-copy",delete:"plugin-list-delete",toggle:"plugin-list-toggle"},{attributes:{setting:field.id},before:this.listActionButtons(service,field,item)})}</div>`).join('') : `<div class="empty-state">No ${escapeHtml(field.label.toLowerCase())} yet.</div>`}</section>`;
+      ${items.length ? items.map(item => `<div class="settings-item" data-live-key="source:${escapeHtml(field.id)}:${escapeHtml(item.id)}"><div class="settings-text"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(service.modeSelector ? HomeModesUI.summary(item) : this.itemSummary(field, item))}</p></div>${AdminUX.definitionActions(item,{edit:"plugin-list-edit",copy:"plugin-list-copy",delete:"plugin-list-delete",toggle:"plugin-list-toggle"},{attributes:{setting:field.id},before:this.listActionButtons(service,field,item)})}</div>`).join('') : `<div class="empty-state">No ${escapeHtml(field.label.toLowerCase())} yet.</div>`}</section>`;
   },
 
   listActionButtons(service, field, item) {
@@ -307,8 +313,10 @@ const PluginUI = {
     }).join(' · ');
   },
 
+  newId(){return `loc-${Array.from(crypto.getRandomValues(new Uint8Array(16)),value=>value.toString(16).padStart(2,'0')).join('')}`;},
+
   newItem(field) {
-    const item = { id: `loc-${crypto.randomUUID()}`, name: '', enabled: true };
+    const item = { id: this.newId(), name: '', enabled: true };
     for (const child of field.fields.filter(child => !['id', 'name', 'enabled'].includes(child.id))) {
       item[child.id] = child.defaultFrom === 'server-location' && config.location
         ? `${config.location.latitude},${config.location.longitude}` : child.default ?? '';
@@ -318,21 +326,24 @@ const PluginUI = {
   },
 
   openItem(service, field, operation, id, prefill = {}) {
+    if(service.id==='tv-calendar'&&field.id==='shows'&&['add','copy'].includes(operation)&&!prefill['tvmaze-id'])return TVCalendarUI.openSearch({operation,id});
     const items = structuredClone(service.config.settings[field.id] || []);
     const original = items.find(item => item.id === id);
     const item = original ? structuredClone(original) : {...this.newItem(field),...prefill};
-    if (operation === 'copy') Object.assign(item, { id: `loc-${crypto.randomUUID()}`, name: `${item.name.slice(0, 27)} copy`, enabled: false });
+    if(service.id==='tv-calendar'&&field.id==='shows')Object.assign(item,prefill);
+    if (operation === 'copy') Object.assign(item, { id: this.newId(), name: `${item.name.slice(0, 27)} copy`, enabled: false });
     // A copied cloud client needs its own identity and credential grant.
     if (operation === 'copy' && service.id === 'google-apps-script' && field.id === 'clients') Object.assign(item, {'client-id':'',key:''});
     const context = { kind: 'plugin-item', pluginId: service.id, setting: field.id, operation,
       item, items, settings: structuredClone(service.config.settings), revision: service.config.revision };
     const title = `${operation === 'add' ? 'Add' : operation === 'copy' ? 'Copy' : operation === 'delete' ? 'Delete' : 'Edit'} ${field.itemLabel}`;
-    const fields = operation === 'delete' ? `<p>Delete ${escapeHtml(item.name)}?</p>` : field.fields.filter(child => child.id !== 'id').map(child => child.type === 'boolean'
+    const fields = operation === 'delete' ? `<p>Delete ${escapeHtml(item.name)}?</p>` : field.fields.filter(child => child.id !== 'id').map(child => service.id==='tv-calendar'&&child.id==='tvmaze-id' ? `<input type="hidden" name="tvmaze-id" value="${escapeHtml(item['tvmaze-id'])}">` : child.type === 'boolean'
       ? `<div class="plugin-setting-row"><label for="item-option-${child.id}">${escapeHtml(child.label)}</label><input type="hidden" name="${child.id}" value="${item[child.id]}"><button id="item-option-${child.id}" class="switch" type="button" role="switch" aria-checked="${item[child.id]}" aria-label="${escapeHtml(child.label)}" data-action="plugin-item-option" data-id="${child.id}"></button></div>`
-      : this.field(child, item[child.id], 'plugin-item')).join('');
+      : service.modeSelector ? HomeModesUI.field(child,item[child.id]) : this.field(child, item[child.id], 'plugin-item')).join('');
     // Capture both the settings revision and item list. Polling never advances
     // the modal's baseline; conflicting external edits must be reopened.
     showDialog(`<form id="plugin-item-form">${dialogHeader(title)}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>${fields}</div>${dialogFooter(operation === 'delete' ? 'Delete' : operation === 'add' || operation === 'copy' ? `Add ${field.itemLabel}` : 'Save changes')}</form>`, context);
+    if(service.modeSelector&&operation!=='delete')HomeModesUI.bind(dialog.querySelector('form'));
   },
 
   async submitItem(form) {
@@ -585,6 +596,7 @@ document.addEventListener('change', event => {
   }
   const form = event.target.closest('#plugin-settings-form');
   if (!form) return;
+  if(event.target.matches('[data-watch-genre]'))WatchGuideUI.syncGenres(event.target);
   const service = state.services.find(service => service.id === form.dataset.pluginId);
   void PluginUI.save(service.id, { settings: PluginUI.readFields(service.settings, form) }, Number(form.dataset.revision));
 });

@@ -15,7 +15,7 @@ const sample=type=>type==='number'?0:type==='boolean'?false:type==='timestamp'?1
 const plugins=[];
 for(const folder of await fs.readdir(new URL('../plugins/',import.meta.url),{withFileTypes:true}))if(folder.isDirectory()){
  const raw=JSON.parse(await fs.readFile(new URL(`../plugins/${folder.name}/declaration.json`,import.meta.url)));
- if(raw.cardTemplates?.length)plugins.push(validateDeclaration(raw));
+ if(raw.cardTemplates?.some(design=>design.entry==='fullscreen.html'))plugins.push(validateDeclaration(raw));
 }
 test('full-screen styles are reproducible and preserve literal TV geometry',async()=>{
  assert.equal(await buildFullscreenStyles(root,{check:true}),17);

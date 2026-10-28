@@ -1,5 +1,13 @@
 /** The complete isolated suite is shared by local checks, clean-source verification and CI. */
 export const publicTests = Object.freeze([
+  "tests/home-map.test.mjs",
+  "tests/home-map-http.test.mjs",
+  "tests/today.test.mjs",
+  "tests/watch-artwork.test.mjs",
+  "tests/interests.test.mjs",
+  "tests/movies.test.mjs",
+  "tests/tv-calendar.test.mjs",
+  "tests/home-modes.test.mjs",
   "tests/launcher.test.mjs",
   "tests/color-themes.test.mjs",
   "tests/lighting-workflows.test.mjs",
@@ -98,6 +106,7 @@ export const publicTests = Object.freeze([
   "tests/universe-viewer.test.mjs",
   "tests/universe.test.mjs",
   "tests/variables-ui.test.mjs",
+  "tests/portal.test.mjs",
   "tests/version.test.mjs",
   "tests/vista-recovery.test.mjs",
   "tests/vistas-legacy.test.mjs",

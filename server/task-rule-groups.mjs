@@ -45,6 +45,8 @@ export class AndRuleGroups {
     return {record,runtime:record.runtime,generation:record.pollGeneration,instanceEpoch};
   }
   comparison(task,rule) {
+    const mode=this.engine.homeModes?.comparison(rule);
+    if(mode!==undefined)return mode;
     const cache=this.observations.get(task.id),saved=cache?.values.get(rule.id),source=this.source(rule);
     if(!saved || cache.signature!==groupSignature(task) || !sameSource(saved,source))return null;
     return saved.matched;

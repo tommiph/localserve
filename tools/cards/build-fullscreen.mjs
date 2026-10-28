@@ -12,7 +12,9 @@ export async function buildFullscreenStyles(root,{check=false}={}) {
     const file=path.join(root,'plugins',folder.name,'declaration.json');
     let plugin;try {plugin=JSON.parse(await fs.readFile(file,'utf8'));} catch(error){if(error.code==='ENOENT')continue;throw error;}
     for(const design of plugin.cardTemplates||[]) {
-      if(!design.id.endsWith('-fullscreen'))continue;
+      // Only dedicated full-screen documents use the shared geometry bundle.
+      // Responsive designs keep their own card.css at every display size.
+      if(!design.id.endsWith('-fullscreen')||design.entry!=='fullscreen.html')continue;
       if(!/^cards\/[a-z0-9-]+$/.test(design.directory))throw Error('Invalid design directory.');
       const directory=path.join(root,'plugins',folder.name,design.directory);
       const motif=await fs.readFile(path.join(directory,'fullscreen-theme.css'),'utf8');

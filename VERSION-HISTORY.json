@@ -1337,6 +1337,279 @@
       "from": "0.60.1",
       "version": "0.61.0",
       "summary": "Improve guided service, Task, display and Controller setup with actionable service connection hints."
+    },
+    {
+      "date": "2026-10-27T08:57:58.700Z",
+      "component": "home-modes",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Add durable shared home modes with named actions, events and a status Card."
+    },
+    {
+      "date": "2026-10-27T09:06:47.583Z",
+      "component": "server",
+      "from": "0.61.0",
+      "version": "0.62.0",
+      "summary": "Add shared Home modes with persistent selection, optional Tasks, current-mode conditions and consistent LAN selectors."
+    },
+    {
+      "date": "2026-10-27T12:53:48.535Z",
+      "component": "tv-calendar",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Follow television releases with a personal calendar, watched history and TVmaze-backed Cards and Task Events"
+    },
+    {
+      "date": "2026-10-27T12:53:48.633Z",
+      "component": "server",
+      "from": "0.62.0",
+      "version": "0.63.0",
+      "summary": "Add TV Calendar administration and reusable tonight episode displays"
+    },
+    {
+      "date": "2026-10-27T13:09:02.560Z",
+      "component": "interests",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Curate attributed science, technology, space and movie metadata into topic Cards and Task Events"
+    },
+    {
+      "date": "2026-10-27T13:09:02.664Z",
+      "component": "server",
+      "from": "0.63.0",
+      "version": "0.64.0",
+      "summary": "Add the Interests briefing workspace and topic-based source controls"
+    },
+    {
+      "date": "2026-10-27T13:25:24.764Z",
+      "component": "tv-calendar",
+      "from": "1.0.0",
+      "version": "1.0.1",
+      "summary": "Accept ordinary numeric TVmaze identifiers when saving followed shows"
+    },
+    {
+      "date": "2026-10-27T13:30:42.259Z",
+      "component": "server",
+      "from": "0.64.0",
+      "version": "0.65.0",
+      "summary": "Create cinematic Today Vistas with animated atmosphere, daily essentials and a rotating spotlight"
+    },
+    {
+      "date": "2026-10-27T13:51:28.555Z",
+      "component": "interests",
+      "from": "1.0.0",
+      "version": "1.0.1",
+      "summary": "Preserve source freshness in briefing Cards and exclude failed readings from mixed digests"
+    },
+    {
+      "date": "2026-10-27T13:51:28.667Z",
+      "component": "tv-calendar",
+      "from": "1.0.1",
+      "version": "1.0.2",
+      "summary": "Expose cached listing status and reception time in television Cards"
+    },
+    {
+      "date": "2026-10-27T13:51:28.767Z",
+      "component": "server",
+      "from": "0.65.0",
+      "version": "0.65.1",
+      "summary": "Align Today previews with selected Card fields and refine daily summaries, typography and source status"
+    },
+    {
+      "date": "2026-10-27T14:19:17.589Z",
+      "component": "server",
+      "from": "0.65.1",
+      "version": "0.65.2",
+      "summary": "Make TV Calendar show selection searchable without entering provider IDs."
+    },
+    {
+      "date": "2026-10-27T14:19:17.698Z",
+      "component": "tv-calendar",
+      "from": "1.0.2",
+      "version": "1.1.0",
+      "summary": "Add genre and status filters with dated TV and streaming discovery."
+    },
+    {
+      "date": "2026-10-27T14:32:14.453Z",
+      "component": "server",
+      "from": "0.65.2",
+      "version": "0.65.3",
+      "summary": "Keep TV show search open while following multiple shows with one-click saves."
+    },
+    {
+      "date": "2026-10-27T14:32:14.560Z",
+      "component": "tv-calendar",
+      "from": "1.1.0",
+      "version": "1.1.1",
+      "summary": "Save followed shows directly from search results without an extra editor step."
+    },
+    {
+      "date": "2026-10-27T14:40:31.656Z",
+      "component": "server",
+      "from": "0.65.3",
+      "version": "0.66.0",
+      "summary": "Add a populated TV discovery browser with one-click following."
+    },
+    {
+      "date": "2026-10-27T14:40:31.767Z",
+      "component": "tv-calendar",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Include eighteen genre-filtered starter picks with credited dated metadata."
+    },
+    {
+      "date": "2026-10-27T14:54:34.761Z",
+      "component": "server",
+      "from": "0.66.0",
+      "version": "0.67.0",
+      "summary": "Add The Daily reader portal with source-linked headlines and daily information."
+    },
+    {
+      "date": "2026-10-27T18:02:51.057Z",
+      "component": "server",
+      "from": "0.67.0",
+      "version": "0.68.0",
+      "summary": "Improve daily summaries, topic browsing, source filters and new-story indicators in The Daily."
+    },
+    {
+      "date": "2026-10-27T18:50:04.877Z",
+      "component": "server",
+      "from": "0.68.0",
+      "version": "0.69.0",
+      "summary": "Daily TV and movie watch guides with Watchlist, watched history and regular/fullscreen Cards."
+    },
+    {
+      "date": "2026-10-27T18:50:04.985Z",
+      "component": "tv-calendar",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Daily genre-based discovery suggestions and a For you calendar view with one-click Follow."
+    },
+    {
+      "date": "2026-10-27T18:50:05.093Z",
+      "component": "movies",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Movie discovery, daily suggestions, Watchlist and watched history with optional TMDB sources."
+    },
+    {
+      "date": "2026-10-27T19:08:10.630Z",
+      "component": "server",
+      "from": "0.69.0",
+      "version": "0.69.1",
+      "summary": "Connect daily TV and movie suggestions to Today with individual spotlight stories and readable metadata."
+    },
+    {
+      "date": "2026-10-27T19:08:10.729Z",
+      "component": "tv-calendar",
+      "from": "1.3.0",
+      "version": "1.3.1",
+      "summary": "Expose each daily suggestion summary and metadata to selected Today Cards."
+    },
+    {
+      "date": "2026-10-27T19:08:10.821Z",
+      "component": "movies",
+      "from": "1.0.0",
+      "version": "1.0.1",
+      "summary": "Expose all four daily movie suggestion details to the Today spotlight."
+    },
+    {
+      "date": "2026-10-27T19:22:32.469Z",
+      "component": "server",
+      "from": "0.69.1",
+      "version": "0.70.0",
+      "summary": "Multiple TV and movie genre preferences with balanced Today section rotation."
+    },
+    {
+      "date": "2026-10-27T19:22:32.570Z",
+      "component": "tv-calendar",
+      "from": "1.3.1",
+      "version": "1.4.0",
+      "summary": "Choose several preferred genres for daily TV suggestions."
+    },
+    {
+      "date": "2026-10-27T19:22:32.666Z",
+      "component": "movies",
+      "from": "1.0.1",
+      "version": "1.1.0",
+      "summary": "Choose several movie genres with inclusive live discovery filters."
+    },
+    {
+      "date": "2026-10-28T06:33:17.139Z",
+      "component": "server",
+      "from": "0.70.0",
+      "version": "0.71.0",
+      "summary": "Emby library movie recommendations across watch guides, ready-made Cards and Today."
+    },
+    {
+      "date": "2026-10-28T06:33:17.233Z",
+      "component": "emby",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Opt-in cached movie-library suggestions independent from playback observations."
+    },
+    {
+      "date": "2026-10-28T07:16:33.149Z",
+      "component": "server",
+      "from": "0.71.0",
+      "version": "0.72.0",
+      "summary": "Cinematic Today carousel with balanced headlines, rotating essentials, local movie artwork and depth animations."
+    },
+    {
+      "date": "2026-10-28T07:16:33.756Z",
+      "component": "movies",
+      "from": "1.1.0",
+      "version": "1.2.0",
+      "summary": "Keep validated poster and backdrop references and support explicit catalogue refresh without changing polling cooldowns."
+    },
+    {
+      "date": "2026-10-28T07:16:34.385Z",
+      "component": "emby",
+      "from": "1.2.0",
+      "version": "1.2.1",
+      "summary": "Retain bounded library image tags for locally cached movie artwork without exposing media paths or credentials."
+    },
+    {
+      "date": "2026-10-28T07:49:20.573Z",
+      "component": "server",
+      "from": "0.72.0",
+      "version": "0.72.1",
+      "summary": "Keep Today panels stable during refresh and use steady-opacity motion on older TV browsers."
+    },
+    {
+      "date": "2026-10-28T07:57:03.702Z",
+      "component": "server",
+      "from": "0.72.1",
+      "version": "0.72.2",
+      "summary": "Simplify Today by removing healthy status badges and source labels while retaining useful content and warnings."
+    },
+    {
+      "date": "2026-10-28T08:26:13.250Z",
+      "component": "server",
+      "from": "0.72.2",
+      "version": "0.73.0",
+      "summary": "Expand Interests with free publisher RSS/Atom sources and country-specific search trends."
+    },
+    {
+      "date": "2026-10-28T08:26:13.866Z",
+      "component": "interests",
+      "from": "1.0.1",
+      "version": "1.1.0",
+      "summary": "Add AI, culture, entertainment, gaming, music, news and trend sources with bounded Atom/GUID parsing and balanced digests."
+    },
+    {
+      "date": "2026-10-28T12:03:54.909Z",
+      "component": "server",
+      "from": "0.73.0",
+      "version": "0.74.0",
+      "summary": "Add floor-plan map editing and a live viewer for shared lighting, scenes, Tasks, remotes and Cards."
+    },
+    {
+      "date": "2026-10-28T13:18:48.517Z",
+      "component": "server",
+      "from": "0.74.0",
+      "version": "0.74.1",
+      "summary": "Unify administrator panel spacing, setup guidance and action layouts across plugin workspaces."
     }
   ]
 }

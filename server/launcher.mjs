@@ -7,6 +7,6 @@ export function launcherView({phoneHome,controls,vistas,universe,games,version,n
   if(universe.snapshot().enabled)displays.push({id:'universe',name:'Universes',path:'/universe',icon:'public',detail:'Immersive worlds'});
   if(games.snapshot().enabled)displays.push({id:'maze',name:'Neon maze',path:'/games/maze',icon:'sports-esports',detail:'An endless maze'});
   return {name:home.name,version,paused:home.paused,revision:home.revision,
-    scenes:home.scenes,tasks:home.tasks,displays,
+    scenes:home.scenes,tasks:home.tasks,displays,modes:home.modes || null,
     options:{timeFormat:controls.options().timeFormat,timeZone:new Intl.DateTimeFormat().resolvedOptions().timeZone,now}};
 }

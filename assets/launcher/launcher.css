@@ -30,3 +30,6 @@ nav{display:-webkit-flex;display:flex}nav button{font-size:23px;padding:14px 21p
 .tile.app.full-art .tile-icon i{position:absolute;left:50%;top:50%;font-size:64px;transform:translate(-50%,-50%)}
 .tile.app.full-art>strong,.tile.app.full-art>small,.tile.app.full-art>.pin{display:none}
 .tile.app.full-art:focus::before{z-index:1;background:rgba(195,255,234,.1)}
+
+/* Shared mode choices keep their selected state distinct from device readings. */
+.home-mode-selector{margin:0 0 20px}.home-mode-row{display:flex;flex-wrap:wrap}.home-mode-button{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;margin:0 10px 10px 0;border:2px solid #69bda7;border-radius:24px;background:transparent;color:inherit;font:inherit;cursor:pointer}.home-mode-button i{margin-right:8px}.home-mode-button[aria-pressed=true]{opacity:1;font-weight:600}.home-mode-feedback{margin:0;font-size:.85em;line-height:1.5}.home-mode-button:focus{box-shadow:0 0 0 3px #6eafbd;outline:none}

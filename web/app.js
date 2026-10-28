@@ -7,7 +7,7 @@ const dialog = document.querySelector('#editor-dialog');
 const confirmationDialog = document.querySelector('#confirmation-dialog');
 let confirmationReturnFocus = null;
 let state, config, actionCatalog;
-let currentView = location.pathname === '/downloads' ? 'downloads' : location.pathname === '/controller-setup' ? 'phone-home' : location.pathname === '/lighting-scenes' ? 'lighting-scenes' : location.pathname === '/remotes' ? 'control-pages' : location.pathname === '/devices' ? 'devices' : location.pathname === '/vr-library' ? 'vr-library' : location.pathname === '/lighting-animations' ? 'lighting' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
+let currentView = location.pathname === '/map-editor' ? 'home-map' : location.pathname === '/downloads' ? 'downloads' : location.pathname === '/controller-setup' ? 'phone-home' : location.pathname === '/lighting-scenes' ? 'lighting-scenes' : location.pathname === '/remotes' ? 'control-pages' : location.pathname === '/devices' ? 'devices' : location.pathname === '/vr-library' ? 'vr-library' : location.pathname === '/lighting-animations' ? 'lighting' : 'overview', serviceSearch = '', initialFormValues = '', dialogContext = null;
 let returnFocus = null, toastTimer, preferencesPending = 0, settingsQueue = Promise.resolve();
 let pluginSearch = '';
 const fontTimers = new Map();
@@ -78,6 +78,7 @@ async function refreshState(render = true) {
 function renderWorkspace(markup) {
   const scope = `${currentView}:${PluginUI.tabs.get(currentView) || 'settings'}`;
   AdminDOM.update(workspace,markup,{scope,onUpdate:() => {
+    if(currentView==='home-map')HomeMapUI.preview();
     workspace.querySelectorAll('iframe[data-ready-card]').forEach(frame => CardRenderer.hydrateReadyMade(frame));
   }});
 }
@@ -296,10 +297,10 @@ function renderView() {
   const focusRegion = focused?.closest('#admin-navigation') ? document.querySelector('#admin-navigation') : workspace;
   const signature = node => JSON.stringify([node.tagName, node.dataset, node.getAttribute('aria-label'), node.getAttribute('href'), node.getAttribute('name'), node.closest('[data-activity-details]')?.dataset.activityDetails, node.closest('[data-variable-details]')?.dataset.variableDetails]);
   const focusSignature = focused?.matches('button,a,summary,input,select') ? signature(focused) : null;
-  if (!['overview','tasks','vistas','universe','downloads','controls','control-pages','lighting-scenes','devices','phone-home','activity','settings','variables','games','vr-library','lighting'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
+  if (!['home-map','overview','tasks','vistas','universe','downloads','controls','control-pages','lighting-scenes','devices','phone-home','activity','settings','variables','games','vr-library','lighting'].includes(currentView) && !state.services.some(service=>service.id===currentView)) currentView='overview';
   renderNavigation();
   const plugin = state.services.find(service=>service.id===currentView);
-  const title = plugin?.name || ({overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',downloads:'Downloads',controls:'Controls','control-pages':'Remotes','lighting-scenes':'Lighting scenes',devices:'Devices','phone-home':'Controller setup',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library',lighting:'Lighting animations'})[currentView] || 'Overview';
+  const title = plugin?.name || ({'home-map':'Home map',overview:'Overview',tasks:'Tasks',vistas:'Vistas',universe:'Universe',downloads:'Downloads',controls:'Controls','control-pages':'Remotes','lighting-scenes':'Lighting scenes',devices:'Devices','phone-home':'Controller setup',activity:'Activity',settings:'Settings',variables:'Variables',games:'Games','vr-library':'VR library',lighting:'Lighting animations'})[currentView] || 'Overview';
   AdminDOM.text(document.querySelector('#breadcrumb-page'),currentView !== 'controls' && ControlsUI.ownsView(currentView) ? 'Controls / ' + title : title);
   if (plugin) renderPlugin(plugin);
   else if (currentView==='tasks') renderWorkspace(TaskUI.renderTasks() + runsPanel());
@@ -307,6 +308,7 @@ function renderView() {
   else if (currentView==='universe') renderWorkspace(UniverseUI.render());
   else if (currentView==='downloads') renderWorkspace(DownloadsUI.render());
   else if (currentView==='controls') renderWorkspace(ControlsUI.render());
+  else if (currentView==='home-map') renderWorkspace(HomeMapUI.render());
   else if (currentView==='control-pages') renderWorkspace(ControlsUI.pages());
   else if (currentView==='lighting-scenes') renderWorkspace(LightingScenesUI.render());
   else if (currentView==='devices') renderWorkspace(DevicesUI.render());
@@ -374,12 +376,18 @@ document.addEventListener('click', async event=>{
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme,adminColorTheme:''}); return; }
     if (action==='display-theme') { await changeSettings({displayTheme:config.displayTheme==='dark'?'light':'dark',displayColorTheme:''}); return; }
     if (!action) return;
+    if(action.startsWith('map-'))return await HomeMapUI.handle(action,control);
     if(action.startsWith('room-'))return await LightingRoomUI.handle(action,control);
     if(action==='downloads-refresh')return await DownloadsUI.load();
     if(action.startsWith('scene-'))return await LightingScenesUI.handle(action,control);
     if(action.startsWith('cloud-')&&typeof CloudRelayUI!=='undefined')return await CloudRelayUI.handle(control);
     if(action.startsWith('device-'))return await DevicesUI.handle(action,id,control);
     if(action.startsWith('setup-'))return SetupUI.handle(action,id);
+    if(action.startsWith('interests-'))return await InterestsUI.handle(action,id);
+    if(action.startsWith('watch-'))return await WatchGuideUI.handle(action,id);
+    if(action.startsWith('tvcal-'))return await TVCalendarUI.handle(action,id);
+    if(action==='home-mode-select')return await HomeModesUI.select(id);
+    if(action==='home-mode-examples')return await HomeModesUI.examples();
     if (action === 'overview-failed-runs') {
       RunUI.task = ''; RunUI.status = 'failed'; RunUI.period = 'day'; RunUI.limit = 20;
       currentView = 'tasks'; setNavigationOpen(false); renderView();
@@ -459,11 +467,15 @@ document.addEventListener('click', async event=>{
 
 document.addEventListener('submit',async event=>{
   event.preventDefault();
+  if(formIdentifier(event.target)==='home-map-form')return HomeMapUI.submit();
   if (['device-editor-form','device-use-form','device-forget-form'].includes(formIdentifier(event.target))) return DevicesUI.submit(event.target);
   if (formIdentifier(event.target) === 'universe-editor-form') return UniverseUI.submit(event.target);
   if (formIdentifier(event.target) === 'vista-editor-form') return VistaUI.submit(event.target);
   if (['controls-editor-form','controls-plugin-form'].includes(formIdentifier(event.target))) return ControlsUI.submit(event.target);
   if (formIdentifier(event.target) === 'card-editor-form') return CardDesigner.submit(event.target);
+  if (formIdentifier(event.target) === 'watch-movie-search-form') return WatchGuideUI.searchMovies(event.target);
+  if (formIdentifier(event.target) === 'tvcal-search-form') return TVCalendarUI.search(event.target);
+  if (formIdentifier(event.target) === 'tvcal-episode-form') return TVCalendarUI.watched(event.target);
   if (formIdentifier(event.target) === 'plugin-item-form') return PluginUI.submitItem(event.target);
   if (formIdentifier(event.target) === 'plugin-lookup-form') return PluginUI.submitLookup(event.target);
   if (formIdentifier(event.target) === 'task-run-form') return TaskUI.submitRun(event.target);
@@ -706,6 +718,7 @@ function showDialog(content, context) {
   dialog.classList.toggle('card-editor', context.kind === 'card');
   dialog.classList.toggle('vista-editor', context.kind === 'vista' || context.kind === 'universe');
   dialog.classList.toggle('controls-editor', context.kind === 'controls');
+  dialog.classList.toggle('home-map-editor-dialog', context.kind === 'home-map');
   dialog.classList.toggle('task-builder-editor', context.kind === 'task-builder');
   dialog.classList.toggle('setup-editor', context.kind === 'setup-guide');
   document.querySelector('#dialog-content').innerHTML = content;
@@ -720,7 +733,7 @@ function showDialog(content, context) {
 // Selecting a captured run or inspecting a lookup changes no saved definition.
 // Keep both the draft hint and close guard on the same definition boundary.
 function isDefinitionEditor(form) {
-  return form && !['task-run', 'task-rerun', 'task-simulation', 'plugin-lookup', 'lighting-start', 'vr-install', 'vr-uninstall'].includes(dialogContext?.kind)
+  return form && !['task-run', 'task-rerun', 'task-simulation', 'plugin-lookup', 'tvcal-search', 'watch-movie-search', 'lighting-start', 'vr-install', 'vr-uninstall'].includes(dialogContext?.kind)
     && dialogContext?.operation !== 'delete' && !formIdentifier(form).includes('delete');
 }
 
@@ -749,6 +762,7 @@ function formIdentifier(form) {
 }
 function serializeForm(form) {
   const id=formIdentifier(form);
+  if(id==='home-map-form')return JSON.stringify(HomeMapUI.readDraft());
   if(id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked,label:row.querySelector('[name="label"]').value.trim()})));
   // Optional builders keep one canonical draft across their changing pages.
   // Navigation/search are presentation; only meaningful choices affect discard.

@@ -3,7 +3,7 @@
  */
 const ControlsUI = {
   pending: false,
-  ownsView(view) { return ['controls', 'control-pages', 'lighting-scenes', 'lighting', 'vr-library', 'phone-home'].includes(view); },
+  ownsView(view) { return ['controls', 'control-pages', 'lighting-scenes', 'lighting', 'vr-library', 'phone-home', 'home-map'].includes(view); },
   service(id) {
     const current = state.services.find(service => service.id === id);
     // Field schemas belong to the captured draft. Declaration polling must not
@@ -18,7 +18,10 @@ const ControlsUI = {
   switch(name, label, value) { return `<div class="card-option"><input type="hidden" name="${name}" value="${value}"><span>${escapeHtml(label)}</span><button type="button" class="switch" role="switch" aria-label="${escapeHtml(label)}" aria-checked="${value}" data-action="control-option"></button></div>`; },
   hub() {
     const entries=[
+      ['watch-guide','Watch guide','movie-filter','Browse daily TV and movie suggestions and upcoming episodes.','/watch'],
+      ['portal','The Daily','newspaper','Browse headlines, original articles and your daily information.','/portal'],
       ['control-room','Control room','dashboard','Use scenes, Tasks, remotes and live Cards from a desktop or tablet.','/control-room'],
+      ['home-map','Home map','house','Place shared lights, scenes, Tasks and Cards on your floor plan.'],
       ['tv-launcher','Sormus Launcher','tv','Choose TV app favorites, inputs, displays and published shortcuts. Install the TV app from Downloads.','/assets/launcher/index.html'],
       ['lighting-scenes','Lighting scenes','lightbulb','Save a lighting look, choose its symbol and manage your scenes.'],
       ['lighting','Lighting animations','palette','Design moving colours, fades and lighting sequences.'],

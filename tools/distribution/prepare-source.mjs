@@ -30,7 +30,7 @@ for(const file of ['config.json','tray/settings.json','DISTRIBUTION-MANIFEST.jso
 await execute('git',['init','--initial-branch=main',checkout],{windowsHide:true});
 async function git(...args){return (await execute('git',args,{cwd:checkout,windowsHide:true,maxBuffer:4*1024*1024})).stdout;}
 await git('config','core.autocrlf','false');
-await git('remote','add','origin','https://github.com/tommiph/localserve.git');
+await git('remote','add','origin','https://github.com/tommiph/sormus.git');
 await git('add','--all');
 const staged=(await git('ls-files','-z')).split('\0').filter(Boolean);
 assert.equal(staged.length,manifest.files.length-2);

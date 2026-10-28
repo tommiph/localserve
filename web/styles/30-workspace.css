@@ -9,7 +9,7 @@
   border-left: 3px solid var(--accent);
   border-radius: 7px;
   padding: 18px 21px;
-  margin-bottom: 22px;
+  margin-bottom: var(--panel-gap, 20px);
 }
 
 .server-strip.paused {
@@ -86,7 +86,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: var(--panel-gap, 20px);
 }
 
 .metric {
@@ -469,5 +469,16 @@
   font-size: calc(24px * var(--font-scale));
   color: var(--faint);
   margin-bottom: 12px;
+}
+/* Setup empty states share the heading, prose and action rhythm of panels.
+ * An action's inline glyph retains button geometry instead of becoming art. */
+:where(#workspace, #editor-dialog) .empty-state > :is(h2,h3,p,.button) + :is(h2,h3,p,.button) {
+  margin-block-start:var(--content-gap, 12px);
+}
+.empty-state .button i {
+  display:inline-block;
+  margin:0;
+  font-size:inherit;
+  color:inherit;
 }
 

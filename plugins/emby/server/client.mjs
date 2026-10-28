@@ -25,9 +25,19 @@ export function configuration(settings) {
 }
 
 export async function readSessions(config, signal, { request } = {}) {
+  return readJson(config,new URL(config.url),signal,{request});
+}
+
+/** One bounded metadata request; credentials and media paths are not URL inputs. */
+export async function readLibrary(config,limit,signal,{request}={}){
+  const url=new URL(config.url);url.pathname='/emby/Items';
+  for(const [key,value]of Object.entries({IncludeItemTypes:'Movie',Recursive:'true',Fields:'Overview,Genres,ProductionYear,PremiereDate',SortBy:'DateCreated',SortOrder:'Descending',Limit:String(limit),EnableImages:'true',ImageTypeLimit:'1',EnableImageTypes:'Primary,Backdrop',EnableUserData:'false'}))url.searchParams.set(key,value);
+  return readJson(config,url,signal,{request,maxBytes:1048576});
+}
+
+async function readJson(config,url,signal,{request,maxBytes=524288}={}){
   const deadline = AbortSignal.any([signal,AbortSignal.timeout(15000)]);
   deadline.throwIfAborted();
-  const url = new URL(config.url);
   return new Promise((resolve,reject) => {
     const req = (request || (url.protocol === 'https:' ? https.request : http.request))(url,{
       method:'GET',agent:false,signal:deadline,
@@ -42,13 +52,13 @@ export async function readSessions(config, signal, { request } = {}) {
       if (response.statusCode !== 200) { fail(response.statusCode); return; }
       if (!/^application\/json(?:;|$)/i.test(response.headers['content-type'] || '')
         || response.headers['content-encoding'] && response.headers['content-encoding'] !== 'identity'
-        || Number(response.headers['content-length']) > 524288) { fail(); return; }
+        || Number(response.headers['content-length']) > maxBytes) { fail(); return; }
       let size = 0;
       const chunks = [];
       response.on('error',() => reject(new Error('Emby response was interrupted.')));
       response.on('data',chunk => {
         size += chunk.length;
-        if (size > 524288) fail();
+        if (size > maxBytes) fail();
         else chunks.push(chunk);
       });
       response.on('end',() => {

@@ -1,0 +1,364 @@
+/* Fixed 1920x1080 composition scales as one surface, including older TVs. */
+.today-scene{position:absolute;
+  width:1920px;
+  height:1080px;
+  overflow:hidden;
+  transform-origin:0 0;
+  font-family:"Segoe UI",Arial,sans-serif;
+  color:#eaf4ff;
+  background:#081321;
+  font-size:20px;
+  --today-opacity:.8;
+  --today-text-scale:1}
+.today-world{position:absolute;
+  left:0;
+  top:0;
+  right:0;
+  bottom:0;
+  overflow:hidden;
+  pointer-events:none}
+.today-sky{position:absolute;
+  left:-15%;
+  top:-15%;
+  right:-15%;
+  bottom:-15%;
+  background:radial-gradient(ellipse at 20% 30%,#15546a 0,transparent 45%),radial-gradient(ellipse at 80% 65%,#344077 0,transparent 48%),linear-gradient(135deg,#06121c,#142438);
+  animation:today-drift 40s ease-in-out infinite alternate}
+.today-stars{position:absolute;
+  left:0;
+  top:0;
+  right:0;
+  bottom:0;
+  opacity:.5;
+  background-image:radial-gradient(1px 1px at 20% 10%,#fff 0,transparent 100%),radial-gradient(2px 2px at 70% 75%,#c9f7ff 0,transparent 100%),radial-gradient(1px 1px at 40% 40%,#fff 0,transparent 100%);
+  background-size:240px 200px,470px 330px,310px 270px;
+  animation:today-stars 70s linear infinite}
+.today-glow{position:absolute;
+  width:1100px;
+  height:1100px;
+  left:-430px;
+  top:-350px;
+  border:1px solid #8df7ec18;
+  border-radius:50%;
+  box-shadow:0 0 0 100px #79d5e408,0 0 0 250px #79d5e405}
+.today-header{position:absolute;
+  left:72px;
+  right:72px;
+  top:62px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center}
+.today-eyebrow{font-size:15px;
+  font-weight:600;
+  letter-spacing:4px;
+  color:#9fc7d8;
+  margin:0 0 15px;
+  text-transform:uppercase}
+.today-greeting{font-size:62px;
+  line-height:1.1;
+  font-weight:300;
+  letter-spacing:-2px;
+  margin:0 0 14px}
+.today-date{font-size:23px;
+  color:#b5c8da;
+  margin:0}
+.today-clockbox{text-align:right}
+.today-clock{font-size:92px;
+  font-weight:200;
+  line-height:1;
+  letter-spacing:-5px;
+  font-variant-numeric:tabular-nums}
+.today-clock-note{font-size:13px;
+  letter-spacing:4px;
+  color:#89a7bd;
+  margin:18px 0 0}
+.today-glass{background:rgba(10,26,43,.8);
+  background:rgba(10,26,43,var(--today-opacity));
+  border:1px solid #8fc6db25;
+  box-shadow:0 22px 65px #0002;
+  border-radius:24px}
+.today-weather{position:absolute;
+  left:72px;
+  top:232px;
+  width:600px;
+  height:252px;
+  padding:28px 32px}
+.today-weather .today-temperature{font-size:86px}
+.today-weather .today-condition{margin:8px 0}
+.today-weather .today-source{margin-top:8px}
+.today-weather-facts{position:absolute;left:32px;right:24px;bottom:20px;font-size:15px;color:#b5cedd;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-sunrise{position:relative;font-size:17px;color:#b5cedd;margin:18px 0 0}
+.today-scene[data-theme="light"] .today-weather-facts,.today-scene[data-theme="light"] .today-sunrise{color:#385f73}
+.today-temperature{position:relative;
+  display:block;
+  font-size:100px;
+  font-weight:200;
+  line-height:1;
+  letter-spacing:-6px}
+.today-condition{position:relative;
+  font-size:24px;
+  margin:10px 0}
+.today-source{font-size:14px;
+  color:#93b3c3;
+  margin:12px 0 0}
+.today-weather-art{position:absolute;
+  right:15px;
+  top:22px;
+  width:240px;
+  height:220px;
+  overflow:hidden}
+.today-sun{position:absolute;
+  left:55px;
+  top:35px;
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff8d6,#ffc474 60%,#f28170);
+  box-shadow:0 0 0 20px #ffd47909,0 0 0 45px #ffd47906;
+  animation:today-breathe 8s ease-in-out infinite alternate}
+.today-daylight{position:absolute;
+  left:704px;
+  top:232px;
+  width:428px;
+  height:252px;
+  padding:28px 32px;
+  overflow:hidden}
+.today-solar-orbit{position:absolute;
+  width:260px;
+  height:260px;
+  right:-40px;
+  bottom:-170px;
+  border:2px solid #edb88055;
+  border-radius:50%;
+  box-shadow:0 0 0 28px #f2b38109,0 0 0 56px #f2b38106}
+.today-sunset{position:relative;
+  display:block;
+  font-size:70px;
+  line-height:1.3;
+  font-weight:200;
+  letter-spacing:-3px}
+.today-spotlight{position:absolute;
+  left:72px;
+  top:514px;
+  width:1060px;
+  height:392px;
+  padding:30px 36px;
+  overflow:hidden}
+.today-story-title{font-size:42px;
+  font-size:calc(42px * var(--today-text-scale));
+  font-weight:400;
+  line-height:1.17;
+  letter-spacing:-1px;
+  margin:12px 0 18px;
+  max-height:2.4em;
+  overflow:hidden;
+  overflow-wrap:break-word}
+.today-story-body{font-size:23px;
+  font-size:calc(23px * var(--today-text-scale));
+  line-height:1.45;
+  white-space:pre-line;
+  max-height:4.7em;
+  overflow:hidden;
+  color:#c1d2df;
+  margin:0}
+.today-story-meta{font-size:18px;
+  line-height:1.4;
+  color:#9fc7d8;
+  margin:-8px 0 16px;
+  max-height:2.8em;
+  overflow:hidden}
+.today-story-meta[hidden]{display:none}
+.today-scene[data-theme="light"] .today-story-meta{color:#385f73}
+.today-spotlight>.today-source{position:absolute;
+  bottom:24px;
+  left:36px;
+  right:125px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis}
+.today-progress{position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:3px;
+  background:#83e7dc10}
+.today-progress>span{display:block;
+  height:100%;
+  background:#82e0d2;
+  box-shadow:0 0 18px #82e0d2;
+  transition:width 1s linear}
+.today-rail{position:absolute;
+  left:1172px;
+  top:232px;
+  width:676px;
+  height:674px;
+  display:flex;
+  flex-direction:column}
+.today-mini{position:relative;
+  padding:20px 28px;
+  flex:1;
+  overflow:hidden;
+  margin-bottom:16px;
+  animation:today-mini-arrive .65s ease both}
+.today-mini:last-child{margin-bottom:0}
+.today-mini .today-eyebrow{font-size:12px;
+  margin-bottom:10px}
+.today-mini h3{font-size:25px;
+  margin:0 0 8px;
+  font-weight:500;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis}
+.today-mini-body{font-size:18px;
+  line-height:1.4;
+  white-space:pre-line;
+  max-height:2.8em;
+  overflow:hidden;
+  margin:0;
+  color:#b9d0df}
+.today-mini .today-source{display:block;
+  font-size:12px;
+  margin-top:6px}
+.today-footer{position:absolute;
+  left:72px;
+  right:72px;
+  bottom:26px;
+  display:flex;
+  justify-content:space-between;
+  font-size:12px;
+  letter-spacing:3px;
+  color:#779daf}
+.today-footer-status{letter-spacing:1px}
+.today-arrive{animation:today-arrive .7s ease both}
+.today-scene[data-mood="aurora"] .today-sky{background:radial-gradient(ellipse at 15% 30%,#176957 0,transparent 50%),radial-gradient(ellipse at 70% 50%,#423a7c 0,transparent 60%),#081321}
+.today-scene[data-mood="midnight"] .today-sky{background:radial-gradient(ellipse at 50% 75%,#263c6c 0,transparent 65%),#050c19}
+.today-scene[data-weather="cloud"] .today-sun{background:linear-gradient(135deg,#c8dfef,#617c98);
+  border-radius:70px 100px 60px 40px;
+  box-shadow:35px 25px 0 -15px #a0bbd0,-25px 30px 0 -10px #7c9bb3}
+.today-scene[data-weather="rain"] .today-sun{background:linear-gradient(135deg,#8fb3c8,#3f617b);
+  box-shadow:0 35px 0 -25px #a9e3f3,30px 55px 0 -45px #a9e3f3}
+.today-scene[data-weather="snow"] .today-sun{background:radial-gradient(circle,#f2fbff,#a0c4d9);
+  box-shadow:30px 35px 0 -50px #fff,-35px 45px 0 -48px #fff}
+.today-scene[data-motion="gentle"] .today-stars{animation-duration:140s}
+.today-scene[data-motion="none"] *{animation:none!important;
+  transition:none!important}
+.today-scene[data-theme="light"]{color:#162f41;
+  background:#dcebf1}
+.today-scene[data-theme="light"] .today-sky{opacity:.22}
+.today-scene[data-theme="light"] .today-glass{background:rgba(245,251,255,.85);
+  border-color:#608ca333}
+.today-scene[data-theme="light"] .today-eyebrow,.today-scene[data-theme="light"] .today-date,.today-scene[data-theme="light"] .today-source,.today-scene[data-theme="light"] .today-story-body,.today-scene[data-theme="light"] .today-mini-body{color:#385f73}
+@keyframes today-drift{from{transform:translate3d(-1%,-1%,0) scale(1)}
+to{transform:translate3d(3%,2%,0) scale(1.06)}
+}
+@keyframes today-stars{to{transform:translate3d(-80px,45px,0)}
+}
+@keyframes today-breathe{to{transform:scale(1.07)}
+}
+@keyframes today-arrive{from{opacity:.2;
+  transform:translate3d(0,12px,0)}
+to{opacity:1;
+  transform:translate3d(0,0,0)}
+}
+@media(prefers-reduced-motion:reduce){.today-scene *{animation:none!important;
+  transition:none!important}
+}
+
+.today-movie-credit{position:absolute;
+  right:36px;
+  bottom:30px;
+  width:70px;
+  height:auto}
+.today-movie-credit[hidden]{display:none}
+
+
+.today-scene[data-period="day"] .today-sky{background:radial-gradient(ellipse at 20% 30%,#27758a 0,transparent 55%),radial-gradient(ellipse at 80% 70%,#294f77 0,transparent 60%),#102d43}
+.today-scene[data-period="dusk"] .today-sky,.today-scene[data-period="dawn"] .today-sky{background:radial-gradient(ellipse at 25% 45%,#985c60 0,transparent 55%),radial-gradient(ellipse at 80% 80%,#51406e 0,transparent 60%),#172b40}
+.today-scene[data-period="day"] .today-stars{opacity:.15}
+.today-scene[data-weather="rain"] .today-stars{background-image:linear-gradient(120deg,transparent 48%,#a3daee66 49%,transparent 50%);
+  background-size:80px 160px;
+  opacity:.2}
+.today-scene[data-weather="unknown"] .today-sun{background:none;
+  border:2px solid #a5cbd655;
+  box-shadow:0 0 0 30px #a5cbd608}
+
+/* Layered geometry gives the scene depth without a WebGL render loop. */
+.today-world{perspective:1100px;-webkit-perspective:1100px}
+.today-depth{position:absolute;left:840px;top:-470px;width:900px;height:900px;
+  transform-style:preserve-3d;-webkit-transform-style:preserve-3d;
+  transform:rotateX(58deg) rotateY(-18deg);-webkit-transform:rotateX(58deg) rotateY(-18deg);
+  animation:today-orbit 60s ease-in-out infinite alternate;opacity:.55}
+.today-depth-ring{position:absolute;left:0;top:0;width:100%;height:100%;border:2px solid rgba(139,231,222,.22);border-radius:50%;box-shadow:0 0 35px rgba(94,223,223,.06)}
+.today-depth-ring-1{transform:rotateY(65deg);-webkit-transform:rotateY(65deg);border-color:rgba(166,150,255,.2)}
+.today-depth-ring-2{transform:rotateX(65deg);-webkit-transform:rotateX(65deg);border-style:dashed;border-color:rgba(255,206,147,.18)}
+.today-backdrop{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;opacity:.2;animation:today-backdrop-drift 45s ease-in-out infinite alternate}
+.today-backdrop[hidden],.today-poster[hidden]{display:none!important}
+.today-world:after{content:'';position:absolute;left:0;right:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(5,16,30,.25),rgba(5,16,30,.65)),linear-gradient(0deg,rgba(5,16,30,.75),transparent 65%)}
+.today-header,.today-weather,.today-daylight,.today-spotlight,.today-rail,.today-queue,.today-footer{z-index:1}
+.today-spotlight>.today-eyebrow,.today-story-title,.today-story-body,.today-story-meta{position:relative;z-index:1}
+.today-spotlight[data-artwork="poster"]>.today-eyebrow,.today-spotlight[data-artwork="poster"]>.today-story-title,.today-spotlight[data-artwork="poster"]>.today-story-body,.today-spotlight[data-artwork="poster"]>.today-story-meta{max-width:730px}
+.today-poster{position:absolute;right:30px;top:32px;width:204px;height:306px;object-fit:cover;border-radius:10px;
+  transform:perspective(800px) rotateY(-8deg);-webkit-transform:perspective(800px) rotateY(-8deg);
+  box-shadow:-18px 18px 35px rgba(0,0,0,.35);z-index:1}
+.today-motif{position:absolute;right:25px;top:78px;width:230px;height:230px;border:1px solid rgba(133,230,219,.12);border-radius:50%;color:#86dacf;opacity:.13;
+  box-shadow:0 0 0 22px rgba(133,230,219,.08),0 0 0 48px rgba(133,230,219,.04);transform:perspective(800px) rotateY(-25deg);-webkit-transform:perspective(800px) rotateY(-25deg);
+  animation:today-float 12s ease-in-out infinite alternate}
+.today-motif>.material-symbol{position:absolute;left:38px;top:38px;font-size:150px}
+.today-spotlight[data-kind="movies"] .today-motif,.today-spotlight[data-kind="tv-calendar"] .today-motif{color:#dbb9ff}
+.today-spotlight[data-kind="interests"] .today-motif{color:#9cecff}
+.today-mini-icon{position:absolute;right:24px;top:23px;color:#94d4d8;opacity:.25;font-size:45px}
+.today-mini>.today-eyebrow,.today-mini>h3{padding-right:58px}
+.today-mini:nth-child(2){animation-delay:.08s}.today-mini:nth-child(3){animation-delay:.16s}.today-mini:nth-child(4){animation-delay:.24s}
+.today-queue{position:absolute;left:72px;right:72px;top:930px;height:90px;display:flex;perspective:1600px;-webkit-perspective:1600px}
+.today-next{flex:1;min-width:0;height:90px;margin:0 16px 0 0;padding:16px 22px;display:flex;align-items:center;text-align:left;font:inherit;color:#d3e6f2;
+  border:1px solid rgba(143,198,219,.18);border-radius:16px;background:rgba(14,34,51,.72);cursor:pointer;
+  transform:rotateY(-2deg);-webkit-transform:rotateY(-2deg);transition:transform .25s,background .25s}
+.today-next-enter{animation:today-next-arrive .65s ease both}
+.today-next:nth-child(2){animation-delay:.06s}.today-next:nth-child(3){animation-delay:.12s}
+.today-next:last-child{margin-right:0}
+.today-next:hover,.today-next:focus{outline:2px solid #83e7dc;outline-offset:3px;background:#20435a;transform:translate3d(0,-4px,8px);-webkit-transform:translate3d(0,-4px,8px)}
+.today-next-icon{flex-shrink:0;font-size:36px;margin-right:18px;color:#8bddcf}
+.today-next-copy{display:block;min-width:0;overflow:hidden}
+.today-next small{display:block;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#9cc9d5;margin-bottom:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-next strong{display:block;font-size:19px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.today-position{font-variant-numeric:tabular-nums;color:#a5c4d6;letter-spacing:1px}
+.today-arrive{animation:today-card-in .8s cubic-bezier(.2,.7,.2,1) both}
+.today-arrive-back{animation:today-card-back .8s cubic-bezier(.2,.7,.2,1) both}
+.today-scene[data-motion="gentle"] .today-depth{animation-duration:120s;opacity:.35}
+.today-scene[data-motion="gentle"] .today-arrive,.today-scene[data-motion="gentle"] .today-arrive-back{animation-name:today-arrive}
+.today-scene[data-idle="true"] *{animation-play-state:paused!important}
+.today-scene[data-paused="true"] .today-sky,.today-scene[data-paused="true"] .today-stars,.today-scene[data-paused="true"] .today-sun,.today-scene[data-paused="true"] .today-depth,.today-scene[data-paused="true"] .today-motif,.today-scene[data-paused="true"] .today-backdrop{animation-play-state:paused!important}
+.today-scene[data-theme="light"] .today-world:after{background:linear-gradient(90deg,rgba(238,247,250,.3),rgba(238,247,250,.7))}
+.today-scene[data-theme="light"] .today-backdrop{opacity:.12}
+.today-scene[data-theme="light"] .today-next{background:rgba(245,251,255,.85);color:#162f41;border-color:rgba(56,95,115,.25)}
+.today-scene[data-theme="light"] .today-next small,.today-scene[data-theme="light"] .today-position{color:#385f73}
+.today-scene[data-theme="light"] .today-next-icon,.today-scene[data-theme="light"] .today-mini-icon{color:#226b73}
+@keyframes today-orbit{to{transform:rotateX(65deg) rotateY(22deg) rotateZ(25deg)}}
+@keyframes today-float{to{transform:perspective(800px) translate3d(0,-14px,20px) rotateY(15deg)}}
+@keyframes today-backdrop-drift{to{transform:scale(1.06) translate3d(-12px,0,0)}}
+@keyframes today-card-in{from{opacity:0;transform:perspective(1600px) translate3d(70px,0,-100px) rotateY(-6deg)}to{opacity:1;transform:perspective(1600px) translate3d(0,0,0) rotateY(0)}}
+@keyframes today-card-back{from{opacity:0;transform:perspective(1600px) translate3d(-70px,0,-100px) rotateY(6deg)}to{opacity:1;transform:perspective(1600px) translate3d(0,0,0) rotateY(0)}}
+@keyframes today-mini-arrive{from{opacity:.25;transform:translate3d(0,8px,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes today-next-arrive{from{opacity:.2;transform:translate3d(35px,0,-35px) rotateY(-8deg)}to{opacity:1;transform:translate3d(0,0,0) rotateY(-2deg)}}
+
+/* Older-TV displays use flat layers and steady opacity for live information.
+ * Only intentional story changes slide; reading updates keep panels mounted. */
+.today-scene[data-renderer="legacy"] .today-world,.today-scene[data-renderer="legacy"] .today-queue{perspective:none;-webkit-perspective:none}
+.today-scene[data-renderer="legacy"] .today-depth{transform-style:flat;-webkit-transform-style:flat;transform:rotate(-18deg) scaleY(.6);-webkit-transform:rotate(-18deg) scaleY(.6);animation-name:today-tv-orbit}
+.today-scene[data-renderer="legacy"] .today-depth-ring-1{transform:rotate(60deg) scaleX(.6);-webkit-transform:rotate(60deg) scaleX(.6)}
+.today-scene[data-renderer="legacy"] .today-depth-ring-2{transform:rotate(-60deg) scaleX(.6);-webkit-transform:rotate(-60deg) scaleX(.6)}
+.today-scene[data-renderer="legacy"] .today-sky,.today-scene[data-renderer="legacy"] .today-backdrop,.today-scene[data-renderer="legacy"] .today-sun,.today-scene[data-renderer="legacy"] .today-mini{animation:none}
+.today-scene[data-renderer="legacy"] .today-stars{animation-name:today-tv-stars}
+.today-scene[data-renderer="legacy"] .today-motif{transform:rotate(-8deg);-webkit-transform:rotate(-8deg);animation-name:today-tv-float}
+.today-scene[data-renderer="legacy"] .today-poster,.today-scene[data-renderer="legacy"] .today-next{transform:none;-webkit-transform:none}
+.today-scene[data-renderer="legacy"] .today-arrive{animation:today-tv-slide .45s ease-out both}
+.today-scene[data-renderer="legacy"] .today-arrive-back{animation:today-tv-slide-back .45s ease-out both}
+.today-scene[data-renderer="legacy"] .today-next-enter{animation:today-tv-preview .45s ease-out both}
+@keyframes today-tv-orbit{from{transform:rotate(-18deg) scaleY(.6)}to{transform:rotate(10deg) scaleY(.6)}}
+@keyframes today-tv-stars{to{transform:translate(-80px,45px)}}
+@keyframes today-tv-float{from{transform:rotate(-8deg) translateY(0)}to{transform:rotate(-8deg) translateY(-10px)}}
+@keyframes today-tv-slide{from{opacity:1;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes today-tv-slide-back{from{opacity:1;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes today-tv-preview{from{opacity:1;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.today-scene *{animation:none!important;transition:none!important}}
+

@@ -9,6 +9,7 @@
   var segments = location.pathname.split('/');
   var slug = segments[segments.length - 1];
   var payload = null;
+  var todayController = null;
   var selections = {};
   var layoutSignature = '';
   var views = {};
@@ -704,6 +705,11 @@
     if(window.ColorThemes)window.ColorThemes.apply(document,payload.options.colorTheme);
     applyVistaFontSize(document);
     document.title = (payload.vista ? payload.vista.name : 'Display') + ' · ' + payload.options.name;
+    if(payload.vista&&payload.vista.layout.enabled&&payload.vista.presentation&&payload.vista.presentation.type==='today'&&window.TodayRenderer){
+      if(!todayController){views={};selections={};clear(host);todayController=TodayRenderer.create(host,{legacy:true});}
+      todayController.pause(rotationPaused);todayController.update(payload);return;
+    }
+    if(todayController){todayController.destroy();todayController=null;layoutSignature='';}
     var emptyMessage = !payload.vista ? 'No enabled Vista selected.' : !payload.cards.length
       ? 'No cards in this Vista yet. Add cards in Sormus when you are ready.'
       : !payload.vista.layout.enabled ? 'Vista layout disabled.' : '';
@@ -792,7 +798,7 @@
           setConnected(true);
           draw();
           status.style.display = rotationPaused ? 'block' : 'none';
-          if (rotationPaused) status.textContent = 'Collection rotation paused · Play/Pause to resume';
+          if (rotationPaused) status.textContent = todayController?'Spotlight paused · Play/Pause to resume':'Collection rotation paused · Play/Pause to resume';
           tickCountdowns();
           return;
         } catch (ignore) {}
@@ -833,6 +839,7 @@
     return;
   }
   function stepCollections(direction) {
+    if(todayController)return todayController.step(direction);
     if (!connected || document.hidden || !payload || direction !== -1 && direction !== 1) return false;
     var entries = {}, changed = false;
     for (var i = 0; i < payload.cards.length; i += 1) entries[payload.cards[i].pluginId + '/' + payload.cards[i].card.id] = payload.cards[i];
@@ -854,7 +861,7 @@
     rotationPaused = mode === 'play' ? false : mode === 'pause' ? true : !rotationPaused;
     if (!rotationPaused) for (var id in views) if (selections[id]) selections[id].nextAt = Date.now() + (views[id].node.intervalSeconds || 10) * 1000;
     status.style.display = rotationPaused ? 'block' : 'none';
-    if (rotationPaused) status.textContent = 'Collection rotation paused · Play/Pause to resume';
+    if (rotationPaused) status.textContent = todayController?'Spotlight paused · Play/Pause to resume':'Collection rotation paused · Play/Pause to resume';
   }});
   refresh();
   setInterval(refresh, 2000);

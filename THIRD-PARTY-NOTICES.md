@@ -11,6 +11,7 @@ Sormus-authored code is licensed under the MIT License in LICENSE. Bundled upstr
 
 - ical.js 2.2.1 (MPL-2.0): plugins/calendar/vendor/ical.js/LICENSE.
 - sax 1.6.1 (BlueOak-1.0.0): plugins/finavia/vendor/sax/LICENSE.md.
+- sax 1.6.1 (BlueOak-1.0.0): plugins/interests/vendor/sax/LICENSE.md.
 - sax 1.6.1 (BlueOak-1.0.0): plugins/news/vendor/sax/LICENSE.md.
 - ws 8.21.3 (MIT): plugins/samsung-tv/vendor/node_modules/ws/LICENSE.
 - sax 1.6.1 (BlueOak-1.0.0): plugins/samsung-tv/vendor/sax/LICENSE.md.

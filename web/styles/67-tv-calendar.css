@@ -1,0 +1,93 @@
+/* Calendar cells scroll inside their panel on compact screens. */
+.tvcal-toolbar,.tvcal-views{display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:8px}
+.tvcal-toolbar{justify-content:space-between;
+  margin-bottom:16px}
+.tvcal-scroll{overflow-x:auto}
+.tvcal-month{display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  min-width:840px}
+.tvcal-weekday{padding:12px;
+  text-align:center;
+  font-weight:600;
+  background:var(--surface)}
+.tvcal-day{padding:8px;
+  min-height:130px;
+  border-top:1px solid var(--border);
+  border-right:1px solid var(--border)}
+.tvcal-day>time{display:block;
+  padding:4px;
+  margin-bottom:4px;
+  font-weight:600}
+.tvcal-day.is-today>time{color:var(--accent);
+  box-shadow:inset 3px 0 var(--accent)}
+.tvcal-day.is-outside{opacity:.55}
+.tvcal-episode{display:flex;
+  align-items:flex-start;
+  gap:6px;
+  text-align:left;
+  width:100%;
+  border:0;
+  border-radius:6px;
+  padding:8px;
+  margin:0 0 6px;
+  background:var(--surface);
+  color:var(--text);
+  cursor:pointer;
+  min-height:42px}
+.tvcal-episode:hover{background:var(--surface-hover)}
+.tvcal-episode:focus-visible{outline:2px solid var(--accent);
+  outline-offset:2px}
+.tvcal-episode>span{min-width:0}
+.tvcal-episode strong,.tvcal-episode small{display:block;
+  overflow-wrap:anywhere}
+.tvcal-episode small{color:var(--muted);
+  margin-top:3px;
+  font-size:.8rem}
+.tvcal-episode.is-watched{opacity:.65}
+.tvcal-episode.is-watched strong{text-decoration:line-through}
+.tvcal-agenda-row{display:flex;
+  align-items:center;
+  gap:16px;
+  padding:8px 0;
+  border-bottom:1px solid var(--border)}
+.tvcal-agenda-row .tvcal-episode{margin:0;
+  flex:1}
+.tvcal-agenda-row>time{white-space:nowrap;
+  color:var(--muted);
+  font-size:.85rem}
+.tvcal-credit{font-size:.8rem;
+  color:var(--muted);
+  margin:16px 0}
+.tvcal-credit a{color:inherit}
+@media(max-width:600px){.tvcal-agenda-row{flex-wrap:wrap;
+  gap:6px}
+.tvcal-agenda-row>time{width:100%;
+  padding:0 8px 8px}
+}
+
+
+.tvcal-search-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.tvcal-search-fields .field{margin:0;min-width:0}
+@media(max-width:600px){.tvcal-search-fields{grid-template-columns:1fr}}
+
+/* Watch suggestions use the same panels and controls as other administrator lists. */
+.watch-pick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:16px}
+.watch-pick{overflow:hidden;position:relative;min-width:0}
+.watch-pick .panel-body{height:100%;display:flex;flex-direction:column;position:relative}
+.watch-pick h3{font-size:1.3rem;line-height:1.25;margin:8px 0 12px;padding-right:35px;overflow-wrap:anywhere}
+.watch-pick-art{position:absolute;right:20px;top:26px;opacity:.15;pointer-events:none}
+.watch-pick-art .material-symbol{font-size:56px}
+.watch-pick-meta{font-size:.72rem;color:var(--accent);margin:0;line-height:1.5;max-width:85%}
+.watch-pick-description{font-size:.88rem;color:var(--muted);line-height:1.65;margin:0 0 12px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.watch-pick-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:12px}
+.watch-pick-actions a{text-decoration:none}
+.watch-tmdb{vertical-align:middle;margin-right:12px}
+.watch-genre-settings{border:0;padding:0;margin:0 0 18px;min-width:0}
+.watch-genre-settings legend{display:flex;align-items:center;gap:8px;padding:0;margin-bottom:10px;font-size:.85rem;font-weight:600}
+.watch-genre-options{display:flex;flex-wrap:wrap;gap:8px}
+.watch-genre-choice{min-height:42px;margin:0;padding:9px 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer}
+.watch-genre-choice:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+@media(max-width:760px){.watch-pick-grid{grid-template-columns:1fr}}

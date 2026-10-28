@@ -639,9 +639,13 @@ export class TaskEngine {
       return { delivered: false, reason: 'chain-limit' };
     }
     const event = { pluginId, eventId, payload: validated, occurredAt: Date.now(), trace: [...trace, `${pluginId}:${eventId}`] };
+    const modeTask=this.homeModes?.taskFor(event);
     const enabledTasks=this.tasks.snapshot().filter(task=>task.enabled);
     const acceptedSource=enabledTasks.some(isAndTask)?this.andRules.source({eventId:capability.id}):null;
     for (const task of enabledTasks) {
+      // A mode's explicit Task binding is one admission, even if that same Task
+      // also has a matching rule. Preserve ancestry for the existing loop guard.
+      if(task.id===modeTask?.id)continue;
       if(isAndTask(task)) {
         if(task.starts.some(rule=>rule.enabled && rule.type==='event' && rule.eventId===capability.id))await this.andRules.event(task,capability,event,acceptedSource);
         continue;
@@ -651,7 +655,7 @@ export class TaskEngine {
         await this.dispatchRule(task, rule, event);
       }
     }
-    return { delivered: true };
+    return { delivered: true,...(modeTask?{modeTask:await this.homeModes.dispatch(event,modeTask)}:{}) };
   }
 
   async claimEventCondition(task, rule, payload, occurrenceKey) {

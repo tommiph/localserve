@@ -2,6 +2,7 @@
  * contain only the cards' declared display data, never administrator snapshots.
  */
 import {displayPalette} from './color-themes.mjs';
+import {todayPresentation,daylightAt} from './today.mjs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { JsonStore, HttpError } from './storage.mjs';
@@ -69,14 +70,15 @@ function validateLayout(layout) {
 }
 
 export function validateVista(value, existing = null) {
-  requireObject(value, ['id', 'revision', 'schemaVersion', 'name', 'slug', 'enabled', 'gap', 'padding', 'layout']);
+  requireObject(value, ['id', 'revision', 'schemaVersion', 'name', 'slug', 'enabled', 'gap', 'padding', 'layout','presentation']);
   if (value.schemaVersion !== 1 || typeof value.name !== 'string' || !value.name.trim()
     || value.name.length > 64 || /[\u0000-\u001f]/.test(value.name) || typeof value.enabled !== 'boolean'
     || typeof value.slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value.slug) || value.slug.length > 64
     || ![value.gap, value.padding].every(size => Number.isInteger(size) && size >= 0 && size <= 80)) throw new HttpError(400, 'Enter a name, a URL name using lowercase letters/numbers/hyphens, and spacing from 0 to 80 pixels.');
   return { id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
     schemaVersion: 1, name: value.name.trim(), slug: value.slug, enabled: value.enabled,
-    gap: value.gap, padding: value.padding, layout: validateLayout(value.layout) };
+    gap: value.gap, padding: value.padding, layout: validateLayout(value.layout),
+    ...(value.presentation!==undefined?{presentation:todayPresentation(value.presentation)}:{}) };
 }
 
 export class VistaStore {
@@ -175,7 +177,8 @@ export class VistaStore {
         ...selectedCardData(card, plugin.cardData, plugin.cardCatalog) };
     });
     const config = this.config.snapshot();
-    return { vista, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale,
-      timeFormat: config.timeFormat, timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now() } };
+    const result={ vista, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale,
+      timeFormat: config.timeFormat, timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now(),...(vista.presentation?{daylight:daylightAt(config)}:{}) } };
+    return this.artwork?this.artwork.decorate(result):result;
   }
 }

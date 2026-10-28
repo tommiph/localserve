@@ -18,12 +18,12 @@
   <div class="home-shell">
     <header class="home-header">
       <div><p class="connection" id="connection" role="status">Connecting</p><h1 id="home-name">Your home</h1><p id="clock" class="clock"></p></div>
-      <nav class="quick-nav" aria-label="Jump to section"><a href="#devices">Controls</a><a href="#scenes">Scenes</a><a href="#tasks">Tasks</a></nav>
+      <nav class="quick-nav" aria-label="Jump to section"><a href="/home-map">Map</a><a href="#devices">Controls</a><a href="#scenes">Scenes</a><a href="#tasks">Tasks</a></nav>
       <button class="round-button" id="view-options" aria-label="View options" title="View options"><i class="material-symbol ms-sliders" aria-hidden="true"></i></button>
     </header>
     <main id="main">
       <div class="connection-notice" id="connection-notice" role="status" hidden></div>
-      <section aria-labelledby="state-title"><div class="section-heading"><h2 id="state-title">Current state</h2><span id="reading-note">Reported by your devices</span></div><div class="status-strip" id="status-strip"><p class="empty">Connecting to Sormus…</p></div></section>
+<section id="home-modes" class="home-mode-selector" aria-label="Home modes" hidden></section>      <section aria-labelledby="state-title"><div class="section-heading"><h2 id="state-title">Current state</h2><span id="reading-note">Reported by your devices</span></div><div class="status-strip" id="status-strip"><p class="empty">Connecting to Sormus…</p></div></section>
       <section id="devices" aria-labelledby="devices-title"><div class="section-heading"><h2 id="devices-title">Your controls</h2><span>Tap to open</span></div><div class="device-grid" id="device-grid"></div></section>
       <section id="scenes" aria-labelledby="scenes-title"><div class="section-heading"><h2 id="scenes-title">Lighting scenes</h2><span>Choose a mood</span></div><div class="shortcut-grid" id="scene-grid"></div></section>
       <section id="tasks" aria-labelledby="tasks-title"><div class="section-heading"><h2 id="tasks-title">Tasks</h2><span>Tap to run</span></div><div class="shortcut-grid" id="task-grid"></div></section>

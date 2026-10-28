@@ -191,6 +191,7 @@ export class PhoneHome {
     });
     return {
       name: this.config.snapshot().name,
+      modes: this.registry?.homeModes?.viewer() || null,
       paused: this.engine.gate.paused,
       revision: home.revision,
       ...(selector ? {scenes} : {remotes: pages, cards: this.cardIndex()}),

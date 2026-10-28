@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "home-modes",
+  "name": "Home modes",
+  "version": "1.0.0",
+  "description": "Shared Home, Away, Evening and Night modes with optional Tasks",
+  "icon": "home-work",
+  "modeSelector": true,
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "settings": [
+    {
+      "id": "modes",
+      "label": "Home modes",
+      "type": "list",
+      "itemLabel": "mode",
+      "maxItems": 20,
+      "uniqueBy": [
+        "id"
+      ],
+      "default": [],
+      "fields": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier"
+        },
+        {
+          "id": "name",
+          "label": "Mode name",
+          "type": "string",
+          "required": true,
+          "maxLength": 40
+        },
+        {
+          "id": "icon",
+          "label": "Symbol",
+          "type": "string",
+          "required": true,
+          "format": "glyph",
+          "default": "home"
+        },
+        {
+          "id": "color",
+          "label": "Color",
+          "type": "string",
+          "required": true,
+          "maxLength": 7,
+          "pattern": "^#[a-fA-F0-9]{6}$",
+          "default": "#69bda7"
+        },
+        {
+          "id": "task-id",
+          "label": "Task on entry",
+          "type": "string",
+          "default": "",
+          "maxLength": 80,
+          "help": "Optional. Runs once when this mode becomes active. Restarting or selecting the active mode does not run it again."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "default": true
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "select-mode",
+      "name": "Select home mode",
+      "description": "Select an enabled mode. Its optional Task runs only on an actual change.",
+      "parameters": [
+        {
+          "id": "mode-id",
+          "label": "Home mode",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "mode-changed",
+      "name": "Home mode",
+      "description": "An actual mode change. Compare Mode ID or Mode name; AND rules can also check the restored current mode.",
+      "payload": [
+        {
+          "id": "mode-id",
+          "label": "Mode ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "mode-name",
+          "label": "Mode name",
+          "type": "string",
+          "required": true,
+          "maxLength": 40
+        },
+        {
+          "id": "previous-mode-id",
+          "label": "Previous mode ID",
+          "type": "string",
+          "maxLength": 64
+        },
+        {
+          "id": "previous-mode-name",
+          "label": "Previous mode name",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "changed-at",
+          "label": "Changed at",
+          "type": "number",
+          "required": true,
+          "min": 0
+        },
+        {
+          "id": "transition-id",
+          "label": "Transition ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "cardFields": [
+    {
+      "id": "mode-id",
+      "label": "Current mode ID",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "mode-id"
+      }
+    },
+    {
+      "id": "mode-name",
+      "label": "Current mode",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "mode-name"
+      }
+    },
+    {
+      "id": "previous-mode-name",
+      "label": "Previous mode",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "previous-mode-name"
+      }
+    },
+    {
+      "id": "mode-color",
+      "label": "Mode color",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "mode-color"
+      }
+    },
+    {
+      "id": "changed-at",
+      "label": "Mode selected at",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "changed-at"
+      }
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "home-status",
+      "name": "Home status",
+      "directory": "cards/home-status",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "mode",
+          "field": "mode-name"
+        },
+        {
+          "id": "previous",
+          "field": "previous-mode-name"
+        },
+        {
+          "id": "changed",
+          "field": "changed-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

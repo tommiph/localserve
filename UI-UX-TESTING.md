@@ -56,6 +56,10 @@ pages provide inert samples of every input family, including controls outside
 field wrappers. Check normal, disabled, readonly, checked, focus and narrow layouts.
 Embedded search fields deliberately use the styled search container's border.
 Native checkboxes/radios, pickers and sliders retain their keyboard semantics.
+The samples also include a heading/prose/help/action panel and a Controls hub
+tile. Check their effective gaps: ordinary content uses 12px, while the hub's own
+layout gap is applied once. Review both themes and enlarged text. Source links
+remain links; an action styled as a button must not acquire an underline.
 
 ## Browser matrix
 

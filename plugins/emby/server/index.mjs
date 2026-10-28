@@ -1,22 +1,47 @@
-/** Sormus API v1 lifecycle. Only refresh performs one read; no discovery,
- * playback commands, account changes or artwork downloads. */
-import { configuration, readSessions } from './client.mjs';
+/** Independent playback observations and opt-in cached movie-library metadata. */
+import { configuration, readSessions,readLibrary } from './client.mjs';
 import { digest, parseSessions, playbackChanges } from './sessions.mjs';
+import {libraryOptions,libraryIdentity,checkLibrary,normalizeLibrary,projectLibrary} from './library.mjs';
 export { configuration } from './client.mjs';
 
-export function createEmbyAdapter({read = readSessions,now = Date.now} = {}) {
-  let configured, startedAt;
+export function createEmbyAdapter({read = readSessions,readMovies=readLibrary,now = Date.now} = {}) {
+  let configured, options, startedAt;
+  async function projectSaved(state,at,context){
+    const before=JSON.stringify(state);projectLibrary(state,configured,options,at);if(!options.monitor)state['poll-status']='Playback monitoring off';
+    if(JSON.stringify(state)!==before)await context.saveState(state);
+  }
+  async function updateLibrary(context,force=false){
+    const state=await context.readState();checkLibrary(state);const at=now(),identity=libraryIdentity(configured,options);
+    if(!options.enabled){await projectSaved(state,at,context);return {completed:true,disabled:true};}
+    if(state.library?.identity!==identity)state.library={identity,items:[],total:0,nextRefresh:0,nextAllowed:0};
+    const library=state.library;
+    if((library.nextAllowed||0)>at||!force&&(library.nextRefresh||0)>at){await projectSaved(state,at,context);return {completed:true,cached:true};}
+    library.nextAllowed=at+2000;projectLibrary(state,configured,options,at);await context.saveState(state);
+    try{
+      const result=normalizeLibrary(await readMovies(configured,options.limit,context.signal),options.limit);context.signal.throwIfAborted();
+      Object.assign(library,result,{receivedAt:at,nextRefresh:at+options.hours*3600000,nextAllowed:at+2000,status:'Ready'});
+      projectLibrary(state,configured,options,at);await context.saveState(state);await context.log(`Emby movie library refreshed: ${library.items.length} metadata entries.`,'success');return {completed:true};
+    }catch(error){
+      context.signal.throwIfAborted();library.nextAllowed=at+([401,403,429].includes(error.status)?3600000:900000);library.status=library.receivedAt?'Cached · library unavailable':'Library unavailable';projectLibrary(state,configured,options,at);await context.saveState(state);await context.log('Emby movie library could not be refreshed; saved metadata retained.','warning');return {completed:false,cached:Boolean(library.receivedAt)};
+    }
+  }
   return {
-    validateConfiguration(settings) { return configuration(settings) !== null; },
+    validateConfiguration(settings) { return configuration(settings) !== null&&libraryOptions(settings)!==null; },
     async start(settings) {
       configured = configuration(settings);
-      if (!configured) throw new Error('Enter the Emby private IPv4 server URL and its dedicated API key.');
+      options=libraryOptions(settings);
+      if (!configured||!options) throw new Error('Enter the Emby server address, API key and valid library preferences.');
       startedAt = now();
     },
-    async stop() { configured = null; },
+    async stop() { configured = null;options=null; },
     async execute(actionId,parameters,context) {
       context.signal.throwIfAborted();
-      if (actionId !== 'refresh' || !configured) throw new Error('Emby refresh is unavailable.');
+      if (!['refresh','refresh-library'].includes(actionId) || !configured) throw new Error('Emby refresh is unavailable.');
+      if(actionId==='refresh-library'){
+        if(!options.enabled)throw Error('Enable library suggestions in Emby Settings first.');
+        const result=await updateLibrary(context,true);if(!result.completed)throw Error('Emby library could not be read. Cached metadata is retained; check Settings and try after the cooldown.');return result;
+      }
+      if(!options.monitor)return updateLibrary(context);
       const state = await context.readState();
       const identity = digest(configured.url);
       const credential = digest(configured.token);
@@ -73,6 +98,7 @@ export function createEmbyAdapter({read = readSessions,now = Date.now} = {}) {
       const payload = {sessions:state['session-count'],active:state['active-count'],playing:state['playing-count'],paused:state['paused-count']};
       for (const key of ['title','state','device','user']) if (state[`current-${key}`] !== null) payload[key] = state[`current-${key}`];
       await context.emit('reading-updated',payload);
+      if(options.enabled||state.libraryPicks!==undefined)await updateLibrary(context);
       return {completed:true};
     },
   };

@@ -4,8 +4,10 @@
   gap: 20px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 25px;
+  margin-bottom: var(--panel-gap, 20px);
 }
+.page-heading > div:first-child { min-width:0; }
+.page-heading h1 { overflow-wrap:anywhere; }
 
 .page-heading p {
   color: var(--muted);
@@ -33,6 +35,8 @@
   display: flex;
   gap: var(--action-gap, 10px);
   align-items: center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 
 .button {
@@ -125,6 +129,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap:wrap;
   border-bottom: 1px solid var(--border);
 }
 
@@ -132,6 +137,8 @@
   display: flex;
   align-items: center;
   gap: 9px;
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
 .panel-count {
@@ -154,9 +161,16 @@
 
 /* Prose, actions and tables have readable separation inside ordinary panels.
  * Form fields and flex/grid children keep their dedicated layout rules. */
-:where(#workspace .panel-body:not(.device-discovery-bar)) > :where(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button)
-  + :where(p, h3, ul, ol, dl, details, .row-actions, .table-scroll, .button) {
+:where(#workspace, #editor-dialog) .panel-body:not(.device-discovery-bar):where(:not(.control-hub-card > .panel-body, .room-diagnostic-grid .panel-body))
+  > :is(p, h2, h3, ul, ol, dl, details, .row-actions, .table-scroll, .event-properties, .home-map-stage, .vr-library-summary, .button)
+  + :is(p, h2, h3, ul, ol, dl, details, .row-actions, .table-scroll, .event-properties, .home-map-stage, .vr-library-summary, .button) {
   margin-block-start: var(--content-gap, 12px);
+}
+
+/* Standalone introductory/help text sits outside the first panel on some
+ * workspaces. Hidden messages do not reserve a gap. Grid owners keep theirs. */
+:where(#workspace, #plugin-panel) > :is(.field-help, .form-error):not([hidden]) + :is(.panel, .plugin-list) {
+  margin-block-start:var(--panel-gap, 20px);
 }
 
 .text-button {

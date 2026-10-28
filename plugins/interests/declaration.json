@@ -1,0 +1,712 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "interests",
+  "name": "Interests",
+  "version": "1.1.0",
+  "icon": "interests",
+  "description": "A personal briefing of science, AI, culture, entertainment, gaming, trends and daily news",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "instances": {
+    "setting": "topics",
+    "stateKey": "topics",
+    "eventKey": "topic-id"
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes",
+    "targetParameter": "topic-id"
+  },
+  "defaultCardLayout": "table",
+  "settings": [
+    {
+      "id": "poll-minutes",
+      "label": "Source refresh interval",
+      "type": "number",
+      "required": true,
+      "default": 30,
+      "min": 15,
+      "max": 120,
+      "enum": [
+        15,
+        30,
+        60,
+        120
+      ],
+      "enumLabels": [
+        "15 minutes",
+        "30 minutes",
+        "1 hour",
+        "2 hours"
+      ]
+    },
+    {
+      "id": "tmdb-token",
+      "label": "TMDB API read access token",
+      "type": "string",
+      "format": "secret",
+      "default": "",
+      "maxLength": 2000,
+      "section": "Optional movie releases",
+      "help": "Only needed for Upcoming movies. Obtain your own API read access token from TMDB. Free noncommercial use requires attribution; commercial use needs a separate agreement."
+    },
+    {
+      "id": "movie-region",
+      "label": "Movie release country",
+      "type": "string",
+      "default": "FI",
+      "required": true,
+      "maxLength": 2,
+      "pattern": "^[A-Z]{2}$",
+      "section": "Optional movie releases",
+      "help": "Two-letter country code, such as FI, US, GB or SE. These are cinema release listings, not local streaming availability."
+    },
+    {
+      "id": "movie-language",
+      "label": "Movie information language",
+      "type": "string",
+      "default": "en-US",
+      "required": true,
+      "maxLength": 5,
+      "pattern": "^[a-z]{2}-[A-Z]{2}$",
+      "section": "Optional movie releases"
+    },
+    {
+      "id": "topics",
+      "label": "Interests",
+      "type": "list",
+      "maxItems": 20,
+      "itemLabel": "interest",
+      "default": [],
+      "uniqueBy": [
+        "id"
+      ],
+      "help": "Use All interests for a balanced digest of other enabled, successfully refreshed interests. Source entries are editable and may use keyword filters.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "ID",
+          "type": "string",
+          "required": true,
+          "format": "identifier",
+          "maxLength": 64
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "provider",
+          "label": "Source",
+          "type": "string",
+          "required": true,
+          "default": "science",
+          "enum": [
+            "science",
+            "technology",
+            "ars-science",
+            "space",
+            "hackernews",
+            "bbc-culture",
+            "variety",
+            "deadline",
+            "guardian-culture",
+            "pitchfork",
+            "nme",
+            "pc-gamer",
+            "reactor",
+            "verge",
+            "guardian-ai",
+            "deepmind",
+            "openai",
+            "huggingface",
+            "google-ai",
+            "nasa",
+            "environment",
+            "bbc-world",
+            "bbc-health",
+            "bbc-tech",
+            "bbc-science",
+            "bbc-sport",
+            "bbc-business",
+            "trends-fi",
+            "trends-us",
+            "movies",
+            "digest"
+          ],
+          "enumLabels": [
+            "ScienceDaily · Science",
+            "Ars Technica · Technology",
+            "Ars Technica · Science",
+            "Spaceflight News",
+            "Hacker News · Technology",
+            "Pop culture · BBC Entertainment & Arts",
+            "Film & TV · Variety",
+            "Film & TV · Deadline",
+            "Culture · The Guardian",
+            "Music · Pitchfork",
+            "Music · NME",
+            "Gaming · PC Gamer",
+            "Sci-fi & fantasy · Reactor",
+            "Technology & culture · The Verge",
+            "AI news · The Guardian",
+            "AI research · Google DeepMind",
+            "AI announcements · OpenAI",
+            "Open models · Hugging Face",
+            "AI announcements · Google",
+            "Space & exploration · NASA",
+            "Environment · ScienceDaily",
+            "World news · BBC",
+            "Health · BBC",
+            "Technology · BBC",
+            "Science & environment · BBC",
+            "Sport · BBC",
+            "Business · BBC",
+            "Trending searches · Finland",
+            "Trending searches · United States",
+            "TMDB · Upcoming movies",
+            "All interests · Mixed digest"
+          ],
+          "help": "Choose a publisher RSS/Atom feed, country-specific Google search trends or a mixed digest. Only the optional TMDB source needs a token."
+        },
+        {
+          "id": "include",
+          "label": "Include words",
+          "type": "string",
+          "default": "",
+          "maxLength": 300,
+          "help": "Optional comma-separated words or phrases. Match any phrase in the headline or description; ignores case."
+        },
+        {
+          "id": "exclude",
+          "label": "Exclude words",
+          "type": "string",
+          "default": "",
+          "maxLength": 300,
+          "help": "Hide items containing any comma-separated phrase."
+        },
+        {
+          "id": "age-days",
+          "label": "Maximum article age",
+          "type": "number",
+          "required": true,
+          "default": 7,
+          "min": 1,
+          "max": 30,
+          "enum": [
+            1,
+            3,
+            7,
+            30
+          ],
+          "enumLabels": [
+            "1 day",
+            "3 days",
+            "7 days",
+            "30 days"
+          ],
+          "help": "Applies to known publication dates. Unknown dates stay labelled as unknown; movie release dates are separate."
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "settingsGuide": {
+    "title": "Interests setup",
+    "sections": [
+      {
+        "title": "Build your briefing",
+        "steps": [
+          "Enable the plugin, add an interest and choose from the source catalogue: AI, pop culture, film/TV, music, gaming, sci-fi, science, space, technology, environment, world news, health, business, sport or trending searches.",
+          "Include words matches any comma-separated phrase; Exclude words removes matching items. These are text filters, not AI interpretation.",
+          "Refresh a source from Discover or wait for the normal interval. An All interests entry combines at most two items from each other fresh source. It performs no extra provider requests."
+        ]
+      },
+      {
+        "title": "Cards and Tasks",
+        "steps": [
+          "Create an Interest briefing ready-made Card for each interest, or a mixed digest. Add it to Today, any Vista, or Controller.",
+          "New item Events include the interest name, headline, description, publisher, link and reported publication time. First reads and restarts do not flood Tasks with old items.",
+          "Descriptions come from providers. Scientific news and community links are not independent verification of research claims."
+        ]
+      },
+      {
+        "title": "Credits and movies",
+        "steps": [
+          "Headlines and supplied descriptions remain attributed to their publishers, with links to original pages. No full articles or external article images are fetched.",
+          "Use BBC, Variety, Deadline, The Guardian, The Verge, Pitchfork, NME, PC Gamer, Reactor, ScienceDaily, NASA, Spaceflight News, Hacker News and official AI publisher feeds. The source list and publisher links are documented in the plugin README.",
+          "This product uses the TMDB API but is not endorsed or certified by TMDB. Enter your own token to use movie listings. Region-specific cinema dates can change and do not promise streaming availability.",
+          "For new trailers, use the existing YouTube plugin with official studio channels. Interests does not duplicate those channel polls.",
+          "Google Trends reports search interest for Finland or the United States, not worldwide popularity or verified news. Official AI company feeds contain their own announcements; independent reporting is offered separately. RSS access needs no key; some linked articles may require a subscription."
+        ]
+      }
+    ]
+  },
+  "cardFields": [
+    {
+      "id": "item-count",
+      "label": "Items",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "item-count"
+      }
+    },
+    {
+      "id": "topic-name",
+      "label": "Interest",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "topic-name"
+      }
+    },
+    {
+      "id": "lead-title",
+      "label": "Latest headline",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "lead-title"
+      }
+    },
+    {
+      "id": "lead-summary",
+      "label": "Description",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "lead-summary"
+      }
+    },
+    {
+      "id": "lead-source",
+      "label": "Publisher",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "lead-source"
+      }
+    },
+    {
+      "id": "lead-at",
+      "label": "Published",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "lead-at"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Source received",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "poll-status",
+      "label": "Source status",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "poll-status"
+      }
+    },
+    {
+      "id": "item-1-title",
+      "label": "Headline 1",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-1-title"
+      }
+    },
+    {
+      "id": "item-2-title",
+      "label": "Headline 2",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-2-title"
+      }
+    },
+    {
+      "id": "item-3-title",
+      "label": "Headline 3",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-3-title"
+      }
+    },
+    {
+      "id": "item-4-title",
+      "label": "Headline 4",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-4-title"
+      }
+    },
+    {
+      "id": "item-5-title",
+      "label": "Headline 5",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-5-title"
+      }
+    },
+    {
+      "id": "item-6-title",
+      "label": "Headline 6",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-6-title"
+      }
+    },
+    {
+      "id": "item-7-title",
+      "label": "Headline 7",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-7-title"
+      }
+    },
+    {
+      "id": "item-8-title",
+      "label": "Headline 8",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-8-title"
+      }
+    },
+    {
+      "id": "item-9-title",
+      "label": "Headline 9",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-9-title"
+      }
+    },
+    {
+      "id": "item-10-title",
+      "label": "Headline 10",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "item-10-title"
+      }
+    },
+    {
+      "id": "headlines",
+      "label": "Headlines",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Headline",
+          "type": "string"
+        },
+        {
+          "id": "source",
+          "label": "Source",
+          "type": "string"
+        },
+        {
+          "id": "at",
+          "label": "Published",
+          "type": "timestamp"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "item-count",
+        "rows": [
+          {
+            "title": "item-1-title",
+            "source": "item-1-source",
+            "at": "item-1-at"
+          },
+          {
+            "title": "item-2-title",
+            "source": "item-2-source",
+            "at": "item-2-at"
+          },
+          {
+            "title": "item-3-title",
+            "source": "item-3-source",
+            "at": "item-3-at"
+          },
+          {
+            "title": "item-4-title",
+            "source": "item-4-source",
+            "at": "item-4-at"
+          },
+          {
+            "title": "item-5-title",
+            "source": "item-5-source",
+            "at": "item-5-at"
+          },
+          {
+            "title": "item-6-title",
+            "source": "item-6-source",
+            "at": "item-6-at"
+          },
+          {
+            "title": "item-7-title",
+            "source": "item-7-source",
+            "at": "item-7-at"
+          },
+          {
+            "title": "item-8-title",
+            "source": "item-8-source",
+            "at": "item-8-at"
+          },
+          {
+            "title": "item-9-title",
+            "source": "item-9-source",
+            "at": "item-9-at"
+          },
+          {
+            "title": "item-10-title",
+            "source": "item-10-source",
+            "at": "item-10-at"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "item-1-source",
+            "type": "string"
+          },
+          {
+            "key": "item-1-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-2-source",
+            "type": "string"
+          },
+          {
+            "key": "item-2-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-3-source",
+            "type": "string"
+          },
+          {
+            "key": "item-3-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-4-source",
+            "type": "string"
+          },
+          {
+            "key": "item-4-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-5-source",
+            "type": "string"
+          },
+          {
+            "key": "item-5-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-6-source",
+            "type": "string"
+          },
+          {
+            "key": "item-6-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-7-source",
+            "type": "string"
+          },
+          {
+            "key": "item-7-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-8-source",
+            "type": "string"
+          },
+          {
+            "key": "item-8-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-9-source",
+            "type": "string"
+          },
+          {
+            "key": "item-9-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "item-10-source",
+            "type": "string"
+          },
+          {
+            "key": "item-10-at",
+            "type": "timestamp"
+          }
+        ]
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Refresh interests",
+      "description": "Read one declared topic source or rebuild its cached mixed digest.",
+      "parameters": [
+        {
+          "id": "topic-id",
+          "label": "Interest",
+          "type": "string",
+          "format": "identifier",
+          "maxLength": 64
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "item-discovered",
+      "name": "New item",
+      "occurrenceKey": "discovery-id",
+      "description": "A new, dated item discovered after a successful baseline. Claims persist before Tasks; cached refreshes and mixed digests do not duplicate Events.",
+      "payload": [
+        {
+          "id": "topic-id",
+          "label": "Interest ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "topic-name",
+          "label": "Interest",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "title",
+          "label": "Headline",
+          "type": "string",
+          "required": true,
+          "maxLength": 200
+        },
+        {
+          "id": "summary",
+          "label": "Description",
+          "type": "string",
+          "maxLength": 400
+        },
+        {
+          "id": "source",
+          "label": "Publisher",
+          "type": "string",
+          "maxLength": 80
+        },
+        {
+          "id": "url",
+          "label": "Original page",
+          "type": "string",
+          "maxLength": 1200
+        },
+        {
+          "id": "published-at",
+          "label": "Published at",
+          "type": "number"
+        },
+        {
+          "id": "discovery-id",
+          "label": "Discovery ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 48
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "interest-brief",
+      "name": "Interest briefing",
+      "directory": "cards/interest-brief",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css",
+        "assets/tmdb.svg"
+      ],
+      "slots": [
+        {
+          "id": "topic",
+          "field": "topic-name"
+        },
+        {
+          "id": "headline",
+          "field": "lead-title"
+        },
+        {
+          "id": "description",
+          "field": "lead-summary"
+        },
+        {
+          "id": "publisher",
+          "field": "lead-source"
+        },
+        {
+          "id": "published",
+          "field": "lead-at",
+          "format": "datetime"
+        },
+        {
+          "id": "list",
+          "field": "headlines",
+          "format": "table",
+          "rows": 5,
+          "columns": [
+            "title",
+            "source"
+          ]
+        },
+        {
+          "id": "status",
+          "field": "poll-status"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

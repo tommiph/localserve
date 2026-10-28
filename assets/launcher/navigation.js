@@ -69,10 +69,10 @@
     if (active.group === 'header') {
       var headings = items.filter(function (item) { return item.group === 'header'; }).sort(function (a,b) { return a.rect.left - b.rect.left; });
       if (code === 37 || code === 39) return headings[headings.indexOf(active) + (code === 37 ? -1 : 1)] || active;
-      if (code === 40) { if (preferred && items.indexOf(preferred) >= 0 && preferred.group === 'primary') return preferred;var entry = rows(items,'primary')[0] || rows(items,'secondary')[0];return entry ? entry[0] : active; }
+      if (code === 40) { var modes=rows(items,'modes')[0];if(modes)return nearest(modes,active);if (preferred && items.indexOf(preferred) >= 0 && preferred.group === 'primary') return preferred;var entry = rows(items,'primary')[0] || rows(items,'secondary')[0];return entry ? entry[0] : active; }
       return active;
     }
-    if (active.group === 'primary' || active.group === 'secondary') {
+    if (active.group === 'primary' || active.group === 'secondary' || active.group === 'modes') {
       var own = rows(items,active.group), rowIndex = -1, column = -1;
       own.forEach(function (row,index) { var at = row.indexOf(active);if (at >= 0) { rowIndex = index;column = at; } });
       if (code === 37 || code === 39) return own[rowIndex][column + (code === 37 ? -1 : 1)] || active;
@@ -81,6 +81,8 @@
       if (code === 38 && active.group === 'secondary') {
         var above = rows(items,'primary');if (above.length) return nearest(above[above.length - 1],active);
       }
+      if (code === 38 && active.group === 'primary') { var modeRows=rows(items,'modes');if(modeRows.length)return nearest(modeRows[modeRows.length-1],active); }
+      if (code === 40 && active.group === 'modes') { var afterModes=rows(items,'primary')[0]||rows(items,'secondary')[0];return afterModes?nearest(afterModes,active):active; }
       if (code === 40 && active.group === 'primary') {
         var below = rows(items,'secondary');if (below.length) return nearest(below[0],active);
       }

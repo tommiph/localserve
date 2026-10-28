@@ -18,8 +18,10 @@ const VistaUI = {
   libraryMarkup: {},
   animations: { none: 'None', random: 'Random', fade: 'Fade', 'slide-left': 'Slide left', 'slide-right': 'Slide right', 'slide-up': 'From bottom', 'slide-down': 'From top', zoom: 'Zoom', flip: 'Flip' },
 
+  newId(){return typeof crypto.randomUUID==='function'?crypto.randomUUID():Array.from(crypto.getRandomValues(new Uint8Array(16)),value=>value.toString(16).padStart(2,'0')).join('');},
+
   newNode(type) {
-    const node = { id: crypto.randomUUID(), type, name: { row: 'Row', column: 'Column', card: 'Card', collection: 'Card collection' }[type], enabled: true, width: '1fr', height: '1fr' };
+    const node = { id: this.newId(), type, name: { row: 'Row', column: 'Column', card: 'Card', collection: 'Card collection' }[type], enabled: true, width: '1fr', height: '1fr' };
     const names = new Set();
     const visit = item => {if (!item) return; names.add(item.name); (item.children || []).forEach(visit);};
     visit(this.draft?.layout);
@@ -38,7 +40,7 @@ const VistaUI = {
 
   library() {
     return state.services.flatMap(service => service.cards.map(card => ({ pluginId: service.id, cardId: card.id,
-      name: card.name, pluginName: service.name, enabled: card.enabled, pluginEnabled: service.enabled, configured: service.configurationReady,
+      name: card.name, templateId:card.templateId, sourceId:card.sourceId, pluginName: service.name, enabled: card.enabled, pluginEnabled: service.enabled, configured: service.configurationReady,
       unavailable: AdminUX.cardAvailability(service, card),
       icon: card.icon === 'inherit' ? service.icon : card.icon === 'none' ? 'id-card' : card.icon,
       label: `${service.name} · ${card.name}${card.enabled ? '' : ' (disabled)'}` })));
@@ -160,7 +162,7 @@ const VistaUI = {
   render() {
     const selected = state.vistas?.find(vista => vista.id === state.vistaDisplay?.vistaId);
     const tv = this.tvLaunchAvailability();
-    return pageHeading('Vistas', 'Layouts for end-user displays', `<button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
+    return pageHeading('Vistas', 'Layouts for end-user displays', `<button class="button" data-action="vista-today">${icon('sun')}Create Today</button><button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
       `<section class="panel vista-display-panel"><div class="panel-header"><h2>${icon('display')}End-user display</h2><a class="button" href="display" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open shared /display</a></div><div class="panel-body"><p>${selected?.enabled ? escapeHtml(selected.name) : 'No enabled Vista selected'} · /display</p><p class="field-help">Use on shared display changes /display for everyone. Open this Vista only opens its own URL. Tasks → Server → Show Vista can change it using Timer, Interval, Schedule or Event rules. All open display pages follow the same selection.</p></div></section>` +
       `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button><button class="button" data-action="vista-tv" data-id="${vista.id}" title="${escapeHtml(!vista.enabled ? 'Enable this Vista first.' : tv.reason || 'Open this Vista on the TV without changing /display.')}" ${vista.enabled && !tv.reason ? '' : 'disabled'}>${icon('display')}Open on TV</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
   },
@@ -177,7 +179,7 @@ const VistaUI = {
 
   copyNode(node) {
     const copy = structuredClone(node);
-    function identities(item) { item.id = crypto.randomUUID(); (item.children || []).forEach(identities); }
+    function identities(item) { item.id = this.newId(); (item.children || []).forEach(identities); }
     identities(copy);
     copy.enabled = false;
     return copy;
@@ -242,9 +244,9 @@ const VistaUI = {
     </section>`;
   },
 
-  openEditor(id, copy = false) {
+  openEditor(id, copy = false, preset = null) {
     const existing = state.vistas?.find(vista => vista.id === id);
-    this.draft = existing ? structuredClone(existing) : { schemaVersion: 1, name: '', slug: '', enabled: false, gap: 16, padding: 16, layout: this.newNode('column') };
+    this.draft = existing ? structuredClone(existing) : preset ? structuredClone(preset) : { schemaVersion: 1, name: '', slug: '', enabled: false, gap: 16, padding: 16, layout: this.newNode('column') };
     // Canvas is the initial root's user-facing name. Keep ordinary columns and
     // existing or copied layouts' saved names intact.
     if (!existing) this.draft.layout.name = 'Canvas';
@@ -258,6 +260,7 @@ const VistaUI = {
     this.expanded = new Set(); this.libraryMarkup = {};
     showDialog(`<form id="vista-editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} Vista` : 'Add Vista')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>
       <div class="field-row vista-identity">${formField('Vista name', 'tag', `<input name="vistaName" required maxlength="64" value="${escapeHtml(this.draft.name)}">`)}<label class="check-field"><span>Vista enabled</span><button type="button" class="switch" role="switch" aria-label="Vista enabled" aria-checked="${this.draft.enabled}" data-action="vista-enabled"></button></label></div>
+      ${this.presentationEditor()}
       <details class="editor-help"><summary>URL and spacing</summary><div class="field-row">${formField('URL name', 'link', `<input name="vistaSlug" required maxlength="64" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${escapeHtml(this.draft.slug)}">`, '/vistas/ followed by this name.')}${this.input('Gap (px)', 'gap', this.draft.gap, 'number', 'min="0" max="80"')}${this.input('Padding (px)', 'padding', this.draft.padding, 'number', 'min="0" max="80"')}</div></details>
       <div class="tabs" role="tablist" aria-label="Vista editor"><button id="vista-layout-tab" class="tab" type="button" role="tab" aria-controls="vista-layout-panel" aria-selected="true" tabindex="0" data-action="vista-tab" data-tab="layout">${icon('table-cells')}Layout</button><button id="vista-preview-tab" class="tab" type="button" role="tab" aria-controls="vista-preview-panel" aria-selected="false" tabindex="-1" data-action="vista-tab" data-tab="preview">${icon('eye')}Preview</button></div><label class="check-field vista-preview-option"><input id="vista-split-preview" type="checkbox">Show preview alongside layout</label>
       <p id="vista-fit-warning" class="field-help evidence-error" role="status" hidden></p><div class="vista-editing-panels"><section id="vista-layout-panel" role="tabpanel" aria-label="Layout"><div class="task-designer vista-designer"><div class="task-canvas"><h3 class="vista-layout-title">Layout editor</h3><p class="field-help vista-layout-instructions">Start by adding cards or layout blocks from the library. <strong>Add here</strong> selects their destination. <strong>Edit</strong> changes sizes and settings; <strong>Preview</strong> shows the result.</p><details class="editor-help"><summary>Layout map</summary><p class="field-help">Select a region to edit it. Containers also become the insertion destination. This is a schematic; use Preview for exact sizes.</p><div id="vista-layout-map" class="vista-layout-map"></div></details><div id="vista-layout-tree">${this.nodeEditor(this.draft.layout, true)}</div></div>${this.renderLibrary()}</div></section><section id="vista-preview-panel" role="tabpanel" aria-label="Preview" hidden><div id="vista-preview" class="vista-stage vista-admin-preview"></div></section></div></div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create Vista')}</form>`, { kind: 'vista', id: existing?.id, copy, revision: existing?.revision });
@@ -265,6 +268,19 @@ const VistaUI = {
     this.updatePreview();
   },
 
+  todayDraft(){
+    const priorities=['weather','hsl-trains','calendar','tv-calendar','tradfri','home-modes','interests','movies','emby','adsb-lol','fingrid','finavia'],available=this.library().filter(card=>card.enabled&&card.pluginEnabled),selected=[];
+    for(const id of priorities){const card=available.find(card=>card.pluginId===id);if(card)selected.push(card);}
+    const tvPicks=available.find(card=>card.pluginId==='tv-calendar'&&/^daily-tv(?:-fullscreen)?$/.test(card.templateId));if(tvPicks&&!selected.includes(tvPicks))selected.push(tvPicks);
+    const embyPicks=available.find(card=>card.pluginId==='emby'&&/^library-movies(?:-fullscreen)?$/.test(card.templateId));if(embyPicks){const old=selected.findIndex(card=>card.pluginId==='emby');if(old>=0)selected[old]=embyPicks;else selected.push(embyPicks);}
+    for(const card of available.filter(card=>card.pluginId==='interests'))if(!selected.some(item=>item.pluginId==='interests'&&item.sourceId===card.sourceId))selected.push(card);
+    const root=this.newNode('column');root.name='Canvas';root.children=selected.map(reference=>{const node=this.newNode('card');node.name=reference.name;node.cards=[{pluginId:reference.pluginId,cardId:reference.cardId}];return node;});
+    return {schemaVersion:1,name:'Today',slug:'today',enabled:false,gap:16,padding:16,layout:root,presentation:{type:'today',mood:'atmospheric',motion:'gentle',spotlightSeconds:30,opacity:80}};
+  },
+  presentationEditor(){
+    const p=this.draft.presentation||{mood:'atmospheric',motion:'gentle',spotlightSeconds:30,opacity:80};
+    return `<section class="panel"><div class="panel-body">${formField('Presentation','display',`<select name="vistaPresentation"><option value="standard" ${this.draft.presentation?'':'selected'}>Standard layout</option><option value="today" ${this.draft.presentation?'selected':''}>Today · Daily briefing</option></select>`)}<div data-today-options ${this.draft.presentation?'':'hidden'}><p class="field-help">Today arranges the enabled Cards in your layout into weather, daylight, daily essentials and a rotating spotlight. Add or remove Cards using the library below. Rows and columns preserve your source selection; Today manages their display positions.</p><div class="field-row">${formField('Mood','palette',`<select name="todayMood" data-today-option="mood">${[['atmospheric','Atmospheric'],['aurora','Aurora'],['midnight','Midnight']].map(([id,name])=>`<option value="${id}" ${p.mood===id?'selected':''}>${name}</option>`).join('')}</select>`)}${formField('Motion','auto-awesome',`<select name="todayMotion" data-today-option="motion">${[['full','Full'],['gentle','Gentle'],['none','None']].map(([id,name])=>`<option value="${id}" ${p.motion===id?'selected':''}>${name}</option>`).join('')}</select>`)}${formField('Spotlight (seconds)','clock',`<input type="number" min="10" max="300" value="${p.spotlightSeconds}" name="todaySpotlight" data-today-option="spotlightSeconds">`)}</div><label class="field"><span class="field-label">Panel opacity <output>${p.opacity}%</output></span><input type="range" aria-label="Panel opacity" min="40" max="100" value="${p.opacity}" name="todayOpacity" data-today-option="opacity"></label></div></div></section>`;
+  },
   readDraft() { return structuredClone(this.draft); },
 
   updatePreview() {
@@ -281,7 +297,7 @@ const VistaUI = {
       (node.children || []).forEach(safe);
     }
     safe(draft.layout);
-    this.preview.update({ vista: draft, cards, options: { theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale, timeZone: state.server.timeZone, timeFormat: config.timeFormat, now: state.server.now, connected: serverClockConnected } });
+    this.preview.update({ vista: draft, cards, options: { daylight:state.server.daylight, theme: config.displayTheme ?? config.theme, fontScale: config.vistaFontScale, timeZone: state.server.timeZone, timeFormat: config.timeFormat, now: state.server.now, connected: serverClockConnected } });
     dialog.querySelectorAll('#vista-preview [data-node-id]').forEach(element => element.classList.toggle('vista-preview-selected', element.dataset.nodeId === this.selectedNodeId));
     dialog.querySelectorAll('[data-vista-node]').forEach(element => element.classList.toggle('vista-selected-node', element.dataset.vistaNode === this.selectedNodeId));
     cancelAnimationFrame(this.fitFrame);
@@ -332,6 +348,11 @@ const VistaUI = {
     if (control.id === 'vista-card-filter') { this.libraryCategory = control.value; this.refreshLibrary(); return; }
     if (control.id === 'vista-split-preview') { this.splitPreview = control.checked; this.updatePanels(); return; }
     if (control.id === 'vista-library-insertion') { this.insertion = control.value; return; }
+    if(control.name==='vistaPresentation'){
+      if(control.value==='today')this.draft.presentation={type:'today',mood:'atmospheric',motion:'gentle',spotlightSeconds:30,opacity:80};else delete this.draft.presentation;
+      dialog.querySelector('[data-today-options]').hidden=!this.draft.presentation;this.updatePreview();return;
+    }
+    if(control.dataset.todayOption&&this.draft.presentation){const key=control.dataset.todayOption;this.draft.presentation[key]=['opacity','spotlightSeconds'].includes(key)?Number(control.value):control.value;const output=control.closest('label')?.querySelector('output');if(output)output.textContent=control.value+'%';this.updatePreview();return;}
     if (control.name === 'vistaName') this.draft.name = control.value;
     if (control.name === 'vistaSlug') this.draft.slug = control.value;
     const nodeId = control.closest('[data-vista-node]')?.dataset.vistaNode;
@@ -399,6 +420,7 @@ const VistaUI = {
   },
 
   async handleAction(action, id, control) {
+    if (action === 'vista-today') return this.openEditor(null,false,this.todayDraft());
     if (action === 'vista-add') return this.openEditor();
     if (action === 'vista-map-select') {
       const found=this.find(id); if(!found)return;

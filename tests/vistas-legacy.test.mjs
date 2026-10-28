@@ -22,6 +22,20 @@ test('every installed ready-made Card has a TV color fallback', async () => {
   }
 });
 
+test('daily watch designs opt into Card hydration and declare the lead and three further picks',async()=>{
+  for(const [plugin,design]of [['movies','daily-movies'],['tv-calendar','daily-tv']]){
+    const declaration=validateDeclaration(JSON.parse(await fs.readFile(`plugins/${plugin}/declaration.json`,'utf8')));
+    const html=await fs.readFile(`plugins/${plugin}/cards/${design}/card.html`,'utf8');
+    assert.match(html,/\bdata-ready-made\b/,'The shared renderer requires the hydration marker.');
+    assert.match(html,/data-card-text="title"/);assert.match(html,/data-card-table="list"/);
+    for(const template of declaration.cardTemplates.filter(item=>item.id.startsWith(design))){
+      assert.equal(template.slots.find(slot=>slot.id==='title').field,'pick-1-title');
+      assert.equal(template.slots.find(slot=>slot.id==='list').field,'daily-more');
+      assert.equal(template.slots.find(slot=>slot.id==='list').rows,3);
+    }
+  }
+});
+
 test('new TV CSS provides literal palettes, date no-wrap and airport-style aircraft geometry', () => {
   const section=readyCss.slice(readyCss.indexOf('/* Agenda, Screening room and Airspace:'));
   assert.doesNotMatch(section,/var\(|conic-gradient|aspect-ratio|display:\s*grid|\b(?:row-|column-)?gap\s*:|#[a-f\d]{8}\b/i);

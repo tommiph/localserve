@@ -286,7 +286,7 @@
 .editor-help p { margin:4px 0 12px; line-height:1.6; }
 .editor-help .field-row { margin-top:10px; }
 .vista-identity { align-items:center; }
-.settings-groups { display:grid; gap:22px; }
+.settings-groups { display:grid; gap:var(--panel-gap, 20px); }
 .settings-groups > .panel { margin:0; }
 .task-failure-shortcut { color:var(--warning); border-color:var(--warning); }
 .service-mobile-read { display:none; }

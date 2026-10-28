@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>The Daily</title><link rel="icon" href="/assets/controls/app-icon.svg">
+  <link rel="stylesheet" href="/assets/material-symbols/material-symbols.css"><link rel="stylesheet" href="/portal.css">
+  <script src="/portal-model.js" defer></script><script src="/portal.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#stories">Skip to stories</a>
+  <header>
+    <div class="edition"><span id="edition-name">Sormus</span><time id="date"></time><button id="refresh">Refresh edition</button></div>
+    <div class="masthead"><span>THE</span><h1>DAILY<span class="dot">●</span></h1><div class="edition-note">YOUR<br>DAILY<br>EDIT</div></div>
+    <nav id="topics" aria-label="Topics"></nav>
+  </header>
+  <main>
+    <div class="edition-status"><p id="status" role="status">Preparing your edition…</p><span id="visit-note"></span><button id="mark-seen" disabled>Mark edition as seen</button></div>
+    <div class="page-grid">
+      <section aria-label="Stories">
+        <div class="section-heading"><h2 id="section-title">The latest</h2><p id="section-summary"></p></div>
+        <form id="story-filters" aria-label="Find stories">
+          <label for="story-search">Find a story<input id="story-search" type="search" maxlength="200" placeholder="Search this edition"></label>
+          <label for="publisher-filter">Publisher<select id="publisher-filter"><option value="">All publishers</option></select></label>
+          <button type="submit">Search</button><button id="clear-filters" type="button">Clear</button>
+        </form>
+        <div id="stories" aria-label="Headlines" aria-live="polite"></div>
+      </section>
+      <aside>
+        <div class="aside-title">YOUR DAY</div><a class="display-link" href="/vistas/today" id="today-link" hidden>Open Today <span>↗</span></a>
+        <div id="briefing"></div><div class="source-box"><h2>Sources & updates</h2><div id="sources"></div></div>
+      </aside>
+    </div>
+  </main>
+  <footer><span>THE DAILY</span><p>Headlines and descriptions belong to their credited publishers. Read the original for the full story. TV listings: TVmaze, CC BY-SA. Movie data: TMDB; this product is not endorsed or certified by TMDB.</p><img id="tmdb" src="/assets/interests/tmdb.svg" alt="TMDB" hidden></footer>
+</body>
+</html>

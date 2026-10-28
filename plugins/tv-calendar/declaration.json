@@ -1,0 +1,1672 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "tv-calendar",
+  "name": "TV Calendar",
+  "version": "1.4.0",
+  "icon": "live-tv",
+  "description": "Follow TV shows, track watched episodes and plan your viewing",
+  "defaultCardLayout": "table",
+  "runtime": {
+    "entry": "server/index.mjs",
+    "stateMaxBytes": 1048576
+  },
+  "polling": {
+    "actionId": "refresh",
+    "intervalSetting": "poll-minutes"
+  },
+  "attribution": {
+    "label": "TVmaze",
+    "url": "https://www.tvmaze.com",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "licenseLabel": "CC BY-SA",
+    "notice": "Episode listings provided by TVmaze. Reported release dates do not guarantee local availability."
+  },
+  "settings": [
+    {
+      "id": "pick-genre",
+      "label": "Daily picks genre",
+      "type": "string",
+      "default": "",
+      "enum": [
+        "",
+        "Science-Fiction",
+        "Drama",
+        "Comedy",
+        "Thriller",
+        "Fantasy",
+        "Action",
+        "Crime",
+        "Mystery",
+        "Adventure"
+      ],
+      "enumLabels": [
+        "All genres",
+        "Science fiction",
+        "Drama",
+        "Comedy",
+        "Thriller",
+        "Fantasy",
+        "Action",
+        "Crime",
+        "Mystery",
+        "Adventure"
+      ],
+      "section": "Daily suggestions"
+    },
+    {
+      "id": "pick-genres",
+      "label": "Preferred genres",
+      "type": "string",
+      "maxLength": 250,
+      "pattern": "^(?:(?:Science-Fiction|Drama|Comedy|Thriller|Fantasy|Action|Crime|Mystery|Adventure)(?:,(?!$)|$))*$",
+      "section": "Daily suggestions",
+      "help": "Select any genres for daily suggestions. An empty selection includes all genres."
+    },
+    {
+      "id": "pick-ended",
+      "label": "Include completed series in daily picks",
+      "type": "boolean",
+      "default": true,
+      "section": "Daily suggestions",
+      "help": "Daily picks are discovery suggestions, not broadcasts or subscription availability. Followed shows are excluded."
+    },
+    {
+      "id": "poll-minutes",
+      "label": "Episode check interval",
+      "type": "number",
+      "required": true,
+      "default": 1,
+      "min": 1,
+      "max": 5,
+      "enum": [
+        1,
+        2,
+        5
+      ],
+      "enumLabels": [
+        "1 minute",
+        "2 minutes",
+        "5 minutes"
+      ],
+      "help": "Checks cached air times for Task Events. A missed interval or restart does not replay old episodes."
+    },
+    {
+      "id": "refresh-hours",
+      "label": "Show metadata refresh",
+      "type": "number",
+      "required": true,
+      "default": 6,
+      "min": 6,
+      "max": 24,
+      "enum": [
+        6,
+        12,
+        24
+      ],
+      "enumLabels": [
+        "6 hours",
+        "12 hours",
+        "24 hours"
+      ],
+      "help": "One due show is fetched per check. Cached listings remain visible during outages."
+    },
+    {
+      "id": "shows",
+      "label": "Followed shows",
+      "type": "list",
+      "maxItems": 20,
+      "itemLabel": "show",
+      "default": [],
+      "uniqueBy": [
+        "id",
+        "tvmaze-id"
+      ],
+      "help": "Find a show in Calendar. Listings follow the original network or streaming release; your local subscription may differ.",
+      "fields": [
+        {
+          "id": "id",
+          "label": "Show entry ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 64,
+          "format": "identifier"
+        },
+        {
+          "id": "name",
+          "label": "Name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "tvmaze-id",
+          "label": "TVmaze show ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 9,
+          "pattern": "^[1-9]\\d{0,8}$"
+        },
+        {
+          "id": "enabled",
+          "label": "Enabled",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "settingsGuide": {
+    "title": "TV Calendar setup",
+    "sections": [
+      {
+        "title": "Follow shows",
+        "steps": [
+          "Open For you for four daily discovery picks. Follow saves a show immediately; followed shows are excluded from new picks. Choose genre and completed-series preferences in Settings. Daily TV suggestions Cards show the same selection.",
+          "Open Discover shows for a starter selection across science-fiction, drama, comedy and thrillers. Filter the selection by genre or follow several shows with one click each. Suggestions are not followed automatically. Their checked date is shown; following loads current episode listings.",
+          "Choose Find shows or Add show. Search by title, or leave the title empty to browse shows airing today. Filter by genre or status, then choose Follow for each show you want; every click saves immediately and keeps the results open.",
+          "Close the finder when finished. Followed shows are enabled and refresh on the next episode check, or choose Refresh show in Shows. Edit a followed show to change its name or Enabled setting.",
+          "Choose Month or Agenda. The server timezone and selected 12/24-hour format apply. Mark episodes watched from their popup."
+        ]
+      },
+      {
+        "title": "Tasks and Cards",
+        "steps": [
+          "Use Episode airing in a Task to receive show name, episode title, season, episode number, air time, network and TVmaze link. Initial reads and restarts do not replay old releases.",
+          "Create a Card using Upcoming television. Publish it through your usual Vista or Controller setup.",
+          "Only public TVmaze endpoints are used. No account or API key is required. Listings are attributed to TVmaze under CC BY-SA."
+        ]
+      }
+    ]
+  },
+  "cardFields": [
+    {
+      "id": "row-count",
+      "label": "Upcoming rows",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "row-count"
+      }
+    },
+    {
+      "id": "show-count",
+      "label": "Followed shows",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "show-count"
+      }
+    },
+    {
+      "id": "watched-count",
+      "label": "Watched episodes",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "watched-count"
+      }
+    },
+    {
+      "id": "received-at",
+      "label": "Listings received",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "received-at"
+      }
+    },
+    {
+      "id": "poll-status",
+      "label": "Listing status",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "poll-status"
+      }
+    },
+    {
+      "id": "next-show",
+      "label": "Next show",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "next-show"
+      }
+    },
+    {
+      "id": "next-title",
+      "label": "Next episode",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "next-title"
+      }
+    },
+    {
+      "id": "next-at",
+      "label": "Next air time",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "next-at"
+      }
+    },
+    {
+      "id": "episode-1-title",
+      "label": "Episode 1",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-1-title"
+      }
+    },
+    {
+      "id": "episode-2-title",
+      "label": "Episode 2",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-2-title"
+      }
+    },
+    {
+      "id": "episode-3-title",
+      "label": "Episode 3",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-3-title"
+      }
+    },
+    {
+      "id": "episode-4-title",
+      "label": "Episode 4",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-4-title"
+      }
+    },
+    {
+      "id": "episode-5-title",
+      "label": "Episode 5",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-5-title"
+      }
+    },
+    {
+      "id": "episode-6-title",
+      "label": "Episode 6",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-6-title"
+      }
+    },
+    {
+      "id": "episode-7-title",
+      "label": "Episode 7",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-7-title"
+      }
+    },
+    {
+      "id": "episode-8-title",
+      "label": "Episode 8",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-8-title"
+      }
+    },
+    {
+      "id": "episode-9-title",
+      "label": "Episode 9",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-9-title"
+      }
+    },
+    {
+      "id": "episode-10-title",
+      "label": "Episode 10",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "episode-10-title"
+      }
+    },
+    {
+      "id": "upcoming",
+      "label": "Upcoming episodes",
+      "type": "table",
+      "columns": [
+        {
+          "id": "show",
+          "label": "Show",
+          "type": "string"
+        },
+        {
+          "id": "title",
+          "label": "Episode",
+          "type": "string"
+        },
+        {
+          "id": "code",
+          "label": "Episode number",
+          "type": "string"
+        },
+        {
+          "id": "at",
+          "label": "Airs",
+          "type": "timestamp"
+        },
+        {
+          "id": "network",
+          "label": "Network / streaming service",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "row-count",
+        "rows": [
+          {
+            "show": "episode-1-show",
+            "title": "episode-1-title",
+            "code": "episode-1-code",
+            "at": "episode-1-at",
+            "network": "episode-1-network"
+          },
+          {
+            "show": "episode-2-show",
+            "title": "episode-2-title",
+            "code": "episode-2-code",
+            "at": "episode-2-at",
+            "network": "episode-2-network"
+          },
+          {
+            "show": "episode-3-show",
+            "title": "episode-3-title",
+            "code": "episode-3-code",
+            "at": "episode-3-at",
+            "network": "episode-3-network"
+          },
+          {
+            "show": "episode-4-show",
+            "title": "episode-4-title",
+            "code": "episode-4-code",
+            "at": "episode-4-at",
+            "network": "episode-4-network"
+          },
+          {
+            "show": "episode-5-show",
+            "title": "episode-5-title",
+            "code": "episode-5-code",
+            "at": "episode-5-at",
+            "network": "episode-5-network"
+          },
+          {
+            "show": "episode-6-show",
+            "title": "episode-6-title",
+            "code": "episode-6-code",
+            "at": "episode-6-at",
+            "network": "episode-6-network"
+          },
+          {
+            "show": "episode-7-show",
+            "title": "episode-7-title",
+            "code": "episode-7-code",
+            "at": "episode-7-at",
+            "network": "episode-7-network"
+          },
+          {
+            "show": "episode-8-show",
+            "title": "episode-8-title",
+            "code": "episode-8-code",
+            "at": "episode-8-at",
+            "network": "episode-8-network"
+          },
+          {
+            "show": "episode-9-show",
+            "title": "episode-9-title",
+            "code": "episode-9-code",
+            "at": "episode-9-at",
+            "network": "episode-9-network"
+          },
+          {
+            "show": "episode-10-show",
+            "title": "episode-10-title",
+            "code": "episode-10-code",
+            "at": "episode-10-at",
+            "network": "episode-10-network"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "episode-1-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-1-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-1-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-1-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-2-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-2-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-2-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-2-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-3-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-3-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-3-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-3-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-4-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-4-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-4-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-4-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-5-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-5-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-5-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-5-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-6-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-6-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-6-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-6-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-7-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-7-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-7-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-7-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-8-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-8-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-8-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-8-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-9-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-9-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-9-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-9-network",
+            "type": "string"
+          },
+          {
+            "key": "episode-10-show",
+            "type": "string"
+          },
+          {
+            "key": "episode-10-code",
+            "type": "string"
+          },
+          {
+            "key": "episode-10-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "episode-10-network",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tonight-count",
+      "label": "Episodes tonight",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "tonight-count"
+      }
+    },
+    {
+      "id": "tonight-show",
+      "label": "First show tonight",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "tonight-show"
+      }
+    },
+    {
+      "id": "tonight-title",
+      "label": "First episode tonight",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "tonight-title"
+      }
+    },
+    {
+      "id": "tonight-at",
+      "label": "First air time tonight",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "tonight-at"
+      }
+    },
+    {
+      "id": "tonight",
+      "label": "Tonight",
+      "type": "table",
+      "columns": [
+        {
+          "id": "show",
+          "label": "Show",
+          "type": "string"
+        },
+        {
+          "id": "title",
+          "label": "Episode",
+          "type": "string"
+        },
+        {
+          "id": "at",
+          "label": "Airs",
+          "type": "timestamp"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "tonight-count",
+        "rows": [
+          {
+            "show": "tonight-1-show",
+            "title": "tonight-1-title",
+            "at": "tonight-1-at"
+          },
+          {
+            "show": "tonight-2-show",
+            "title": "tonight-2-title",
+            "at": "tonight-2-at"
+          },
+          {
+            "show": "tonight-3-show",
+            "title": "tonight-3-title",
+            "at": "tonight-3-at"
+          },
+          {
+            "show": "tonight-4-show",
+            "title": "tonight-4-title",
+            "at": "tonight-4-at"
+          },
+          {
+            "show": "tonight-5-show",
+            "title": "tonight-5-title",
+            "at": "tonight-5-at"
+          },
+          {
+            "show": "tonight-6-show",
+            "title": "tonight-6-title",
+            "at": "tonight-6-at"
+          },
+          {
+            "show": "tonight-7-show",
+            "title": "tonight-7-title",
+            "at": "tonight-7-at"
+          },
+          {
+            "show": "tonight-8-show",
+            "title": "tonight-8-title",
+            "at": "tonight-8-at"
+          },
+          {
+            "show": "tonight-9-show",
+            "title": "tonight-9-title",
+            "at": "tonight-9-at"
+          },
+          {
+            "show": "tonight-10-show",
+            "title": "tonight-10-title",
+            "at": "tonight-10-at"
+          }
+        ],
+        "cellFields": [
+          {
+            "key": "tonight-1-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-1-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-1-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-2-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-2-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-2-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-3-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-3-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-3-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-4-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-4-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-4-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-5-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-5-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-5-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-6-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-6-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-6-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-7-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-7-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-7-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-8-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-8-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-8-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-9-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-9-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-9-at",
+            "type": "timestamp"
+          },
+          {
+            "key": "tonight-10-show",
+            "type": "string"
+          },
+          {
+            "key": "tonight-10-title",
+            "type": "string"
+          },
+          {
+            "key": "tonight-10-at",
+            "type": "timestamp"
+          }
+        ]
+      }
+    },
+    {
+      "id": "pick-day",
+      "label": "Suggestion date",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-day"
+      }
+    },
+    {
+      "id": "pick-status",
+      "label": "Suggestion source status",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-status"
+      }
+    },
+    {
+      "id": "pick-1-title",
+      "label": "Daily pick 1: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-title"
+      }
+    },
+    {
+      "id": "pick-1-summary",
+      "label": "Daily pick 1: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-summary"
+      }
+    },
+    {
+      "id": "pick-1-genres",
+      "label": "Daily pick 1: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-genres"
+      }
+    },
+    {
+      "id": "pick-1-network",
+      "label": "Daily pick 1: Network / service",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-network"
+      }
+    },
+    {
+      "id": "pick-1-year",
+      "label": "Daily pick 1: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-year"
+      }
+    },
+    {
+      "id": "pick-1-url",
+      "label": "Daily pick 1: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-1-url"
+      }
+    },
+    {
+      "id": "pick-2-title",
+      "label": "Daily pick 2: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-title"
+      }
+    },
+    {
+      "id": "pick-2-summary",
+      "label": "Daily pick 2: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-summary"
+      }
+    },
+    {
+      "id": "pick-2-genres",
+      "label": "Daily pick 2: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-genres"
+      }
+    },
+    {
+      "id": "pick-2-network",
+      "label": "Daily pick 2: Network / service",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-network"
+      }
+    },
+    {
+      "id": "pick-2-year",
+      "label": "Daily pick 2: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-year"
+      }
+    },
+    {
+      "id": "pick-2-url",
+      "label": "Daily pick 2: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-2-url"
+      }
+    },
+    {
+      "id": "pick-3-title",
+      "label": "Daily pick 3: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-title"
+      }
+    },
+    {
+      "id": "pick-3-summary",
+      "label": "Daily pick 3: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-summary"
+      }
+    },
+    {
+      "id": "pick-3-genres",
+      "label": "Daily pick 3: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-genres"
+      }
+    },
+    {
+      "id": "pick-3-network",
+      "label": "Daily pick 3: Network / service",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-network"
+      }
+    },
+    {
+      "id": "pick-3-year",
+      "label": "Daily pick 3: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-year"
+      }
+    },
+    {
+      "id": "pick-3-url",
+      "label": "Daily pick 3: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-3-url"
+      }
+    },
+    {
+      "id": "pick-4-title",
+      "label": "Daily pick 4: Title",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-title"
+      }
+    },
+    {
+      "id": "pick-4-summary",
+      "label": "Daily pick 4: Summary",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-summary"
+      }
+    },
+    {
+      "id": "pick-4-genres",
+      "label": "Daily pick 4: Genres",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-genres"
+      }
+    },
+    {
+      "id": "pick-4-network",
+      "label": "Daily pick 4: Network / service",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-network"
+      }
+    },
+    {
+      "id": "pick-4-year",
+      "label": "Daily pick 4: Release year",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-year"
+      }
+    },
+    {
+      "id": "pick-4-url",
+      "label": "Daily pick 4: Details link",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "pick-4-url"
+      }
+    },
+    {
+      "id": "pick-count",
+      "label": "Daily TV pick count",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "pick-count"
+      }
+    },
+    {
+      "id": "daily-picks",
+      "label": "Daily TV picks",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Show",
+          "type": "string"
+        },
+        {
+          "id": "genres",
+          "label": "Genre",
+          "type": "string"
+        },
+        {
+          "id": "network",
+          "label": "Network",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "pick-count",
+        "rows": [
+          {
+            "title": "pick-1-title",
+            "genres": "pick-1-genres",
+            "network": "pick-1-network"
+          },
+          {
+            "title": "pick-2-title",
+            "genres": "pick-2-genres",
+            "network": "pick-2-network"
+          },
+          {
+            "title": "pick-3-title",
+            "genres": "pick-3-genres",
+            "network": "pick-3-network"
+          },
+          {
+            "title": "pick-4-title",
+            "genres": "pick-4-genres",
+            "network": "pick-4-network"
+          }
+        ]
+      }
+    },
+    {
+      "id": "daily-more",
+      "label": "More daily suggestions",
+      "type": "table",
+      "columns": [
+        {
+          "id": "title",
+          "label": "Show",
+          "type": "string"
+        },
+        {
+          "id": "genres",
+          "label": "Genre",
+          "type": "string"
+        },
+        {
+          "id": "network",
+          "label": "Network",
+          "type": "string"
+        }
+      ],
+      "source": {
+        "kind": "rows",
+        "countKey": "more-count",
+        "rows": [
+          {
+            "title": "pick-2-title",
+            "genres": "pick-2-genres",
+            "network": "pick-2-network"
+          },
+          {
+            "title": "pick-3-title",
+            "genres": "pick-3-genres",
+            "network": "pick-3-network"
+          },
+          {
+            "title": "pick-4-title",
+            "genres": "pick-4-genres",
+            "network": "pick-4-network"
+          }
+        ]
+      }
+    },
+    {
+      "id": "more-count",
+      "label": "More daily suggestions",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "more-count"
+      }
+    }
+  ],
+  "actions": [
+    {
+      "id": "refresh",
+      "name": "Check TV episodes",
+      "description": "Check cached episode times and refresh one due show.",
+      "parameters": []
+    },
+    {
+      "id": "lookup-show",
+      "name": "Find shows",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "query",
+          "label": "Show title",
+          "type": "string",
+          "required": false,
+          "maxLength": 100
+        },
+        {
+          "id": "genre",
+          "label": "Genre",
+          "type": "string",
+          "maxLength": 40
+        },
+        {
+          "id": "status",
+          "label": "Show status",
+          "type": "string",
+          "enum": [
+            "",
+            "Running",
+            "Ended",
+            "To Be Determined"
+          ],
+          "enumLabels": [
+            "Any status",
+            "Running",
+            "Ended",
+            "To be determined"
+          ]
+        },
+        {
+          "id": "source",
+          "label": "Browse shows",
+          "type": "string",
+          "default": "suggested",
+          "enum": [
+            "suggested",
+            "streaming",
+            "tv-us",
+            "tv-gb",
+            "tv-fi"
+          ],
+          "enumLabels": [
+            "Starter picks",
+            "Worldwide streaming",
+            "United States TV",
+            "United Kingdom TV",
+            "Finland TV"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "refresh-show",
+      "name": "Refresh show",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "show-id",
+          "label": "TVmaze show ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 9
+        }
+      ]
+    },
+    {
+      "id": "set-watched",
+      "name": "Mark episode watched",
+      "settingsOnly": true,
+      "parameters": [
+        {
+          "id": "episode-id",
+          "label": "Episode ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 9
+        },
+        {
+          "id": "watched",
+          "label": "Watched",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "episode-airing",
+      "name": "Episode airing",
+      "description": "A followed episode reaches its reported air time during active checks. This is a schedule event, not a streaming-availability confirmation.",
+      "occurrenceKey": "episode-id",
+      "payload": [
+        {
+          "id": "show-id",
+          "label": "Show ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 9
+        },
+        {
+          "id": "show-name",
+          "label": "Show name",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        },
+        {
+          "id": "episode-id",
+          "label": "Episode ID",
+          "type": "string",
+          "required": true,
+          "maxLength": 9
+        },
+        {
+          "id": "episode-title",
+          "label": "Episode title",
+          "type": "string",
+          "required": true,
+          "maxLength": 140
+        },
+        {
+          "id": "season",
+          "label": "Season",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "number",
+          "label": "Episode number",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "air-at",
+          "label": "Air time",
+          "type": "number",
+          "required": true
+        },
+        {
+          "id": "network",
+          "label": "Network / streaming service",
+          "type": "string"
+        },
+        {
+          "id": "url",
+          "label": "TVmaze episode link",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "upcoming-television",
+      "name": "Upcoming television",
+      "directory": "cards/upcoming-television",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "show",
+          "field": "next-show"
+        },
+        {
+          "id": "episode",
+          "field": "next-title"
+        },
+        {
+          "id": "air",
+          "field": "next-at",
+          "format": "datetime"
+        },
+        {
+          "id": "list",
+          "field": "upcoming",
+          "format": "table",
+          "rows": 6,
+          "columns": [
+            "show",
+            "title",
+            "at"
+          ]
+        },
+        {
+          "id": "status",
+          "field": "poll-status"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "tonight-television",
+      "name": "Tonight on television",
+      "directory": "cards/upcoming-television",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "show",
+          "field": "tonight-show"
+        },
+        {
+          "id": "episode",
+          "field": "tonight-title"
+        },
+        {
+          "id": "air",
+          "field": "tonight-at",
+          "format": "datetime"
+        },
+        {
+          "id": "list",
+          "field": "tonight",
+          "format": "table",
+          "rows": 6,
+          "columns": [
+            "show",
+            "title",
+            "at"
+          ]
+        },
+        {
+          "id": "status",
+          "field": "poll-status"
+        },
+        {
+          "id": "received",
+          "field": "received-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "daily-tv",
+      "name": "Daily TV suggestions",
+      "directory": "cards/daily-tv",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-network"
+        },
+        {
+          "id": "day",
+          "field": "pick-day"
+        },
+        {
+          "id": "note",
+          "field": "pick-status"
+        },
+        {
+          "id": "list",
+          "field": "daily-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "genres"
+          ]
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-network",
+          "field": "pick-2-network"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-network",
+          "field": "pick-3-network"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-network",
+          "field": "pick-4-network"
+        }
+      ]
+    },
+    {
+      "id": "daily-tv-fullscreen",
+      "name": "Daily TV suggestions · Fullscreen",
+      "directory": "cards/daily-tv",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "title",
+          "field": "pick-1-title"
+        },
+        {
+          "id": "description",
+          "field": "pick-1-summary"
+        },
+        {
+          "id": "genre",
+          "field": "pick-1-genres"
+        },
+        {
+          "id": "year",
+          "field": "pick-1-year"
+        },
+        {
+          "id": "source",
+          "field": "pick-1-network"
+        },
+        {
+          "id": "day",
+          "field": "pick-day"
+        },
+        {
+          "id": "note",
+          "field": "pick-status"
+        },
+        {
+          "id": "list",
+          "field": "daily-more",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "genres"
+          ]
+        },
+        {
+          "id": "pick-2-title",
+          "field": "pick-2-title"
+        },
+        {
+          "id": "pick-2-summary",
+          "field": "pick-2-summary"
+        },
+        {
+          "id": "pick-2-year",
+          "field": "pick-2-year"
+        },
+        {
+          "id": "pick-2-genres",
+          "field": "pick-2-genres"
+        },
+        {
+          "id": "pick-2-network",
+          "field": "pick-2-network"
+        },
+        {
+          "id": "pick-3-title",
+          "field": "pick-3-title"
+        },
+        {
+          "id": "pick-3-summary",
+          "field": "pick-3-summary"
+        },
+        {
+          "id": "pick-3-year",
+          "field": "pick-3-year"
+        },
+        {
+          "id": "pick-3-genres",
+          "field": "pick-3-genres"
+        },
+        {
+          "id": "pick-3-network",
+          "field": "pick-3-network"
+        },
+        {
+          "id": "pick-4-title",
+          "field": "pick-4-title"
+        },
+        {
+          "id": "pick-4-summary",
+          "field": "pick-4-summary"
+        },
+        {
+          "id": "pick-4-year",
+          "field": "pick-4-year"
+        },
+        {
+          "id": "pick-4-genres",
+          "field": "pick-4-genres"
+        },
+        {
+          "id": "pick-4-network",
+          "field": "pick-4-network"
+        }
+      ]
+    }
+  ]
+}

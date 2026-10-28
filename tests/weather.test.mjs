@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import vm from 'node:vm';
+import {webcrypto} from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { createLocalserve } from '../server.mjs';
 import { validateDeclaration } from '../server/plugins.mjs';
@@ -374,7 +375,7 @@ test('all documented Location formats normalize safely, and the new-entry defaul
   for (const input of ['https://example.com', '//Paris', '/:help', '90.1,0', '0,180.1', 'Paris?format=3', 'Paris\nBerlin', '@example/com']) assert.equal(locationQuery(input), null);
   const declaration = validateDeclaration(JSON.parse(await fs.readFile(path.join(source, 'declaration.json'), 'utf8')));
   const sandbox = { document: { addEventListener() {} }, config: { location: { latitude: 60.4048, longitude: 25.113 } },
-    crypto: { randomUUID: () => 'test-id' } };
+    crypto: webcrypto };
   vm.createContext(sandbox);
   vm.runInContext(await fs.readFile(new URL('../web/plugin-ui.js', import.meta.url), 'utf8'), sandbox);
   sandbox.field = declaration.settings[1];

@@ -18,6 +18,8 @@ import { PluginRegistry } from './server/plugins.mjs';
 import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
 import {explainTask} from './server/task-explanation.mjs';
+import {daylightAt} from './server/today.mjs';
+import {WatchArtwork} from './server/watch-artwork.mjs';
 import { VistaStore } from './server/vistas.mjs';
 import { DemoSetup } from './server/demo.mjs';
 import {ApkLibrary, nativeLibraryRoute, serveNativeLibrary, libraryAdminOperation} from './server/apk-library.mjs';
@@ -31,7 +33,12 @@ import {phoneDisplay} from './server/phone-display.mjs';
 import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
+import {HomeModes} from './server/home-modes.mjs';
+import {portalView,watchGuideView} from './server/portal.mjs';
 import {controlRoomView} from './server/control-room.mjs';
+import {HomeMap} from './server/home-map.mjs';
+import {homeMapView,homeMapCatalogue} from './server/home-map-view.mjs';
+import {mapImageLimit} from './server/home-map-image.mjs';
 import {launcherView} from './server/launcher.mjs';
 import {LauncherArtwork} from './server/launcher-artwork.mjs';
 import {readClientPackages} from './server/client-packages.mjs';
@@ -182,6 +189,7 @@ export async function createLocalserve(root, options = {}) {
     const games = await new GamesStore(root,registry,activity).load();
     const controls = await new ControlsStore(root, registry, config, activity).load();
     const launcherArtwork=new LauncherArtwork(root,registry,engine.gate);
+    const watchArtwork=new WatchArtwork(root,registry,engine.gate);vistas.artwork=watchArtwork;
     registry.controls = controls;
     const lightingRoom = new LightingRoom(registry,controls);
     const gatewayScenes = new GatewayScenes(registry,controls,lightingRoom);
@@ -189,6 +197,8 @@ export async function createLocalserve(root, options = {}) {
     registry.lightingAnimations = lightingAnimations;
     engine.vistas = vistas;
     const phoneHome=await new PhoneHome(root,tasks,engine,controls,config,state,registry).load();
+    const homeMap=await new HomeMap(root).load();
+    const homeModes=await new HomeModes(root,registry,engine).load();registry.homeModes=homeModes;engine.homeModes=homeModes;
     const cloudRelay=await new CloudRelay(root,registry,phoneHome,controls,sensorIngress).load();registry.cloudRelay=cloudRelay;
     const devices=await new Devices(root,registry,engine.gate,options.deviceDiscovery).load();
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
@@ -224,7 +234,7 @@ export async function createLocalserve(root, options = {}) {
       // Lighting receipts travel with the existing incremental administrator
       // read. Opening the workspace never starts another periodic gateway read.
       const services=registry.services().map(service=>service.controls?.lighting?.inventoryState?{...service,lightingRoom:lightingRoom.snapshot(service.id)}:service);
-      return { config: {...config.snapshot(),colorThemes:themeCatalogue(config.snapshot()),adminColorTheme:config.snapshot().adminColorTheme??'',displayColorTheme:config.snapshot().displayColorTheme??'',version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services, controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+      return { homeMap:homeMap.admin(), config: {...config.snapshot(),colorThemes:themeCatalogue(config.snapshot()),adminColorTheme:config.snapshot().adminColorTheme??'',displayColorTheme:config.snapshot().displayColorTheme??'',version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services, controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
         taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(), lightingAnimations: lightingAnimations.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
@@ -234,7 +244,7 @@ export async function createLocalserve(root, options = {}) {
           now: Date.now(),
           // A derived clock detail lets the browser display server time even if
           // its own system timezone differs. This is not an editable preference.
-          timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone,daylight:daylightAt(config.snapshot()),
           cpuPercent: Math.round((cpu.user + cpu.system) / (seconds * 10000) * 10) / 10,
           memoryBytes: process.memoryUsage().rss, runningTasks: engine.active.size, discoveryErrors: registry.errors }, token };
     }
@@ -295,9 +305,48 @@ export async function createLocalserve(root, options = {}) {
           return json(response,200,await sensorIngress.receive(request));
         }
         if (request.method === 'GET' && url.pathname === '/api/control-view') return json(response, 200, controls.index());
+        if(url.pathname==='/api/watch-guide'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the watch guide.');
+          return json(response,200,watchGuideView(registry,controls.options(),Date.now(),watchArtwork));
+        }
+        const watchImage=/^\/api\/watch-art\/(movies|emby)\/([a-f0-9]{40})\/(poster|backdrop)\.jpg$/.exec(url.pathname);
+        if(watchImage){
+          if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use the artwork URL.');
+          const bytes=await watchArtwork.read(watchImage[1],watchImage[2],watchImage[3]);
+          response.writeHead(200,{'Content-Type':'image/jpeg','Content-Length':bytes.length,'Cache-Control':'private, max-age=300','X-Content-Type-Options':'nosniff'});
+          return response.end(request.method==='HEAD'?undefined:bytes);
+        }
+        if(url.pathname==='/api/portal'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the portal.');
+          return json(response,200,portalView(registry,vistas,controls.options()));
+        }
         if(url.pathname==='/api/control-room'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the control room.');
           return json(response,200,controlRoomView(phoneHome,controls,lightingRoom));
+        }
+        if(url.pathname==='/api/home-map'||url.pathname==='/api/home-map/catalogue'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the home map.');
+          const view=controlRoomView(phoneHome,controls,lightingRoom);
+          return json(response,200,url.pathname.endsWith('/catalogue')?homeMapCatalogue(view):homeMapView(homeMap.admin(),view));
+        }
+        const mapImage=/^\/api\/home-map\/image\/([a-f0-9]{64}\.png)$/.exec(url.pathname);
+        if(mapImage){
+          if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use the current floor-plan image.');
+          const bytes=await homeMap.image(mapImage[1],request.headers['x-localserve-token']===token);
+          response.writeHead(200,{'Content-Type':'image/png','Content-Length':bytes.length,'Cache-Control':'no-store','Cross-Origin-Resource-Policy':'same-origin'});
+          return response.end(request.method==='HEAD'?undefined:bytes);
+        }
+        if(url.pathname==='/api/home-map/upload'){
+          if(request.method!=='POST'||url.search||request.headers.origin!==browserOrigin||request.headers['x-localserve-token']!==token)throw new HttpError(403,'Use this administration page to upload a floor plan.');
+          if(closing||demoInstalling)throw new HttpError(503,'Server is not ready for changes.');
+          if(request.headers['content-type']!=='image/png')throw new HttpError(415,'Convert the floor plan to PNG before uploading.');
+          const revision=Number(request.headers['x-home-map-revision']);
+          if(!Number.isSafeInteger(revision)||revision<1)throw new HttpError(400,'Use the current map revision.');
+          const chunks=[];let size=0;administratorWrites++;
+          try{
+            for await(const chunk of request){size+=chunk.length;if(size>mapImageLimit)throw new HttpError(413,'Use a floor plan smaller than 6 MiB.');chunks.push(chunk);}
+            return json(response,200,await homeMap.prepareImage(Buffer.concat(chunks),revision));
+          }finally{administratorWrites--;}
         }
         if(url.pathname==='/api/launcher'){
           if(request.method!=='GET'||url.search)throw new HttpError(405,'Use Sormus Launcher.');
@@ -347,11 +396,11 @@ export async function createLocalserve(root, options = {}) {
         if(phoneRun){
           if(url.search)throw new HttpError(400,'Unexpected parameters.');
           const capability=request.headers['x-localserve-home-token'];
-          if(phoneRun[2]&&request.method==='GET')return json(response,200,phoneHome.status(phoneRun[2],capability));
+          if(phoneRun[2]&&request.method==='GET')return json(response,200,homeModes.owns(phoneRun[2],capability)?homeModes.status(phoneRun[2],capability):phoneHome.status(phoneRun[2],capability));
           if(phoneRun[1]!=='run'||request.method!=='POST'||request.headers.origin!==browserOrigin)throw new HttpError(403,'Use this Home page’s server address.');
           const values=await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          return json(response,202,await phoneHome.run(values,capability));
+          return json(response,202,await (values&&Object.hasOwn(values,'modeId')?homeModes.select(values,capability):phoneHome.run(values,capability)));
         }
         const controlView = /^\/api\/control-view\/([a-z0-9-]+)\/([a-z0-9-]+)(?:\/(run|cancel|scene))?$/.exec(url.pathname);
         if (controlView) {
@@ -426,6 +475,9 @@ export async function createLocalserve(root, options = {}) {
             finally{response.removeListener('close',cancelled);}
           } else if(sceneAdmin){
             return json(response,sceneAdmin[3]?202:200,await controls.administerScene(sceneAdmin[1],sceneAdmin[2],values,Boolean(sceneAdmin[3])));
+          } else if(url.pathname==='/api/home-map/settings'){
+            if(url.search)throw new HttpError(400,'Unexpected map parameters.');
+            return json(response,200,await homeMap.save(values));
           } else if(url.pathname==='/api/cloud-relay/setup'){
             if(url.search)throw new HttpError(400,'Unexpected relay parameters.');
             return json(response,200,await cloudRelay.setup(values));
@@ -629,14 +681,18 @@ export async function createLocalserve(root, options = {}) {
         const controlPage = /^\/controls\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(url.pathname);
         const controlDefinition = controlPage ? controls.resolve(controlPage[1], controlPage[2]) : null;
         if (viewerPage) vistas.viewer(viewerPage[1]); // Disabled URLs return 404.
-        const relative = url.pathname === '/control-room' ? 'control-room.html' : playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations','/controller-setup','/lighting-scenes','/remotes','/downloads'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
+        const relative = url.pathname === '/home-map' ? 'home-map.html' : url.pathname === '/map-editor' ? 'index.html' : url.pathname === '/watch' ? 'watch.html' : url.pathname === '/portal' ? 'portal.html' : url.pathname === '/control-room' ? 'control-room.html' : playstationPage ? 'playstation-mode.html' : url.pathname === '/scenes' ? 'scene-selector.html' : url.pathname === '/home' ? 'phone-home.html' : ['/devices','/vr-library','/lighting-animations','/controller-setup','/lighting-scenes','/remotes','/downloads'].includes(url.pathname) ? 'index.html' : gamePage ? 'maze.html' : url.pathname === '/phone-information' ? 'phone-information.html' : url.pathname === '/sensors' ? 'sensors-install.html' : url.pathname === '/universe' ? 'universe.html' : noticePage ? 'assets/notices/notice.html' : controlPage || url.pathname === '/controls' ? 'controls.html' : viewerPage || url.pathname === '/display' ? 'vista.html' : decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html';
         // Administrator routes resolve to the server-connected client under web/.
         // Allow only named client files, shared CSS, and supported local assets;
         // realpath also prevents a permitted asset path escaping the project.
         const webFiles = new Set(['universe.html', 'universe-ui.js', 'index.html', 'app.js', 'admin-ux.js', 'variables-ui.js', 'activity-ui.js', 'run-ui.js', 'browser-compat.js', 'tasks-ui.js', 'time-ui.js', 'plugin-ui.js', 'card-renderer.js', 'card-designer.js', 'vista.html', 'vistas-ui.js', 'vista-renderer.js', 'vista-viewer.js', 'controls.html', 'controls-renderer.js', 'controls-viewer.js', 'control-app.js', 'controls-ui.js', 'lighting-controls.js', 'television-controls.js']);
+        for(const file of ['portal.html','portal.js','portal-model.js','portal.css','watch.html','watch.js','watch.css'])webFiles.add(file);
         for(const file of ['control-room.html','control-room.js','control-room.css'])webFiles.add(file);
+        for(const file of ['home-map.html','home-map.js','home-map.css','home-map-ui.js'])webFiles.add(file);
         webFiles.add('sensors-install.html');
         webFiles.add('demo-ui.js');
+        webFiles.add('home-modes-ui.js');
+        webFiles.add('today-renderer.js');webFiles.add('tv-calendar-ui.js');webFiles.add('interests-ui.js');webFiles.add('watch-guide-ui.js');
         for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('lighting-scenes-ui.js');
         webFiles.add('lighting-room-ui.js');webFiles.add('color-themes.js');webFiles.add('color-themes-ui.js');
@@ -655,7 +711,7 @@ export async function createLocalserve(root, options = {}) {
         if (!realFile.startsWith(realRoot + path.sep)) throw new HttpError(404, 'File not found.');
         if(builderPlugin&&!realFile.startsWith((await fs.realpath(path.join(root,'plugins',builderPlugin.folder)))+path.sep))throw new HttpError(404,'Task builder unavailable.');
         let content = await fs.readFile(realFile);
-        if(relative==='phone-home.html'||relative==='scene-selector.html'||relative==='control-room.html'){
+        if(relative==='home-map.html'||relative==='watch.html'||relative==='portal.html'||relative==='phone-home.html'||relative==='scene-selector.html'||relative==='control-room.html'){
           response.setHeader('Referrer-Policy','no-referrer');
           response.setHeader('Content-Security-Policy',"default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
         }
@@ -744,17 +800,19 @@ export async function createLocalserve(root, options = {}) {
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, devices, cloudRelay, apkLibrary, snapshot, cleanupActivity,
+    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, homeMap, devices, cloudRelay, apkLibrary, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
         if (!closePromise) closePromise = (async () => {
-          closing = true; tvClose.close();launcherArtwork.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
+          closing = true; tvClose.close();launcherArtwork.close();watchArtwork.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
           await cloudRelay.close();await devices.close();
           await lightingAnimations.close();
+          await homeModes.close();
+          await homeMap.close();
           await phoneHome.close();
           await apkLibrary.close();
           registry.beginClose();
