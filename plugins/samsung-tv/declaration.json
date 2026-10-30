@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "samsung-tv",
   "name": "Samsung TV",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "Local Samsung TV readings, apps and remote controls",
   "icon": "display",
   "runtime": {
@@ -1247,6 +1247,186 @@
             "name",
             "type",
             "id"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "reported-power"
+        },
+        {
+          "id": "metric-1",
+          "field": "volume",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "playback-state"
+        },
+        {
+          "id": "metric-3",
+          "field": "tv-name"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "apps",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "reported-power"
+        },
+        {
+          "id": "metric-1",
+          "field": "volume",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "playback-state"
+        },
+        {
+          "id": "metric-3",
+          "field": "tv-name"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "apps",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "reported-power"
+        },
+        {
+          "id": "metric-1",
+          "field": "volume",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "playback-state"
+        },
+        {
+          "id": "metric-3",
+          "field": "tv-name"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "apps",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "type"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "reported-power"
+        },
+        {
+          "id": "metric-1",
+          "field": "volume",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "playback-state"
+        },
+        {
+          "id": "metric-3",
+          "field": "tv-name"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "apps",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "type"
           ]
         }
       ]

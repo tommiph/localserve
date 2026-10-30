@@ -36,6 +36,11 @@ const CardRenderer = (() => {
       .format(Math.max(0, Math.ceil((value - now) / 60000)))} min`;
   }
 
+  function countdown(value, now) {
+    const seconds=Math.max(0,Math.ceil((value-now)/1000));
+    return `${Math.floor(seconds/86400)}d ${String(Math.floor(seconds%86400/3600)).padStart(2,'0')}:${String(Math.floor(seconds%3600/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
+  }
+
   function updateCountdowns(root, now, locale) {
     if (!Number.isFinite(now)) return;
     // Update text only: gallery/modal focus and scroll remain intact, and a
@@ -43,7 +48,7 @@ const CardRenderer = (() => {
     for (const element of root.querySelectorAll('[data-countdown-at]')) {
       const at = Number(element.dataset.countdownAt);
       if (!Number.isFinite(at)) continue;
-      const next = minutesUntil(at, now, locale);
+      const next = element.dataset.countdownFormat==='countdown' ? countdown(at,now) : minutesUntil(at, now, locale);
       if (element.textContent !== next) element.textContent = next;
     }
     for (const frame of root.querySelectorAll('iframe[data-ready-card]')) {
@@ -59,6 +64,9 @@ const CardRenderer = (() => {
       return entries.length ? `<ul class="display-card-log">${entries.map(entry => `<li><span>${escape(entry.message)}</span><time>${escape(timestamp(entry.at, options))}</time></li>`).join('')}</ul>` : '<span class="display-card-empty">No log entries</span>';
     }
     let value = datum.value;
+    if (datum.type === 'timestamp' && field.format === 'countdown') {
+      return `<span data-countdown-at="${escape(value)}" data-countdown-format="countdown">${escape(countdown(value, options.now ?? Date.now()))}</span>`;
+    }
     if (datum.type === 'timestamp' && field.format === 'minutes-until') {
       return `<span data-countdown-at="${escape(value)}">${escape(minutesUntil(value, options.now ?? Date.now(), options.locale))}</span>`;
     }
@@ -257,7 +265,7 @@ const CardRenderer = (() => {
       }
       let value = 'No data';
       if (available) {
-        value = slot.type === 'timestamp' ? slot.format === 'minutes-until'
+        value = slot.type === 'timestamp' ? slot.format === 'countdown' ? countdown(datum.value, options.now ?? Date.now()) : slot.format === 'minutes-until'
           ? minutesUntil(datum.value, options.now ?? Date.now(), options.locale)
           : timestamp(datum.value, options, slot.format === 'time')
           : slot.format === 'number' ? new Intl.NumberFormat(options.locale,
@@ -265,12 +273,12 @@ const CardRenderer = (() => {
           : slot.type === 'boolean' ? datum.value ? 'Yes' : 'No' : String(datum.value);
       }
       return [slot.id, { value, raw: available ? datum.value : null, available: Boolean(available),
-        ...(available && slot.format === 'minutes-until' ? { deadline: datum.value } : {}) }];
+        ...(available && ['minutes-until','countdown'].includes(slot.format) ? { deadline: datum.value, countdownFormat:slot.format } : {}) }];
     }));
     const variant = template.variant;
     const variantValue = variant ? Object.entries(variant.choices).find(([, values]) => values.includes(String(slots[variant.slot]?.raw)))?.[0] || variant.fallback : 'default';
     const payload = { slots, variant: variantValue, name: selection.source.name, status: options.connected === false ? 'Disconnected · retained reading' : !selection.source.enabled ? 'Data source disabled' : data.status || 'Unavailable',
-      connected: options.connected !== false, theme: options.theme || 'dark', fontScale: options.fontScale || 100,
+      connected: options.connected !== false, paused:options.paused===true, motion:['full','gentle','none'].includes(options.motion)?options.motion:'full',deckCard:Number.isInteger(options.deckOpacity),deckOpacity:Math.max(70,Math.min(100,Number(options.deckOpacity)||100)), theme: options.theme || 'dark', fontScale: options.fontScale || 100,
       previewUrl: template.previewUrl, previewActive: options.connected !== false && selection.source.enabled && data.status === 'Ready' };
     return `<article class="display-card display-card-readymade" aria-label="${escape(card.name)}"><div class="display-card-fields" role="region" aria-label="Card information"><iframe class="display-card-ready-frame" title="${escape(card.name)}" src="${escape(template.url)}" sandbox="allow-same-origin" referrerpolicy="no-referrer" data-ready-card="${escape(JSON.stringify(payload))}"></iframe></div></article>`;
   }
@@ -286,6 +294,8 @@ const CardRenderer = (() => {
       root.dataset.variant = payload.variant;
       root.dataset.theme = payload.theme;
       root.dataset.connected = String(payload.connected);
+      root.dataset.paused=String(payload.paused===true);root.dataset.motion=payload.motion||'full';
+      root.dataset.deckCard=String(payload.deckCard===true);root.style.setProperty('--card-opacity',Math.max(.7,Math.min(1,(payload.deckOpacity||100)/100)));
       root.style.setProperty('--font-scale', Math.max(.8, Math.min(1.3, payload.fontScale / 100)));
       for (const element of document.querySelectorAll('[data-card-text]')) {
         const id = element.dataset.cardText;
@@ -296,6 +306,8 @@ const CardRenderer = (() => {
         element.dataset.available = String(payload.slots[id]?.available ?? true);
         if (Number.isFinite(payload.slots[id]?.deadline)) element.dataset.countdownAt = String(payload.slots[id].deadline);
         else delete element.dataset.countdownAt;
+        if (payload.slots[id]?.countdownFormat) element.dataset.countdownFormat=payload.slots[id].countdownFormat;
+        else delete element.dataset.countdownFormat;
       }
       for (const element of document.querySelectorAll('[data-card-color]')) {
         const value = payload.slots[element.dataset.cardColor]?.value;

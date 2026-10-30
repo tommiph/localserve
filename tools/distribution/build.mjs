@@ -112,7 +112,7 @@ function fieldList(fields) {
 }
 
 async function pluginGuide(declaration) {
-  if(declaration.taskBuilder || ['oculus-go','webcam','google-apps-script','movies','tv-calendar','interests','emby'].includes(declaration.id)){await write(`plugins/${declaration.id}/README.md`,await fs.readFile(path.join(root,'plugins',declaration.id,'README.md')));return;}
+  if(declaration.taskBuilder || ['downloads-inbox','oculus-go','webcam','google-apps-script','movies','tv-calendar','interests','emby'].includes(declaration.id)){await write(`plugins/${declaration.id}/README.md`,await fs.readFile(path.join(root,'plugins',declaration.id,'README.md')));return;}
   const templates = declaration.cardTemplates?.map(item => item.name).join(', ') || 'No fixed ready-made design; use the ordinary Card designer.';
   await write(`plugins/${declaration.id}/README.md`, `# ${declaration.name}\n\n${declaration.description}\n\n## Setup\n\n${setup[declaration.id] || 'Configure declared Settings before enabling.'}\n\nStarts disabled with fresh default settings, no cached readings, saved Cards or Controls. Configure through the shared administrator; do not copy credentials from someone else\'s installation.\n\n## Settings\n\n${fieldList(declaration.settings)}\n\n## Actions and events\n\nActions: ${declaration.actions.map(item => item.name).join('; ') || 'None'}.\n\nEvents: ${declaration.events.map(item => item.name).join('; ') || 'None'}.\n\nPlugin actions appear in global Tasks only when the plugin is enabled and ready. Explicit device actions can have real effects. Polling failures retain successful same-target readings; missing values remain explicit and uncertain effects are not automatically retried/replayed.\n\n## Cards\n\nReady-made designs: ${templates}. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.\n\n${declaration.attribution ? `## Data attribution\n\n${declaration.attribution.label}: ${declaration.attribution.url}\n\n${declaration.attribution.licenseLabel || ''} ${declaration.attribution.licenseUrl || ''}\n\n${declaration.attribution.notice || ''}\n\n` : ''}See [installation instructions](../../INSTALL.md) for storage, credentials and LAN access. Private mutable files are created only under this plugin\'s data folder.\n`);
 }
@@ -183,6 +183,7 @@ try {
   // Only public isolated tests are copied; never traverse tests/.tmp.
   for (const file of publicTests.filter(file=>file!=='tests/source.test.mjs')) await copyFile(file);
   await copyFile('tests/fixtures/scene-selector.mjs');
+  await copyFile('tests/fixtures/themed.mjs');
   for (const file of ['tools/testing/public-tests.mjs','tools/testing/profiles.mjs','tools/testing/run.mjs','tools/testing/ui-preview.mjs','tools/testing/form-controls.mjs','UI-UX-TESTING.md','.github/workflows/windows.yml']) await copyFile(file);
   await write('tests/source.test.mjs',await fs.readFile(path.join(tooling,'templates/source.test.mjs')));
   await write('tools/initialize-settings.mjs',await fs.readFile(path.join(tooling,'templates/initialize-settings.mjs')));
@@ -206,6 +207,7 @@ try {
   await copyFile('SCENE-SELECTOR.md');
   await copyFile('CONTROLLER.md');
   await copyFile('DOWNLOADS.md');
+  await copyFile('FILE-DOWNLOADS.md');
   await copyFile('GOOGLE-APPS-SCRIPT.md');
   await copyFile('tools/build-sensors-declaration.mjs');
   // Music belongs to the installation. Ship game code and instructions only.
@@ -215,6 +217,9 @@ try {
   await copyFile('TRADFRI-CONTROL-ROOM.md');
   await copyFile('CONTROL-ROOM.md');
   await copyFile('HOME-MAP.md');
+  await copyFile('BACKUPS.md');
+  await copyFile('THEMED-VISTAS.md');
+  await copyFile('ADMIN-ACCESS.md');
   await copyFile('HOME-MODES.md');
   await copyFile('TODAY.md');
   await copyFile('DEVICES.md');
@@ -255,6 +260,10 @@ try {
     }
     try { await copyFile(folder+'/LICENSE.txt'); } catch (error) { if (error.code !== 'ENOENT') throw error; }
     if (declaration.id === 'hsl-trains') await copyFile(folder+'/stations.json');
+    if(declaration.id==='downloads-inbox'){
+      for(const directory of ['src','res','test'])await copyTree(folder+'/android/'+directory);
+      for(const file of ['app.json','AndroidManifest.xml','build.mjs','README.md','dist/sormus-downloads.apk','dist/sormus-downloads.apk.sha256','dist/verification.json'])await copyFile(folder+'/android/'+file);
+    }
     if (declaration.id === 'oculus-go') {
       for (const directory of ['src','res','assets','native','vendor','test']) await copyTree(folder+'/android/'+directory);
       for (const file of ['app.json','AndroidManifest.xml','build.mjs','README.md','dist/localserve-go.apk','dist/localserve-go.apk.sha256','dist/verification.json']) await copyFile(folder+'/android/'+file);

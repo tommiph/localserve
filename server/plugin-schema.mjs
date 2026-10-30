@@ -69,6 +69,10 @@ export function validateFields(fields = [], nested = false) {
     }
     if (field.format === 'glyph') result.format = 'glyph';
     if (field.format === 'identifier') result.format = 'identifier';
+    if (['date','time'].includes(field.format)) {
+      if (field.type !== 'string' || field.enum) throw new Error('Date/time fields must be plain strings.');
+      result.format = field.format;
+    }
     if (field.format === 'secret') {
       if (field.type !== 'string' || field.enum || field.suggestions) throw new Error('Secret fields must be plain strings.');
       result.format = 'secret';
@@ -121,6 +125,9 @@ export function validateValue(field, value) {
   if (field.enum && !field.enum.includes(value)) throw new HttpError(400, `Choose a valid ${label}.`);
   if (field.format === 'glyph' && !glyphs.includes(value)) throw new HttpError(400, 'Choose a bundled Material Symbols glyph.');
   if (field.format === 'identifier' && !isIdentifier(value)) throw new HttpError(400, `Choose a valid ${label}.`);
+  if (value && field.format === 'time' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) throw new HttpError(400, `Enter a valid ${label}.`);
+  if (value && field.format === 'date' && (!/^\d{4}-\d{2}-\d{2}$/.test(value) || value < '1970-01-01'
+    || !Number.isFinite(Date.parse(value+'T00:00:00Z')) || new Date(value+'T00:00:00Z').toISOString().slice(0,10) !== value)) throw new HttpError(400, `Enter a valid ${label} (1970–9999).`);
   if (field.pattern && !new RegExp(field.pattern, 'u').test(value)) throw new HttpError(400, `Enter a valid ${label}.`);
 }
 

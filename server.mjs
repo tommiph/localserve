@@ -11,6 +11,10 @@ import { randomBytes, createHash } from 'node:crypto';
 import { execFile } from 'node:child_process';
 import { JsonStore, ActivityLog, HttpError } from './server/storage.mjs';
 import {AdminSync} from './server/admin-sync.mjs';
+import {Backups} from './server/backups.mjs';
+import {AdminAccess} from './server/admin-access.mjs';
+import {ThemePack} from './server/theme-pack.mjs';
+import {administratorPages,publicAccessRoute,loginReturn} from './server/access-policy.mjs';
 import {Devices} from './server/devices.mjs';
 import {CloudRelay} from './server/cloud-relay.mjs';
 import {TvCloseRequests} from './server/tv-close.mjs';
@@ -18,6 +22,7 @@ import { PluginRegistry } from './server/plugins.mjs';
 import { TaskEngine, builtInActions, validateTask } from './server/tasks.mjs';
 import { glyphs } from './server/plugin-schema.mjs';
 import {explainTask} from './server/task-explanation.mjs';
+import {calendarDateTime} from './server/rules.mjs';
 import {daylightAt} from './server/today.mjs';
 import {WatchArtwork} from './server/watch-artwork.mjs';
 import { VistaStore } from './server/vistas.mjs';
@@ -32,6 +37,7 @@ import { SensorIngress } from './server/sensor-ingress.mjs';
 import {phoneDisplay} from './server/phone-display.mjs';
 import {playstationDisplay} from './server/playstation-display.mjs';
 import { ControlsStore } from './server/controls.mjs';
+import {DownloadTransfers,nativeTransferRoute} from './server/download-transfers.mjs';
 import {PhoneHome} from './server/phone-home.mjs';
 import {HomeModes} from './server/home-modes.mjs';
 import {portalView,watchGuideView} from './server/portal.mjs';
@@ -121,6 +127,11 @@ export async function createLocalserve(root, options = {}) {
   let server, lanServer, registry;
   try {
     await lock.writeFile(JSON.stringify({ pid: process.pid, startedAt: Date.now() }) + '\n');
+    // Recovery completes under the folder lock before any store or adapter loads.
+    const backups=await new Backups(root,serverVersion,{keyProvider:options.backupKeyProvider}).load();
+    await backups.applyPending();
+    await backups.beforeStartup();
+    const adminAccess=await new AdminAccess(root).load();
     const config = await new JsonStore(path.join(root, 'config.json'), defaultConfig).load();
     // Scheduling and timestamps use the process's system timezone. Discard an
     // unsupported saved override without resetting other server preferences.
@@ -184,6 +195,7 @@ export async function createLocalserve(root, options = {}) {
     await registry.discover();
     await engine.recover();
     const vistas = await new VistaStore(root, registry, config, activity).load();
+    vistas.tasks=tasks;vistas.runtimeState=state;
     const universe = await new UniverseStore(root, registry, config, activity).load();
     registry.universe = universe;
     const games = await new GamesStore(root,registry,activity).load();
@@ -196,12 +208,15 @@ export async function createLocalserve(root, options = {}) {
     const lightingAnimations = await new LightingAnimations(root,registry,activity).load();
     registry.lightingAnimations = lightingAnimations;
     engine.vistas = vistas;
+    const downloadTransfers=await new DownloadTransfers(root,registry,options.downloadTransfers).load();
+    downloadTransfers.blocked=()=>backups.pending||backups.busy||themePack.busy;
     const phoneHome=await new PhoneHome(root,tasks,engine,controls,config,state,registry).load();
     const homeMap=await new HomeMap(root).load();
     const homeModes=await new HomeModes(root,registry,engine).load();registry.homeModes=homeModes;engine.homeModes=homeModes;
     const cloudRelay=await new CloudRelay(root,registry,phoneHome,controls,sensorIngress).load();registry.cloudRelay=cloudRelay;
     const devices=await new Devices(root,registry,engine.gate,options.deviceDiscovery).load();
     const demo=await new DemoSetup(root,registry,tasks,state,vistas,controls,universe,engine).load();
+    const themePack=await new ThemePack(root,registry,vistas,activity).load();
     let administratorWrites=0,demoInstalling=false,demoOperation=null;
     const apkLibrary = await new ApkLibrary(root, registry).load();
     const token = randomBytes(32).toString('hex');
@@ -223,10 +238,10 @@ export async function createLocalserve(root, options = {}) {
       retentionQueue = operation.catch(error => console.error('Activity retention:', error.message));
       return retentionQueue;
     }
-    const json = (response, code, body) => { response.writeHead(code, { 'Content-Type': contentTypes['.json'] }); response.end(JSON.stringify(body)); };
+    const jsonResponse = (response, code, body) => { response.writeHead(code, { 'Content-Type': contentTypes['.json'] }); response.end(JSON.stringify(body)); };
 
     const adminSync=new AdminSync();
-    function snapshot(browserAddress = origin) {
+    function snapshot(browserAddress = origin,session=null) {
       // CPU and memory refer only to this process. CPU is an average since process
       // startup, not a sampled host load. Active step positions overlay history;
       // the run definition and final status remain separate from editable Tasks.
@@ -234,12 +249,12 @@ export async function createLocalserve(root, options = {}) {
       // Lighting receipts travel with the existing incremental administrator
       // read. Opening the workspace never starts another periodic gateway read.
       const services=registry.services().map(service=>service.controls?.lighting?.inventoryState?{...service,lightingRoom:lightingRoom.snapshot(service.id)}:service);
-      return { homeMap:homeMap.admin(), config: {...config.snapshot(),colorThemes:themeCatalogue(config.snapshot()),adminColorTheme:config.snapshot().adminColorTheme??'',displayColorTheme:config.snapshot().displayColorTheme??'',version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services, controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
-        taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
+      return { downloadTransfers:downloadTransfers.snapshot(), homeMap:homeMap.admin(), config: {...config.snapshot(),colorThemes:themeCatalogue(config.snapshot()),adminColorTheme:config.snapshot().adminColorTheme??'',displayColorTheme:config.snapshot().displayColorTheme??'',version:serverVersion}, cloudRelay:cloudRelay.admin(),devices:devices.snapshot(), phoneHome:phoneHome.admin(), demo:demo.snapshot(), games:games.admin(), universe: universe.snapshot(), paused: engine.gate.paused, services, controls: controls.admin(), tasks: tasks.snapshot(), vistas: vistas.snapshot(), vistaDisplay: vistas.displaySnapshot(),
+        themePack:themePack.snapshot(),access:adminAccess.admin(session?.id),backups:backups.snapshot(),taskActions: [...builtInActions, ...registry.actions()], activity: activity.latest(),
         taskEvents: registry.events(), pluginGlyphs: glyphs, tvNotice: notices.admin(), lightingAnimations: lightingAnimations.admin(),
         doNotDisturb: doNotDisturbStatus(config.snapshot().doNotDisturb),
         runs: state.snapshot().runs.map(run => ({ ...run, step: engine.active.get(run.id)?.step || run.step })),
-        server: { taskRuleModes:['or','and'], startedAt, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), address: browserAddress,
+        server: { taskRuleModes:['or','and'], taskCalendarRules:true, startedAt, uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), address: browserAddress,
           lanAddress: registry.localDisplayOrigin(), clientPackages,
           now: Date.now(),
           // A derived clock detail lets the browser display server time even if
@@ -250,20 +265,53 @@ export async function createLocalserve(root, options = {}) {
     }
 
     server = http.createServer(async (request, response) => {
+      let browserOrigin,privateRequest=false;
+      const json=(target,code,body)=>{if(privateRequest&&code<400)adminAccess.require(request,browserOrigin);return jsonResponse(target,code,body);};
       response.setHeader('Cache-Control', 'no-store');
       response.setHeader('X-Content-Type-Options', 'nosniff');
       response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-src http: https:; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
       try {
         if (closing) throw new HttpError(503, 'Server is stopping.');
         // LAN and localhost each keep their own exact Host/Origin pairing.
-        // Tokens/capabilities still guard writes; this is not account authentication.
-        const browserOrigin = requestOrigin(request, server.address().port);
+        // Optional administrator sessions are independent of display/native capabilities.
+        browserOrigin = requestOrigin(request, server.address().port);
         const url = new URL(request.url, browserOrigin);
+        if(url.pathname==='/api/access/status'){
+          if(request.method!=='GET'||url.search)throw new HttpError(405,'Use the sign-in status endpoint.');
+          return json(response,200,adminAccess.status(request,browserOrigin));
+        }
+        if(['/api/access/login','/api/access/logout'].includes(url.pathname)){
+          if(request.method!=='POST'||url.search||request.headers.origin!==browserOrigin)throw new HttpError(403,'Use this server’s sign-in page.');
+          const values=await readBody(request);let result;
+          if(url.pathname.endsWith('/login'))result=await adminAccess.login(values,browserOrigin,request.socket.remoteAddress);
+          else{if(Object.keys(values).length)throw new HttpError(400,'Invalid sign-out request.');result=await adminAccess.logout(request,browserOrigin);}
+          response.setHeader('Set-Cookie',result.cookie);return json(response,200,{ok:true});
+        }
+        if(nativeTransferRoute(url.pathname)){
+          if(url.search)throw new HttpError(400,'Unexpected Downloads parameters.');
+          const operation=url.pathname.slice('/api/file-downloads/native/'.length);
+          if(operation==='pair'&&request.method==='POST')return json(response,200,await downloadTransfers.pair(await readBody(request),request));
+          const actor=downloadTransfers.actor(request);
+          if(operation==='status'&&request.method==='GET')return json(response,200,downloadTransfers.snapshot(actor));
+          if(operation==='jobs'&&request.method==='POST')return json(response,202,await downloadTransfers.submit(await readBody(request),actor));
+          const job=/^jobs\/([a-f0-9-]{36})(?:\/(content|cancel))?$/.exec(operation);
+          if(job&&job[2]==='content'&&request.method==='PUT')return json(response,200,await downloadTransfers.upload(job[1],request,actor));
+          if(job&&job[2]==='cancel'&&request.method==='POST'){const body=await readBody(request);if(Object.keys(body).length)throw new HttpError(400,'Invalid cancellation.');return json(response,200,await downloadTransfers.cancel(job[1],actor));}
+          if(job&&!job[2]&&request.method==='GET')return json(response,200,downloadTransfers.publicJob(job[1],actor));
+          throw new HttpError(405,'Unsupported Downloads operation.');
+        }
+        let administratorSession=null;
+        privateRequest=url.pathname.startsWith('/api/')&&!publicAccessRoute(url.pathname,request.method)&&!nativeLibraryRoute(url.pathname)&&!nativeTransferRoute(url.pathname);
+        if(privateRequest)administratorSession=adminAccess.require(request,browserOrigin);
+        if(administratorPages.has(url.pathname)&&adminAccess.enabled()&&!adminAccess.session(request,browserOrigin)){
+          response.writeHead(303,{Location:'/login?return='+encodeURIComponent(loginReturn(url.pathname))});return response.end();
+        }
         const previewFrame = /^\/api\/plugin-preview\/([a-z][a-z0-9-]{0,63})\/frame\.jpg$/.exec(url.pathname);
         if (previewFrame) {
           if (!['GET','HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
           if (url.search && !/^\?v=\d{1,16}$/.test(url.search)) throw new HttpError(400, 'Invalid frame request.');
           const jpeg = await registry.previewFrame(previewFrame[1]);
+          adminAccess.require(request,browserOrigin);
           response.writeHead(200, { 'Content-Type': 'image/jpeg', 'Content-Length': jpeg.length,
             'Cache-Control': 'no-store', 'Cross-Origin-Resource-Policy': 'same-origin' });
           return response.end(request.method === 'HEAD' ? undefined : jpeg);
@@ -286,7 +334,7 @@ export async function createLocalserve(root, options = {}) {
         }
         const libraryArt = /^\/api\/vr-library\/art\/([A-Za-z][A-Za-z0-9_.]{1,199})$/.exec(url.pathname);
         if (request.method === 'GET' && libraryArt) {
-          const image = await apkLibrary.art(libraryArt[1]); response.writeHead(200,{'Content-Type':image.type}); return response.end(image.data);
+          const image = await apkLibrary.art(libraryArt[1]);adminAccess.require(request,browserOrigin);response.writeHead(200,{'Content-Type':image.type}); return response.end(image.data);
         }
         const noticeApi = /^\/api\/tv-notices\/([a-f0-9]{48})$/.exec(url.pathname);
         if (noticeApi) {
@@ -332,7 +380,7 @@ export async function createLocalserve(root, options = {}) {
         const mapImage=/^\/api\/home-map\/image\/([a-f0-9]{64}\.png)$/.exec(url.pathname);
         if(mapImage){
           if(!['GET','HEAD'].includes(request.method)||url.search)throw new HttpError(405,'Use the current floor-plan image.');
-          const bytes=await homeMap.image(mapImage[1],request.headers['x-localserve-token']===token);
+          const bytes=await homeMap.image(mapImage[1],request.headers['x-localserve-token']===token&&(!adminAccess.enabled()||Boolean(adminAccess.session(request,browserOrigin))));
           response.writeHead(200,{'Content-Type':'image/png','Content-Length':bytes.length,'Cache-Control':'no-store','Cross-Origin-Resource-Policy':'same-origin'});
           return response.end(request.method==='HEAD'?undefined:bytes);
         }
@@ -434,6 +482,20 @@ export async function createLocalserve(root, options = {}) {
         }
         const viewerApi = /^\/api\/vistas\/([a-z0-9-]+)$/.exec(url.pathname);
         if (request.method === 'GET' && viewerApi) return json(response, 200, vistas.viewer(viewerApi[1]));
+        if(url.pathname.startsWith('/api/file-downloads/')){
+          if(url.search)throw new HttpError(400,'Unexpected Downloads parameters.');
+          const operation=url.pathname.slice('/api/file-downloads/'.length),actor={id:'admin',check:()=>adminAccess.require(request,browserOrigin)};
+          if(operation==='status'&&request.method==='GET')return json(response,200,downloadTransfers.snapshot());
+          if(!['POST','PUT'].includes(request.method)||request.headers.origin!==browserOrigin||request.headers['x-localserve-token']!==token)throw new HttpError(403,'Use this server’s Downloads page.');
+          const job=/^jobs\/([a-f0-9-]{36})\/(content|cancel)$/.exec(operation);
+          if(job&&job[2]==='content'&&request.method==='PUT')return json(response,200,await downloadTransfers.upload(job[1],request,actor));
+          const value=await readBody(request);
+          if(operation==='pair-code'&&request.method==='POST')return json(response,200,downloadTransfers.code(value));
+          if(operation==='revoke'&&request.method==='POST')return json(response,200,await downloadTransfers.revoke(value));
+          if(operation==='jobs'&&request.method==='POST')return json(response,202,await downloadTransfers.submit(value,actor));
+          if(job&&job[2]==='cancel'&&request.method==='POST'){if(Object.keys(value).length)throw new HttpError(400,'Invalid cancellation.');return json(response,200,await downloadTransfers.cancel(job[1],actor));}
+          throw new HttpError(405,'Unsupported Downloads operation.');
+        }
         if (url.pathname.startsWith('/api/')) {
           const roomAdmin=/^\/api\/lighting-room\/([a-z0-9-]+)(\/manage)?$/.exec(url.pathname);
           if(roomAdmin&&url.search)throw new HttpError(400,'Unexpected lighting parameters.');
@@ -449,12 +511,20 @@ export async function createLocalserve(root, options = {}) {
           if(sceneAdmin&&request.method==='GET'&&!sceneAdmin[3])return json(response,200,controls.sceneDetails(sceneAdmin[1],sceneAdmin[2]));
           const explanation=/^\/api\/tasks\/([a-zA-Z0-9-]{1,80})\/explanation$/.exec(url.pathname);
           if(request.method==='GET'&&explanation&&!url.search)return json(response,200,explainTask(engine,explanation[1]));
-          if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin));
+          if(url.pathname==='/api/calendar-date') {
+            if(request.method!=='GET')throw new HttpError(405,'Use the read-only date resolver.');
+            if([...url.searchParams.keys()].some(key=>!['date','time'].includes(key)) || ['date','time'].some(key=>url.searchParams.getAll(key).length!==1))throw new HttpError(400,'Choose one date and one time.');
+            const at=calendarDateTime(url.searchParams.get('date'),url.searchParams.get('time'));
+            if(at===null)throw new HttpError(400,'Choose a valid date and time in the server timezone. Missing daylight-saving minutes are unavailable.');
+            return json(response,200,{at,timeZone:new Intl.DateTimeFormat().resolvedOptions().timeZone});
+          }
+          if (request.method === 'GET' && url.pathname === '/api/state') return json(response, 200, snapshot(browserOrigin,administratorSession));
+          if(request.method==='GET'&&url.pathname==='/api/backups'&&!url.search){await backups.refresh();return json(response,200,backups.snapshot());}
           if(request.method==='GET'&&url.pathname==='/api/admin-state'){
             const cursor=url.searchParams.get('cursor');
             if([...url.searchParams.keys()].some(key=>key!=='cursor')||url.searchParams.getAll('cursor').length>1
               ||cursor!==null&&!/^[a-f0-9]{32}$/.test(cursor))throw new HttpError(400,'Use a current administrator refresh cursor.');
-            return json(response,200,adminSync.encode(snapshot(browserOrigin),cursor));
+            return json(response,200,adminSync.encode(snapshot(browserOrigin,administratorSession),cursor));
           }
           if (request.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
           if (request.headers.origin !== browserOrigin || request.headers['x-localserve-token'] !== token) throw new HttpError(403, 'Refresh this administration page before making changes.');
@@ -463,7 +533,39 @@ export async function createLocalserve(root, options = {}) {
           try {
           const values = await readBody(request);
           if(closing)throw new HttpError(503,'Server is stopping.');
-          if(roomAdmin){
+          adminAccess.require(request,browserOrigin);
+          if(backups.pending&&url.pathname!=='/api/backups/cancel')throw new HttpError(409,'A restore is pending. Restart normally to apply it, or cancel it in Settings.');
+          if(backups.busy)throw new HttpError(409,'A backup operation is in progress.');
+          if(themePack.busy)throw new HttpError(409,'Themed Vista setup is in progress.');
+          if(url.pathname==='/api/theme-pack'){
+            if(url.search||Object.keys(values).some(key=>key!=='revision')||!Number.isSafeInteger(values.revision))throw new HttpError(400,'Use the current themed Vista setup revision.');
+            if(administratorWrites!==1||discoveryBusy||engine.active.size)throw new HttpError(409,'Wait for current operations to finish before creating themed Vistas.');
+            return json(response,200,await themePack.install(values.revision));
+          }else if(url.pathname.startsWith('/api/access/')){
+            if(url.search)throw new HttpError(400,'Unexpected access parameters.');
+            let result;
+            if(url.pathname==='/api/access/settings')result=await adminAccess.configure(values,request,browserOrigin);
+            else if(url.pathname==='/api/access/session-name')result=await adminAccess.changeSession(values,request,browserOrigin);
+            else if(url.pathname==='/api/access/revoke')result=await adminAccess.changeSession(values,request,browserOrigin,true);
+            else throw new HttpError(404,'Access operation not found.');
+            if(result.cookie)response.setHeader('Set-Cookie',result.cookie);
+            // Credential rotation/self-revocation deliberately replaces this request's cookie.
+            privateRequest=false;
+            return json(response,200,{ok:true,signedOut:Boolean(result.signedOut)});
+          } else if(url.pathname.startsWith('/api/backups/')){
+            if(url.search||administratorWrites!==1||demoInstalling||discoveryBusy||apkLibrary.active||downloadTransfers.active.size||engine.active.size)throw new HttpError(409,'Wait for active operations to finish before using backups.');
+            const check=allowed=>{if(Object.keys(values).some(key=>!allowed.includes(key)))throw new HttpError(400,'Invalid backup request.');};
+            if(url.pathname==='/api/backups/create'){check([]);return json(response,200,await backups.create());}
+            if(url.pathname==='/api/backups/preview'){check(['id']);return json(response,200,await backups.preview(values.id));}
+            if(url.pathname==='/api/backups/settings')return json(response,200,await backups.saveSettings(values));
+            if(url.pathname==='/api/backups/delete'){check(['id']);return json(response,200,await backups.remove(values.id));}
+            if(url.pathname==='/api/backups/restore'){
+              check(['token']);if(!engine.gate.paused)throw new HttpError(409,'Pause the server before staging a restore.');
+              return json(response,200,await backups.stage(values.token));
+            }
+            if(url.pathname==='/api/backups/cancel'){check([]);return json(response,200,await backups.cancel());}
+            throw new HttpError(404,'Backup operation not found.');
+          } else if(roomAdmin){
             const controller=new AbortController(),cancelled=()=>{if(!response.writableEnded)controller.abort(new Error('Client disconnected.'));};
             response.once('close',cancelled);
             try{return json(response,200,await lightingRoom[roomAdmin[2]?'manage':'command'](roomAdmin[1],values,controller.signal));}
@@ -568,7 +670,7 @@ export async function createLocalserve(root, options = {}) {
             response.once('close', cancelled);
             try {
               const result = await registry.execute(id, actionId, values.parameters || {}, {signal: controller.signal, configRevision: values.revision});
-              return json(response, 200, { result, ...snapshot(browserOrigin) });
+              return json(response, 200, { result, ...snapshot(browserOrigin,adminAccess.session(request,browserOrigin)) });
             } catch (error) {
               if (!error.status) error.status = 409;
               throw error;
@@ -631,7 +733,7 @@ export async function createLocalserve(root, options = {}) {
             } else throw new HttpError(404, 'Operation not found.');
           }
           await controls.sync();
-          return json(response, 200, snapshot(browserOrigin));
+          return json(response, 200, snapshot(browserOrigin,adminAccess.session(request,browserOrigin)));
           }finally{administratorWrites--;}
         }
         if (!['GET', 'HEAD'].includes(request.method)) throw new HttpError(405, 'Method not allowed.');
@@ -696,14 +798,15 @@ export async function createLocalserve(root, options = {}) {
         for(const name of ['scene-selector.html','scene-selector.js','scene-selector.css','phone-home.html','phone-home.js','phone-home.css','phone-home-ui.js'])webFiles.add(name);
         webFiles.add('lighting-scenes-ui.js');
         webFiles.add('lighting-room-ui.js');webFiles.add('color-themes.js');webFiles.add('color-themes-ui.js');
-        webFiles.add('downloads-ui.js');
-        webFiles.add('vr-library-ui.js');
+        webFiles.add('download-transfers-ui.js');webFiles.add('downloads-ui.js');webFiles.add('backups-ui.js');webFiles.add('access-ui.js');webFiles.add('login.html');webFiles.add('login.js');webFiles.add('hacker-console.js');webFiles.add('deck-renderer.js');webFiles.add('vista-deck-ui.js');
+        webFiles.add('vr-library-ui.js');webFiles.add('vista-scenes.js');webFiles.add('vista-native.js');webFiles.add('vista-reactions-ui.js');
         webFiles.add('devices-ui.js');webFiles.add('cloud-relay-ui.js');
         webFiles.add('phone-information.html');
         webFiles.add('playstation-mode.html');
         webFiles.add('maze.html');webFiles.add('games-ui.js');
         const builderMatch=/^plugin-task-builders\/([a-z][a-z0-9-]{0,63})\.(js|css)$/.exec(relative);
         const builderPlugin=builderMatch&&registry.services().find(plugin=>plugin.id===builderMatch[1]&&plugin.taskBuilder&&plugin.enabled);
+        if(relative==='login')return response.writeHead(303,{Location:'/login.html'+url.search}).end();
         const file = builderPlugin ? path.join(root,'plugins',builderPlugin.folder,'admin/task-builder.'+builderMatch[2]) : webFiles.has(relative) ? path.join(root, 'web', relative) : path.resolve(root, relative);
         if (localDisplayPath('/' + relative)) await requireLocalDisplay(root, '/' + relative);
         if (!builderPlugin&&!webFiles.has(relative) && relative !== 'styles.css' && !(relative.startsWith('assets/') && Object.hasOwn(contentTypes, path.extname(file)))) throw new HttpError(404, 'File not found.');
@@ -765,7 +868,7 @@ export async function createLocalserve(root, options = {}) {
         if (response.headersSent || response.destroyed) { response.destroy(); return; }
         const status = error.status || (error.code === 'ENOENT' ? 404 : 500);
         if (status === 500) console.error('Sormus request failed:', error.message);
-        json(response, status, { error: status === 500 ? 'Unable to save or read server data. Original data was retained.' : error.message });
+        json(response, status, { error: status === 500 ? 'Unable to save or read server data. Original data was retained.' : error.message,...(error.authenticationRequired?{authenticationRequired:true}:{}) });
       }
     });
     const listen = { ...config.snapshot().listen, ...options.listen };
@@ -790,7 +893,7 @@ export async function createLocalserve(root, options = {}) {
     }, 60000);
     const pluginTimer = options.automatic === false ? null : setInterval(async () => {
       // Skip timer overlap; the registry also serializes manual refreshes.
-      if (discoveryBusy || closing) return;
+      if (discoveryBusy || closing || backups.busy || backups.pending || themePack.busy) return;
       discoveryBusy = true;
       try {
         await registry.discover();
@@ -800,12 +903,14 @@ export async function createLocalserve(root, options = {}) {
       } catch (error) { console.error('Plugin discovery/polling:', error.message); }
       finally { discoveryBusy = false; }
     }, 3000);
-    return { server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, homeMap, devices, cloudRelay, apkLibrary, snapshot, cleanupActivity,
+    return { downloadTransfers, server, origin, config, tasks, state, activity, registry, engine, vistas, universe, games, controls, lightingAnimations, phoneHome, homeMap, devices, cloudRelay, apkLibrary, backups, adminAccess, themePack, snapshot, cleanupActivity,
       async close() {
         // Repeated shutdown requests share one promise. Stop admitting work and
         // timers, drain runs/discovery, close HTTP, then release the folder lock.
         if (!closePromise) closePromise = (async () => {
           closing = true; tvClose.close();launcherArtwork.close();watchArtwork.close(); clearInterval(schedulerTimer); clearInterval(pluginTimer); clearInterval(retentionTimer);
+          while(backups.busy)await new Promise(resolve=>setTimeout(resolve,10));
+          await themePack.close();
           // Finish owned example writes before shutting down their stores or
           // releasing the installation lock. Setup never admits device effects.
           if(demoOperation)await demoOperation.catch(()=>{});
@@ -813,8 +918,10 @@ export async function createLocalserve(root, options = {}) {
           await lightingAnimations.close();
           await homeModes.close();
           await homeMap.close();
+          await downloadTransfers.close();
           await phoneHome.close();
           await apkLibrary.close();
+          await adminAccess.close();
           registry.beginClose();
           await sensorIngress.queue;
           await controls.close();

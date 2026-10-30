@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "interests",
   "name": "Interests",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "icon": "interests",
   "description": "A personal briefing of science, AI, culture, entertainment, gaming, trends and daily news",
   "runtime": {
@@ -705,6 +705,186 @@
           "id": "received",
           "field": "received-at",
           "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lead-title"
+        },
+        {
+          "id": "metric-1",
+          "field": "lead-source"
+        },
+        {
+          "id": "metric-2",
+          "field": "topic-name"
+        },
+        {
+          "id": "metric-3",
+          "field": "item-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "headlines",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "source"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lead-title"
+        },
+        {
+          "id": "metric-1",
+          "field": "lead-source"
+        },
+        {
+          "id": "metric-2",
+          "field": "topic-name"
+        },
+        {
+          "id": "metric-3",
+          "field": "item-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "headlines",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "source"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lead-title"
+        },
+        {
+          "id": "metric-1",
+          "field": "lead-source"
+        },
+        {
+          "id": "metric-2",
+          "field": "topic-name"
+        },
+        {
+          "id": "metric-3",
+          "field": "item-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "headlines",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "source"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lead-title"
+        },
+        {
+          "id": "metric-1",
+          "field": "lead-source"
+        },
+        {
+          "id": "metric-2",
+          "field": "topic-name"
+        },
+        {
+          "id": "metric-3",
+          "field": "item-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "headlines",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "source"
+          ]
         }
       ]
     }

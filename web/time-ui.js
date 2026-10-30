@@ -36,11 +36,11 @@ const TimeUI = {
     }).join('');
   },
 
-  render(value) {
+  render(value, name = 'time', required = true, inputId = '') {
     const id = `time-options-${crypto.randomUUID()}`;
     return `<div class="time-combobox">
-      <input name="timeText" type="text" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}" autocomplete="off" required value="${this.format(value)}" placeholder="${config.timeFormat === '12' ? 'h:mm AM/PM' : 'HH:mm'}" data-time-input>
-      <input name="time" type="hidden" value="${value}">
+      <input ${inputId?`id="${escapeHtml(inputId)}"`:''} name="${escapeHtml(name)}Text" type="text" role="combobox" aria-autocomplete="list" aria-haspopup="listbox" aria-expanded="false" aria-controls="${id}" autocomplete="off" ${required?'required':''} value="${value?this.format(value):''}" placeholder="${config.timeFormat === '12' ? 'h:mm AM/PM' : 'HH:mm'}" data-time-input>
+      <input name="${escapeHtml(name)}" type="hidden" value="${escapeHtml(value)}" data-time-value>
       <button class="time-menu-button" type="button" data-action="toggle-time-menu" aria-label="Choose time">${icon('chevron-down')}</button>
       <div id="${id}" class="time-options" role="listbox" aria-label="Times" popover="manual">${this.optionMarkup(id, value)}</div>
     </div>`;
@@ -48,8 +48,8 @@ const TimeUI = {
 
   normalize(input, display = false) {
     const value = this.parse(input.value);
-    input.closest('.time-combobox').querySelector('[name="time"]').value = value;
-    input.setCustomValidity(value ? '' : 'Enter a valid time, such as 19:15 or 7:15 PM.');
+    input.closest('.time-combobox').querySelector('[data-time-value]').value = value;
+    input.setCustomValidity(value || !input.required && !input.value.trim() ? '' : 'Enter a valid time, such as 19:15 or 7:15 PM.');
     if (display && value) input.value = this.format(value);
     return value;
   },
@@ -109,7 +109,7 @@ const TimeUI = {
   refreshFormat() {
     this.close();
     document.querySelectorAll('.time-combobox').forEach(root => {
-      const value = root.querySelector('[name="time"]').value;
+      const value = root.querySelector('[data-time-value]').value;
       const input = root.querySelector('[data-time-input]');
       if (value) input.value = this.format(value);
       input.placeholder = config.timeFormat === '12' ? 'h:mm AM/PM' : 'HH:mm';

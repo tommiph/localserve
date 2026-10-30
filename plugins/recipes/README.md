@@ -47,3 +47,7 @@ no credentials or private settings are included in the catalogue. Installed
 plugin JavaScript is trusted code, not a security sandbox. Disabling or removing
 Recipes leaves created Tasks intact. It performs no background polling, provider
 requests, synthetic Events or device commands. Fresh installations start off.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

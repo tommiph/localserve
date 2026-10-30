@@ -30,6 +30,7 @@ async function request(endpoint, values) {
     method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Localserve-Token': csrfToken }, body: JSON.stringify(values),
   });
   const result = await response.json();
+  if(response.status===401&&result.authenticationRequired&&typeof AccessUI!=='undefined')AccessUI.lock();
   if(values!==undefined)AdminSync.invalidate();
   if (!response.ok) {const error=new Error(result.error || 'Request failed.');error.status=response.status;throw error;}
   return result;
@@ -76,6 +77,7 @@ async function refreshState(render = true) {
 }
 
 function renderWorkspace(markup) {
+  if(state?.backups?.pending&&currentView!=='settings')markup='<section class="panel"><div class="panel-body"><p role="status">A restore is staged. Restart Sormus normally to apply it, or cancel it in Settings.</p><button class="button" data-view="settings">Backup and restore</button></div></section>'+markup;
   const scope = `${currentView}:${PluginUI.tabs.get(currentView) || 'settings'}`;
   AdminDOM.update(workspace,markup,{scope,onUpdate:() => {
     if(currentView==='home-map')HomeMapUI.preview();
@@ -280,7 +282,7 @@ function renderSettings() {
     <section class="panel settings-group" aria-label="Network"><div class="panel-header"><h2>Network</h2></div>
       <div class="settings-item">${icon('network-wired')}<div class="settings-text"><h3>Server address</h3><p>${escapeHtml(state.server.address)}</p></div><button class="button" data-action="edit-server-options" aria-label="Edit server options">${icon('pen')}Edit</button></div>
     </section>
-  ${AdminUX.versions(state)}</div>`);
+  ${typeof AccessUI!=='undefined'?AccessUI.render():''}${typeof BackupsUI!=='undefined'?BackupsUI.render():''}${AdminUX.versions(state)}</div>`);
 }
 
 function fontSizeSetting(label, id, value, description) {
@@ -376,6 +378,8 @@ document.addEventListener('click', async event=>{
     if (action==='theme') { const theme=document.documentElement.dataset.theme==='dark'?'light':'dark'; setTheme(theme); await changeSettings({theme,adminColorTheme:''}); return; }
     if (action==='display-theme') { await changeSettings({displayTheme:config.displayTheme==='dark'?'light':'dark',displayColorTheme:''}); return; }
     if (!action) return;
+    if(action.startsWith('access-'))return await AccessUI.handle(action,control);
+    if(action.startsWith('backup-'))return await BackupsUI.handle(action,control);
     if(action.startsWith('map-'))return await HomeMapUI.handle(action,control);
     if(action.startsWith('room-'))return await LightingRoomUI.handle(action,control);
     if(action==='downloads-refresh')return await DownloadsUI.load();
@@ -385,6 +389,7 @@ document.addEventListener('click', async event=>{
     if(action.startsWith('setup-'))return SetupUI.handle(action,id);
     if(action.startsWith('interests-'))return await InterestsUI.handle(action,id);
     if(action.startsWith('watch-'))return await WatchGuideUI.handle(action,id);
+    if(action.startsWith('file-dl-'))return await DownloadTransfersUI.handle(action,id);
     if(action.startsWith('tvcal-'))return await TVCalendarUI.handle(action,id);
     if(action==='home-mode-select')return await HomeModesUI.select(id);
     if(action==='home-mode-examples')return await HomeModesUI.examples();
@@ -467,6 +472,8 @@ document.addEventListener('click', async event=>{
 
 document.addEventListener('submit',async event=>{
   event.preventDefault();
+  if(['access-settings-form','access-session-form'].includes(formIdentifier(event.target)))return AccessUI.submit(event.target);
+  if(['backup-options-form','backup-delete-form','backup-restore-form'].includes(formIdentifier(event.target)))return BackupsUI.submit(event.target);
   if(formIdentifier(event.target)==='home-map-form')return HomeMapUI.submit();
   if (['device-editor-form','device-use-form','device-forget-form'].includes(formIdentifier(event.target))) return DevicesUI.submit(event.target);
   if (formIdentifier(event.target) === 'universe-editor-form') return UniverseUI.submit(event.target);
@@ -474,6 +481,7 @@ document.addEventListener('submit',async event=>{
   if (['controls-editor-form','controls-plugin-form'].includes(formIdentifier(event.target))) return ControlsUI.submit(event.target);
   if (formIdentifier(event.target) === 'card-editor-form') return CardDesigner.submit(event.target);
   if (formIdentifier(event.target) === 'watch-movie-search-form') return WatchGuideUI.searchMovies(event.target);
+  if(['download-upload-form','download-link-form'].includes(formIdentifier(event.target)))return await DownloadTransfersUI.submit(event.target);
   if (formIdentifier(event.target) === 'tvcal-search-form') return TVCalendarUI.search(event.target);
   if (formIdentifier(event.target) === 'tvcal-episode-form') return TVCalendarUI.watched(event.target);
   if (formIdentifier(event.target) === 'plugin-item-form') return PluginUI.submitItem(event.target);
@@ -591,7 +599,7 @@ async function initialize() {
       // open modal drafts keep their captured definitions and save revisions.
       if (polling || document.hidden) return;
       polling = true;
-      try { await refreshState(!dialog.open && !PluginUI.pending && !CardDesigner.pending && !VistaUI.pending && !ControlsUI.pending && !GamesUI.pending && !document.querySelector('#glyph-picker[open]')); }
+      try { await refreshState(!dialog.open && !PluginUI.pending && !DownloadTransfersUI.pending && !CardDesigner.pending && !VistaUI.pending && !ControlsUI.pending && !GamesUI.pending && !document.querySelector('#glyph-picker[open]')); }
       catch {
         serverClockConnected = false;
         CardDesigner.updatePreview();
@@ -762,6 +770,13 @@ function formIdentifier(form) {
 }
 function serializeForm(form) {
   const id=formIdentifier(form);
+  if(id==='plugin-item-form' && dialogContext?.pluginId==='calendar' && dialogContext.setting==='calendars' && dialogContext.operation!=='delete') {
+    const field=state.services.find(service=>service.id==='calendar')?.settings.find(field=>field.id==='calendars');
+    // Conditional fields and the editable time label are presentation. Read the
+    // canonical controls even while hidden/disabled so opening or switching a
+    // source type cannot manufacture an unsaved change.
+    if(field)return JSON.stringify(PluginUI.readFields(field.fields.filter(child=>child.id!=='id'),form));
+  }
   if(id==='home-map-form')return JSON.stringify(HomeMapUI.readDraft());
   if(id==='phone-home-form')return JSON.stringify([...form.querySelectorAll('[data-phone-task]')].map(row=>({id:row.dataset.phoneTask,publish:row.querySelector('[name="publish"]').checked,icon:row.querySelector('[name="icon"]').value,enabled:row.querySelector('[name="enabled"]').checked,label:row.querySelector('[name="label"]').value.trim()})));
   // Optional builders keep one canonical draft across their changing pages.
@@ -804,6 +819,7 @@ function closeConfirmation(restoreFocus = true) {
 }
 
 function closeDialog() {
+  if(dialogContext?.kind==='access-settings')dialog.querySelectorAll('[type="password"]').forEach(input=>{input.value='';});
   dialog.classList.remove('wide-preview');
   VistaUI.preview?.destroy();
   VistaUI.preview = null;

@@ -27,3 +27,7 @@ Listings provided by [TVmaze](https://www.tvmaze.com), licensed under [CC BY-SA]
 Calendar > For you shows four daily discovery suggestions plus upcoming unwatched episodes from followed shows. Follow saves a suggestion with one click. Followed shows are excluded from new daily suggestions. Select any preferred genres and the completed-series option in Settings. Suggestions can match any selected genre; All genres removes that filter. Starter metadata carries its checked date and is not a claim that a show airs today or is available on your subscriptions. The normal episode check updates the daily selection.
 
 Create Card opens the ordinary editor with Daily TV suggestions selected. A Fullscreen version is also available. Tonight on television and Upcoming television retain their existing meanings and source selection. No new notifications or playback Tasks are created.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

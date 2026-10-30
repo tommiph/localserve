@@ -17,7 +17,7 @@ const CardDesigner = {
       string: [['auto', 'Automatic'], ['text', 'Text'], ['link', 'Link']],
       number: [['auto', 'Automatic'], ['number', 'Decimal number'], ['text', 'Text']],
       boolean: [['auto', 'Automatic'], ['yes-no', 'Yes / No'], ['text', 'True / False']],
-      timestamp: [['auto', 'Automatic'], ['datetime', 'Date and time'], ['relative', 'Time ago']],
+      timestamp: [['auto', 'Automatic'], ['datetime', 'Date and time'], ['relative', 'Time ago'], ['countdown', 'Countdown · days / hours : minutes : seconds']],
       log: [['auto', 'Automatic'], ['log', 'Recent log']],
     }[type] || [['auto', 'Automatic']];
   },

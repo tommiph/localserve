@@ -29,7 +29,7 @@ Plugin actions appear in global Tasks only when the plugin is enabled and ready.
 
 ## Cards
 
-Ready-made designs: Airspace, Airspace · Fullscreen. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.
+Ready-made designs: Airspace, Airspace · Fullscreen, Sci-fi console, Hacker terminal, Rustic almanac, LCARS display. Designs are package assets, not preconfigured saved Cards. Create a Card, choose its source and enable it before adding it to a Vista. Cards and Vistas are read-only; Controls/Tasks own actions.
 
 ## Data attribution
 

@@ -69,3 +69,4 @@ localserve-*-private.json
 /tools/oculus-build/packages/
 /tools/oculus-build/ndk/
 /plugins/oculus-go/android/build/
+/plugins/downloads-inbox/android/build/

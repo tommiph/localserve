@@ -8,9 +8,14 @@
     && Object.fromEntries && Array.prototype.at && Element.prototype.replaceChildren
     && window.fetch && window.Promise;
   document.write('<script src="../today-renderer.js?v=3" defer><\/script>');
+  document.write('<script src="../assets/universe/vendor/three-r97/three.min.js" defer><\/script>');
+  document.write('<script src="../vista-scenes.js?v=3" defer><\/script>');
+  document.write('<script src="../vista-native.js?v=2" defer><\/script>');
+  document.write('<script src="../hacker-console.js?v=3" defer><\/script>');
+  document.write('<script src="../deck-renderer.js?v=5" defer><\/script>');
   var scripts = modern
-    ? ['../card-renderer.js?v=11', '../vista-renderer.js?v=5', '../vista-viewer.js?v=3']
-    : ['../assets/vista-legacy.js?v=33'];
+    ? ['../card-renderer.js?v=12', '../vista-renderer.js?v=6', '../vista-viewer.js?v=3']
+    : ['../assets/vista-legacy.js?v=35'];
   if (!modern) document.write('<link rel="stylesheet" href="../assets/vista-legacy.css?v=6">');
   for (var i = 0; i < scripts.length; i += 1) {
     document.write('<script src="' + scripts[i] + '" defer><\/script>');

@@ -112,6 +112,10 @@ const PluginUI = {
       input = `<select ${common}>${field.enum.map((choice, index) => `<option value="${escapeHtml(choice)}" ${choice === value ? 'selected' : ''}>${escapeHtml(field.enumLabels?.[index] ?? choice)}</option>`).join('')}</select>`;
     } else if (field.type === 'number') {
       input = `<input ${common} type="number" step="any" ${field.min !== undefined ? `min="${field.min}"` : ''} ${field.max !== undefined ? `max="${field.max}"` : ''} value="${escapeHtml(value ?? '')}">`;
+    } else if (field.format === 'date') {
+      input = `<input ${common} type="date" min="1970-01-01" max="9999-12-31" value="${escapeHtml(value || '')}">`;
+    } else if (field.format === 'time') {
+      input = TimeUI.render(value || '', field.id, field.required, id);
     } else if (field.format === 'multiline') {
       input = `<textarea ${common} rows="4" maxlength="${field.maxLength || 4000}">${escapeHtml(value ?? '')}</textarea>`;
     } else {
@@ -147,6 +151,7 @@ const PluginUI = {
   render(service) {
     const room=Boolean(service.controls?.lighting?.inventoryState)&&typeof LightingRoomUI!=='undefined';
     const tabNames = [
+      ...(service.id==='downloads-inbox' ? [['transfers','Transfers','download']] : []),
       ...(service.id==='interests' ? [['discover','Discover','interests']] : []),
       ...(service.id==='movies' ? [['discover','Watch guide','movie-filter']] : []),
       ...(service.id==='emby' ? [['library','Library','movie-filter']] : []),
@@ -161,16 +166,16 @@ const PluginUI = {
       ['log', room?'Activity':'Log', 'clipboard-list'],
     ];
     const remembered = this.tabs.get(service.id);
-    const selected = tabNames.some(([id]) => id === remembered) ? remembered : ['interests','movies'].includes(service.id)?'discover':service.id==='emby'?'library':service.id==='tv-calendar'?'calendar':service.modeSelector?'modes':room?'rooms':service.taskBuilder?'create':'settings';
+    const selected = tabNames.some(([id]) => id === remembered) ? remembered : service.id==='downloads-inbox'?'transfers':['interests','movies'].includes(service.id)?'discover':service.id==='emby'?'library':service.id==='tv-calendar'?'calendar':service.modeSelector?'modes':room?'rooms':service.taskBuilder?'create':'settings';
     this.tabs.set(service.id,selected);
     const status = serviceStatus(service);
     const heading = `<div class="page-heading"><div class="plugin-heading"><span class="service-icon">${icon(service.icon)}</span><div><h1>${escapeHtml(service.name)} <small class="plugin-version" title="Plugin version">v${escapeHtml(service.version)}</small></h1><div class="plugin-readiness">${statusPill(status.label, status.className)}</div></div></div></div>`;
     const tabs = `<div class="tabs" role="tablist" aria-label="${escapeHtml(service.name)} workspace">${tabNames.map(([id, label, glyph]) => `<button type="button" id="plugin-tab-${id}" class="tab" role="tab" aria-selected="${selected === id}" aria-controls="plugin-panel" tabindex="${selected === id ? 0 : -1}" data-action="plugin-tab" data-id="${id}">${icon(glyph)}${label}</button>`).join('')}</div>`;
     const recovery = AdminUX.recoveryHint(service, state.paused);
     const error = `<div id="plugin-error" class="form-error" role="alert" ${service.error || recovery ? '' : 'hidden'}>${escapeHtml(service.error)}${recovery ? `<p>${escapeHtml(recovery)}</p>` : ''}</div>`;
-    const panel = selected==='library'&&service.id==='emby' ? WatchGuideUI.renderEmby(service) : selected==='discover'&&service.id==='movies' ? WatchGuideUI.renderMovies(service) : selected==='discover'&&service.id==='interests' ? InterestsUI.render(service) : selected==='calendar'&&service.id==='tv-calendar' ? TVCalendarUI.render(service) : selected==='modes' ? HomeModesUI.render(service) : room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected) ? LightingRoomUI.render(service,selected) : selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
+    const panel = selected==='transfers'&&service.id==='downloads-inbox' ? DownloadTransfersUI.render(service) : selected==='library'&&service.id==='emby' ? WatchGuideUI.renderEmby(service) : selected==='discover'&&service.id==='movies' ? WatchGuideUI.renderMovies(service) : selected==='discover'&&service.id==='interests' ? InterestsUI.render(service) : selected==='calendar'&&service.id==='tv-calendar' ? TVCalendarUI.render(service) : selected==='modes' ? HomeModesUI.render(service) : room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected) ? LightingRoomUI.render(service,selected) : selected==='create' ? this.taskBuilderHome(service) : selected === 'controls' ? ControlsUI.render(service) : selected === 'cards' ? CardDesigner.render(service) : selected === 'log' ? this.log(service)
       : selected === 'events' ? this.events(service) : this.settings(service);
-    const evidence=selected==='library'||selected==='discover'||selected==='calendar'||selected==='modes'||selected==='create'||room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected)?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
+    const evidence=selected==='transfers'||selected==='library'||selected==='discover'||selected==='calendar'||selected==='modes'||selected==='create'||room&&['rooms','devices','scenes','effects','diagnostics'].includes(selected)?'':`<div class="plugin-evidence">${serviceEvidence(service)}<p>A completed check may use cached data. Reception is the latest available source timestamp; command delivery does not confirm device state.</p></div>`;
     renderWorkspace(heading + evidence + tabs + error + `<div id="plugin-panel" role="tabpanel" aria-labelledby="plugin-tab-${selected}">${panel}</div>`);
     renderSaveFeedback();
   },
@@ -267,13 +272,15 @@ const PluginUI = {
     if(service.id==='tv-calendar'&&field.id==='shows')return TVCalendarUI.showList(service,field);
     const items = service.config.settings[field.id] || [];
     const lookup = service.settingsLookup?.setting === field.id;
-    return `<section class="panel plugin-list"><div class="panel-header"><h2>${escapeHtml(field.label)} <span class="panel-count">${items.length}</span></h2><div class="heading-actions">${lookup ? `<button type="button" class="button" data-action="plugin-find-source" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('magnifying-glass')}Find ${escapeHtml(field.itemLabel)}</button>` : ''}<button type="button" class="button primary" data-action="plugin-list-add" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('plus')}Add ${escapeHtml(field.itemLabel)}</button></div></div>
+    const dateButton=service.id==='calendar'&&field.id==='calendars'?`<button type="button" class="button" data-action="plugin-add-date" ${items.length>=field.maxItems?'disabled':''}>${icon('calendar')}Add date / countdown</button>`:'';
+    return `<section class="panel plugin-list"><div class="panel-header"><h2>${escapeHtml(field.label)} <span class="panel-count">${items.length}</span></h2><div class="heading-actions">${lookup ? `<button type="button" class="button" data-action="plugin-find-source" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('magnifying-glass')}Find ${escapeHtml(field.itemLabel)}</button>` : ''}${dateButton}<button type="button" class="button primary" data-action="plugin-list-add" data-setting="${field.id}" ${items.length >= field.maxItems ? 'disabled' : ''}>${icon('plus')}Add ${escapeHtml(field.itemLabel)}</button></div></div>
       ${field.help ? `<div class="panel-body"><p class="field-help">${escapeHtml(field.help)}</p></div>` : ''}
       ${items.length ? items.map(item => `<div class="settings-item" data-live-key="source:${escapeHtml(field.id)}:${escapeHtml(item.id)}"><div class="settings-text"><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(service.modeSelector ? HomeModesUI.summary(item) : this.itemSummary(field, item))}</p></div>${AdminUX.definitionActions(item,{edit:"plugin-list-edit",copy:"plugin-list-copy",delete:"plugin-list-delete",toggle:"plugin-list-toggle"},{attributes:{setting:field.id},before:this.listActionButtons(service,field,item)})}</div>`).join('') : `<div class="empty-state">No ${escapeHtml(field.label.toLowerCase())} yet.</div>`}</section>`;
   },
 
   listActionButtons(service, field, item) {
-    return (service.listActions || []).filter(entry => entry.setting === field.id).map(entry => {
+    const task = service.id==='calendar'&&field.id==='calendars' ? TaskUI.calendarShortcut(service,item) : '';
+    return task + (service.listActions || []).filter(entry => entry.setting === field.id).map(entry => {
       const action = service.actions.find(action => action.id === entry.actionId);
       if (!action) return '';
       const reason = state.paused ? 'Enable server functions first.' : !item.enabled ? 'Enable this entry first.'
@@ -304,6 +311,7 @@ const PluginUI = {
   },
 
   itemSummary(field, item) {
+    if(field.id==='calendars' && item['source-type']==='date')return `Local date / countdown · ${item['target-date']} · ${TimeUI.format(item['target-time'])} · Server time`;
     return field.fields.filter(child => child.format !== 'secret' && !['id', 'name', 'enabled'].includes(child.id)
       && item[child.id] !== '' && item[child.id] !== undefined).map(child => {
       const value = item[child.id];
@@ -330,20 +338,34 @@ const PluginUI = {
     const items = structuredClone(service.config.settings[field.id] || []);
     const original = items.find(item => item.id === id);
     const item = original ? structuredClone(original) : {...this.newItem(field),...prefill};
+    if(service.id==='calendar' && field.id==='calendars')item['source-type'] ||= 'subscription';
     if(service.id==='tv-calendar'&&field.id==='shows')Object.assign(item,prefill);
     if (operation === 'copy') Object.assign(item, { id: this.newId(), name: `${item.name.slice(0, 27)} copy`, enabled: false });
     // A copied cloud client needs its own identity and credential grant.
     if (operation === 'copy' && service.id === 'google-apps-script' && field.id === 'clients') Object.assign(item, {'client-id':'',key:''});
     const context = { kind: 'plugin-item', pluginId: service.id, setting: field.id, operation,
       item, items, settings: structuredClone(service.config.settings), revision: service.config.revision };
-    const title = `${operation === 'add' ? 'Add' : operation === 'copy' ? 'Copy' : operation === 'delete' ? 'Delete' : 'Edit'} ${field.itemLabel}`;
-    const fields = operation === 'delete' ? `<p>Delete ${escapeHtml(item.name)}?</p>` : field.fields.filter(child => child.id !== 'id').map(child => service.id==='tv-calendar'&&child.id==='tvmaze-id' ? `<input type="hidden" name="tvmaze-id" value="${escapeHtml(item['tvmaze-id'])}">` : child.type === 'boolean'
+    const itemLabel=service.id==='calendar'&&item['source-type']==='date'?'date / countdown':field.itemLabel;
+    const title = `${operation === 'add' ? 'Add' : operation === 'copy' ? 'Copy' : operation === 'delete' ? 'Delete' : 'Edit'} ${itemLabel}`;
+    let fields = operation === 'delete' ? `<p>Delete ${escapeHtml(item.name)}?</p>` : field.fields.filter(child => child.id !== 'id').map(child => service.id==='tv-calendar'&&child.id==='tvmaze-id' ? `<input type="hidden" name="tvmaze-id" value="${escapeHtml(item['tvmaze-id'])}">` : child.type === 'boolean'
       ? `<div class="plugin-setting-row"><label for="item-option-${child.id}">${escapeHtml(child.label)}</label><input type="hidden" name="${child.id}" value="${item[child.id]}"><button id="item-option-${child.id}" class="switch" type="button" role="switch" aria-checked="${item[child.id]}" aria-label="${escapeHtml(child.label)}" data-action="plugin-item-option" data-id="${child.id}"></button></div>`
       : service.modeSelector ? HomeModesUI.field(child,item[child.id]) : this.field(child, item[child.id], 'plugin-item')).join('');
     // Capture both the settings revision and item list. Polling never advances
     // the modal's baseline; conflicting external edits must be reopened.
     showDialog(`<form id="plugin-item-form">${dialogHeader(title)}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>${fields}</div>${dialogFooter(operation === 'delete' ? 'Delete' : operation === 'add' || operation === 'copy' ? `Add ${field.itemLabel}` : 'Save changes')}</form>`, context);
     if(service.modeSelector&&operation!=='delete')HomeModesUI.bind(dialog.querySelector('form'));
+    if(service.id==='calendar' && field.id==='calendars' && operation!=='delete')this.syncCalendarFields(dialog.querySelector('form'));
+  },
+
+  syncCalendarFields(form) {
+    const local=form.querySelector('[name="source-type"]').value==='date';
+    for(const name of ['url','reminder-minutes','target-date','target-time']) {
+      const control=form.querySelector(`[name="${name}"]`), active=['target-date','target-time'].includes(name)?local:!local;
+      const wrapper=control.closest('.field');wrapper.hidden=!active;
+      for(const input of wrapper.querySelectorAll('input,button'))input.disabled=!active;
+      const visible=wrapper.querySelector('[data-time-input]')||control;
+      visible.required=active && name!=='reminder-minutes';
+    }
   },
 
   async submitItem(form) {
@@ -355,6 +377,10 @@ const PluginUI = {
     if (context.operation === 'delete') items = items.filter(item => item.id !== context.item.id);
     else {
       const item = { ...context.item, ...this.readFields(field.fields.filter(child => child.id !== 'id'), form) };
+      if(service.id==='calendar' && field.id==='calendars') {
+        if(item['source-type']==='date'){item.url='';item['reminder-minutes']=0;}
+        else{item['target-date']='';item['target-time']='';}
+      }
       for (const child of field.fields.filter(child => child.type === 'string')) item[child.id] = item[child.id].trim();
       const index = items.findIndex(existing => existing.id === item.id);
       if (index < 0) items.push(item);
@@ -364,11 +390,18 @@ const PluginUI = {
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
     try {
+      const localDate=service.id==='calendar'&&field.id==='calendars'&&context.operation!=='delete'&&items.find(item=>item.id===context.item.id&&item['source-type']==='date');
+      if(localDate) {
+        const response=await fetch(`api/calendar-date?date=${encodeURIComponent(localDate['target-date'])}&time=${encodeURIComponent(localDate['target-time'])}`,{cache:'no-store'});
+        const result=await response.json();
+        if(dialogContext!==context||!form.isConnected)return;
+        if(!response.ok)throw Error(result.error||'This date/time is unavailable in the server timezone.');
+      }
       await mutate(`api/plugins/${service.id}/config`, { revision: context.revision, settings: { ...context.settings, [field.id]: items } });
       closeDialog();
       this.render(state.services.find(candidate => candidate.id === context.pluginId));
       notify(`${field.itemLabel[0].toUpperCase() + field.itemLabel.slice(1)} saved`);
-    } catch (error) { showFormError(error.message); }
+    } catch (error) { if(dialogContext===context&&form.isConnected)showFormError(error.message); }
     finally { this.pending = false; if (button.isConnected) button.disabled = false; }
   },
 
@@ -513,6 +546,7 @@ const PluginUI = {
       if(!result || result.revision!==service.config.revision || !result.devices?.some(item=>String(item.index)===selected))return this.showError('List and choose the camera again for the current settings.');
       return this.save(service.id,{settings:{...service.config.settings,'device-index':Number(selected)}},result.revision);
     }
+    if(action==='plugin-add-date')return this.openItem(service,service.settings.find(field=>field.id==='calendars'),'add',null,{'source-type':'date'});
     if (action === 'plugin-connection') {
       await this.testConnection(service, control);
     } else if (action === 'plugin-source-action') {
@@ -585,6 +619,9 @@ document.addEventListener('input', event => {
 });
 
 document.addEventListener('change', event => {
+  if(event.target.name==='source-type' && dialogContext?.kind==='plugin-item' && dialogContext.pluginId==='calendar' && dialogContext.setting==='calendars') {
+    TimeUI.close();PluginUI.syncCalendarFields(event.target.closest('form'));return;
+  }
   if(event.target.id==='camera-choice') {
     const button=document.querySelector('[data-action="plugin-camera-use"]');if(button)button.disabled=event.target.value==='';return;
   }

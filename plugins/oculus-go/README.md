@@ -66,3 +66,7 @@ heights may still require scrolling.
 The separate **· Fullscreen** ready-made Card uses a 1920×1080 layout with
 additional declared readings and bounded detail lists. Choose it in Add ready-made
 card; existing Cards keep their design. See [fullscreen setup](../../FULLSCREEN-CARDS.md).
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

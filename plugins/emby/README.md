@@ -32,3 +32,7 @@ Metadata requests are bounded to one response up to 1 MiB and a 15-second timeou
 Session baselines commit before Events. Startup, restart and interrupted polling do not replay previous changes. Library errors do not overwrite successful session observations or create playback Events. The plugin sends no playback, account or media-management commands.
 
 Saved configuration, cached metadata, Cards and activity belong to the installation and are excluded from public source distributions. See the official [Emby Items API](https://dev.emby.media/reference/RestAPI/ItemsService/getItems.html) for the metadata interface.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

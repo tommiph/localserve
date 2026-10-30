@@ -1552,3 +1552,90 @@ html[data-theme="light"][data-legacy-template="daily-tv"] body,html[data-theme="
 /* Emby library recommendations retain their package-owned literal palette. */
 html[data-legacy-template="library-movies"] body{background:#102f2e;color:#f0f4ff}
 html[data-theme="light"][data-legacy-template="library-movies"] body{background:#eef2fa;color:#1b2b43}
+
+/* Local calendar countdown uses literal colors and pixel typography on Tizen. */
+html[data-legacy-template="countdown"] body{background:#12231f;color:#eff5ef}
+html[data-legacy-template="countdown"] .card{background:#12231f}
+html[data-legacy-template="countdown"] h1{color:#eff5ef;font-size:32px}
+html[data-legacy-template="countdown"] .remaining{font-size:48px;color:#a6ddbe;line-height:1.2}
+html[data-legacy-template="countdown"] header,html[data-legacy-template="countdown"] footer,html[data-legacy-template="countdown"] .target,html[data-legacy-template="countdown"] .status{color:#aec5b9;font-size:13px}
+html[data-theme="light"][data-legacy-template="countdown"] body,html[data-theme="light"][data-legacy-template="countdown"] .card{background:#f0f6f1;color:#20352b}
+html[data-theme="light"][data-legacy-template="countdown"] h1{color:#20352b}
+html[data-theme="light"][data-legacy-template="countdown"] .remaining{color:#296c49}
+html[data-theme="light"][data-legacy-template="countdown"] header,html[data-theme="light"][data-legacy-template="countdown"] footer,html[data-theme="light"][data-legacy-template="countdown"] .target,html[data-theme="light"][data-legacy-template="countdown"] .status{color:#536c5d}
+/* New theme designs carry literal palettes in their own stylesheets too. */
+html[data-legacy-template="theme-sci-fi"] body { background:#06111e;color:#f2ffff; }
+html[data-legacy-template="theme-hacker"] body { background:#030b06;color:#e4ffdf; }
+html[data-legacy-template="theme-rustic"] body { background:#f5eddd;color:#342c22; }
+html[data-legacy-template="theme-lcars"] body { background:#07080e;color:#f7e4d6; }
+
+/* Themed designs share a literal, margin-spaced Chromium 47 layout. These
+   scoped rules also isolate them from the older generic .hero/.metric rules. */
+html[data-legacy-template^="theme-"] .theme-card { display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;padding:20px;min-height:0; }
+html[data-legacy-template^="theme-"] .theme-card .decor { display:none; }
+html[data-legacy-template^="theme-"] .theme-card header { display:-webkit-flex;display:flex;-webkit-flex:0 0 auto;flex:0 0 auto;-webkit-justify-content:space-between;justify-content:space-between;min-width:0;margin:0 0 14px;padding:0 0 12px; }
+html[data-legacy-template^="theme-"] .theme-card .eyebrow { font-size:11px;letter-spacing:1px;max-width:58%;padding-right:10px; }
+html[data-legacy-template^="theme-"] .theme-card .source { font-size:12px;max-width:42%; }
+html[data-legacy-template^="theme-"] .theme-card .hero { display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;-webkit-justify-content:center;justify-content:center;-webkit-flex:1 1 auto;flex:1 1 auto;min-height:140px;min-width:0;padding:0;margin:0 0 14px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-label { font-size:11px;margin:0 0 8px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-reading { display:-webkit-flex;display:flex;-webkit-align-items:baseline;align-items:baseline;min-width:0; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value { font-size:34px;line-height:1.15;letter-spacing:0;min-width:0;word-wrap:break-word; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value[data-kind="number"] { font-size:66px;letter-spacing:-2px; }
+html[data-legacy-template^="theme-"] .theme-card .unit { font-size:16px;margin-left:10px; }
+html[data-legacy-template^="theme-"] .theme-card .metrics { display:-webkit-flex;display:flex;-webkit-flex-wrap:nowrap;flex-wrap:nowrap;-webkit-flex:0 0 auto;flex:0 0 auto;margin:0 0 14px;min-width:0; }
+html[data-legacy-template^="theme-"] .theme-card .metric { -webkit-flex:1 1 0;flex:1 1 0;min-width:0;width:30%;margin:0 10px 0 0;padding:9px;border:0;border-left:2px solid;border-radius:0; }
+html[data-legacy-template^="theme-"] .theme-card .metric:last-child { margin-right:0; }
+html[data-legacy-template^="theme-"] .theme-card .metric-label { font-size:10px;line-height:1.2;max-height:2.4em;overflow:hidden;margin:0 0 7px; }
+html[data-legacy-template^="theme-"] .theme-card .metric strong { font-size:15px;line-height:1.35;max-height:2.7em;word-wrap:break-word; }
+html[data-legacy-template^="theme-"] .theme-card .items { -webkit-flex:0 1 auto;flex:0 1 auto;max-height:90px;min-height:0;margin-bottom:14px; }
+html[data-legacy-template^="theme-"] .theme-card footer { display:-webkit-flex;display:flex;-webkit-flex:0 0 auto;flex:0 0 auto;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;font-size:10px;padding-top:8px; }
+html[data-legacy-template^="theme-"] .theme-card .state { margin-right:10px; }
+html[data-legacy-template^="theme-"] .theme-card .credit { font-size:9px;width:100%;margin-top:6px; }
+html[data-legacy-template="theme-sci-fi"] .theme-card .metric { background:#0c2433;border-color:#75f8ef; }
+html[data-legacy-template="theme-hacker"] .theme-card .metric { background:#0b1b0d;border-color:#85ff7d;border-left-style:dashed; }
+html[data-legacy-template="theme-rustic"] .theme-card .metric { background:#e9dec8;border-color:#c1ac89; }
+html[data-legacy-template="theme-lcars"] .theme-card { padding-left:48px; }
+html[data-legacy-template="theme-lcars"] .theme-card .metric { background:#d4a2c8;color:#17101d;border-radius:0 18px 18px 0; }
+html[data-legacy-template="theme-lcars"] .theme-card .lcars-spine { display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column; }
+html[data-legacy-template="theme-lcars"] .theme-card .lcars-spine i { -webkit-flex:1;flex:1;margin-bottom:8px; }
+html[data-legacy-template="theme-lcars"] .theme-card .lcars-spine i:nth-child(2) { -webkit-flex:2;flex:2; }
+@media (max-height:600px) {
+html[data-legacy-template^="theme-"] .has-credit .metrics,html[data-legacy-template^="theme-"] .has-credit .items { display:none; }
+}
+@media (max-height:430px) {
+html[data-legacy-template^="theme-"] .theme-card { padding:10px; }
+html[data-legacy-template^="theme-"] .theme-card header { margin-bottom:8px;padding-bottom:8px; }
+html[data-legacy-template^="theme-"] .theme-card .eyebrow,html[data-legacy-template^="theme-"] .theme-card .source { font-size:10px; }
+html[data-legacy-template^="theme-"] .theme-card .hero { min-height:80px;margin-bottom:8px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-label { font-size:9px;margin-bottom:5px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value { font-size:23px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value[data-kind="number"] { font-size:36px; }
+html[data-legacy-template^="theme-"] .theme-card .metrics { margin-bottom:8px; }
+html[data-legacy-template^="theme-"] .theme-card .metric { margin-right:6px;padding:6px; }
+html[data-legacy-template^="theme-"] .theme-card .metric:last-child { margin-right:0; }
+html[data-legacy-template^="theme-"] .theme-card .metric-label { font-size:9px; }
+html[data-legacy-template^="theme-"] .theme-card .metric strong { font-size:12px; }
+html[data-legacy-template^="theme-"] .theme-card .items,html[data-legacy-template^="theme-"] .has-credit .metrics { display:none; }
+html[data-legacy-template^="theme-"] .theme-card footer { font-size:9px;padding-top:6px; }
+html[data-legacy-template^="theme-"] .theme-card .credit { font-size:8px; }
+html[data-legacy-template="theme-lcars"] .theme-card { padding-left:38px; }
+}
+@media (max-height:280px) {
+html[data-legacy-template^="theme-"] .theme-card .eyebrow { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+html[data-legacy-template^="theme-"] .theme-card .hero { min-height:90px; }
+html[data-legacy-template^="theme-"] .theme-card .metric-label { white-space:nowrap;text-overflow:ellipsis;max-height:1.2em;margin-bottom:5px; }
+html[data-legacy-template^="theme-"] .theme-card .metric strong { white-space:nowrap;text-overflow:ellipsis;max-height:1.35em; }
+}
+@media (max-height:240px) {
+html[data-legacy-template^="theme-"] .theme-card .metrics { display:none; }
+}
+/* Narrow supporting panels need real pixel sizes: neither dynamic CSS sizing nor an
+   unavailable numeric field rendered as a giant "No data" label can fit. */
+@media (max-width:450px) {
+html[data-legacy-template^="theme-"] .theme-card .eyebrow { white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value { font-size:26px; }
+html[data-legacy-template^="theme-"] .theme-card .hero-value[data-kind="number"] { font-size:36px; }
+html[data-legacy-template^="theme-"] .theme-card .metric-label { white-space:nowrap;text-overflow:ellipsis;max-height:1.2em; }
+html[data-legacy-template^="theme-"] .theme-card .metric strong { white-space:nowrap;text-overflow:ellipsis;max-height:1.35em; }
+}
+html[data-legacy-template^="theme-"] .theme-card .hero-value[data-available="false"] { font-size:26px;letter-spacing:0; }

@@ -38,6 +38,7 @@ export async function attachTrayControl(application, root, options = {}) {
     if (request.command === 'status') return status();
     if (stopping) throw new Error('Server is stopping.');
     if (['pause', 'resume'].includes(request.command)) {
+      if(request.command==='resume'&&application.backups?.pending)throw Error('A restore is pending. Restart normally or cancel it in Settings.');
       await application.engine.setPaused(request.command === 'pause');
       return status();
     }

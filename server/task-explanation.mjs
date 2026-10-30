@@ -1,7 +1,7 @@
 /** Read-only Task readiness. Retained comparisons and run history describe
  * observations, not proof that an unrecorded occurrence should have run. */
 import {HttpError} from './storage.mjs';
-import {eventConditionSignature,solarOccurrence} from './rules.mjs';
+import {eventConditionSignature,solarOccurrence,calendarDateTime} from './rules.mjs';
 import {doNotDisturbStatus,isTvAction} from './do-not-disturb.mjs';
 
 export function explainTask(engine,id,date=new Date()) {
@@ -31,6 +31,14 @@ export function explainTask(engine,id,date=new Date()) {
       }else if(['timer','interval'].includes(rule.type)){
         const clock=state.ruleClocks?.[id+'/'+rule.id];nextAt=Number.isFinite(clock?.nextAt)?clock.nextAt:null;
         status=clock?.completed?'Timer already consumed. Disable and enable the rule to rearm.':nextAt===null?'Clock not armed. Enable the Task and rule.':nextAt<=date.getTime()?'Due time reached; admission still depends on server state and other rules.':'Waiting for the next due time.';
+      }else if(rule.type==='calendar'){
+        nextAt=calendarDateTime(rule.date,rule.time);
+        const zone=new Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const key=`${id}/${rule.id}/${rule.date}/${rule.time}/${zone}`;
+        status=state.claims.includes(key)?'This date occurrence was already consumed; no replay.'
+          :nextAt===null?'This local date/time is unavailable in the server timezone.'
+          :date.getTime()>=nextAt+60000?'This date has passed; missed dates are not replayed.'
+          :'Once on '+rule.date+' at '+rule.time+' using server local time. Minute precision.';
       }else{
         if(rule.type==='schedule')status='Runs at '+rule.time+' on the selected days using server local time.';
         else{nextAt=solarOccurrence(date,rule,config.location);status=nextAt===null?'No solar time available. Check Server location and the selected date.':'Solar time uses Server location and server local time.';}

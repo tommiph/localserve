@@ -18,7 +18,8 @@ const VariablesUI = {
       'data/tasks.json; server/task-rule-groups.mjs',{ruleMode:'and'});
     for (const [id, name] of Object.entries(TaskUI.ruleTypes)) {
       add('server','Server','rule','Task start rule',name,id,'rule',
-        'Use starts[].type. Only Event rules supply captured Event values.', 'data/tasks.json', {type:id});
+        id==='calendar'?'One-time date/time in the server system timezone, to the minute. Missed dates are not replayed; the earlier repeated DST minute is used. No Event values.'
+          :'Use starts[].type. Only Event rules supply captured Event values.', 'data/tasks.json', id==='calendar'?{type:id,date:'2027-01-15',time:'19:00'}:{type:id});
     }
     for (const action of snapshot.taskActions || []) {
       const service = services.find(service => service.id === action.pluginId);

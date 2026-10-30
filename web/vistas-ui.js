@@ -162,7 +162,7 @@ const VistaUI = {
   render() {
     const selected = state.vistas?.find(vista => vista.id === state.vistaDisplay?.vistaId);
     const tv = this.tvLaunchAvailability();
-    return pageHeading('Vistas', 'Layouts for end-user displays', `<button class="button" data-action="vista-today">${icon('sun')}Create Today</button><button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
+    return pageHeading('Vistas', 'Layouts for end-user displays', `${typeof VistaDeckUI!=='undefined'?VistaDeckUI.packButton():''}<button class="button" data-action="vista-today">${icon('sun')}Create Today</button><button class="button primary" data-action="vista-add">${icon('plus')}Add Vista</button>`) +
       `<section class="panel vista-display-panel"><div class="panel-header"><h2>${icon('display')}End-user display</h2><a class="button" href="display" target="_blank" rel="noopener">${icon('arrow-up-right-from-square')}Open shared /display</a></div><div class="panel-body"><p>${selected?.enabled ? escapeHtml(selected.name) : 'No enabled Vista selected'} · /display</p><p class="field-help">Use on shared display changes /display for everyone. Open this Vista only opens its own URL. Tasks → Server → Show Vista can change it using Timer, Interval, Schedule or Event rules. All open display pages follow the same selection.</p></div></section>` +
       `<section class="panel"><div class="panel-header"><h2>Vistas <span class="panel-count">${state.vistas?.length || 0}</span></h2></div>${state.vistas?.length ? state.vistas.map(vista => `<div class="settings-item" data-live-key="vista:${escapeHtml(vista.id)}"><span class="service-icon">${icon('table-cells-large')}</span><div class="settings-text"><h3>${escapeHtml(vista.name)}</h3><p>/vistas/${escapeHtml(vista.slug)}</p></div>${state.vistaDisplay?.vistaId === vista.id ? '<span class="selected-display-marker">Selected for /display</span>' : ''}<button class="button" data-action="vista-show" data-id="${vista.id}" ${vista.enabled && state.vistaDisplay?.vistaId !== vista.id ? '' : 'disabled'}>${icon('display')}Use on shared display</button><button class="button" data-action="vista-open" data-id="${vista.id}" ${vista.enabled ? '' : 'disabled'}>${icon('arrow-up-right-from-square')}Open this Vista</button><button class="button" data-action="vista-tv" data-id="${vista.id}" title="${escapeHtml(!vista.enabled ? 'Enable this Vista first.' : tv.reason || 'Open this Vista on the TV without changing /display.')}" ${vista.enabled && !tv.reason ? '' : 'disabled'}>${icon('display')}Open on TV</button>${itemActions(vista, 'vista')}</div>`).join('') : '<div class="empty-state">No Vistas. Add a Vista to arrange cards.</div>'}</section>`;
   },
@@ -278,6 +278,7 @@ const VistaUI = {
     return {schemaVersion:1,name:'Today',slug:'today',enabled:false,gap:16,padding:16,layout:root,presentation:{type:'today',mood:'atmospheric',motion:'gentle',spotlightSeconds:30,opacity:80}};
   },
   presentationEditor(){
+    if(typeof VistaDeckUI!=='undefined')return VistaDeckUI.editor(this.draft.presentation);
     const p=this.draft.presentation||{mood:'atmospheric',motion:'gentle',spotlightSeconds:30,opacity:80};
     return `<section class="panel"><div class="panel-body">${formField('Presentation','display',`<select name="vistaPresentation"><option value="standard" ${this.draft.presentation?'':'selected'}>Standard layout</option><option value="today" ${this.draft.presentation?'selected':''}>Today · Daily briefing</option></select>`)}<div data-today-options ${this.draft.presentation?'':'hidden'}><p class="field-help">Today arranges the enabled Cards in your layout into weather, daylight, daily essentials and a rotating spotlight. Add or remove Cards using the library below. Rows and columns preserve your source selection; Today manages their display positions.</p><div class="field-row">${formField('Mood','palette',`<select name="todayMood" data-today-option="mood">${[['atmospheric','Atmospheric'],['aurora','Aurora'],['midnight','Midnight']].map(([id,name])=>`<option value="${id}" ${p.mood===id?'selected':''}>${name}</option>`).join('')}</select>`)}${formField('Motion','auto-awesome',`<select name="todayMotion" data-today-option="motion">${[['full','Full'],['gentle','Gentle'],['none','None']].map(([id,name])=>`<option value="${id}" ${p.motion===id?'selected':''}>${name}</option>`).join('')}</select>`)}${formField('Spotlight (seconds)','clock',`<input type="number" min="10" max="300" value="${p.spotlightSeconds}" name="todaySpotlight" data-today-option="spotlightSeconds">`)}</div><label class="field"><span class="field-label">Panel opacity <output>${p.opacity}%</output></span><input type="range" aria-label="Panel opacity" min="40" max="100" value="${p.opacity}" name="todayOpacity" data-today-option="opacity"></label></div></div></section>`;
   },
@@ -288,7 +289,7 @@ const VistaUI = {
     this.refreshLibrary();
     const map = dialog.querySelector('#vista-layout-map'), mapMarkup=this.layoutMap();
     if (map && this.libraryMarkup.map !== mapMarkup) {map.innerHTML=mapMarkup; this.libraryMarkup.map=mapMarkup;}
-    const cards = state.services.flatMap(service => service.cards.filter(card => card.enabled).map(card => ({ pluginId: service.id, cardId: card.id, card, catalog: service.cardCatalog, data: service.cardData })));
+    const cards = state.services.flatMap(service => service.cards.filter(card => card.enabled).map(card => ({ pluginId: service.id, cardId: card.id, card, catalog: service.cardCatalog, data: service.cardData,...(service.attribution?{attribution:service.attribution}:{}) })));
     // Invalid intermediate sizing should not inject CSS or destroy a working
     // preview. Server validation remains authoritative on Save.
     const draft = this.readDraft();
@@ -339,6 +340,7 @@ const VistaUI = {
   },
 
   onInput(control) {
+    if(typeof VistaDeckUI!=='undefined'&&VistaDeckUI.input(control,this))return;
     if (control.id === 'vista-card-search') {
       this.librarySearch = control.value; this.refreshLibrary(); return;
     }
@@ -420,8 +422,11 @@ const VistaUI = {
   },
 
   async handleAction(action, id, control) {
+    if(action==='vista-theme-setup')return VistaDeckUI.setup();
+    if(action==='vista-theme-confirm')return VistaDeckUI.install(control);
     if (action === 'vista-today') return this.openEditor(null,false,this.todayDraft());
     if (action === 'vista-add') return this.openEditor();
+    if (action === 'vista-scene-suggest' && typeof VistaReactionsUI!=='undefined') return VistaReactionsUI.suggest(this);
     if (action === 'vista-map-select') {
       const found=this.find(id); if(!found)return;
       this.selectedNodeId=id;

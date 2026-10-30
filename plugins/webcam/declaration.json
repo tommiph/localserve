@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "webcam",
   "name": "Webcam",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "icon": "videocam",
   "description": "Local Windows webcam preview, movement detection and relative lighting measurements",
   "runtime": {
@@ -557,6 +557,154 @@
           "field": "height",
           "format": "number",
           "decimals": 1
+        }
+      ]
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "motion-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "brightness",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "condition"
+        },
+        {
+          "id": "metric-3",
+          "field": "motion"
+        },
+        {
+          "id": "stamp",
+          "field": "captured-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "motion-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "brightness",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "condition"
+        },
+        {
+          "id": "metric-3",
+          "field": "motion"
+        },
+        {
+          "id": "stamp",
+          "field": "captured-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "motion-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "brightness",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "condition"
+        },
+        {
+          "id": "metric-3",
+          "field": "motion"
+        },
+        {
+          "id": "stamp",
+          "field": "captured-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "motion-percent",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "brightness",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "condition"
+        },
+        {
+          "id": "metric-3",
+          "field": "motion"
+        },
+        {
+          "id": "stamp",
+          "field": "captured-at",
+          "format": "datetime"
         }
       ]
     }

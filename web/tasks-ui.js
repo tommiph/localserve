@@ -2,7 +2,7 @@
 const TaskUI = {
   search: '',
   stepTypes: { log: 'Log activity', delay: 'Delay', 'show-vista': 'Show Vista', 'run-task': 'Run task' },
-  ruleTypes: { schedule: 'Schedule', timer: 'Timer', interval: 'Interval', sunrise: 'Sunrise', sunset: 'Sunset', event: 'Event' },
+  ruleTypes: { schedule: 'Schedule', calendar: 'Calendar', timer: 'Timer', interval: 'Interval', sunrise: 'Sunrise', sunset: 'Sunset', event: 'Event' },
   librarySearch: '',
   libraryCategory: 'all',
   replaceStepId: null,
@@ -12,7 +12,7 @@ const TaskUI = {
   },
 
   glyphFor(type) {
-    return { log: 'clipboard-list', delay: 'hourglass-half', 'show-vista': 'display', 'run-task':'list-check', timer: 'hourglass-start', interval: 'arrows-rotate', sunrise: 'sun', sunset: 'moon', event: 'tower-broadcast', schedule: 'calendar' }[type] || 'bolt';
+    return { log: 'clipboard-list', delay: 'hourglass-half', 'show-vista': 'display', 'run-task':'list-check', timer: 'hourglass-start', interval: 'arrows-rotate', sunrise: 'sun', sunset: 'moon', event: 'tower-broadcast', schedule: 'calendar', calendar:'calendar' }[type] || 'bolt';
   },
 
   renderLibrary() {
@@ -110,6 +110,11 @@ const TaskUI = {
   },
 
   ruleFields(rule) {
+    if (rule.type === 'calendar') {
+      return this.field('Date', 'calendar', `<input name="date" type="date" min="1970-01-01" max="9999-12-31" required value="${escapeHtml(rule.date || '')}">`)
+        + this.field('Time', 'clock', TimeUI.render(rule.time || '19:00'))
+        + '<p class="field-help">Once on this date and time, in the server’s system timezone. Minute precision; missed dates are not replayed. A repeated daylight-saving minute runs once.</p>';
+    }
     if (rule.type === 'schedule') {
       return this.field('Time', 'clock', TimeUI.render(rule.time || '19:00')) + this.weekdayFields(rule);
     }
@@ -290,7 +295,7 @@ const TaskUI = {
   },
 
   card(item, group, open = false) {
-    const types = group === 'start' ? this.ruleTypes : Object.fromEntries(actionCatalog.map(action => [action.type === 'plugin' ? action.id : action.type, action.type === 'plugin' ? `${action.pluginName} · ${action.name}` : action.name]));
+    const types = group === 'start' ? Object.fromEntries(Object.entries(this.ruleTypes).filter(([type])=>type!=='calendar'||state.server?.taskCalendarRules||item.type==='calendar')) : Object.fromEntries(actionCatalog.map(action => [action.type === 'plugin' ? action.id : action.type, action.type === 'plugin' ? `${action.pluginName} · ${action.name}` : action.name]));
     const selectedType = item.type === 'plugin' ? item.capabilityId : item.type;
     if (item.type === 'plugin' && !types[selectedType]) types[selectedType] = 'Unavailable plugin action';
     const nameEdited = item.nameEdited ?? Boolean(item.name && !Object.values(this.ruleTypes).includes(item.name));
@@ -303,6 +308,32 @@ const TaskUI = {
           <button class="icon-button" type="button" data-action="task-block-edit" aria-label="Edit ${group}">${icon('pen')}</button><button class="icon-button" type="button" data-action="task-block-copy" aria-label="Copy ${group}">${icon('copy')}</button><button class="icon-button delete" type="button" data-action="task-block-delete" aria-label="Delete ${group}">${icon('trash-can')}</button><button class="switch" type="button" role="switch" aria-checked="${item.enabled !== false}" data-action="task-block-toggle" aria-label="${group === 'start' ? 'Rule' : 'Step'} enabled"></button>
         </div></div><button class="task-block-summary" type="button" data-action="task-block-edit" title="Edit parameters"></button><div class="task-block-fields" ${open ? '' : 'hidden'}>${fields}</div>
     </article>`;
+  },
+
+  calendarEvent(entry) {
+    const kind=entry['source-type']===undefined?'subscription':entry['source-type'];
+    const eventId=kind==='date'?'date-reached':kind==='subscription'?'event-started':null;
+    return eventId && (state.taskEvents||[]).find(event=>event.pluginId==='calendar'&&event.instanceId===entry.id&&event.eventId===eventId);
+  },
+
+  calendarShortcut(service,entry) {
+    const available=Boolean(this.calendarEvent(entry));
+    return `<button type="button" class="button" data-action="task-from-calendar" data-id="${escapeHtml(entry.id)}" data-revision="${service.config.revision}" aria-label="Create task for ${escapeHtml(entry.name)}" title="${available?'Open a disabled Task draft for this entry.':'This entry’s Task Event is unavailable. Refresh Calendar.'}" ${available?'':'disabled'}>${icon('list-check')}Create task</button>`;
+  },
+
+  openCalendarTask(id,revision) {
+    const service=state.services.find(service=>service.id==='calendar');
+    const entry=service?.config.settings.calendars?.find(entry=>entry.id===id);
+    if(!entry || !Number.isSafeInteger(revision) || service.config.revision!==revision)throw Error('This calendar entry changed. Refresh Calendar before creating a Task.');
+    const event=this.calendarEvent(entry);
+    if(!event)throw Error('This calendar entry’s Task Event is unavailable. Refresh Calendar.');
+    const base=`On ${entry.name}`.slice(0,48);let name=base,suffix=2;
+    while(state.tasks.some(task=>task.name.toLowerCase()===name.toLowerCase()))name=`${base.slice(0,42)} ${suffix++}`;
+    const local=entry['source-type']==='date';
+    this.openEditor(null,false,{name,enabled:false,ruleMode:'or',
+      starts:[{id:crypto.randomUUID(),type:'event',name:`${local?'Date reached':'Event started'}: ${entry.name}`.slice(0,64),nameEdited:true,enabled:true,eventId:event.id}],steps:[],
+      hint:local?'Follows this entry’s Date reached Event and later date changes. Enable Calendar and the entry; the Event runs on its normal check interval.'
+        :'Starts on Event started from this calendar. Add a title comparison to target particular appointments. Enable Calendar and the entry.'});
   },
 
   lightingShortcut({pluginId,kind,id='',pageId='',sceneId='',name=''}) {
@@ -342,7 +373,7 @@ const TaskUI = {
     this.librarySearch = ''; this.libraryCategory = 'all';
     showDialog(`<form id="editor-form">${dialogHeader(existing ? `${copy ? 'Copy' : 'Edit'} task` : 'Add task')}<div class="dialog-body"><div id="form-error" class="form-error" role="alert" hidden></div>
       <div class="field-row">${this.field('Task name', 'tag', `<input name="name" required maxlength="48" value="${escapeHtml(copy ? task.name + ' copy' : task.name)}">`)}<label class="check-field task-enabled"><input name="enabled" type="checkbox" ${task.enabled && !copy ? 'checked' : ''}>Task enabled</label></div>
-      <details class="editor-help"><summary>How Task activation works</summary><p>Task enabled permits runs. OR lets any enabled rule start it. AND combines the latest reported comparisons; all enabled rules must match. AND does not merge Event values: action text uses the report that starts the run. Enabled steps run in order. With no enabled rules, use manual Run.</p></details><div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p id="task-rule-help">${this.ruleModeHelp(task.ruleMode)}</p></div><label class="task-rule-mode">Combine rules<select name="ruleMode" aria-label="Combine rules" aria-describedby="task-rule-help"><option value="or" ${task.ruleMode!=='and'?'selected':''}>OR · Any rule</option><option value="and" ${task.ruleMode==='and'?'selected':''} ${state.server?.taskRuleModes?.includes('and')?'':'disabled'}>AND · All rules</option></select></label></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
+      <details class="editor-help"><summary>How Task activation works</summary><p>Task enabled permits runs. OR lets any enabled rule start it. AND combines the latest reported comparisons; all enabled rules must match. AND does not merge Event values: action text uses the report that starts the run. Enabled steps run in order. With no enabled rules, use manual Run.</p></details>${draft?.hint?`<p class="aside-note">${escapeHtml(draft.hint)}</p>`:''}<div class="task-designer"><div class="task-canvas"><section class="task-editor-section"><div class="task-section-heading"><div><h3>Start task when</h3><p id="task-rule-help">${this.ruleModeHelp(task.ruleMode)}</p></div><label class="task-rule-mode">Combine rules<select name="ruleMode" aria-label="Combine rules" aria-describedby="task-rule-help"><option value="or" ${task.ruleMode!=='and'?'selected':''}>OR · Any rule</option><option value="and" ${task.ruleMode==='and'?'selected':''} ${state.server?.taskRuleModes?.includes('and')?'':'disabled'}>AND · All rules</option></select></label></div><div id="task-starts">${task.starts.map(start => this.card(copy ? { ...start, id: crypto.randomUUID() } : start, 'start')).join('')}</div><div class="task-add-controls"><button class="button" type="button" data-action="task-add-rule">${icon('calendar')}Add rule</button></div></section>
       <section class="task-editor-section"><div class="task-section-heading"><div><h3>Run these steps in order</h3><p>Choose actions from the library. Tap a block’s parameters to edit them.</p></div></div><div id="task-steps">${task.steps.map(step => this.card(copy ? { ...step, id: crypto.randomUUID() } : step, 'step')).join('')}</div><button class="button add-action-button" type="button" data-action="task-focus-library">${icon('plus')}Add action</button></section></div>${this.renderLibrary()}</div>
       ${copy ? '<p class="aside-note">The copied task starts disabled.</p>' : ''}</div>${dialogFooter(existing && !copy ? 'Save changes' : 'Create task')}</form>`, { kind: 'task', id, copy, revision: existing?.revision });
     this.numberCards();
@@ -384,6 +415,7 @@ const TaskUI = {
     const item = this.readCard(card);
     let detail = item.type === 'log' ? this.bindingLabel(item.message || 'Set message') : '';
     if (item.type === 'schedule') detail = `${TimeUI.format(item.time)} · ${item.days.map(day => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day]).join(', ')}`;
+    if (item.type === 'calendar') detail = `${item.date || 'Choose date'} · ${TimeUI.format(item.time)} · Once · Server time`;
     if (item.type === 'timer') detail = `After ${item.seconds} seconds`;
     if (item.type === 'interval') detail = `Every ${item.seconds} seconds`;
     if (item.type === 'sunrise' || item.type === 'sunset') detail = config.location ? `Server location: ${config.location.latitude}, ${config.location.longitude}` : 'Server location required';
@@ -475,7 +507,8 @@ const TaskUI = {
           value: field?.type === 'boolean' ? raw === 'true' : field?.type === 'number' ? raw ? Number(raw) : NaN : raw };
       }
     }
-    if (item.type === 'schedule') item.time = get('time');
+    if (['schedule','calendar'].includes(item.type)) item.time = get('time');
+    if (item.type === 'calendar') item.date = get('date');
     if (['schedule', 'sunrise', 'sunset'].includes(item.type)) item.days = [...card.querySelectorAll('[name="days"]:checked')].map(input => Number(input.value));
     return item;
   },
@@ -491,7 +524,9 @@ const TaskUI = {
       const original = state.tasks.find(task => task.id === dialogContext?.id)?.starts.find(rule => rule.id === item.id && rule.eventId === item.eventId);
       if (!original) return 'Select an event declared by an installed plugin.';
     }
-    if (item.type === 'schedule' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)) return 'Enter a valid time.';
+    if (['schedule','calendar'].includes(item.type) && !/^([01]\d|2[0-3]):[0-5]\d$/.test(item.time)) return 'Enter a valid time.';
+    if (item.type === 'calendar' && (!/^\d{4}-\d{2}-\d{2}$/.test(item.date) || item.date < '1970-01-01'
+      || !Number.isFinite(Date.parse(`${item.date}T00:00:00Z`)) || new Date(`${item.date}T00:00:00Z`).toISOString().slice(0,10) !== item.date)) return 'Enter a valid calendar date (1970–9999).';
     if (['schedule', 'sunrise', 'sunset'].includes(item.type)) {
       if (!item.days.length) return 'Select at least one day.';
     }
@@ -515,6 +550,7 @@ const TaskUI = {
     if (!task.steps.length) return showFormError('Add at least one step.');
     if(task.ruleMode==='and' && task.starts.some(rule=>rule.enabled && rule.type==='event' && !rule.condition))return showFormError('AND requires a comparison on every enabled Event rule.');
     if(task.ruleMode==='and' && !state.server?.taskRuleModes?.includes('and'))return showFormError('AND rules require the updated server. Refresh after the server update before saving.');
+    if(task.starts.some(rule=>rule.type==='calendar') && !state.server?.taskCalendarRules)return showFormError('Calendar date rules require the updated server. Refresh after the server update before saving.');
     if (!isNew) task.revision = dialogContext.revision;
     const button = form.querySelector('[type="submit"]'); button.disabled = true;
     try {
@@ -661,6 +697,7 @@ const TaskUI = {
   },
 
   async handleAction(action, id, control) {
+    if(action==='task-from-calendar')return this.openCalendarTask(id,Number(control.dataset.revision));
     if(action==='task-from-light')return this.openLightingTask({pluginId:control.dataset.pluginId,kind:control.dataset.kind,id:control.dataset.targetId,pageId:control.dataset.pageId,sceneId:control.dataset.sceneId});
     if (action === 'task-dismiss-notice') {
       control.disabled = true;

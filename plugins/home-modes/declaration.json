@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "home-modes",
   "name": "Home modes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Shared Home, Away, Evening and Night modes with optional Tasks",
   "icon": "home-work",
   "modeSelector": true,
@@ -203,6 +203,142 @@
         },
         {
           "id": "changed",
+          "field": "changed-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "mode-name"
+        },
+        {
+          "id": "metric-1",
+          "field": "previous-mode-name"
+        },
+        {
+          "id": "metric-2",
+          "field": "changed-at",
+          "format": "datetime"
+        },
+        {
+          "id": "metric-3",
+          "field": "plugin-enabled"
+        },
+        {
+          "id": "stamp",
+          "field": "changed-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "mode-name"
+        },
+        {
+          "id": "metric-1",
+          "field": "previous-mode-name"
+        },
+        {
+          "id": "metric-2",
+          "field": "changed-at",
+          "format": "datetime"
+        },
+        {
+          "id": "metric-3",
+          "field": "plugin-enabled"
+        },
+        {
+          "id": "stamp",
+          "field": "changed-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "mode-name"
+        },
+        {
+          "id": "metric-1",
+          "field": "previous-mode-name"
+        },
+        {
+          "id": "metric-2",
+          "field": "changed-at",
+          "format": "datetime"
+        },
+        {
+          "id": "metric-3",
+          "field": "plugin-enabled"
+        },
+        {
+          "id": "stamp",
+          "field": "changed-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "mode-name"
+        },
+        {
+          "id": "metric-1",
+          "field": "previous-mode-name"
+        },
+        {
+          "id": "metric-2",
+          "field": "changed-at",
+          "format": "datetime"
+        },
+        {
+          "id": "metric-3",
+          "field": "plugin-enabled"
+        },
+        {
+          "id": "stamp",
           "field": "changed-at",
           "format": "datetime"
         }

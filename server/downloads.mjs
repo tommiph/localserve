@@ -49,6 +49,7 @@ export function sourceZip(files) {
   return Buffer.concat([...local,directory,end]);
 }
 const items=[
+  {id:'downloads-phone',name:'Sormus Downloads',platform:'Android phone',kind:'APK',file:'downloads.apk',folder:'plugins/downloads-inbox/android',artifact:'sormus-downloads.apk',description:'Send files, magnets and torrent files to your paired PC Downloads folder.'},
   {id:'controller',name:'Controller',platform:'Android phone',kind:'APK',file:'controller.apk',folder:'plugins/sensors/android',artifact:'localserve-sensors.apk',description:'Lights, Tasks, remotes, Cards and optional phone reporting.'},
   {id:'vistas-tv',name:'Sormus Vistas',platform:'Samsung Tizen TV',kind:'Signed widget',file:'vistas.wgt',folder:'tv-tizen',description:'Install with the Tizen SDK and an authorized developer connection.'},
   {id:'vistas-source',name:'Vistas TV source',platform:'Samsung Tizen TV',kind:'Source ZIP',file:'vistas-source.zip',folder:'tv-tizen',description:'Build and sign with your own Tizen SDK and certificate.'},

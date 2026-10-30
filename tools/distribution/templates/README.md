@@ -32,6 +32,11 @@ global Node installation, AI subscription or cloud hosting is required. Provider
 plugins need their services and your own credentials. Android and TV components
 are optional.
 
+Tasks support a one-time **Calendar** date and time in the server PC’s system
+timezone, with minute precision and no missed-date replay. The Calendar plugin
+also offers local date/countdowns, remaining-time Events and a live Countdown
+Card without a subscription. See [Calendar](plugins/calendar/README.md).
+
 For remote phone reports and scene/Task shortcuts without exposing your PC,
 see the optional [Google Apps Script relay](GOOGLE-APPS-SCRIPT.md).
 
@@ -138,8 +143,9 @@ No server location or provider/device target is preconfigured.
 
 First start listens on localhost and chooses an available port; the tray opens
 the actual address. LAN access requires your explicit private address and an
-appropriate firewall rule. Sormus has no account login or HTTPS and is
-intended for trusted local networks. Do not expose it directly to the internet.
+appropriate firewall rule. Optional administrator sign-in is off by default;
+enable it in Settings if desired. Sormus has no built-in HTTPS and is intended
+for trusted local networks. Do not expose it directly to the internet.
 See [SECURITY.md](SECURITY.md).
 
 Private settings and runtime files are generated on your PC and excluded by
@@ -190,3 +196,14 @@ Open `/portal`, or Controls > The Daily, for source-linked headlines and daily i
 Your day uses the Cards selected in the enabled Vista with slug `today`: current weather, the next valid train, daylight, followed TV episodes and lighting status. Reception times and cached readings remain visible. It uses the display theme, text size and server time format. It never changes devices. Countdown labels update locally without moving headlines; when a departure has passed, refresh the edition for the next train.
 
 New highlights stories that were absent on your previous visit. Mark edition as seen clears the highlights. This is per browser and server address; a different browser starts a fresh edition. Only up to 500 hashed story identifiers and a visit time are stored locally, with no reading history sent to Sormus. Storage restrictions disable the indicator without hiding stories. Original articles open on their publishers? websites.
+
+## Themed TV decks
+
+Bundled plugins provide Sci-fi, Hacker, Rustic and LCARS ready-made Cards. In Vistas, **Create themed Vistas** adds five themed displays, including **Holographic Command**. They use local Three.js worlds with native instruments, console answers, signposts and LCARS controls rather than Card panels. Optional selected readings drive weather, wind, daylight and machinery; selected Task activity is scoped to each Vista. Full HD layouts show six sources together with richer selected tables and supporting readings. Motion controls, reduced-motion and Canvas2D fallbacks are included. See [Themed Cards and TV decks](THEMED-VISTAS.md) for setup, editing and playback.
+
+
+The five procedural worlds are orbital sci-fi, hacker data corridor, rustic valley, LCARS starship and holographic reactor. They use the locally bundled Three.js engine and selected public information, without additional provider polling.
+
+## Send files to this PC
+
+Use the **Downloads inbox** plugin and **Sormus Downloads** Android app for paired phone file shares and optional qBittorrent handoff. See [Phone files and torrents](FILE-DOWNLOADS.md).

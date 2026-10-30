@@ -21,7 +21,8 @@
   }
   root.LocalserveTvViewer = {
     state:function (value) { connected = value === true; report(); },
-    install:function (callback, controls) { step = callback;pause = controls && controls.pause || null; }
+    install:function (callback, controls) { step = callback;pause = controls && controls.pause || null; },
+    pause:function(mode){if(pause&&!document.hidden)pause(mode||'toggle');}
   };
   function remote(code) {
     if (!session || !parentFrame() || document.hidden) return false;

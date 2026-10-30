@@ -9,18 +9,7 @@ import { readyMadeCatalog, validateReadyMadeCard, readyMadeSelection } from './c
 import { solarOccurrence } from './rules.mjs';
 import {modeState} from './home-mode-contract.mjs';
 
-const commonFields = [
-  { id: 'plugin-name', label: 'Plugin name', type: 'string', icon: 'plug' },
-  { id: 'plugin-version', label: 'Plugin version', type: 'string', icon: 'code' },
-  { id: 'plugin-status', label: 'Plugin status', type: 'string', icon: 'circle-check' },
-  { id: 'plugin-health', label: 'Runtime health', type: 'string', icon: 'heart' },
-  { id: 'plugin-enabled', label: 'Plugin enabled', type: 'boolean', icon: 'toggle-on' },
-  { id: 'plugin-configured', label: 'Configuration complete', type: 'boolean', icon: 'sliders' },
-  { id: 'last-message', label: 'Latest log message', type: 'string', icon: 'comment' },
-  { id: 'last-log-level', label: 'Latest log level', type: 'string', icon: 'clipboard-list' },
-  { id: 'last-activity', label: 'Last activity time', type: 'timestamp', icon: 'clock' },
-  { id: 'recent-log', label: 'Recent log entries', type: 'log', icon: 'clipboard-list' },
-];
+import {commonFields} from './card-common.mjs';
 
 export function validateCardFields(values = [], events = [], settings = []) {
   if (!Array.isArray(values) || values.length > 64) throw new Error('cardFields must contain at most 64 public fields.');
@@ -145,7 +134,7 @@ export function cardCatalog(plugin, settings = {}) {
 export function cardFormats(type) {
   return {
     string: ['auto', 'text', 'link'], number: ['auto', 'number', 'text'],
-    boolean: ['auto', 'yes-no', 'text'], timestamp: ['auto', 'datetime', 'relative'],
+    boolean: ['auto', 'yes-no', 'text'], timestamp: ['auto', 'datetime', 'relative', 'countdown'],
     log: ['auto', 'log'], table: ['auto'],
   }[type] || ['auto'];
 }
@@ -186,7 +175,7 @@ export function validateCard(value, plugin, existing = null, settings = {}) {
     // Keep saved missing bindings editable; never invent a replacement value or
     // silently cascade-delete templates when a declaration stops advertising data.
     if (!source && !original) throw new HttpError(400, 'Choose information declared by this plugin.');
-    const formats = source ? cardFormats(source.type) : cardFormats('string').concat('number', 'yes-no', 'datetime', 'relative', 'log');
+    const formats = source ? cardFormats(source.type) : cardFormats('string').concat('number', 'yes-no', 'datetime', 'relative', 'countdown', 'log');
     if (typeof field.enabled !== 'boolean' || !['auto', 'none', ...glyphs].includes(field.icon)
       || !formats.includes(field.format) || !Number.isInteger(field.decimals) || field.decimals < 0 || field.decimals > 4) throw new HttpError(400, 'Choose valid card field formatting.');
     return { id: field.id, binding: field.binding, label: text(field.label, 'field label', 64, true),
@@ -344,13 +333,13 @@ export function projectCardData(plugin, record, paused = false, environment = {}
 /** Public Vista output includes only the requested table rows/columns. Reuse the
  * same binding boundary as scalar cards; hidden cells must not leak in the DTO.
  */
-export function selectedCardData(card, data, catalog) {
+export function selectedCardData(card, data, catalog, { sceneDetails = false } = {}) {
   const readyMade = readyMadeSelection(card, data.readyMade);
   const bindings = new Set(readyMade ? Object.values(readyMade.bindings || {}) : card.fields.filter(field => field.enabled).map(field => field.binding));
   const tableSelection = id => {
-    if (card.layout === 'table') return card.listOptions;
+    if (card.layout === 'table') return sceneDetails ? { ...card.listOptions, rows: Math.max(8, card.listOptions.rows) } : card.listOptions;
     const slot = readyMade?.template?.slots.find(slot => slot.type === 'table' && readyMade.bindings[slot.id] === id);
-    return slot ? { rows: slot.rows, columns: slot.columns.map(column => column.id) } : null;
+    return slot ? { rows: sceneDetails ? Math.max(8, slot.rows) : slot.rows, columns: slot.columns.map(column => column.id) } : null;
   };
   const selectedCatalog = catalog.filter(field => bindings.has(field.id)).map(field => {
     const selection = field.type === 'table' && tableSelection(field.id);

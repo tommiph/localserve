@@ -1,5 +1,8 @@
 /** The complete isolated suite is shared by local checks, clean-source verification and CI. */
 export const publicTests = Object.freeze([
+  "tests/themed-deck.test.mjs",
+  "tests/admin-access.test.mjs",
+  "tests/backups.test.mjs",
   "tests/home-map.test.mjs",
   "tests/home-map-http.test.mjs",
   "tests/today.test.mjs",
@@ -27,6 +30,9 @@ export const publicTests = Object.freeze([
   "tests/adsb-lol.test.mjs",
   "tests/backbone.test.mjs",
   "tests/calendar.test.mjs",
+  "tests/calendar-dates.test.mjs",
+  "tests/calendar-task-shortcut.test.mjs",
+  "tests/countdown-cards.test.mjs",
   "tests/card-design-library.test.mjs",
   "tests/card-templates.test.mjs",
   "tests/cards.test.mjs",
@@ -114,5 +120,10 @@ export const publicTests = Object.freeze([
   "tests/weather.test.mjs",
   "tests/webcam.test.mjs",
   "tests/webpage.test.mjs",
-  "tests/youtube.test.mjs"
+  "tests/youtube.test.mjs",
+  "tests/hacker-console.test.mjs",
+  "tests/vista-scenes.test.mjs",
+  "tests/vista-native.test.mjs",
+  "tests/download-transfers.test.mjs",
+  "tests/downloads-android.test.mjs"
 ]);

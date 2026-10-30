@@ -189,10 +189,7 @@ The default is localhost only. In Settings, choose this PC's explicit private
 IPv4 address and a fixed unused port, then restart Sormus. Use the new LAN URL
 shown by the administrator. Do not use a wildcard or public bind address.
 
-LAN mode exposes administration and enabled Controls to trusted network users;
-there is no account login. Treat this as access to both settings and configured
-device actions. Do not forward its port to the internet or expose it to untrusted
-networks. HTTP traffic is not encrypted. Keep API keys restricted where supported.
+LAN mode exposes published Controls and, while sign-in is off, administration to trusted network users. Enable optional administrator sign-in in Settings to protect private pages and APIs; published controls retain their own access rules. Do not forward the port to the internet or expose it to untrusted networks. HTTP traffic is not encrypted. Keep API keys restricted where supported. See [Administrator access](ADMIN-ACCESS.md).
 
 If Windows Firewall requires an exception, the included `tray/enable-lan.ps1`
 accepts your own matching local address, exact interface subnet and port. From

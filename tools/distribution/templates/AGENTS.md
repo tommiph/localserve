@@ -62,7 +62,8 @@ apply to this repository, including plugins, Android and optional TV source.
   catch-up or replay of uncertain effects. Preserve provider rate limits.
 - Preserve exact Host/Origin, administrator token, scoped Controls claims, private
   file restrictions and public-display projection. Workers execute trusted code,
-  not sandboxed plugins. LAN write tokens are not account authentication. Do not
+  not sandboxed plugins. Preserve optional administrator sign-in/session checks;
+  leave sign-in off until configured. LAN write tokens alone are not login. Do not
   expose Sormus to the internet as an implementation shortcut.
 - Cards/Vistas/Universe remain read-only. Never expose settings, secrets, arbitrary
   URLs/RPC or private data in display APIs. Keep iframe/CSP isolation.

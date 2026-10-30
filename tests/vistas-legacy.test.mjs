@@ -92,6 +92,11 @@ class FakeElement {
   setAttribute(name, value) { this.attributes[name] = String(value); }
   removeAttribute(name) { delete this.attributes[name]; }
   getAttribute(name) { return this.attributes[name] || (name === 'data-theme' ? 'dark' : null); }
+  querySelectorAll(selector) {
+    const attribute=/^\[([a-z-]+)\]$/.exec(selector)?.[1],found=[];
+    const visit=node=>{for(const child of node.children){if(attribute&&Object.hasOwn(child.attributes,attribute))found.push(child);visit(child);}};
+    visit(this);return found;
+  }
 }
 
 function runLegacy(payload, time = Date, manual = false) {
@@ -147,6 +152,15 @@ test('TV Vista font sizing scales fallback fonts without compounding on polls', 
   assert.equal(result.fontRule.style.fontSize, '16px');
   result.update(make(100));
   assert.equal(result.fontRule.style.fontSize, '20px');
+});
+
+test('ordinary TV countdown ticks retain its value node and freeze on disconnection',()=>{
+  let now=100000;class Clock extends Date {static now(){return now;}}
+  const entry={pluginId:'sample',cardId:'date',card:{id:'date',name:'Date',layout:'highlight',enabled:true,fields:[{id:'at',binding:'at',label:'Remaining',enabled:true,format:'countdown'}]},catalog:[{id:'at',type:'timestamp'}],data:{pluginName:'Calendar',status:'Ready',values:{at:{type:'timestamp',available:true,value:105000}}}};
+  const payload={vista:{id:'v',layout:{id:'slot',type:'card',enabled:true,width:'1fr',height:'1fr',cards:[{pluginId:'sample',cardId:'date'}]}},cards:[entry],options:{now,theme:'dark',fontScale:100}};
+  const result=runLegacy(payload,Clock),node=result.host.querySelectorAll('[data-countdown-at]')[0];assert.ok(node);assert.equal(node.textContent,'0d 00:00:05');
+  now+=1000;result.tick();assert.equal(result.host.querySelectorAll('[data-countdown-at]')[0],node);assert.equal(node.textContent,'0d 00:00:04');
+  result.disconnect();now+=10000;result.tick();assert.equal(node.textContent,'0d 00:00:04');
 });
 
 test('TV remote steps each collection, wraps and restarts its interval without editing the layout',()=>{
@@ -291,7 +305,7 @@ test('new Cards hydrate real declared scalar/table slots and retain frames on di
       createElement:tag=>new FakeElement(tag)};
     frame.onload();
     assert.equal(frame.contentDocument.head.children.length,1);
-    assert.equal(frame.contentDocument.head.firstChild.href,'/assets/vista-legacy-ready.css?v=21');
+    assert.equal(frame.contentDocument.head.firstChild.href,'/assets/vista-legacy-ready.css?v=22');
     assert.equal(frame.contentDocument.documentElement.getAttribute('data-legacy-template'),entries[i].card.templateId);
     assert.ok(tables[0].textContent.includes('<b>literal</b>'),entries[i].pluginId+' should hydrate its declared text cells');
     if(entries[i].data.readyMade.template.slots.some(slot=>slot.type==='number')) {

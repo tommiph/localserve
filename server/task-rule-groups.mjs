@@ -1,6 +1,6 @@
 /** AND retains comparison results, never Event payloads. Clock occurrences
  * must fall due together; a blocked occurrence cannot be replayed later. */
-import {eventConditionMatches, solarOccurrence} from './rules.mjs';
+import {eventConditionMatches, solarOccurrence, calendarDue} from './rules.mjs';
 export const isAndTask = task => task.ruleMode === 'and';
 export const groupSignature = task => JSON.stringify(task.starts.filter(rule=>rule.enabled)
   .map(({name,nameEdited,...rule})=>rule).sort((a,b)=>a.id.localeCompare(b.id)));
@@ -103,11 +103,11 @@ export class AndRuleGroups {
           const clock=state.ruleClocks?.[key];
           return {rule,key,clock,due:Boolean(clock && !clock.completed && clock.nextAt<=now)};
         }
-        const occurrence=rule.type==='schedule'?null:solarOccurrence(date,rule,location);
+        const occurrence=['schedule','calendar'].includes(rule.type)?null:solarOccurrence(date,rule,location);
         const at=occurrence===null?null:new Date(occurrence);
-        const time=rule.type==='schedule'?rule.time:at?`${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`:null;
+        const time=['schedule','calendar'].includes(rule.type)?rule.time:at?`${String(at.getHours()).padStart(2,'0')}:${String(at.getMinutes()).padStart(2,'0')}`:null;
         const claim=`${key}/${minute.date}/${minute.time}/${zone}`;
-        return {rule,claim,due:time===minute.time && rule.days.includes(date.getDay()) && !state.claims.includes(claim)};
+        return {rule,claim,due:time===minute.time && (rule.type==='calendar'?calendarDue(rule,date):rule.days.includes(date.getDay())) && !state.claims.includes(claim)};
       });
       if(!due.some(item=>item.due))return;
       const claimed=await this.engine.state.update(state=>{

@@ -18,9 +18,9 @@ async function fixture(t){
   t.after(async()=>{assert.equal(path.dirname(root),base);await fs.rm(root,{recursive:true,force:true});});
   return {root,write,apk};
 }
-test('catalogue lists one phone app, separates headset/source files and omits private metadata',async t=>{
+test('catalogue lists separate Controller and Downloads phone apps, separates headset/source files and omits private metadata',async t=>{
   const f=await fixture(t),items=await downloadCatalogue(f.root);
-  assert.equal(items.filter(item=>item.platform==='Android phone').length,1);
+  assert.equal(items.filter(item=>item.platform==='Android phone').length,2);
   const controller=items.find(item=>item.id==='controller');assert.equal(controller.version,'2.3.4');assert.equal(controller.available,true);
   assert.equal(items.find(item=>item.id==='oculus-go').available,false);
   assert.doesNotMatch(JSON.stringify(items),/DO NOT EXPOSE|verification.json|\/data\//);
@@ -46,7 +46,7 @@ test('download routes preserve HEAD semantics, attachment identity and missing-f
   const head=await fetch(url,{method:'HEAD'});assert.equal(head.status,200);assert.equal(head.headers.get('content-length'),String(f.apk.length));assert.equal((await head.arrayBuffer()).byteLength,0);
   assert.equal((await fetch(url+'?file=config.json')).status,400);
   assert.equal((await fetch(url,{method:'POST'})).status,405);
-  const index=await fetch(app.origin+'/api/downloads').then(response=>response.json());assert.equal(index.items.length,9);
+  const index=await fetch(app.origin+'/api/downloads').then(response=>response.json());assert.equal(index.items.length,10);
   assert.equal(index.items.find(item=>item.id==='launcher-tv').available,false);
   assert.equal(index.items.find(item=>item.id==='launcher-source').platform,'Samsung Tizen TV');
   const legacy=await fetch(app.origin+'/sensors',{redirect:'manual'});assert.equal(legacy.status,307);assert.equal(legacy.headers.get('location'),'/downloads');

@@ -1,10 +1,12 @@
 # Security and private data
 
-Sormus is for a trusted local PC/private LAN. It has no account authentication
-or built-in HTTPS. Administrator/Controls tokens and Host/Origin checks protect
-requests, not user login. Do not forward its port to the internet, publish an
-unauthenticated tunnel or use an untrusted network. Maintain Windows, the browser
-and dependencies.
+Sormus is for a trusted local PC/private LAN. Optional administrator password
+sign-in is off by default; enable it in Settings when desired. Administrator
+sessions protect private APIs independently of existing display/native
+capabilities and Host/Origin/write-token checks. It has no built-in HTTPS:
+sign-in does not encrypt traffic or protect published local controls. Do not
+forward its port to the internet, publish a tunnel or use an untrusted network.
+Maintain Windows, the browser and dependencies. See [Administrator access](ADMIN-ACCESS.md).
 
 Plugins are trusted executable code; worker supervision is not a sandbox. Review
 plugin source before installation. Some actions control real devices. Read-only

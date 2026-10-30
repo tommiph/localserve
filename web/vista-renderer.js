@@ -175,8 +175,9 @@ const VistaRenderer = (() => {
     let controller=null,kind=null,paused=false;
     return {
       update(view){
-        const next=view.vista.layout.enabled&&view.vista.presentation?.type==='today'?'today':'standard';
-        if(!controller||next!==kind){controller?.destroy();host.replaceChildren();kind=next;controller=next==='today'?TodayRenderer.create(host):createStandard(host);controller.pause(paused);}
+        const type=view.vista.layout.enabled&&view.vista.presentation?.type;
+        const next=type==='deck'&&typeof VistaDeckRenderer!=='undefined'?'deck':type==='today'?'today':'standard';
+        if(!controller||next!==kind){controller?.destroy();host.replaceChildren();kind=next;controller=next==='deck'?VistaDeckRenderer.create(host):next==='today'?TodayRenderer.create(host):createStandard(host);controller.pause(paused);}
         controller.update(view);
       },
       step(direction){return controller?.step(direction)||false;},

@@ -16,7 +16,7 @@ export function assertPublicPath(file,{seeds=false}={}) {
     ||/^tray\/(?:LocalserveTray\.next\.exe|build-result\.json)$/.test(file)
     ||/^tray\/\.build\//.test(file)
     ||file.startsWith('tools/android-build/')&&!['tools/android-build/prepare.ps1','tools/android-build/README.md','tools/android-build/source-receipt.mjs'].includes(file)
-    ||/^plugins\/sensors\/android\/build\//.test(file)
+    ||/^plugins\/(?:sensors|downloads-inbox)\/android\/build\//.test(file)
     ||/^apps\/scenes\/build\//.test(file)
     ||/^plugins\/oculus-go\/android\/build\//.test(file)
     ||/^tools\/oculus-build\//.test(file)&&!['tools/oculus-build/prepare.ps1','tools/oculus-build/README.md'].includes(file)

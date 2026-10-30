@@ -283,11 +283,28 @@ best score is stored locally. See [Games](GAMES.md) for setup and controls.
 
 ## Updates and backups
 
+**Settings → Backup and restore** creates encrypted local configuration and
+credential snapshots, previews changes and stages a restore for a normal tray
+restart. Restored Tasks/plugins are disabled and the server stays paused for
+review. Configure pre-update retention in Backup options. Keep a separate copy
+of the whole `data/backups` folder; its key needs this Windows account/computer.
+Application/media libraries, plugin cached history and runtime receipts are
+excluded. See [Backup and restore](BACKUPS.md).
+
 Stop this installation before replacing application files. Keep a secure backup
 of your own private settings/data; Windows DPAPI stores are account-bound.
 Extract updates separately and review compatibility before transferring private
 data. Never upload a backup or configured folder to GitHub. Ignore rules are
 a safeguard, not a substitute for reviewing commits.
+
+## Optional administrator access
+
+Optional local administrator sign-in is off by default. Use **Settings →
+Administrator access** to enable it, change the password, review/name/revoke
+browser sessions, sign out or turn it off. Published displays and scoped
+remotes keep their access; native phone/headset approvals are separate. Sessions
+expire after twelve hours. Configuration restores retain current sign-in.
+See [Administrator access](ADMIN-ACCESS.md) for local recovery and HTTP limits.
 
 ## Reconnect a TV or Oculus Go
 
@@ -472,3 +489,14 @@ In Sormus Launcher, personalization → **App artwork** switches between widescr
 icons and glyphs; **App tiles: Artwork only** fills app buttons without labels.
 Icon mode uses the TV’s own Smart Hub artwork when accessible. Connection settings opens the TV keyboard with OK on a field;
 Done or Return finishes editing before Save and connect.
+
+## Themed TV decks
+
+Bundled plugins provide Sci-fi, Hacker, Rustic and LCARS ready-made Cards. In Vistas, **Create themed Vistas** adds five themed displays, including **Holographic Command**. They use local Three.js worlds with native instruments, console answers, signposts and LCARS controls rather than Card panels. Optional selected readings drive weather, wind, daylight and machinery; selected Task activity is scoped to each Vista. Full HD layouts show six sources together with richer selected tables and supporting readings. Motion controls, reduced-motion and Canvas2D fallbacks are included. See [Themed Cards and TV decks](THEMED-VISTAS.md) for setup, editing and playback.
+
+
+The five procedural worlds are orbital sci-fi, hacker data corridor, rustic valley, LCARS starship and holographic reactor. They use the locally bundled Three.js engine and selected public information, without additional provider polling.
+
+## Send files to this PC
+
+Use the **Downloads inbox** plugin and **Sormus Downloads** Android app for paired phone file shares and optional qBittorrent handoff. See [Phone files and torrents](FILE-DOWNLOADS.md).

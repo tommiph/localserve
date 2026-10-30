@@ -27,3 +27,7 @@ Starter classifications and short recommendations are Sormus editorial content. 
 Optional live data is supplied by [TMDB](https://www.themoviedb.org). This product uses the TMDB API but is not endorsed or certified by TMDB. Its approved logo is bundled unchanged. Noncommercial API use requires attribution; commercial use requires an agreement with TMDB. Read the [TMDB API terms](https://www.themoviedb.org/api-terms-of-use).
 
 Configuration, watchlist/history, searches and cached metadata are private installation data, excluded from source distributions. No Movies Task, playback action or notification is created automatically.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

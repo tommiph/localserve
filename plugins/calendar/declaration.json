@@ -3,9 +3,9 @@
   "apiVersion": 1,
   "id": "calendar",
   "name": "Calendar",
-  "version": "1.1.1",
+  "version": "1.3.1",
   "icon": "calendar",
-  "description": "Subscribed calendars, agendas and Task reminders",
+  "description": "Subscribed calendars, local dates, countdowns and Task reminders",
   "defaultCardLayout": "table",
   "runtime": {
     "entry": "server/index.mjs",
@@ -66,7 +66,7 @@
     },
     {
       "id": "calendars",
-      "label": "Calendars",
+      "label": "Calendars and dates",
       "type": "list",
       "itemLabel": "calendar",
       "maxItems": 20,
@@ -75,7 +75,7 @@
         "id",
         "name"
       ],
-      "help": "Add a complete HTTPS or webcal subscription URL. Subscription links can grant access to private events; they remain private settings. Calendars are read-only.",
+      "help": "Choose a read-only subscription or a local date/countdown. Local dates need no subscription or account. All local times use the server’s system timezone.",
       "fields": [
         {
           "id": "id",
@@ -93,13 +93,44 @@
           "maxLength": 32
         },
         {
+          "id": "source-type",
+          "label": "Source",
+          "type": "string",
+          "default": "subscription",
+          "enum": [
+            "subscription",
+            "date"
+          ],
+          "enumLabels": [
+            "Calendar subscription",
+            "Local date / countdown"
+          ]
+        },
+        {
           "id": "url",
           "label": "Subscription URL",
           "type": "string",
-          "required": true,
           "format": "secret",
           "maxLength": 2000,
           "help": "Complete public HTTPS feed address. webcal links use HTTPS. No sign-in, redirects, attachments or linked pages are opened."
+        },
+        {
+          "id": "target-date",
+          "label": "Target date",
+          "type": "string",
+          "format": "date",
+          "maxLength": 10,
+          "default": "",
+          "help": "Server local date, 1970–9999. A missing daylight-saving minute is rejected."
+        },
+        {
+          "id": "target-time",
+          "label": "Target time",
+          "type": "string",
+          "format": "time",
+          "maxLength": 5,
+          "default": "",
+          "help": "Server local time, to the minute. Date reached emits on the next active check; missed checks do not replay."
         },
         {
           "id": "reminder-minutes",
@@ -249,6 +280,126 @@
       "source": {
         "kind": "state",
         "key": "next-all-day"
+      }
+    },
+    {
+      "id": "source-kind",
+      "label": "Source kind",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "source-kind"
+      }
+    },
+    {
+      "id": "target-name",
+      "label": "Countdown name",
+      "type": "string",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "target-name"
+      }
+    },
+    {
+      "id": "target-at",
+      "label": "Countdown target",
+      "type": "timestamp",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "target-at"
+      }
+    },
+    {
+      "id": "remaining-seconds",
+      "label": "Total seconds remaining",
+      "type": "number",
+      "icon": "hourglass-half",
+      "source": {
+        "kind": "state",
+        "key": "remaining-seconds"
+      }
+    },
+    {
+      "id": "remaining-minutes",
+      "label": "Total minutes remaining",
+      "type": "number",
+      "icon": "hourglass-half",
+      "source": {
+        "kind": "state",
+        "key": "remaining-minutes"
+      }
+    },
+    {
+      "id": "remaining-hours",
+      "label": "Total hours remaining",
+      "type": "number",
+      "icon": "hourglass-half",
+      "source": {
+        "kind": "state",
+        "key": "remaining-hours"
+      }
+    },
+    {
+      "id": "remaining-days",
+      "label": "Total days remaining",
+      "type": "number",
+      "icon": "hourglass-half",
+      "source": {
+        "kind": "state",
+        "key": "remaining-days"
+      }
+    },
+    {
+      "id": "days",
+      "label": "Countdown days component",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "days"
+      }
+    },
+    {
+      "id": "hours",
+      "label": "Countdown hours component",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "hours"
+      }
+    },
+    {
+      "id": "minutes",
+      "label": "Countdown minutes component",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "minutes"
+      }
+    },
+    {
+      "id": "seconds",
+      "label": "Countdown seconds component",
+      "type": "number",
+      "icon": "clock",
+      "source": {
+        "kind": "state",
+        "key": "seconds"
+      }
+    },
+    {
+      "id": "reached",
+      "label": "Date reached",
+      "type": "boolean",
+      "icon": "calendar",
+      "source": {
+        "kind": "state",
+        "key": "reached"
       }
     },
     {
@@ -627,7 +778,7 @@
     {
       "id": "refresh",
       "name": "Check calendar",
-      "description": "Check cached reminders and refresh the selected feed when its refresh interval allows.",
+      "description": "Calculate a local countdown, or check cached reminders and refresh the selected feed when its refresh interval allows.",
       "parameters": [
         {
           "id": "calendar-id",
@@ -895,6 +1046,214 @@
           "required": true
         }
       ]
+    },
+    {
+      "id": "countdown-updated",
+      "name": "Countdown updated",
+      "testAction": "refresh",
+      "description": "Remaining time from the latest successful local date check. Numeric totals round positive fractions up; components are days plus hours/minutes/seconds. Cards tick locally between checks.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "target",
+          "label": "Target timestamp",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000000
+        },
+        {
+          "id": "remaining-seconds",
+          "label": "remaining seconds",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-minutes",
+          "label": "remaining minutes",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-hours",
+          "label": "remaining hours",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-days",
+          "label": "remaining days",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "days",
+          "label": "days",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "hours",
+          "label": "hours",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "minutes",
+          "label": "minutes",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "seconds",
+          "label": "seconds",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "reached",
+          "label": "Date reached",
+          "type": "boolean",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "date-reached",
+      "name": "Date reached",
+      "testAction": "refresh",
+      "occurrenceKey": "occurrence-id",
+      "description": "A local target crossed during active checks. The claim commits before dispatch; first checks, restarts and missed dates do not replay.",
+      "payload": [
+        {
+          "id": "calendar-id",
+          "label": "Calendar",
+          "type": "string",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "id": "calendar-name",
+          "label": "Calendar name",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "id": "target",
+          "label": "Target timestamp",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000000
+        },
+        {
+          "id": "remaining-seconds",
+          "label": "remaining seconds",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-minutes",
+          "label": "remaining minutes",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-hours",
+          "label": "remaining hours",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "remaining-days",
+          "label": "remaining days",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "days",
+          "label": "days",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "hours",
+          "label": "hours",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "minutes",
+          "label": "minutes",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "seconds",
+          "label": "seconds",
+          "type": "number",
+          "required": true,
+          "min": 0,
+          "max": 8640000000000
+        },
+        {
+          "id": "reached",
+          "label": "Date reached",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "id": "occurrence-id",
+          "label": "Occurrence",
+          "type": "string",
+          "required": true,
+          "maxLength": 100
+        }
+      ]
     }
   ],
   "cardTemplates": [
@@ -1026,6 +1385,232 @@
           "id": "agenda-limited",
           "field": "agenda-limited",
           "format": "text"
+        }
+      ]
+    },
+    {
+      "id": "countdown",
+      "name": "Countdown",
+      "sourceLabel": "Local date",
+      "directory": "cards/countdown",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "name",
+          "field": "target-name",
+          "format": "text"
+        },
+        {
+          "id": "remaining",
+          "field": "target-at",
+          "format": "countdown"
+        },
+        {
+          "id": "target",
+          "field": "target-at",
+          "format": "datetime"
+        },
+        {
+          "id": "status",
+          "field": "poll-status",
+          "format": "text"
+        },
+        {
+          "id": "checked",
+          "field": "checked-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "event-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "next-title"
+        },
+        {
+          "id": "metric-2",
+          "field": "target-at",
+          "format": "countdown"
+        },
+        {
+          "id": "metric-3",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "agenda",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "start"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "event-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "next-title"
+        },
+        {
+          "id": "metric-2",
+          "field": "target-at",
+          "format": "countdown"
+        },
+        {
+          "id": "metric-3",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "agenda",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "start"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "event-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "next-title"
+        },
+        {
+          "id": "metric-2",
+          "field": "target-at",
+          "format": "countdown"
+        },
+        {
+          "id": "metric-3",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "agenda",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "start"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "event-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "next-title"
+        },
+        {
+          "id": "metric-2",
+          "field": "target-at",
+          "format": "countdown"
+        },
+        {
+          "id": "metric-3",
+          "field": "next-start",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "agenda",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "title",
+            "start"
+          ]
         }
       ]
     }

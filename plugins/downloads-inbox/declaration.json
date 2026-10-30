@@ -1,0 +1,254 @@
+{
+  "schemaVersion": 1,
+  "apiVersion": 1,
+  "id": "downloads-inbox",
+  "name": "Downloads inbox",
+  "version": "1.1.0",
+  "icon": "download",
+  "description": "Receive phone files and send torrents to this PC's qBittorrent client",
+  "runtime": {
+    "entry": "server/index.mjs"
+  },
+  "settings": [
+    {
+      "id": "folder",
+      "label": "Downloads folder",
+      "type": "string",
+      "default": "",
+      "maxLength": 1000,
+      "help": "Blank uses this Windows account's Downloads folder. An absolute folder can be selected instead."
+    },
+    {
+      "id": "max-file-mib",
+      "label": "Maximum uploaded file (MiB)",
+      "type": "number",
+      "default": 512,
+      "min": 1,
+      "max": 4096
+    },
+    {
+      "id": "torrents-enabled",
+      "label": "Download torrent contents with qBittorrent",
+      "type": "boolean",
+      "default": false,
+      "help": "Explicitly submitted magnets and torrent files are handed to the installed PC client. Sormus does not report torrent completion."
+    },
+    {
+      "id": "torrent-location",
+      "label": "Torrent content location",
+      "type": "string",
+      "default": "downloads",
+      "enum": [
+        "downloads",
+        "qbittorrent"
+      ],
+      "enumLabels": [
+        "Use the Downloads inbox folder",
+        "Let qBittorrent choose"
+      ],
+      "help": "Let qBittorrent choose uses its own save location and Add Torrent dialog preference. Ordinary uploads and received .torrent files still use the Downloads inbox folder."
+    },
+    {
+      "id": "qbittorrent-path",
+      "label": "qBittorrent executable",
+      "type": "string",
+      "default": "",
+      "maxLength": 1000,
+      "help": "Blank detects the standard Windows installation. No Web UI password is needed."
+    }
+  ],
+  "actions": [],
+  "events": [],
+  "cardFields": [
+    {
+      "id": "received-count",
+      "label": "Files received",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "received-count"
+      }
+    },
+    {
+      "id": "torrent-count",
+      "label": "Torrents handed off",
+      "type": "number",
+      "source": {
+        "kind": "state",
+        "key": "torrent-count"
+      }
+    },
+    {
+      "id": "last-file",
+      "label": "Last received filename",
+      "type": "string",
+      "source": {
+        "kind": "state",
+        "key": "last-file"
+      }
+    },
+    {
+      "id": "last-transfer-at",
+      "label": "Last transfer",
+      "type": "timestamp",
+      "source": {
+        "kind": "state",
+        "key": "last-transfer-at"
+      }
+    }
+  ],
+  "cardTemplates": [
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "received-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "last-file"
+        },
+        {
+          "id": "metric-2",
+          "field": "torrent-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "received-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "last-file"
+        },
+        {
+          "id": "metric-2",
+          "field": "torrent-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "received-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "last-file"
+        },
+        {
+          "id": "metric-2",
+          "field": "torrent-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "received-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "last-file"
+        },
+        {
+          "id": "metric-2",
+          "field": "torrent-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        },
+        {
+          "id": "stamp",
+          "field": "last-transfer-at",
+          "format": "datetime"
+        }
+      ]
+    }
+  ]
+}

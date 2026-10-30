@@ -3,12 +3,14 @@
 import { createHash } from 'node:crypto';
 import { subscriptionUrl, readSubscription } from './http.mjs';
 import { expandCalendar } from './parse.mjs';
+import {localTarget, refreshDate} from './dates.mjs';
 
 const digest = value => createHash('sha256').update(value).digest('hex');
 export function configuration(settings) {
   if (!settings || ![1,2,5].includes(settings['poll-minutes']) || ![5,15,30,60].includes(settings['feed-minutes'])
     || !Array.isArray(settings.calendars) || settings.calendars.length > 20) return null;
-  if (settings.calendars.some(item => !subscriptionUrl(item.url) || !Number.isInteger(item['reminder-minutes'])
+  if (settings.calendars.some(item => item['source-type'] !== undefined && !['subscription','date'].includes(item['source-type'])
+    || (item['source-type'] === 'date' ? localTarget(item) === null : !subscriptionUrl(item.url)) || !Number.isInteger(item['reminder-minutes'])
     || item['reminder-minutes'] < 0 || item['reminder-minutes'] > 1440)) return null;
   const calendars = settings.calendars.filter(item => item.enabled);
   return calendars.length ? {calendars,ids:new Set(settings.calendars.map(item => item.id)),tick:settings['poll-minutes'],feed:settings['feed-minutes']} : null;
@@ -33,7 +35,7 @@ export function createCalendarAdapter({ read = readSubscription, expand = expand
     validateConfiguration(settings) { return configuration(settings) !== null; },
     async start(settings) {
       configured = configuration(settings);
-      if (!configured) throw new Error('Add and enable a valid calendar subscription.');
+      if (!configured) throw new Error('Add and enable a valid calendar subscription or local date.');
       startedAt = now();
     },
     async stop() { configured = null; },
@@ -44,15 +46,17 @@ export function createCalendarAdapter({ read = readSubscription, expand = expand
       if (!calendar) throw new Error('Choose an enabled calendar.');
       const state = await context.readState();
       state.calendars = Object.fromEntries(Object.entries(state.calendars || {}).filter(([id]) => configured.ids.has(id)));
-      const identity = digest(`${subscriptionUrl(calendar.url)}\n${calendar['reminder-minutes']}`);
+      const target = calendar['source-type'] === 'date' ? localTarget(calendar) : null;
+      const identity = digest(target === null ? `${subscriptionUrl(calendar.url)}\n${calendar['reminder-minutes']}` : `date\n${target}`);
       const old = state.calendars[calendar.id];
       const previous = old?.identity === identity ? old : {identity,claims:[]};
       if (state.sequence !== undefined && (!Number.isSafeInteger(state.sequence) || state.sequence < 0)
         || !Array.isArray(previous.claims) || previous.claims.length > 128
-        || previous.claims.some(claim => !/^[a-f\d]{64}$/.test(claim.id) || !Number.isFinite(claim.at))) {
+        || previous.claims.some(claim => (target === null ? !/^[a-f\d]{64}$/.test(claim.id) : claim.id !== 'date-reached') || !Number.isFinite(claim.at))) {
         throw new Error('Calendar saved occurrence claims are invalid; original state retained.');
       }
       state.calendars[calendar.id] = previous;
+      if (target !== null) return refreshDate({source:calendar, target, previous, state, current:now(), startedAt, tick:configured.tick, context});
       const fetched = !Array.isArray(previous.occurrences) || now() >= (previous.nextFetchAt || 0);
       if (fetched) {
         if (now() < (state.nextRequestAt || 0)) {

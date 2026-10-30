@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "tradfri",
   "name": "TRÅDFRI",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "Legacy IKEA gateway lights, groups and lighting controls",
   "icon": "lightbulb",
   "runtime": {
@@ -2948,6 +2948,194 @@
           ]
         }
       }
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "light-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "lights-summary"
+        },
+        {
+          "id": "metric-3",
+          "field": "connection-status"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "lights",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "room"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "light-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "lights-summary"
+        },
+        {
+          "id": "metric-3",
+          "field": "connection-status"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "lights",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "room"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "light-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "lights-summary"
+        },
+        {
+          "id": "metric-3",
+          "field": "connection-status"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "lights",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "room"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "lights-on",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-1",
+          "field": "light-count",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-2",
+          "field": "lights-summary"
+        },
+        {
+          "id": "metric-3",
+          "field": "connection-status"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "lights",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "room"
+          ]
+        }
+      ]
     }
   ]
 }

@@ -3,7 +3,7 @@
   "apiVersion": 1,
   "id": "playstation",
   "name": "PlayStation",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "PSN presence, active game, playtime and trophies",
   "icon": "gamepad",
   "runtime": {
@@ -1940,6 +1940,186 @@
           ]
         }
       }
+    },
+    {
+      "id": "theme-sci-fi",
+      "name": "Sci-fi console",
+      "directory": "cards/theme-sci-fi",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "active-game-display"
+        },
+        {
+          "id": "metric-1",
+          "field": "online-status"
+        },
+        {
+          "id": "metric-2",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "platform"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "games",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "platform"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-hacker",
+      "name": "Hacker terminal",
+      "directory": "cards/theme-hacker",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "active-game-display"
+        },
+        {
+          "id": "metric-1",
+          "field": "online-status"
+        },
+        {
+          "id": "metric-2",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "platform"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "games",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "platform"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-rustic",
+      "name": "Rustic almanac",
+      "directory": "cards/theme-rustic",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "active-game-display"
+        },
+        {
+          "id": "metric-1",
+          "field": "online-status"
+        },
+        {
+          "id": "metric-2",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "platform"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "games",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "platform"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "theme-lcars",
+      "name": "LCARS display",
+      "directory": "cards/theme-lcars",
+      "entry": "card.html",
+      "assets": [
+        "card.html",
+        "card.css"
+      ],
+      "slots": [
+        {
+          "id": "hero",
+          "field": "active-game-display"
+        },
+        {
+          "id": "metric-1",
+          "field": "online-status"
+        },
+        {
+          "id": "metric-2",
+          "field": "active-play-hours",
+          "format": "number",
+          "decimals": 0
+        },
+        {
+          "id": "metric-3",
+          "field": "platform"
+        },
+        {
+          "id": "stamp",
+          "field": "received-at",
+          "format": "datetime"
+        },
+        {
+          "id": "items",
+          "field": "games",
+          "format": "table",
+          "rows": 3,
+          "columns": [
+            "name",
+            "platform"
+          ]
+        }
+      ]
     }
   ]
 }

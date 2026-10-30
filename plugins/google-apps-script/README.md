@@ -24,3 +24,7 @@ Events. There is no ready-made Card for this transport plugin.
 
 Private profiles, Google configuration, phone readings and receipt stores are
 not included in distributable source. Never publish exported JSON or real keys.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

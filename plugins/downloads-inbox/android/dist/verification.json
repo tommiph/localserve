@@ -1,0 +1,21 @@
+{
+  "packageName": "org.sormus.downloads",
+  "name": "Sormus Downloads",
+  "version": "1.1.0",
+  "versionCode": 2,
+  "size": 29150,
+  "sha256": "c8ae4da44e16ccc29e015fcad3df69d71557fde09b5ba1a6d7e555bd1135d662",
+  "minSdk": 26,
+  "targetSdk": 35,
+  "unconfigured": true,
+  "signatureVerified": true,
+  "certificateSha256": "d5637cdeea8f625bc46ab31c18458492a8a939649a8085258f8b2c85f2994c49",
+  "sameSignerAsPrevious": true,
+  "sourceReceipt": {
+    "algorithm": "sha256",
+    "files": 12,
+    "digest": "e7f450f025d6791199e5ea70003c3cb92d0fa4f559183e56605b016e14dce3a3"
+  },
+  "protocolTests": "Phone address and link boundaries passed.",
+  "inboxTests": "Received transfer FIFO, capacity, duplicate/cancel guards and launcher separation passed."
+}

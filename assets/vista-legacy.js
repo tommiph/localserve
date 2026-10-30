@@ -10,6 +10,7 @@
   var slug = segments[segments.length - 1];
   var payload = null;
   var todayController = null;
+  var deckController = null;
   var selections = {};
   var layoutSignature = '';
   var views = {};
@@ -87,11 +88,18 @@
     return null;
   }
 
+  function countdown(value, now) {
+    var seconds = Math.max(0, Math.ceil((value - now) / 1000));
+    function two(n) { return n < 10 ? '0' + n : String(n); }
+    return Math.floor(seconds / 86400) + 'd ' + two(Math.floor(seconds % 86400 / 3600)) + ':' + two(Math.floor(seconds % 3600 / 60)) + ':' + two(seconds % 60);
+  }
+
   function formatted(value, type, field) {
     if (value === null || value === undefined) return 'No data';
     if (type === 'boolean') return value ? 'Yes' : 'No';
     if (type === 'number' && field && field.format === 'duration') return readyCell(field,value).value;
     if (type === 'timestamp') {
+      if (field && field.format === 'countdown') return countdown(value, payload && payload.options && payload.options.now || Date.now());
       var date = new Date(value);
       if (isNaN(date.getTime())) return 'No data';
       if (field && field.format === 'date') return date.toLocaleDateString();
@@ -374,8 +382,13 @@
       } else {
         var line = element('div', 'legacy-field');
         line.appendChild(element('div', 'legacy-field-label', field.label || (source && source.label) || 'Reading'));
-        line.appendChild(element('div', 'legacy-field-value', datum && datum.available
-          ? formatted(datum.value, datum.type, field) : source ? 'No data' : 'Unavailable field'));
+        var valueNode = element('div', 'legacy-field-value', datum && datum.available
+          ? formatted(datum.value, datum.type, field) : source ? 'No data' : 'Unavailable field');
+        if (datum && datum.available && datum.type === 'timestamp' && field.format === 'countdown') {
+          valueNode.setAttribute('data-countdown-at', String(datum.value));
+          valueNode.setAttribute('data-countdown-format', 'countdown');
+        }
+        line.appendChild(valueNode);
         body.appendChild(line);
       }
     }
@@ -429,7 +442,7 @@
         if (frame._legacyStyledDocument !== doc) {
           var link = doc.createElement('link');
           link.rel = 'stylesheet';
-          link.href = '/assets/vista-legacy-ready.css?v=21';
+          link.href = '/assets/vista-legacy-ready.css?v=22';
           link.onload = function () {
             applyVistaFontSize(doc);
             if (frame._legacyOnReady) {
@@ -476,7 +489,7 @@
             var value = 'No data';
             if (known) {
               value = definition.type === 'timestamp'
-                ? definition.format === 'minutes-until'
+                ? definition.format === 'countdown' ? countdown(reading.value, payload && payload.options && payload.options.now || Date.now()) : definition.format === 'minutes-until'
                   ? Math.max(0, Math.ceil((reading.value - (payload && payload.options && payload.options.now || Date.now())) / 60000)) + ' min'
                   : definition.format === 'time' ? clockTime(reading.value) : tableTime(reading.value)
                 : definition.format === 'number' ? readyNumber(reading.value, definition.decimals)
@@ -484,7 +497,7 @@
                 : String(reading.value);
             }
             slots[definition.id] = { value: value, raw: known ? reading.value : null, available: Boolean(known),
-              deadline: known && definition.format === 'minutes-until' ? reading.value : null };
+              deadline: known && (definition.format === 'minutes-until' || definition.format === 'countdown') ? reading.value : null, countdownFormat:definition.format };
           }
         }
         var variant = template.variant;
@@ -501,6 +514,8 @@
         }
         doc.documentElement.setAttribute('data-variant', variantValue);
         doc.documentElement.setAttribute('data-connected', String(connected));
+        doc.documentElement.setAttribute('data-paused', String(rotationPaused || document.hidden || frame._deckOptions&&frame._deckOptions.paused));
+        doc.documentElement.setAttribute('data-motion', frame._deckOptions&&frame._deckOptions.motion||'full');
         var nodes = doc.querySelectorAll('[data-card-text]');
         for (var i = 0; i < nodes.length; i += 1) {
           var id = nodes[i].getAttribute('data-card-text');
@@ -516,6 +531,8 @@
           nodes[i].setAttribute('data-available', String(id === 'source-name' || id === 'source-status' || Boolean(slots[id] && slots[id].available)));
           if (slots[id] && slots[id].deadline) nodes[i].setAttribute('data-countdown-at', String(slots[id].deadline));
           else nodes[i].removeAttribute('data-countdown-at');
+          if (slots[id] && slots[id].countdownFormat) nodes[i].setAttribute('data-countdown-format', slots[id].countdownFormat);
+          else nodes[i].removeAttribute('data-countdown-format');
         }
         var colors = doc.querySelectorAll('[data-card-color]');
         for (var ci = 0; ci < colors.length; ci += 1) {
@@ -697,6 +714,16 @@
 
   function draw() {
     if (!payload) return;
+    if(payload.vista&&payload.vista.layout.enabled&&payload.vista.presentation&&payload.vista.presentation.type==='deck'&&window.VistaDeckRenderer){
+      if(todayController){todayController.destroy();todayController=null;}
+      if(!deckController){views={};selections={};clear(host);deckController=VistaDeckRenderer.create(host,{legacy:true,mount:function(box,entry,options){
+        var frame=box.querySelector('iframe');
+        if(frame&&frame._legacyEntry&&entry.card.layout==='readymade'&&frame._legacyEntry.card.templateId===entry.card.templateId&&frame._legacyEntry.pluginId===entry.pluginId){frame._legacyEntry=entry;frame._deckOptions=options;hydrateReadyFrame(frame);return;}
+        var signature=JSON.stringify([entry.card,entry.data,options.connected]);if(box._deckSignature!==signature){clear(box);var rendered=renderCard(entry);box.appendChild(rendered);frame=box.querySelector('iframe');if(frame)frame._deckOptions=options;box._deckSignature=signature;}
+      }});}
+      payload.options.connected=connected;deckController.pause(rotationPaused);deckController.update(payload);return;
+    }
+    if(deckController){deckController.destroy();deckController=null;layoutSignature='';}
     var entries = {};
     for (var i = 0; i < payload.cards.length; i += 1) {
       entries[payload.cards[i].pluginId + '/' + payload.cards[i].card.id] = payload.cards[i];
@@ -741,19 +768,24 @@
     if (!payload || status.style.display === 'block') return;
     var now = payload.options.now && clockReceivedAt
       ? payload.options.now + Date.now() - clockReceivedAt : Date.now();
+    function updateNodes(root) {
+      var nodes = root.querySelectorAll('[data-countdown-at]');
+      for (var i = 0; i < nodes.length; i += 1) {
+        var at = Number(nodes[i].getAttribute('data-countdown-at'));
+        if (!isFinite(at)) continue;
+        var next = nodes[i].getAttribute('data-countdown-format') === 'countdown'
+          ? countdown(at, now) : Math.max(0, Math.ceil((at - now) / 60000)) + ' min';
+        if (nodes[i].textContent !== next) nodes[i].textContent = next;
+      }
+    }
+    updateNodes(host);
     for (var id in views) {
       if (!Object.prototype.hasOwnProperty.call(views, id)) continue;
       var frame = views[id].currentElement && views[id].currentElement.firstChild;
       try {
         var doc = frame && frame._legacyEntry && frame.contentDocument;
         if (!doc) continue;
-        var nodes = doc.querySelectorAll('[data-countdown-at]');
-        for (var i = 0; i < nodes.length; i += 1) {
-          var at = Number(nodes[i].getAttribute('data-countdown-at'));
-          if (!isFinite(at)) continue;
-          var next = Math.max(0, Math.ceil((at - now) / 60000)) + ' min';
-          if (nodes[i].textContent !== next) nodes[i].textContent = next;
-        }
+        updateNodes(doc);
       } catch (ignore) {}
     }
   }
@@ -762,6 +794,7 @@
     if (window.LocalserveTvViewer) window.LocalserveTvViewer.state(next);
     if (connected === next) return;
     connected = next;
+    if(deckController&&payload){payload.options.connected=next;deckController.update(payload);}
     // Only our mounted same-origin ready-made frames receive this signal.
     // Retain the actual document/readings; freeze ambient CSS and timers when
     // disconnected, then hydrate the same frames on the next successful poll.
@@ -839,6 +872,7 @@
     return;
   }
   function stepCollections(direction) {
+    if(deckController)return deckController.step(direction);
     if(todayController)return todayController.step(direction);
     if (!connected || document.hidden || !payload || direction !== -1 && direction !== 1) return false;
     var entries = {}, changed = false;
@@ -859,6 +893,7 @@
   }
   if (window.LocalserveTvViewer) window.LocalserveTvViewer.install(stepCollections,{pause:function (mode) {
     rotationPaused = mode === 'play' ? false : mode === 'pause' ? true : !rotationPaused;
+    if(deckController)deckController.pause(rotationPaused);
     if (!rotationPaused) for (var id in views) if (selections[id]) selections[id].nextAt = Date.now() + (views[id].node.intervalSeconds || 10) * 1000;
     status.style.display = rotationPaused ? 'block' : 'none';
     if (rotationPaused) status.textContent = todayController?'Spotlight paused · Play/Pause to resume':'Collection rotation paused · Play/Pause to resume';
@@ -866,4 +901,5 @@
   refresh();
   setInterval(refresh, 2000);
   setInterval(function () { if (connected) { draw(); tickCountdowns(); } }, 1000);
+  if(window.addEventListener)window.addEventListener('pagehide',function(){if(deckController)deckController.destroy();});
 }());

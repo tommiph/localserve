@@ -8,6 +8,9 @@ import { randomUUID } from 'node:crypto';
 import { HttpError } from './storage.mjs';
 import { isIdentifier } from './plugin-schema.mjs';
 import { pluginInstances, instanceBinding } from './plugin-instances.mjs';
+import {commonFields} from './card-common.mjs';
+const statusFields=commonFields.filter(field=>['plugin-name','plugin-version','plugin-status','plugin-health','plugin-enabled','plugin-configured'].includes(field.id));
+const statusIds=new Set(statusFields.map(field=>field.id));
 
 const assetPath = /^[a-z0-9-]+(?:\/[a-z0-9-]+)*\.(?:html|css|svg|png|webp)$/;
 export function validateCardTemplates(values = [], fields = []) {
@@ -25,10 +28,10 @@ export function validateCardTemplates(values = [], fields = []) {
     if (value.sourceLabel !== undefined && (typeof value.sourceLabel !== 'string' || !value.sourceLabel.trim() || value.sourceLabel.length > 32)) throw new Error('Invalid ready-made data source label.');
     const result = { id: value.id, name: value.name.trim(), sourceLabel: value.sourceLabel || 'Data source', directory: value.directory, entry: value.entry, assets: [...value.assets],
       slots: value.slots.map(slot => {
-        const field = fields.find(field => field.id === slot.field);
+        const field = [...fields,...statusFields].find(field => field.id === slot.field);
         if (!isIdentifier(slot.id) || ['source-name','source-status'].includes(slot.id) || slots.has(slot.id) || !field || !['string','number','boolean','timestamp','table'].includes(field.type)
-          || !['text','number','time','datetime','minutes-until','table'].includes(slot.format || 'text')
-          || ['time','datetime','minutes-until'].includes(slot.format) && field.type !== 'timestamp'
+          || !['text','number','time','datetime','minutes-until','countdown','table'].includes(slot.format || 'text')
+          || ['time','datetime','minutes-until','countdown'].includes(slot.format) && field.type !== 'timestamp'
           || (slot.format === 'table') !== (field.type === 'table')
           || slot.format === 'number' && field.type !== 'number'
           || slot.percentOf !== undefined && (slot.format !== 'number' || field.type !== 'number')
@@ -70,12 +73,15 @@ export function validateCardTemplates(values = [], fields = []) {
 }
 
 export function readyMadeCatalog(plugin, settings = {}) {
-  const sources = plugin.instances ? pluginInstances(plugin, settings) : [{ id: 'plugin', name: plugin.name, enabled: true }];
+  const sources = plugin.instances ? [...pluginInstances(plugin, settings)] : [{ id: 'plugin', name: plugin.name, enabled: true }];
+  // A metadata-only unavailable source lets themed installations retain a place
+  // for unconfigured named plugins without inventing settings, readings or Events.
+  if(!sources.length&&(plugin.cardTemplates||[]).some(template=>template.id.startsWith('theme-')))sources.push({id:'plugin',name:'Not configured',enabled:false});
   return { templates: (plugin.cardTemplates || []).map(({ directory, assets, entry, ...template }) => ({ ...template,
     url: `/plugin-card-assets/${plugin.id}/${template.id}/${entry}`,
     ...(template.preview && plugin.runtime?.preview === 'jpeg-v1' ? { previewUrl: `/api/plugin-preview/${plugin.id}/frame.jpg` } : {}) })),
   sources: sources.map(source => ({ id: source.id, name: source.name, enabled: source.enabled,
-    bindings: Object.fromEntries(plugin.cardFields.map(field => [field.id, plugin.instances ? instanceBinding(plugin, source, field) : field.id])) })) };
+    bindings: Object.fromEntries([...(plugin.cardFields||[]),...statusFields].map(field => [field.id, plugin.instances&&!statusIds.has(field.id) ? instanceBinding(plugin, source, field) : field.id])) })) };
 }
 
 export function validateReadyMadeCard(value, plugin, existing, settings) {

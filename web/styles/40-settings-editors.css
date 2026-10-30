@@ -1,4 +1,23 @@
 /* Plugin tabs and system configuration reuse the same panel and list language. */
+.backup-list { display: grid; gap: 16px; margin-top: 20px; }
+.backup-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; border-top: 1px solid var(--border); padding-top: 16px; }
+.backup-row > div:first-child { flex: 1 1 260px; min-width: 0; }
+.backup-row p, .backup-changes code { overflow-wrap: anywhere; }
+.backup-changes { display: grid; gap: 8px; padding-left: 20px; }
+.backup-dialog-body { display: grid; gap: 12px; }
+.backup-dialog-body > * { margin: 0; }
+.backup-dialog-body .backup-changes { margin-top: 12px; }
+.access-form { display: grid; gap: 12px; }
+.access-form > * { margin: 0; }
+.access-form > .field { margin: 0; }
+.admin-login-panel label.field { display: grid; gap: 6px; }
+.access-sessions { display: grid; gap: 16px; margin-top: 20px; }
+.access-session { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; border-top: 1px solid var(--border); padding-top: 16px; }
+.access-session > div:first-child { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; }
+.admin-login { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+.admin-login-panel { width: min(100%, 540px); }
+.admin-login-panel h1 { font-size: calc(22px * var(--font-scale)); }
+.admin-login-panel code { overflow-wrap: anywhere; }
 .tabs {
   display: flex;
   gap: 23px;

@@ -1,0 +1,11 @@
+/* The private file receiver follows shared panels/forms at phone text sizes. */
+.download-transfer-panel .panel-body { display:flex;flex-direction:column;gap:16px; }
+.download-transfer-panel .panel-body>p { margin:0; }
+.download-transfer-panel form { display:flex;flex-direction:column;align-items:stretch;gap:12px;min-width:0; }
+.download-transfer-panel form+form { border-top:1px solid var(--border);padding-top:20px; }
+.download-transfer-panel form>.button { align-self:flex-start; }
+.download-transfer-panel .field { margin:0;min-width:0; }
+.download-transfer-panel .field-help { margin:0; }
+.download-transfer-panel strong,.download-transfer-panel .settings-text { overflow-wrap:anywhere;word-wrap:break-word; }
+.download-pair-code { font:32px Consolas,monospace;letter-spacing:4px; }
+#download-progress:empty { display:none; }

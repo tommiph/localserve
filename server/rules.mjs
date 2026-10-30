@@ -5,10 +5,30 @@ import { HttpError } from './storage.mjs';
 import { validateValues } from './plugin-schema.mjs';
 
 export const ruleTypes = {
-  schedule: 'Schedule', timer: 'Timer', interval: 'Interval',
+  schedule: 'Schedule', calendar: 'Calendar', timer: 'Timer', interval: 'Interval',
   sunrise: 'Sunrise', sunset: 'Sunset', event: 'Event',
 };
 const solarCache = new Map();
+
+/** A strict wall-clock minute in the server's system timezone. Nonexistent
+ * spring-forward minutes are invalid; Date selects the earlier repeated hour. */
+export function calendarDateTime(date, time) {
+  if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)
+    || typeof time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return null;
+  const [year, month, day] = date.split('-').map(Number), [hour, minute] = time.split(':').map(Number);
+  if (year < 1970 || year > 9999) return null;
+  const value = new Date(year, month - 1, day, hour, minute);
+  return value.getFullYear() === year && value.getMonth() === month - 1
+    && value.getDate() === day && value.getHours() === hour && value.getMinutes() === minute
+    ? value.getTime() : null;
+}
+
+export function calendarDue(rule, now) {
+  const at = calendarDateTime(rule.date, rule.time);
+  // Compare instants too: the second copy of a repeated local minute must not
+  // become catch-up work when the first copy was missed during an outage.
+  return at !== null && now.getTime() >= at && now.getTime() < at + 60000;
+}
 
 export function validateRule(start, events) {
   if (!Object.hasOwn(ruleTypes, start.type) || typeof start.name !== 'string'
@@ -29,7 +49,11 @@ export function validateRule(start, events) {
     }
     rule.days = [...new Set(start.days)];
   }
-  if (start.type === 'schedule') {
+  if (start.type === 'calendar') {
+    if (calendarDateTime(start.date, start.time) === null) throw new HttpError(400, 'Choose a valid date and time in the server timezone (1970–9999). Missing daylight-saving minutes are unavailable.');
+    rule.date = start.date;
+    rule.time = start.time;
+  } else if (start.type === 'schedule') {
     if (typeof start.time !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start.time)) {
       throw new HttpError(400, 'Enter a valid schedule time.');
     }

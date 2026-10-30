@@ -5,6 +5,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 export const androidPackages=Object.freeze([
+  {folder:'plugins/downloads-inbox/android',apk:'sormus-downloads.apk'},
   {folder:'plugins/sensors/android',apk:'localserve-sensors.apk'},
   {folder:'plugins/oculus-go/android',apk:'localserve-go.apk'},
 ]);

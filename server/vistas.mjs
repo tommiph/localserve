@@ -3,6 +3,7 @@
  */
 import {displayPalette} from './color-themes.mjs';
 import {todayPresentation,daylightAt} from './today.mjs';
+import {deckPresentation,validateSceneSources,sceneActivity} from './vista-deck.mjs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { JsonStore, HttpError } from './storage.mjs';
@@ -78,7 +79,7 @@ export function validateVista(value, existing = null) {
   return { id: existing?.id || randomUUID(), revision: (existing?.revision || 0) + 1,
     schemaVersion: 1, name: value.name.trim(), slug: value.slug, enabled: value.enabled,
     gap: value.gap, padding: value.padding, layout: validateLayout(value.layout),
-    ...(value.presentation!==undefined?{presentation:todayPresentation(value.presentation)}:{}) };
+    ...(value.presentation!==undefined?{presentation:value.presentation?.type==='deck'?deckPresentation(value.presentation):todayPresentation(value.presentation)}:{}) };
 }
 
 export class VistaStore {
@@ -149,6 +150,7 @@ export class VistaStore {
       name = old?.name;
       if (operation === 'delete') { saved.vistas.splice(index, 1); return; }
       const vista = validateVista(operation === 'enabled' ? { ...old, enabled: values.enabled } : values, old);
+      if(vista.presentation?.type==='deck')validateSceneSources(vista,this.registry.services(),old,this.tasks?.snapshot()||[]);
       if (saved.vistas.some(item => item.id !== id && (item.slug === vista.slug || item.name.toLowerCase() === vista.name.toLowerCase()))) throw new HttpError(409, 'Use a unique Vista name and URL name.');
       if (!old && saved.vistas.length >= 100) throw new HttpError(400, 'The server supports up to 100 Vistas.');
       if (old) saved.vistas[index] = vista;
@@ -174,11 +176,13 @@ export class VistaStore {
       const card = plugin?.cards.find(card => card.id === reference.cardId);
       if (!card?.enabled) return { ...reference, unavailable: card ? 'Card disabled' : 'Card unavailable' };
       return { ...reference, card: { ...card, fields: card.fields.filter(field => field.enabled) },
-        ...selectedCardData(card, plugin.cardData, plugin.cardCatalog) };
+        ...(vista.presentation?.type==='deck'&&plugin.attribution?{attribution:{...plugin.attribution}}:{}),
+        ...selectedCardData(card, plugin.cardData, plugin.cardCatalog, { sceneDetails: vista.presentation?.type === 'deck' }) };
     });
     const config = this.config.snapshot();
     const result={ vista, cards, options: { name: config.name, theme: config.displayTheme ?? config.theme, colorTheme:displayPalette(config), fontScale: config.vistaFontScale,
       timeFormat: config.timeFormat, timeZone: new Intl.DateTimeFormat().resolvedOptions().timeZone, now: Date.now(),...(vista.presentation?{daylight:daylightAt(config)}:{}) } };
+    if(vista.presentation?.type==='deck')result.sceneActivity=sceneActivity(vista,this.tasks?.snapshot()||[],this.runtimeState?.snapshot().runs||[]);
     return this.artwork?this.artwork.decorate(result):result;
   }
 }

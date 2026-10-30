@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { doNotDisturbStatus, isTvAction, tvDoNotDisturbError } from './do-not-disturb.mjs';
 import { performance } from 'node:perf_hooks';
 import { HttpError } from './storage.mjs';
-import { validateRule, reconcileRuleClocks, solarOccurrence, ruleTypes,
+import { validateRule, reconcileRuleClocks, solarOccurrence, ruleTypes, calendarDue,
   eventConditionSignature, eventConditionMatches, reconcileEventConditions } from './rules.mjs';
 import { validateValues } from './plugin-schema.mjs';
 import { validateTaskParameters, resolveTaskParameters } from './task-event-values.mjs';
@@ -557,10 +557,10 @@ export class TaskEngine {
             await this.tickClock(task, start, date);
             continue;
           }
-          const occurrence = start.type === 'schedule' ? null : solarOccurrence(date, start, this.config.snapshot().location);
-          const time = start.type === 'schedule' ? start.time
+          const occurrence = ['schedule','calendar'].includes(start.type) ? null : solarOccurrence(date, start, this.config.snapshot().location);
+          const time = ['schedule','calendar'].includes(start.type) ? start.time
             : occurrence === null ? null : scheduleMinute(new Date(occurrence)).time;
-          if (time !== minute.time || !start.days.includes(minute.day)) continue;
+          if (time !== minute.time || (start.type === 'calendar' ? !calendarDue(start,date) : !start.days.includes(minute.day))) continue;
           // A local date/time key suppresses the repeated minute at a daylight-
           // saving fallback. Keep the derived system zone in the key so a system
           // zone change does not confuse occurrences from different calendars.

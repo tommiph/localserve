@@ -67,3 +67,7 @@ Existing API choices remain available: [Spaceflight News](https://www.spacefligh
 RSS 2.0, Atom alternate links, safe permalink GUIDs, and timezone-qualified dates are supported. Responses are limited to 1 MiB, 2,000 input entries, 30 parsed metadata rows and 10 retained items per interest. Text fields/depth remain bounded and DTDs are rejected. Large or changed feeds can become unavailable; cached items remain and the source backs off.
 
 No article pages or article images are fetched. Source text is displayed as text, never executed as HTML. Saved interests, tokens, cached items and discovery history are private installation data and excluded from distributions. SAX parsing uses the bundled sax package under its included licence in vendor/sax/LICENSE.md.
+
+## Themed Cards
+
+This plugin includes Sci-fi, Hacker, Rustic and LCARS ready-made designs. Choose a source in the Card editor, or use **Vistas → Create themed Vistas** for the complete collection and Holographic Command presentation. Disabled or missing sources remain explicit; these read-only designs never send commands. See [Themed Cards and TV decks](../../THEMED-VISTAS.md).

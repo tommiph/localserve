@@ -1610,6 +1610,286 @@
       "from": "0.74.0",
       "version": "0.74.1",
       "summary": "Unify administrator panel spacing, setup guidance and action layouts across plugin workspaces."
+    },
+    {
+      "date": "2026-10-29T06:46:53.337Z",
+      "component": "calendar",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add local date countdowns, remaining-time readings, Date reached Events and a Countdown Card"
+    },
+    {
+      "date": "2026-10-29T06:46:53.441Z",
+      "component": "server",
+      "from": "0.74.1",
+      "version": "0.75.0",
+      "summary": "Add one-time Calendar Task rules and live timestamp countdown formatting with shared date/time controls"
+    },
+    {
+      "date": "2026-10-29T07:41:11.387Z",
+      "component": "server",
+      "from": "0.75.0",
+      "version": "0.76.0",
+      "summary": "Create disabled Task drafts directly from saved Calendar dates and subscriptions using linked Event triggers"
+    },
+    {
+      "date": "2026-10-29T09:14:42.089Z",
+      "component": "server",
+      "from": "0.76.0",
+      "version": "0.77.0",
+      "summary": "Add encrypted local configuration backups, pre-update retention and previewed journalled restores"
+    },
+    {
+      "date": "2026-10-29T09:49:45.132Z",
+      "component": "server",
+      "from": "0.77.0",
+      "version": "0.78.0",
+      "summary": "Add optional administrator password sign-in, revocable browser sessions and offline recovery"
+    },
+    {
+      "date": "2026-10-29T16:07:10.630Z",
+      "component": "adsb-lol",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:10.751Z",
+      "component": "calendar",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:10.873Z",
+      "component": "emby",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:10.999Z",
+      "component": "finavia",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.119Z",
+      "component": "fingrid",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.240Z",
+      "component": "google-apps-script",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.365Z",
+      "component": "home-modes",
+      "from": "1.0.0",
+      "version": "1.1.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.485Z",
+      "component": "hsl-trains",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.607Z",
+      "component": "interests",
+      "from": "1.1.0",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.732Z",
+      "component": "movies",
+      "from": "1.2.0",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.855Z",
+      "component": "news",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:11.986Z",
+      "component": "oculus-go",
+      "from": "1.4.3",
+      "version": "1.5.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.112Z",
+      "component": "pc-network",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.234Z",
+      "component": "playstation",
+      "from": "1.4.1",
+      "version": "1.5.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.356Z",
+      "component": "recipes",
+      "from": "1.1.0",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.482Z",
+      "component": "samsung-tv",
+      "from": "1.7.1",
+      "version": "1.8.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.611Z",
+      "component": "sensors",
+      "from": "1.9.1",
+      "version": "1.10.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.738Z",
+      "component": "simulator",
+      "from": "1.1.1",
+      "version": "1.2.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.860Z",
+      "component": "tradfri",
+      "from": "1.8.1",
+      "version": "1.9.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:12.994Z",
+      "component": "tv-calendar",
+      "from": "1.4.0",
+      "version": "1.5.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:13.115Z",
+      "component": "weather",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:13.236Z",
+      "component": "webcam",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:13.354Z",
+      "component": "webpage",
+      "from": "1.3.1",
+      "version": "1.4.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:13.475Z",
+      "component": "youtube",
+      "from": "1.2.1",
+      "version": "1.3.0",
+      "summary": "Add animated sci-fi, hacker, rustic and LCARS ready-made Card designs"
+    },
+    {
+      "date": "2026-10-29T16:07:13.601Z",
+      "component": "server",
+      "from": "0.78.0",
+      "version": "0.79.0",
+      "summary": "Add four plugin Card themes, five TV decks and a holographic 3D Vista presentation"
+    },
+    {
+      "date": "2026-10-29T16:41:19.772Z",
+      "component": "server",
+      "from": "0.79.0",
+      "version": "0.79.1",
+      "summary": "Fix TV deck sizing on older Tizen engines and add scoped literal themed Card layouts"
+    },
+    {
+      "date": "2026-10-29T17:04:46.868Z",
+      "component": "server",
+      "from": "0.79.1",
+      "version": "0.80.0",
+      "summary": "Add a cinematic typewriter answer-search console to the Hacker TV theme"
+    },
+    {
+      "date": "2026-10-29T17:31:47.092Z",
+      "component": "server",
+      "from": "0.80.0",
+      "version": "0.81.0",
+      "summary": "Add five procedural Three.js Vista worlds with animated TV fallback and cinematic camera motion"
+    },
+    {
+      "date": "2026-10-29T19:20:19.974Z",
+      "component": "server",
+      "from": "0.81.0",
+      "version": "0.82.0",
+      "summary": "Render theme-native Vista information with optional scoped reading effects and Task activity"
+    },
+    {
+      "date": "2026-10-30T03:16:32.518Z",
+      "component": "downloads-inbox",
+      "from": null,
+      "version": "1.0.0",
+      "summary": "Add paired phone file uploads and local qBittorrent handoff"
+    },
+    {
+      "date": "2026-10-30T03:16:32.615Z",
+      "component": "server",
+      "from": "0.82.0",
+      "version": "0.83.0",
+      "summary": "Add Downloads inbox transfer routes, administrator workspace and Android package"
+    },
+    {
+      "date": "2026-10-30T03:47:38.750Z",
+      "component": "downloads-inbox",
+      "from": "1.0.0",
+      "version": "1.1.0",
+      "summary": "Allow qBittorrent to choose torrent content location and honor its add-dialog preference"
+    },
+    {
+      "date": "2026-10-30T03:47:38.855Z",
+      "component": "server",
+      "from": "0.83.0",
+      "version": "0.84.0",
+      "summary": "Support independent torrent content destination policy in Downloads inbox"
+    },
+    {
+      "date": "2026-10-30T09:21:47.767Z",
+      "component": "server",
+      "from": "0.84.0",
+      "version": "0.85.0",
+      "summary": "Expand full-HD theme-native Vistas with six sources, richer selected tables and live console details"
+    },
+    {
+      "date": "2026-10-30T09:41:13.031Z",
+      "component": "calendar",
+      "from": "1.3.0",
+      "version": "1.3.1",
+      "summary": "Restore the Fullscreen Agenda Card alongside countdown and themed designs"
     }
   ]
 }

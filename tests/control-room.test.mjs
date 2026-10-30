@@ -21,7 +21,7 @@ async function fixture(t){
 
 test('control room exposes published capabilities and bounded room membership without administrator data or effects',async t=>{
   const f=await fixture(t),before=f.app.controls.admin(),tasks=f.app.tasks.snapshot(),view=await f.get();
-  assert.equal(view.scenes.length,6);assert.equal(view.tasks.length,3);assert.equal(view.remotes.length,1);assert.equal(view.cards.length,2);
+  assert.equal(view.scenes.length,6);assert.equal(view.tasks.length,3);assert.equal(view.remotes.length,1);assert.deepEqual(view.cards.map(card=>card.templateId).sort(),f.record.plugin.cardTemplates.map(design=>design.id).sort());
   assert.equal(view.lighting[0].lights[0].brightness,0);assert.equal(view.lighting[0].lights[0].on,false);
   assert.deepEqual(view.lighting[0].groups.map(group=>group.memberIds),[['1'],['1']]);
   assert.equal(view.options.timeFormat,'24');assert.ok(Number.isFinite(view.options.now));
@@ -77,7 +77,8 @@ test('Card catalogues avoid reading state, activity and saved Cards; refreshes p
   const state=f.record.state.snapshot,log=f.record.log.latest,cards=f.record.cards.snapshot;
   f.record.state.snapshot=forbidden;f.record.log.latest=forbidden;f.record.cards.snapshot=forbidden;
   const index=f.app.phoneHome.cardIndex();
-  assert.equal(index.length,4);
+  const expected=registry.plugins.flatMap(plugin=>(plugin.cardTemplates||[]).map(design=>plugin.id+'/'+design.id)).sort();
+  assert.deepEqual(index.map(card=>card.pluginId+'/'+card.templateId).sort(),expected);
   assert.ok(index.every(card=>card.available));
   assert.doesNotMatch(JSON.stringify(index),/privateCredential|never-publish|settings|bindings|pluginState/);
   assert.equal(registry.cardLibrary('unknown').length,0);
@@ -88,7 +89,7 @@ test('Card catalogues avoid reading state, activity and saved Cards; refreshes p
   assert.equal(reply.status,200);
   assert.doesNotMatch(JSON.stringify(await reply.json()),/privateCredential|never-publish|settings|pluginState/);
   assert.deepEqual(f.record.config.snapshot(),config);
-  assert.equal((await f.get()).cards.length,4,'Overview uses the same lightweight catalogue');
+  assert.deepEqual((await f.get()).cards.map(card=>card.pluginId+'/'+card.templateId).sort(),expected,'Overview uses the same lightweight catalogue');
   f.record.cards.snapshot=cards;
 });
 

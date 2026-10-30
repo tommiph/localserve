@@ -33,3 +33,8 @@ test('setup defaults remain per-user and preserve private data; compiler is pinn
   const script=await fs.readFile(new URL('../tools/installer/localserve.iss',import.meta.url),'utf8'),lock=JSON.parse(await fs.readFile(new URL('../tools/installer/compiler-lock.json',import.meta.url)));
   assert.match(script,/PrivilegesRequired=lowest/);assert.match(script,/CloseApplications=no/);assert.match(script,/Flags: unchecked/);assert.match(script,/--stop-and-exit/);assert.match(script,/MB_DEFBUTTON2/);assert.match(script,/ValidateDestination/);assert.match(lock.sha256,/^[a-f0-9]{64}$/);assert.match(lock.url,/^https:\/\/github\.com\/jrsoftware\/issrc\/releases\/download\//);
 });
+test('Setup creates an opted-in backup after cooperative stop and before replacing application files',async()=>{
+ const script=await fs.readFile(new URL('../tools/installer/localserve.iss',import.meta.url),'utf8');
+ const prepare=script.slice(script.indexOf('function PrepareToInstall'),script.indexOf('procedure CurStepChanged'));
+ assert.ok(prepare.indexOf('AcquireMaintenance(True)')<prepare.indexOf('--before-update'));assert.match(prepare,/FileExists.*backups-cli\.mjs/);assert.match(prepare,/Code <> 0/);assert.match(prepare,/Existing application files were retained/);
+});

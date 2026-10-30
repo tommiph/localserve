@@ -127,10 +127,15 @@ begin
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var Code: Integer;
 begin
   Result := ValidateDestination; if Result <> '' then exit;
   if not IsDotNetInstalled(net48, 0) then begin Result := 'Sormus requires Microsoft .NET Framework 4.8 or later. Install it and run Setup again.'; exit; end;
   Result := AcquireMaintenance(True);
+  if (Result = '') and FileExists(ExpandConstant('{app}\server\backups-cli.mjs')) then begin
+    if not Exec(ExpandConstant('{app}\runtime\node.exe'), '"' + ExpandConstant('{app}\server\backups-cli.mjs') + '" --before-update', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code) then Code := -1;
+    if Code <> 0 then begin Result := 'Could not create the configured pre-update backup. Existing application files were retained. Start Sormus to review Backup settings before trying again.'; ReleaseMaintenance; end;
+  end;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
